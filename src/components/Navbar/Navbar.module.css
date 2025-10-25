@@ -1,0 +1,129 @@
+/* src/components/Navbar/Navbar.module.css */
+
+.navbar {
+  background: linear-gradient(180deg, rgba(6, 10, 20, 0.85) 0%, rgba(6, 10, 20, 0.70) 100%);
+  -webkit-backdrop-filter: saturate(140%) blur(6px);
+  backdrop-filter: saturate(140%) blur(6px);
+  height: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.1rem;
+  position: sticky; /* Deixa o menu fixo no topo */
+  top: 0;
+  z-index: 999;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(0, 255, 240, 0.12);
+}
+
+.navbarContainer {
+  display: flex;
+  justify-content: space-between; /* Logo à esquerda, links à direita */
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  max-width: 1300px;
+  padding: 0 24px;
+}
+
+/* 1. Estilos do Logo */
+.logoWrapper {
+  cursor: pointer;
+}
+
+.logo {
+  height: 45px; /* Ajuste a altura do logo conforme necessário */
+}
+
+/* 2. Estilos dos Links de Navegação (Desktop) */
+.navMenu {
+  display: flex; /* Alinha os links horizontalmente */
+  align-items: center;
+  list-style: none; /* Remove bolinhas */
+  text-align: center;
+}
+
+.navItem {
+  margin: 0 1rem;
+}
+
+.navLink {
+  /* Tipografia para Navegação [cite: 8] */
+  font-family: 'Poppins', sans-serif;
+  font-weight: 400; /* Regular */
+  color: var(--cor-branco-puro);
+  text-shadow: 0 0 6px rgba(0, 255, 240, 0.18);
+  text-decoration: none; /* Remove sublinhado */
+  padding: 0.5rem 0;
+  transition: all 0.2s ease-in-out;
+  border-bottom: 3px solid transparent; /* Efeito de sublinhado no hover */
+}
+
+/* Efeito ao passar o mouse */
+.navLink:hover {
+  color: var(--cor-principal); /* Violeta vibrante */
+  border-bottom: 3px solid var(--cor-principal);
+}
+
+/* Botão de "Entrar" estilizado */
+.navLinkCta {
+  padding: 8px 20px;
+  border-radius: 8px;
+  background-color: var(--cor-principal);
+  color: var(--cor-branco-puro);
+  border: none;
+}
+
+.navLinkCta:hover {
+  background-color: var(--cor-destaque-escuro);
+  color: var(--cor-branco-puro);
+  border-bottom: 3px solid transparent; /* Remove borda do hover padrão */
+}
+
+/* 3. Ícone do Menu Mobile (Hambúrguer) */
+.mobileIcon {
+  display: none; /* Escondido no desktop */
+  font-size: 1.8rem;
+  color: var(--cor-principal);
+  cursor: pointer;
+}
+
+
+/* 4. RESPONSIVIDADE (Media Query para Mobile) */
+@media screen and (max-width: 960px) {
+  
+  /* Esconde os links do desktop */
+  .navMenu {
+    display: flex;
+    flex-direction: column; /* Empilha os links verticalmente */
+    width: 100%;
+    height: 90vh; /* Ocupa quase a tela toda */
+    position: absolute;
+    top: 80px; /* Abaixo da navbar */
+    left: -100%; /* Começa fora da tela */
+    opacity: 1;
+    transition: all 0.5s ease;
+    background: rgba(6, 10, 20, 0.92);
+    -webkit-backdrop-filter: saturate(140%) blur(8px);
+    backdrop-filter: saturate(140%) blur(8px);
+  }
+
+  /* Mostra o menu quando o estado 'active' é aplicado */
+  .navMenu.active {
+    left: 0; /* Puxa o menu para dentro da tela */
+    opacity: 1;
+  }
+
+  .navItem {
+    margin: 1.5rem 0;
+  }
+  
+  .navLink {
+    font-size: 1.5rem; /* Links maiores no mobile */
+  }
+
+  /* Mostra o ícone de hambúrguer */
+  .mobileIcon {
+    display: block; 
+  }
+}

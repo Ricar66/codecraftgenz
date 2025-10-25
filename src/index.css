@@ -1,0 +1,28 @@
+/**
+ * ARQUIVO PRINCIPAL DE ESTILOS - CODECRAFT
+ * 
+ * Este arquivo importa todos os estilos globais e configurações
+ * base da aplicação CodeCraft.
+ */
+
+/* Importação dos estilos globais */
+@import './styles/globals.css';
+
+/* Estilos específicos da aplicação */
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Configurações específicas para o ambiente de desenvolvimento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,35 @@
+/* src/components/Button/Button.module.css */
+
+/* Estilo base do botão */
+.btn {
+  padding: 12px 24px;
+  font-family: 'Poppins', sans-serif; /* Fonte de navegação [cite: 8] */
+  font-weight: 700;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px; /* Cantos arredondados  */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+}
+
+/* Variante primária (Violeta) */
+.primary {
+  background-color: var(--cor-principal); /* Violeta vibrante  */
+  color: var(--cor-branco-puro);
+}
+
+.primary:hover {
+  background-color: var(--cor-destaque-escuro); /* Roxo escuro  */
+}
+
+/* Variante secundária (Azul) */
+.secondary {
+  background-color: var(--cor-destaque-acao); /* Azul Gen-Z  */
+  color: var(--cor-texto-principal);
+}
+
+.secondary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0, 228, 242, 0.3);
+}
