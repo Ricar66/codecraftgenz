@@ -1,4 +1,5 @@
 // src/App.jsx
+// teste
 import React from 'react';
 
 // Páginas
