@@ -255,21 +255,25 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
       <style>{`
         /* ===== SEÇÃO PRINCIPAL - CONTINUIDADE COM HERO ===== */
         .feedback-showcase {
+          min-height: 100vh;
           width: 100%;
-          padding: 80px 0;
           position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           overflow: hidden;
           outline: none;
           
-          /* Background idêntico ao Hero para continuidade visual */
+          /* Background EXATAMENTE idêntico ao Hero */
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
           background-attachment: fixed;
           background-image: url('/src/assets/hero-background.svg');
+          background-color: var(--fundo-escuro);
         }
 
-        /* Overlay idêntico ao Hero para manter consistência */
+        /* Overlay EXATAMENTE idêntico ao Hero - usando as mesmas cores */
         .feedback-showcase::before {
           content: '';
           position: absolute;
