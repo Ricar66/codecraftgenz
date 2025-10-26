@@ -15,6 +15,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 import heroBackground from '../../assets/hero-background.svg';
 import { useAnalytics } from '../../hooks/useAnalytics';

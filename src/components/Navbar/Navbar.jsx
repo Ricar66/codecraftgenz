@@ -74,7 +74,15 @@ const Navbar = () => {
           <li className={styles.navItem}>
             <a href="#ranking" className={styles.navLink} onClick={closeMobileMenu}>Ranking</a>
           </li>
-          
+          <li className={styles.navItem}>
+            <Link 
+              to="/feedbacks" 
+              className={`${styles.navLink} ${isActiveLink('/feedbacks') ? styles.navLinkActive : ''}`}
+              onClick={closeMobileMenu}
+            >
+              Feedbacks
+            </Link>
+          </li>
           {/* CTA Button */}
           <li className={styles.navItem}>
             <a 
