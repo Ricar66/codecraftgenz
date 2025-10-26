@@ -1,0 +1,355 @@
+/* src/components/Projects/ProjectCard.module.css */
+
+/* ===== CARD PRINCIPAL ===== */
+.projectCard {
+  background-color: var(--fundo-card);
+  border-radius: var(--raio-xl);
+  padding: var(--espaco-xl);
+  border: 1px solid rgba(209, 43, 242, 0.2);
+  transition: var(--transicao-normal);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.projectCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--cor-primaria), var(--cor-terciaria));
+  opacity: 0;
+  transition: var(--transicao-normal);
+}
+
+.projectCard:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--sombra-xl);
+  border-color: var(--cor-primaria);
+}
+
+.projectCard:hover::before {
+  opacity: 1;
+}
+
+.projectCard:focus-within {
+  outline: 2px solid var(--cor-primaria);
+  outline-offset: 2px;
+}
+
+/* ===== CABEÇALHO DO CARD ===== */
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--espaco-lg);
+  gap: var(--espaco-lg);
+}
+
+.projectTitle {
+  font-family: var(--fonte-titulos);
+  font-size: var(--texto-xl);
+  font-weight: 700;
+  color: var(--texto-branco);
+  margin: 0;
+  line-height: 1.3;
+  flex: 1;
+  transition: var(--transicao-normal);
+}
+
+.projectCard:hover .projectTitle {
+  color: var(--cor-primaria);
+}
+
+/* ===== STATUS BADGES ===== */
+.statusBadge {
+  padding: var(--espaco-sm) var(--espaco-md);
+  border-radius: 20px;
+  font-family: var(--fonte-subtitulos);
+  font-size: var(--texto-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.statusBadge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: var(--transicao-lenta);
+}
+
+.statusBadge:hover::before {
+  left: 100%;
+}
+
+.statusInProgress {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: var(--texto-branco);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.statusCompleted {
+  background: linear-gradient(135deg, #10b981, #047857);
+  color: var(--texto-branco);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.statusPaused {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: var(--texto-branco);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.statusDefault {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+  color: var(--texto-branco);
+  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
+}
+
+/* Conteúdo do Card */
+.cardContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.projectInfo {
+  margin-bottom: 16px;
+}
+
+.startDate {
+  font-family: var(--fonte-subtitulos);
+  font-size: var(--texto-sm);
+  color: var(--texto-cinza-digital);
+  font-weight: 500;
+}
+
+.startDate strong {
+  color: var(--texto-gelo);
+}
+
+/* ===== DATA ===== */
+.projectDate {
+  font-family: var(--fonte-subtitulos);
+  font-size: var(--texto-sm);
+  color: var(--texto-cinza-digital);
+  margin-bottom: var(--espaco-lg);
+  font-weight: 500;
+}
+
+/* Descrição melhorada */
+.description {
+  margin-bottom: 20px;
+  flex: 1;
+}
+
+.description p {
+  font-family: var(--fonte-principal);
+  font-size: var(--texto-base);
+  line-height: 1.6;
+  color: var(--texto-gelo);
+  margin: 0 0 8px 0;
+}
+
+/* ===== DESCRIÇÃO ===== */
+.projectDescription {
+  font-family: var(--fonte-principal);
+  color: var(--texto-gelo);
+  line-height: 1.6;
+  margin-bottom: var(--espaco-xl);
+  font-size: var(--texto-base);
+}
+
+.readMoreButton {
+  background: none;
+  border: none;
+  color: var(--cor-terciaria);
+  font-family: var(--fonte-subtitulos);
+  font-size: var(--texto-sm);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: var(--transicao-normal);
+}
+
+.readMoreButton:hover {
+  color: var(--cor-acento);
+  text-decoration-thickness: 2px;
+}
+
+.readMoreButton:focus {
+  outline: 2px solid var(--cor-terciaria);
+  outline-offset: 2px;
+  border-radius: var(--raio-sm);
+}
+
+/* ===== BARRA DE PROGRESSO ===== */
+.progressSection {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-md);
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.progressLabel {
+  font-family: var(--fonte-subtitulos);
+  font-size: var(--texto-sm);
+  font-weight: 500;
+  color: var(--texto-gelo);
+}
+
+.progressPercentage {
+  font-family: var(--fonte-titulos);
+  font-size: var(--texto-sm);
+  font-weight: 700;
+  color: var(--texto-branco);
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Barra de Progresso */
+.progressBar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--raio-sm);
+  overflow: hidden;
+  position: relative;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: var(--raio-sm);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.progressFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Cores da Barra de Progresso */
+.progressLow {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.progressMedium {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.progressHigh {
+  background: linear-gradient(90deg, #10b981, #047857);
+}
+
+/* ===== RESPONSIVIDADE ===== */
+@media (max-width: 768px) {
+  .projectCard {
+    padding: var(--espaco-lg);
+  }
+  
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--espaco-md);
+  }
+  
+  .projectTitle {
+    font-size: var(--texto-lg);
+  }
+  
+  .statusBadge {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .projectCard {
+    padding: var(--espaco-md);
+  }
+  
+  .projectTitle {
+    font-size: var(--texto-base);
+  }
+  
+  .statusBadge {
+    font-size: 0.6875rem;
+    padding: 3px 10px;
+  }
+}
+
+/* Estados de Foco para Acessibilidade */
+.projectCard:focus-within {
+  outline: 2px solid var(--cor-primaria);
+  outline-offset: 2px;
+}
+
+/* Animações suaves */
+.projectCard * {
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+/* ===== MODO ESCURO ===== */
+@media (prefers-color-scheme: dark) {
+  .projectCard {
+    background-color: var(--fundo-card);
+    border-color: rgba(209, 43, 242, 0.2);
+    color: var(--texto-branco);
+  }
+  
+  .projectTitle {
+    color: var(--texto-branco);
+  }
+  
+  .description p {
+    color: var(--texto-gelo);
+  }
+  
+  .startDate {
+    color: var(--texto-cinza-digital);
+  }
+  
+  .progressLabel,
+  .progressPercentage {
+    color: var(--texto-branco);
+  }
+}

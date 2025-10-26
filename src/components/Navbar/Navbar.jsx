@@ -1,22 +1,36 @@
 // src/components/Navbar/Navbar.jsx
 import React, { useState } from 'react';
 import { FaBars, FaTimes } from 'react-icons/fa';
+import { Link, useLocation } from 'react-router-dom';
 
 import logo from '../../assets/logo-codecraft.svg';
 
 import styles from './Navbar.module.css';
 
-/*
+/**
  * Componente da Barra de Navegação
  * Inclui o logo, links de navegação e menu mobile.
  */
 const Navbar = () => {
   // Estado para controlar se o menu mobile está aberto ou fechado
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Hook para obter a rota atual
+  const location = useLocation();
 
   // Função para alternar o estado do menu mobile
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  // Função para fechar o menu mobile ao clicar em um link
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
+  // Função para verificar se o link está ativo
+  const isActiveLink = (path) => {
+    return location.pathname === path;
   };
 
   return (
@@ -24,9 +38,9 @@ const Navbar = () => {
       <div className={styles.navbarContainer}>
         
         {/* 1. Logo */}
-        <div className={styles.logoWrapper}>
+        <Link to="/" className={styles.logoWrapper} onClick={closeMobileMenu}>
           <img src={logo} alt="CodeCraft Gen-Z Logo" className={styles.logo} />
-        </div>
+        </Link>
 
         {/* 2. Links de Navegação (Desktop) */}
         {/* Usamos a classe 'navMenu' e adicionamos 'active' se o menu mobile estiver aberto */}
@@ -34,21 +48,40 @@ const Navbar = () => {
           
           {/* Baseado nos ícones de área da plataforma */}
           <li className={styles.navItem}>
-            <a href="#desafios" className={styles.navLink}>Desafios</a>
+            <Link 
+              to="/" 
+              className={`${styles.navLink} ${isActiveLink('/') ? styles.navLinkActive : ''}`}
+              onClick={closeMobileMenu}
+            >
+              Início
+            </Link>
           </li>
           <li className={styles.navItem}>
-            <a href="#projetos" className={styles.navLink}>Projetos</a>
+            <a href="#desafios" className={styles.navLink} onClick={closeMobileMenu}>Desafios</a>
           </li>
           <li className={styles.navItem}>
-            <a href="#mentorias" className={styles.navLink}>Mentorias</a>
+            <Link 
+              to="/projetos" 
+              className={`${styles.navLink} ${isActiveLink('/projetos') ? styles.navLinkActive : ''}`}
+              onClick={closeMobileMenu}
+            >
+              Projetos
+            </Link>
           </li>
           <li className={styles.navItem}>
-            <a href="#ranking" className={styles.navLink}>Ranking</a>
+            <a href="#mentorias" className={styles.navLink} onClick={closeMobileMenu}>Mentorias</a>
+          </li>
+          <li className={styles.navItem}>
+            <a href="#ranking" className={styles.navLink} onClick={closeMobileMenu}>Ranking</a>
           </li>
           
-          {/* Link de Destaque */}
+          {/* CTA Button */}
           <li className={styles.navItem}>
-            <a href="#login" className={`${styles.navLink} ${styles.navLinkCta}`}>
+            <a 
+              href="#login" 
+              className={`${styles.navLink} ${styles.navLinkCta}`}
+              onClick={closeMobileMenu}
+            >
               Entrar
             </a>
           </li>
@@ -56,7 +89,7 @@ const Navbar = () => {
 
         {/* 3. Ícone do Menu Mobile (Hambúrguer) */}
         <div className={styles.mobileIcon} onClick={toggleMobileMenu}>
-          {/* Alterna o ícone com base no estado */}
+          {/* Alterna entre ícone de hambúrguer e X */}
           {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
         </div>
 

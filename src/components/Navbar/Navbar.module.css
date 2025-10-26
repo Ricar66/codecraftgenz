@@ -1,129 +1,207 @@
 /* src/components/Navbar/Navbar.module.css */
 
 .navbar {
-  background: linear-gradient(180deg, rgba(6, 10, 20, 0.85) 0%, rgba(6, 10, 20, 0.70) 100%);
-  -webkit-backdrop-filter: saturate(140%) blur(6px);
-  backdrop-filter: saturate(140%) blur(6px);
-  height: 80px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0;
+  z-index: 1000;
   position: sticky; /* Deixa o menu fixo no topo */
   top: 0;
-  z-index: 999;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
-  border-bottom: 1px solid rgba(0, 255, 240, 0.12);
+  width: 100%;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
 }
 
 .navbarContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
   display: flex;
-  justify-content: space-between; /* Logo à esquerda, links à direita */
+  justify-content: space-between;
   align-items: center;
-  height: 100%;
-  width: 100%;
-  max-width: 1300px;
-  padding: 0 24px;
+  height: 80px;
 }
 
-/* 1. Estilos do Logo */
-.logoWrapper {
-  cursor: pointer;
+/* 1. Logo */
+.navbarLogo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #8b5cf6;
+  text-decoration: none;
+  transition: color 0.3s ease;
 }
 
-.logo {
-  height: 45px; /* Ajuste a altura do logo conforme necessário */
+.navbarLogo:hover {
+  color: #7c3aed;
 }
 
 /* 2. Estilos dos Links de Navegação (Desktop) */
 .navMenu {
-  display: flex; /* Alinha os links horizontalmente */
+  display: flex;
   align-items: center;
-  list-style: none; /* Remove bolinhas */
-  text-align: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .navItem {
-  margin: 0 1rem;
+  margin-left: 2rem;
 }
 
 .navLink {
   /* Tipografia para Navegação [cite: 8] */
-  font-family: 'Poppins', sans-serif;
-  font-weight: 400; /* Regular */
-  color: var(--cor-branco-puro);
-  text-shadow: 0 0 6px rgba(0, 255, 240, 0.18);
-  text-decoration: none; /* Remove sublinhado */
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #374151;
+  text-decoration: none;
   padding: 0.5rem 0;
-  transition: all 0.2s ease-in-out;
-  border-bottom: 3px solid transparent; /* Efeito de sublinhado no hover */
+  position: relative;
+  transition: color 0.3s ease;
 }
 
-/* Efeito ao passar o mouse */
 .navLink:hover {
-  color: var(--cor-principal); /* Violeta vibrante */
-  border-bottom: 3px solid var(--cor-principal);
+  color: #8b5cf6;
 }
 
-/* Botão de "Entrar" estilizado */
+/* Estado ativo do link */
+.navLinkActive {
+  color: #8b5cf6;
+  font-weight: 600;
+}
+
+.navLinkActive::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #8b5cf6, #a855f7);
+  border-radius: 1px;
+}
+
 .navLinkCta {
-  padding: 8px 20px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  color: white !important;
+  padding: 0.75rem 1.5rem;
   border-radius: 8px;
-  background-color: var(--cor-principal);
-  color: var(--cor-branco-puro);
-  border: none;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+  transition: all 0.3s ease;
 }
 
 .navLinkCta:hover {
-  background-color: var(--cor-destaque-escuro);
-  color: var(--cor-branco-puro);
-  border-bottom: 3px solid transparent; /* Remove borda do hover padrão */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+  color: white !important;
 }
 
 /* 3. Ícone do Menu Mobile (Hambúrguer) */
 .mobileIcon {
-  display: none; /* Escondido no desktop */
-  font-size: 1.8rem;
-  color: var(--cor-principal);
+  display: none;
+  font-size: 1.5rem;
   cursor: pointer;
+  color: #374151;
+  transition: color 0.3s ease;
 }
 
+.mobileIcon:hover {
+  color: #8b5cf6;
+}
 
-/* 4. RESPONSIVIDADE (Media Query para Mobile) */
-@media screen and (max-width: 960px) {
-  
-  /* Esconde os links do desktop */
+/* 4. Responsividade - Mobile */
+@media screen and (max-width: 768px) {
   .navMenu {
-    display: flex;
-    flex-direction: column; /* Empilha os links verticalmente */
-    width: 100%;
-    height: 90vh; /* Ocupa quase a tela toda */
-    position: absolute;
+    position: fixed;
+    left: -100%; /* Esconde o menu fora da tela */
     top: 80px; /* Abaixo da navbar */
-    left: -100%; /* Começa fora da tela */
-    opacity: 1;
-    transition: all 0.5s ease;
-    background: rgba(6, 10, 20, 0.92);
-    -webkit-backdrop-filter: saturate(140%) blur(8px);
-    backdrop-filter: saturate(140%) blur(8px);
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.98);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    width: 100%;
+    text-align: center;
+    transition: 0.3s;
+    box-shadow: 0 10px 27px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid rgba(139, 92, 246, 0.1);
+    padding: 2rem 0;
   }
 
   /* Mostra o menu quando o estado 'active' é aplicado */
   .navMenu.active {
     left: 0; /* Puxa o menu para dentro da tela */
-    opacity: 1;
   }
 
   .navItem {
-    margin: 1.5rem 0;
-  }
-  
-  .navLink {
-    font-size: 1.5rem; /* Links maiores no mobile */
+    margin: 1rem 0;
   }
 
-  /* Mostra o ícone de hambúrguer */
+  .navLink {
+    font-size: 1.125rem;
+    display: block;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 0 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .navLink:hover {
+    background: rgba(139, 92, 246, 0.1);
+    color: #8b5cf6;
+  }
+
+  .navLinkActive {
+    background: rgba(139, 92, 246, 0.1);
+  }
+
+  .navLinkActive::after {
+    display: none;
+  }
+
+  .navLinkCta {
+    margin: 1rem;
+    display: inline-block;
+  }
+
   .mobileIcon {
-    display: block; 
+    display: block;
+  }
+}
+
+/* Animações suaves */
+.navLink,
+.navbarLogo,
+.mobileIcon {
+  transition: all 0.3s ease;
+}
+
+/* Estados de foco para acessibilidade */
+.navLink:focus,
+.navbarLogo:focus,
+.mobileIcon:focus {
+  outline: 2px solid #8b5cf6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Melhorias para telas pequenas */
+@media screen and (max-width: 480px) {
+  .navbarContainer {
+    padding: 0 16px;
+  }
+
+  .navbarLogo {
+    font-size: 1.25rem;
+  }
+
+  .navMenu {
+    padding: 1.5rem 0;
+  }
+
+  .navLink {
+    font-size: 1rem;
+    margin: 0 0.5rem;
   }
 }
