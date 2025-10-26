@@ -1,15 +1,16 @@
-import express from 'express';
 import path from 'path';
-import compression from 'compression';
-import helmet from 'helmet';
 import { fileURLToPath } from 'url';
+
+import compression from 'compression';
+import express from 'express';
+import helmet from 'helmet';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 app.set('trust proxy', true);
-const port = process.env.PORT || 8080;
+const port = globalThis.process?.env?.PORT || 8080;
 
 // Security headers
 app.use(helmet({
@@ -46,5 +47,6 @@ app.get('*', (req, res) => {
 });
 
 app.listen(port, () => {
+   
   console.log(`Server listening on port ${port}`);
 });
