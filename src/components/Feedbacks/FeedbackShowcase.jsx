@@ -253,22 +253,41 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
       </div>
 
       <style>{`
-        /* ===== SEÇÃO PRINCIPAL ===== */
+        /* ===== SEÇÃO PRINCIPAL - CONTINUIDADE COM HERO ===== */
         .feedback-showcase {
           width: 100%;
           padding: 80px 0;
-          background: linear-gradient(
-            135deg,
-            rgba(15, 23, 42, 0.95) 0%,
-            rgba(30, 41, 59, 0.9) 50%,
-            rgba(51, 65, 85, 0.85) 100%
-          );
           position: relative;
           overflow: hidden;
           outline: none;
+          
+          /* Background idêntico ao Hero para continuidade visual */
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+          background-attachment: fixed;
+          background-image: url('/src/assets/hero-background.svg');
         }
 
+        /* Overlay idêntico ao Hero para manter consistência */
         .feedback-showcase::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(
+            135deg,
+            rgba(10, 10, 15, 0.85) 0%,
+            rgba(26, 26, 46, 0.8) 30%,
+            rgba(22, 33, 62, 0.75) 70%,
+            rgba(15, 52, 96, 0.7) 100%
+          );
+          z-index: 1;
+        }
+
+        .feedback-showcase::after {
           content: '';
           position: absolute;
           top: 0;
@@ -277,10 +296,10 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
           bottom: 0;
           background: radial-gradient(
             ellipse at center,
-            rgba(var(--cor-primaria-rgb), 0.05) 0%,
-            transparent 70%
+            rgba(0, 0, 0, 0.1) 0%,
+            rgba(0, 0, 0, 0.3) 100%
           );
-          pointer-events: none;
+          z-index: 1;
         }
 
         /* ===== CONTAINER ===== */
@@ -289,7 +308,7 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
           margin: 0 auto;
           padding: 0 var(--espaco-xl);
           position: relative;
-          z-index: 2;
+          z-index: 3;
         }
 
         /* ===== CABEÇALHO ===== */
@@ -304,14 +323,27 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
           font-weight: 700;
           color: var(--texto-branco);
           margin-bottom: var(--espaco-lg);
+          text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
           background: linear-gradient(
             135deg,
             var(--cor-primaria) 0%,
-            var(--cor-terciaria) 100%
+            var(--cor-terciaria) 50%,
+            var(--texto-branco) 100%
           );
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
+          animation: gradientShift 3s ease-in-out infinite alternate;
+        }
+
+        /* Animação do gradiente - idêntica ao Hero */
+        @keyframes gradientShift {
+          0% {
+            background-position: 0% 50%;
+          }
+          100% {
+            background-position: 100% 50%;
+          }
         }
 
         .showcase-subtitle {
@@ -321,6 +353,7 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
           max-width: 600px;
           margin: 0 auto;
           line-height: 1.6;
+          text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }
 
         /* ===== ESTADOS DE CARREGAMENTO E ERRO ===== */
@@ -662,6 +695,11 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
 
           .star {
             transition: none;
+          }
+
+          /* Desabilitar animação do título para consistência com Hero */
+          .showcase-title {
+            animation: none;
           }
         }
 

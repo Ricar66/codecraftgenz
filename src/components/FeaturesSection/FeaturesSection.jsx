@@ -14,7 +14,7 @@ const FeaturesSection = () => {
         
         {/* Subtítulo da Seção (Fonte: Poppins) */}
         <p className={styles.subtitle}>
-          Tudo que você precisa para conectar seu talento à inovação real[cite: 3].
+          Tudo que você precisa para conectar seu talento à inovação real.
         </p>
 
         {/* Grade de Recursos */}
