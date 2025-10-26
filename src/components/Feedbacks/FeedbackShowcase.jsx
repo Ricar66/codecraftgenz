@@ -2,7 +2,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
+import heroBackground from '../../assets/hero-background.svg';
 import useFeedbacks from '../../hooks/useFeedbacks';
+
+import styles from './FeedbackShowcase.module.css';
 
 const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
   const { items, loading, error } = useFeedbacks({ autoFetch: true, pageSize: 20 });
@@ -106,7 +109,7 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
     return Array.from({ length: 5 }, (_, index) => (
       <span 
         key={index} 
-        className={`star ${index < rating ? 'filled' : 'empty'}`}
+        className={`${styles.star} ${index < rating ? styles.filled : styles.empty}`}
       >
         ★
       </span>
@@ -123,9 +126,9 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
 
   if (loading) {
     return (
-      <section className="feedback-showcase">
-        <div className="showcase-container">
-          <div className="loading-state">
+      <section className={styles.feedbackShowcase}>
+        <div className={styles.showcaseContainer}>
+          <div className={styles.loadingState}>
             <p>Carregando feedbacks...</p>
           </div>
         </div>
@@ -135,9 +138,9 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
 
   if (error) {
     return (
-      <section className="feedback-showcase">
-        <div className="showcase-container">
-          <div className="error-state">
+      <section className={styles.feedbackShowcase}>
+        <div className={styles.showcaseContainer}>
+          <div className={styles.errorState}>
             <p>Erro ao carregar feedbacks: {error.message}</p>
           </div>
         </div>
@@ -147,68 +150,69 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
 
   return (
     <section 
-      className="feedback-showcase"
+      className={styles.feedbackShowcase}
+      style={{ backgroundImage: `url(${heroBackground})` }}
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="region"
       aria-label="Carrossel de feedbacks"
     >
-      <div className="showcase-container">
-        <div className="showcase-header">
-          <h2 className="showcase-title">O que nossos clientes dizem</h2>
-          <p className="showcase-subtitle">
+      <div className={styles.showcaseContainer}>
+        <div className={styles.showcaseHeader}>
+          <h2 className={styles.showcaseTitle}>O que nossos clientes dizem</h2>
+          <p className={styles.showcaseSubtitle}>
             Experiências reais de quem confia no nosso trabalho
           </p>
         </div>
         
         {feedbacks.length === 0 ? (
-          <div className="empty-state">
+          <div className={styles.emptyState}>
             <p>
               Nenhum feedback disponível. <Link to="/feedbacks">Seja o primeiro a enviar!</Link>
             </p>
           </div>
         ) : (
-          <div className="carousel-wrapper">
+          <div className={styles.carouselWrapper}>
             <div 
-              className="carousel-container"
+              className={styles.carouselContainer}
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => setIsPaused(false)}
             >
               <div 
-                className="carousel-track"
+                className={`${styles.carouselTrack} ${prefersReducedMotion ? styles.carouselTrackReducedMotion : ''}`}
                 style={{
                   transform: `translateX(-${currentIndex * 100}%)`,
                   transition: prefersReducedMotion ? 'none' : 'transform 0.5s ease-in-out'
                 }}
               >
                 {feedbacks.map((feedback) => (
-                  <div key={feedback.id} className="carousel-slide">
-                    <div className="feedback-card">
-                      <div className="feedback-content">
-                        <p className="feedback-text">"{feedback.text}"</p>
-                        <div className="feedback-footer">
-                          <div className="feedback-author">
-                            <div className="author-avatar">
+                  <div key={feedback.id} className={styles.carouselSlide}>
+                    <div className={styles.feedbackCard}>
+                      <div className={styles.feedbackContent}>
+                        <p className={styles.feedbackText}>"{feedback.text}"</p>
+                        <div className={styles.feedbackFooter}>
+                          <div className={styles.feedbackAuthor}>
+                            <div className={styles.authorAvatar}>
                               {feedback.avatarUrl ? (
                                 <img 
                                   src={feedback.avatarUrl} 
                                   alt={`Avatar de ${feedback.author}`}
-                                  className="avatar-image"
+                                  className={styles.avatarImage}
                                 />
                               ) : (
                                 getInitials(feedback.author)
                               )}
                             </div>
-                            <div className="author-info">
-                              <span className="author-name">{feedback.author}</span>
+                            <div className={styles.authorInfo}>
+                              <span className={styles.authorName}>{feedback.author}</span>
                               {feedback.createdAt && (
-                                <span className="feedback-date">
+                                <span className={styles.feedbackDate}>
                                   {new Date(feedback.createdAt).toLocaleDateString('pt-BR')}
                                 </span>
                               )}
                             </div>
                           </div>
-                          <div className="feedback-rating">
+                          <div className={styles.feedbackRating}>
                             {renderStars(feedback.rating)}
                           </div>
                         </div>
@@ -222,510 +226,37 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
             {showControls && feedbacks.length > 1 && (
               <>
                 <button 
-                  className="carousel-btn carousel-btn-prev"
+                  className={`${styles.carouselBtn} ${styles.carouselBtnPrev}`}
                   onClick={prevSlide}
                   aria-label="Feedback anterior"
                 >
                   ‹
                 </button>
                 <button 
-                  className="carousel-btn carousel-btn-next"
+                  className={`${styles.carouselBtn} ${styles.carouselBtnNext}`}
                   onClick={nextSlide}
                   aria-label="Próximo feedback"
                 >
                   ›
                 </button>
                 
-                <div className="carousel-indicators">
-                  {feedbacks.map((_, index) => (
-                    <button
-                      key={index}
-                      className={`indicator ${index === currentIndex ? 'active' : ''}`}
-                      onClick={() => goToSlide(index)}
-                      aria-label={`Ir para feedback ${index + 1}`}
-                    />
-                  ))}
-                </div>
+                <div className={styles.carouselIndicators}>
+                   {feedbacks.map((_, index) => (
+                     <button
+                       key={index}
+                       className={`${styles.indicator} ${index === currentIndex ? styles.active : ''}`}
+                       onClick={() => goToSlide(index)}
+                       aria-label={`Ir para feedback ${index + 1}`}
+                     />
+                   ))}
+                 </div>
               </>
             )}
           </div>
         )}
       </div>
-
-      <style>{`
-        /* ===== SEÇÃO PRINCIPAL - CONTINUIDADE COM HERO ===== */
-        .feedback-showcase {
-          min-height: 100vh;
-          width: 100%;
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-          outline: none;
-          
-          /* Background EXATAMENTE idêntico ao Hero */
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-          background-attachment: fixed;
-          background-image: url('/src/assets/hero-background.svg');
-          background-color: var(--fundo-escuro);
-        }
-
-        /* Overlay EXATAMENTE idêntico ao Hero - usando as mesmas cores */
-        .feedback-showcase::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(
-            135deg,
-            rgba(10, 10, 15, 0.85) 0%,
-            rgba(26, 26, 46, 0.8) 30%,
-            rgba(22, 33, 62, 0.75) 70%,
-            rgba(15, 52, 96, 0.7) 100%
-          );
-          z-index: 1;
-        }
-
-        .feedback-showcase::after {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: radial-gradient(
-            ellipse at center,
-            rgba(0, 0, 0, 0.1) 0%,
-            rgba(0, 0, 0, 0.3) 100%
-          );
-          z-index: 1;
-        }
-
-        /* ===== CONTAINER ===== */
-        .showcase-container {
-          max-width: 1400px;
-          margin: 0 auto;
-          padding: 0 var(--espaco-xl);
-          position: relative;
-          z-index: 3;
-        }
-
-        /* ===== CABEÇALHO ===== */
-        .showcase-header {
-          text-align: center;
-          margin-bottom: var(--espaco-3xl);
-        }
-
-        .showcase-title {
-          font-family: var(--fonte-titulos);
-          font-size: clamp(2rem, 5vw, 3rem);
-          font-weight: 700;
-          color: var(--texto-branco);
-          margin-bottom: var(--espaco-lg);
-          text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-          background: linear-gradient(
-            135deg,
-            var(--cor-primaria) 0%,
-            var(--cor-terciaria) 50%,
-            var(--texto-branco) 100%
-          );
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          animation: gradientShift 3s ease-in-out infinite alternate;
-        }
-
-        /* Animação do gradiente - idêntica ao Hero */
-        @keyframes gradientShift {
-          0% {
-            background-position: 0% 50%;
-          }
-          100% {
-            background-position: 100% 50%;
-          }
-        }
-
-        .showcase-subtitle {
-          font-family: var(--fonte-subtitulos);
-          font-size: clamp(1rem, 2.5vw, 1.25rem);
-          color: var(--texto-gelo);
-          max-width: 600px;
-          margin: 0 auto;
-          line-height: 1.6;
-          text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        /* ===== ESTADOS DE CARREGAMENTO E ERRO ===== */
-        .loading-state,
-        .error-state,
-        .empty-state {
-          text-align: center;
-          padding: var(--espaco-2xl);
-          color: var(--texto-gelo);
-          font-family: var(--fonte-subtitulos);
-        }
-
-        .empty-state a {
-          color: var(--cor-primaria);
-          text-decoration: none;
-          font-weight: 600;
-        }
-
-        .empty-state a:hover {
-          text-decoration: underline;
-        }
-
-        /* ===== CARROSSEL ===== */
-        .carousel-wrapper {
-          position: relative;
-          margin-top: var(--espaco-2xl);
-        }
-
-        .carousel-container {
-          overflow: hidden;
-          border-radius: var(--raio-lg);
-          position: relative;
-        }
-
-        .carousel-track {
-          display: flex;
-          width: 100%;
-        }
-
-        .carousel-slide {
-          min-width: 100%;
-          flex-shrink: 0;
-          padding: 0 var(--espaco-md);
-        }
-
-        /* ===== CARDS DE FEEDBACK ===== */
-        .feedback-card {
-          background: rgba(255, 255, 255, 0.05);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: var(--raio-lg);
-          padding: var(--espaco-2xl);
-          transition: all 0.3s ease;
-          position: relative;
-          overflow: hidden;
-          max-width: 800px;
-          margin: 0 auto;
-        }
-
-        .feedback-card::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 3px;
-          background: linear-gradient(
-            90deg,
-            var(--cor-primaria) 0%,
-            var(--cor-terciaria) 100%
-          );
-        }
-
-        .feedback-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 
-            0 20px 40px rgba(0, 0, 0, 0.3),
-            0 0 0 1px rgba(255, 255, 255, 0.1);
-          border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        /* ===== CONTEÚDO DO CARD ===== */
-        .feedback-content {
-          display: flex;
-          flex-direction: column;
-          gap: var(--espaco-xl);
-          height: 100%;
-        }
-
-        .feedback-text {
-          font-family: var(--fonte-corpo);
-          font-size: clamp(1.125rem, 2.5vw, 1.375rem);
-          line-height: 1.7;
-          color: var(--texto-branco);
-          font-style: italic;
-          flex-grow: 1;
-          margin: 0;
-          text-align: center;
-        }
-
-        /* ===== RODAPÉ DO CARD ===== */
-        .feedback-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: auto;
-        }
-
-        .feedback-author {
-          display: flex;
-          align-items: center;
-          gap: var(--espaco-md);
-        }
-
-        .author-avatar {
-          width: 50px;
-          height: 50px;
-          border-radius: 50%;
-          background: linear-gradient(
-            135deg,
-            var(--cor-primaria) 0%,
-            var(--cor-terciaria) 100%
-          );
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: var(--fonte-subtitulos);
-          font-weight: 600;
-          font-size: 1rem;
-          color: var(--texto-branco);
-          text-transform: uppercase;
-          overflow: hidden;
-        }
-
-        .avatar-image {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          border-radius: 50%;
-        }
-
-        .author-info {
-          display: flex;
-          flex-direction: column;
-          gap: var(--espaco-xs);
-        }
-
-        .author-name {
-          font-family: var(--fonte-subtitulos);
-          font-size: 1rem;
-          font-weight: 600;
-          color: var(--texto-branco);
-        }
-
-        .feedback-date {
-          font-family: var(--fonte-corpo);
-          font-size: 0.875rem;
-          color: var(--texto-gelo);
-          opacity: 0.8;
-        }
-
-        /* ===== AVALIAÇÃO ===== */
-        .feedback-rating {
-          display: flex;
-          gap: 4px;
-        }
-
-        .star {
-          font-size: 1.25rem;
-          transition: all 0.2s ease;
-        }
-
-        .star.filled {
-          color: #ffd700;
-        }
-
-        .star.empty {
-          color: rgba(255, 255, 255, 0.2);
-        }
-
-        /* ===== CONTROLES DO CARROSSEL ===== */
-        .carousel-btn {
-          position: absolute;
-          top: 50%;
-          transform: translateY(-50%);
-          background: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 50%;
-          width: 50px;
-          height: 50px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 1.5rem;
-          color: var(--texto-branco);
-          cursor: pointer;
-          transition: all 0.3s ease;
-          z-index: 10;
-        }
-
-        .carousel-btn:hover {
-          background: rgba(255, 255, 255, 0.2);
-          border-color: rgba(255, 255, 255, 0.4);
-          transform: translateY(-50%) scale(1.1);
-        }
-
-        .carousel-btn:focus {
-          outline: 2px solid var(--cor-primaria);
-          outline-offset: 2px;
-        }
-
-        .carousel-btn-prev {
-          left: -25px;
-        }
-
-        .carousel-btn-next {
-          right: -25px;
-        }
-
-        /* ===== INDICADORES ===== */
-        .carousel-indicators {
-          display: flex;
-          justify-content: center;
-          gap: var(--espaco-sm);
-          margin-top: var(--espaco-xl);
-        }
-
-        .indicator {
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          border: none;
-          background: rgba(255, 255, 255, 0.3);
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .indicator:hover {
-          background: rgba(255, 255, 255, 0.5);
-          transform: scale(1.2);
-        }
-
-        .indicator.active {
-          background: var(--cor-primaria);
-          transform: scale(1.3);
-        }
-
-        .indicator:focus {
-          outline: 2px solid var(--cor-primaria);
-          outline-offset: 2px;
-        }
-
-        /* ===== RESPONSIVIDADE ===== */
-        @media (max-width: 768px) {
-          .feedback-showcase {
-            padding: 60px 0;
-          }
-
-          .showcase-container {
-            padding: 0 var(--espaco-lg);
-          }
-
-          .feedback-card {
-            padding: var(--espaco-xl);
-          }
-
-          .feedback-footer {
-            flex-direction: column;
-            align-items: center;
-            gap: var(--espaco-md);
-            text-align: center;
-          }
-
-          .carousel-btn {
-            width: 40px;
-            height: 40px;
-            font-size: 1.25rem;
-          }
-
-          .carousel-btn-prev {
-            left: -20px;
-          }
-
-          .carousel-btn-next {
-            right: -20px;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .feedback-showcase {
-            padding: 40px 0;
-          }
-
-          .showcase-container {
-            padding: 0 var(--espaco-md);
-          }
-
-          .feedback-card {
-            padding: var(--espaco-lg);
-          }
-
-          .feedback-text {
-            font-size: 1rem;
-          }
-
-          .carousel-btn {
-            display: none;
-          }
-
-          .carousel-slide {
-            padding: 0;
-          }
-        }
-
-        /* ===== ACESSIBILIDADE ===== */
-        @media (prefers-reduced-motion: reduce) {
-          .feedback-card,
-          .carousel-btn,
-          .indicator {
-            transition: none;
-          }
-
-          .feedback-card:hover {
-            transform: none;
-          }
-
-          .carousel-btn:hover {
-            transform: translateY(-50%);
-          }
-
-          .indicator:hover {
-            transform: none;
-          }
-
-          .indicator.active {
-            transform: none;
-          }
-
-          .star {
-            transition: none;
-          }
-
-          /* Desabilitar animação do título para consistência com Hero */
-          .showcase-title {
-            animation: none;
-          }
-        }
-
-        /* ===== MODO DE ALTO CONTRASTE ===== */
-        @media (prefers-contrast: high) {
-          .feedback-card {
-            border-width: 2px;
-            border-color: var(--texto-branco);
-          }
-
-          .feedback-text {
-            color: var(--texto-branco);
-          }
-
-          .carousel-btn {
-            border-width: 2px;
-            border-color: var(--texto-branco);
-          }
-        }
-      `}</style>
-    </section>
-  );
-};
-
-export default FeedbackShowcase;
+     </section>
+   );
+ };
+ 
+ export default FeedbackShowcase;
