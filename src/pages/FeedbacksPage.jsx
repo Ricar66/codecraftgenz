@@ -181,6 +181,7 @@ export default function FeedbacksPage() {
 
         /* ===== RESPONSIVIDADE ===== */
         @media (max-width: 768px) {
+          .hero-section { background-attachment: scroll; }
           .hero-container {
             padding: var(--espaco-2xl) var(--espaco-lg);
           }

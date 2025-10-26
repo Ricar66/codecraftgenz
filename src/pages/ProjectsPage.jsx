@@ -1,6 +1,7 @@
 // src/pages/ProjectsPage.jsx
 import React from 'react';
 
+import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
 import ProjectsList from '../components/Projects/ProjectsList';
 
@@ -14,7 +15,10 @@ const ProjectsPage = () => {
       <Navbar />
       
       {/* Hero Section - Consistente com a página inicial */}
-      <section className="hero-section">
+      <section 
+        className="hero-section"
+        style={{ backgroundImage: `url(${heroBackground})` }}
+      >
         <div className="overlay"></div>
         <div className="hero-container">
           <div className="hero-content">
@@ -59,7 +63,6 @@ const ProjectsPage = () => {
           background-position: center;
           background-repeat: no-repeat;
           background-attachment: fixed;
-          background-image: url('/src/assets/hero-background.svg');
         }
 
         /* Overlay idêntico ao da página inicial */
@@ -172,6 +175,7 @@ const ProjectsPage = () => {
 
         /* ===== RESPONSIVIDADE ===== */
         @media (max-width: 768px) {
+          .hero-section { background-attachment: scroll; }
           .hero-container {
             padding: var(--espaco-2xl) var(--espaco-lg);
           }
