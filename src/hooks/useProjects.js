@@ -90,7 +90,7 @@ const useProjects = (options = {}) => {
       setError(null);
 
       const mergedOptions = {
-        useMockData: useMock, // Corrigindo nome da propriedade
+        useMockData: useMock,
         filters: { ...filters, ...fetchOptions.filters },
         signal: abortControllerRef.current.signal,
         ...fetchOptions
@@ -204,49 +204,48 @@ const useProjects = (options = {}) => {
           retryIn: Math.min(3000 * Math.pow(2, retryCount), 15000)
         });
       } else {
-        // Outros erros da API
+        // Outros erros
         setRetryCount(prev => prev + 1);
         setError({
           message: error.message || 'Erro desconhecido ao carregar projetos',
-          status: error.status || 500,
-          type: 'api_error',
+          status: error.status || 0,
+          type: 'unknown',
           canRetry: retryCount < maxRetries - 1,
-          originalError: error,
-          retryIn: Math.min(1000 * Math.pow(2, retryCount), 8000)
+          retryIn: Math.min(1000 * Math.pow(2, retryCount), 5000)
         });
       }
+
+      // Finaliza medição com erro
+      globalPerformanceMonitor.endMeasure(measureId, {
+        success: false,
+        error: error.message,
+        retryCount
+      });
 
       setLoading(false);
       return [];
     } finally {
-        if (isMountedRef.current) {
-          setLoading(false);
-        }
-        
-        // Finaliza medição em caso de erro
-        if (!globalPerformanceMonitor.metrics.has(measureId)) {
-          globalPerformanceMonitor.endMeasure(measureId, {
-            success: false,
-            error: error?.message || 'Unknown error'
-          });
-        }
+      // Sempre limpa o timeout
+      clearTimeout(timeoutId);
+      
+      // Só atualiza loading se o componente ainda estiver montado
+      if (isMountedRef.current) {
+        setLoading(false);
       }
-  }, [options, retryCount, maxRetries, timeout, useMock, filters, error?.message]);
+    }
+  }, [useMock, timeout, maxRetries]); // Dependências estáveis - removido retryCount e filters
 
   /**
    * Função para retry com backoff exponencial
-   * @param {Object} options - Opções para o retry
    */
-  const retryWithBackoff = useCallback(async (options = {}) => {
-    if (!error || !error.canRetry) return;
-    
-    const retryDelay = error.retryIn || 1000;
-    
-    // Aguarda o delay antes de tentar novamente
-    await new Promise(resolve => setTimeout(resolve, retryDelay));
-    
-    return fetchProjects(options);
-  }, [error, fetchProjects]);
+  const retryWithBackoff = useCallback(async (delay = 1000) => {
+    return new Promise((resolve) => {
+      setTimeout(async () => {
+        const result = await fetchProjects();
+        resolve(result);
+      }, delay);
+    });
+  }, [fetchProjects]);
 
   /**
    * Função para refetch manual (limpa erro e tenta novamente)
@@ -322,7 +321,7 @@ const useProjects = (options = {}) => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [autoFetch, refetchInterval, fetchProjects]);
+  }, [autoFetch, refetchInterval]); // Removido fetchProjects das dependências para evitar loop infinito
 
   /**
    * Cleanup ao desmontar componente
@@ -348,28 +347,29 @@ const useProjects = (options = {}) => {
   const isRefetching = loading && projects.length > 0;
   const hasError = error !== null;
   const hasProjects = projects.length > 0;
-  const canRetry = hasError && error.canRetry;
 
   /**
    * Estatísticas dos projetos
    */
   const stats = {
     total: projects.length,
-    inProgress: projects.filter(p => p.status === 'in-progress').length,
+    inProgress: projects.filter(p => p.status === 'in_progress').length,
     completed: projects.filter(p => p.status === 'completed').length,
-    paused: projects.filter(p => p.status === 'paused').length,
     averageProgress: projects.length > 0 
-      ? Math.round(projects.reduce((sum, p) => sum + p.progress, 0) / projects.length)
+      ? Math.round(projects.reduce((acc, p) => acc + (p.progress || 0), 0) / projects.length)
       : 0
   };
 
   return {
-    // Dados principais
+    // Dados
     projects,
+    stats,
+    lastFetch,
+
+    // Estados
     loading,
     error,
     isEmpty,
-    lastFetch,
     retryCount,
 
     // Estados derivados
@@ -377,10 +377,6 @@ const useProjects = (options = {}) => {
     isRefetching,
     hasError,
     hasProjects,
-    canRetry,
-
-    // Estatísticas
-    stats,
 
     // Funções
     fetchProjects,
