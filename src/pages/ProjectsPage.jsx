@@ -62,7 +62,6 @@ const ProjectsPage = () => {
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
-          background-attachment: fixed;
         }
 
         /* Overlay idêntico ao da página inicial */

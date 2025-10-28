@@ -30,7 +30,7 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-attachment: fixed;
+  /* background-attachment: fixed; */
   
   /* Transições para animações */
   opacity: 0;
