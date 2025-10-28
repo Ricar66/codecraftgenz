@@ -48,6 +48,14 @@ const useProjects = (options = {}) => {
    * @returns {Promise<Array>} Lista de projetos
    */
   const fetchProjects = useCallback(async (fetchOptions = {}) => {
+    // Log de depuração para rastrear chamadas
+    console.log('🔄 fetchProjects chamado:', {
+      timestamp: new Date().toISOString(),
+      retryCount,
+      isMounted: isMountedRef.current,
+      options: { ...options, ...fetchOptions }
+    });
+
     // Inicia medição de performance
     const measureId = `fetch-projects-${Date.now()}`;
     globalPerformanceMonitor.startMeasure(measureId, {
@@ -56,10 +64,14 @@ const useProjects = (options = {}) => {
     });
 
     // Verifica se o componente ainda está montado
-    if (!isMountedRef.current) return [];
+    if (!isMountedRef.current) {
+      console.log('⚠️ Componente desmontado, cancelando fetchProjects');
+      return [];
+    }
 
     // Verifica se já excedeu o número máximo de tentativas
     if (retryCount >= maxRetries) {
+      console.log('❌ Máximo de tentativas excedido:', retryCount, '>=', maxRetries);
       setError({
         message: `Falha ao carregar projetos após ${maxRetries} tentativas. Verifique sua conexão.`,
         status: 0,
@@ -70,8 +82,15 @@ const useProjects = (options = {}) => {
       return [];
     }
 
+    // Previne múltiplas chamadas simultâneas
+    if (loading) {
+      console.log('⚠️ Já existe uma requisição em andamento, ignorando nova chamada');
+      return [];
+    }
+
     // Cancela requisição anterior se existir
     if (abortControllerRef.current) {
+      console.log('🚫 Cancelando requisição anterior');
       abortControllerRef.current.abort();
     }
 
@@ -81,11 +100,13 @@ const useProjects = (options = {}) => {
     // Configura timeout
     const timeoutId = setTimeout(() => {
       if (abortControllerRef.current) {
+        console.log('⏰ Timeout atingido, cancelando requisição');
         abortControllerRef.current.abort();
       }
     }, timeout);
 
     try {
+      console.log('🚀 Iniciando requisição de projetos');
       setLoading(true);
       setError(null);
 
@@ -95,6 +116,8 @@ const useProjects = (options = {}) => {
         signal: abortControllerRef.current.signal,
         ...fetchOptions
       };
+
+      console.log('📋 Opções da requisição:', mergedOptions);
 
       const response = await getProjects({
         ...mergedOptions,
@@ -106,7 +129,16 @@ const useProjects = (options = {}) => {
       clearTimeout(timeoutId);
 
       // Verifica se o componente ainda está montado
-      if (!isMountedRef.current) return response.data || [];
+      if (!isMountedRef.current) {
+        console.log('⚠️ Componente desmontado durante requisição, ignorando resposta');
+        return response.data || [];
+      }
+
+      console.log('✅ Projetos carregados com sucesso:', {
+        count: response.data?.length || 0,
+        source: response.meta?.source,
+        cached: response.meta?.cached
+      });
 
       // Atualiza estado com dados validados
       setProjects(response.data || []);
@@ -134,6 +166,13 @@ const useProjects = (options = {}) => {
 
       return response.data || [];
     } catch (error) {
+      console.log('❌ Erro ao carregar projetos:', {
+        message: error.message,
+        name: error.name,
+        retryCount,
+        isAborted: error.name === 'AbortError'
+      });
+
       // Limpa o timeout em caso de erro
       clearTimeout(timeoutId);
 
@@ -304,21 +343,34 @@ const useProjects = (options = {}) => {
    * Busca inicial e configuração de refetch automático
    */
   useEffect(() => {
-    if (autoFetch) {
+    console.log('🔄 useEffect principal executado:', {
+      autoFetch,
+      refetchInterval,
+      isMounted: isMountedRef.current
+    });
+
+    if (autoFetch && isMountedRef.current) {
+      console.log('🚀 Executando busca inicial de projetos');
       fetchProjects();
     }
 
     // Configura refetch automático se especificado
-    if (refetchInterval && refetchInterval > 0) {
+    if (refetchInterval && refetchInterval > 0 && isMountedRef.current) {
+      console.log('⏰ Configurando refetch automático:', refetchInterval + 'ms');
       intervalRef.current = setInterval(() => {
-        fetchProjects();
+        if (isMountedRef.current) {
+          console.log('🔄 Executando refetch automático');
+          fetchProjects();
+        }
       }, refetchInterval);
     }
 
     // Cleanup
     return () => {
+      console.log('🧹 Limpando useEffect principal');
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
   }, [autoFetch, refetchInterval]); // Removido fetchProjects das dependências para evitar loop infinito
