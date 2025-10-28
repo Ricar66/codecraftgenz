@@ -1,9 +1,10 @@
 // src/pages/ProjectsPage.jsx
 import React from 'react';
 
-import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
 import ProjectsList from '../components/Projects/ProjectsList';
+
+import './ProjectsPage.css';
 
 /**
  * Página de Projetos
@@ -17,7 +18,6 @@ const ProjectsPage = () => {
       {/* Hero Section - Consistente com a página inicial */}
       <section 
         className="hero-section"
-        style={{ backgroundImage: `url(${heroBackground})` }}
       >
         <div className="overlay"></div>
         <div className="hero-container">
@@ -51,7 +51,7 @@ const ProjectsPage = () => {
           background-color: var(--fundo-escuro);
         }
 
-        /* ===== HERO SECTION - IDÊNTICA À PÁGINA INICIAL ===== */
+        /* ===== HERO SECTION - SEM BACKGROUND DUPLICADO ===== */
         .hero-section {
           min-height: 100vh;
           width: 100%;
@@ -59,9 +59,7 @@ const ProjectsPage = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
+          /* Background removido - usando apenas o background global do body */
         }
 
         /* Overlay idêntico ao da página inicial */

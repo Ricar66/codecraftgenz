@@ -15,11 +15,14 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 
-import heroBackground from '../../assets/hero-background.svg';
-import { useAnalytics } from '../../hooks/useAnalytics';
+import { motion } from 'framer-motion';
+
+import { FaCode, FaRocket, FaUsers, FaLightbulb, FaArrowRight, FaGithub, FaLinkedin, FaInstagram } from 'react-icons/fa';
+import { SiReact, SiNodedotjs, SiPython, SiJavascript, SiTypescript, SiMongodb, SiPostgresql, SiDocker } from 'react-icons/si';
+
 import Button from '../Button/Button';
+import { useAnalytics } from '../../hooks/useAnalytics';
 
 import styles from './Hero.module.css';
 
@@ -71,7 +74,6 @@ const Hero = () => {
   return (
     <section 
       className={`${styles.heroWrapper} ${isVisible ? styles.visible : ''}`}
-      style={{ backgroundImage: `url(${heroBackground})` }}
       aria-label="Seção principal - Banner CodeCraft"
     >
       {/* Container principal do conteúdo */}
