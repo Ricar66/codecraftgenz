@@ -32,16 +32,16 @@ export default function FeedbackList({ pageSize = 5 }) {
 
       <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '12px' }}>
         {items.map(item => (
-          <li key={item.id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: 12 }}>
+          <li key={item.ID || item.id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <strong>{item.author || item.company || 'Anônimo'}</strong>
-              <span aria-label={`Avaliação ${item.rating} de 5`}>
-                {'★'.repeat(item.rating)}{'☆'.repeat(5 - item.rating)}
+              <strong>{item.Author || item.Company || item.author || item.company || 'Anônimo'}</strong>
+              <span aria-label={`Avaliação ${item.Rating || item.rating} de 5`}>
+                {'★'.repeat(item.Rating || item.rating)}{'☆'.repeat(5 - (item.Rating || item.rating))}
               </span>
             </div>
-            <small style={{ color: '#666' }}>{new Date(item.createdAt).toLocaleString()}</small>
-            <p style={{ marginTop: 8 }}>{item.message}</p>
-            <small style={{ background: '#f3f3f3', borderRadius: 6, padding: '2px 6px' }}>{item.type}</small>
+            <small style={{ color: '#666' }}>{new Date(item.CreatedAt || item.createdAt).toLocaleString()}</small>
+            <p style={{ marginTop: 8 }}>{item.Message || item.message}</p>
+            <small style={{ background: '#f3f3f3', borderRadius: 6, padding: '2px 6px' }}>{item.Type || item.type}</small>
             {item.approved === false && (
               <small style={{ marginLeft: 8, color: '#a00' }}>Pendente de moderação</small>
             )}

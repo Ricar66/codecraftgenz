@@ -17,13 +17,13 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
   const feedbacks = useMemo(() => {
     if (items && items.length > 0) {
       return items.map(item => ({
-        id: item.id,
-        text: item.message,
-        author: item.author || item.company || 'Anônimo',
-        rating: item.rating || 5,
-        avatarUrl: item.avatarUrl,
-        createdAt: item.createdAt,
-        type: item.type
+        id: item.ID || item.id,
+        text: item.Message || item.message,
+        author: item.Author || item.Company || item.author || item.company || 'Anônimo',
+        rating: item.Rating || item.rating || 5,
+        avatarUrl: item.AvatarUrl || item.avatarUrl,
+        createdAt: item.CreatedAt || item.createdAt,
+        type: item.Type || item.type
       }));
     }
     
