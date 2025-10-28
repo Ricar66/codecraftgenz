@@ -190,6 +190,72 @@ app.post('/api/feedbacks', async (req, res) => {
     }
 });
 
+// GET /api/projects - Busca todos os projetos
+app.get('/api/projects', async (req, res) => {
+    console.log(`[${new Date().toISOString()}] Recebido GET /api/projects`);
+    try {
+        const pool = await poolPromise;
+        if (!pool) {
+            console.log(`[${new Date().toISOString()}] GET /api/projects: BD indisponível, retornando dados mock`);
+            // Retorna dados mock quando BD não está disponível
+            const mockProjects = [
+                {
+                    id: 1,
+                    title: 'OverlayCraft',
+                    status: 'active',
+                    startDate: '2025-05-26',
+                    description: 'Um utilitário em C# Windows Forms que exibe, em tempo real, uma sobreposição flutuante (overlay) com informações do sistema — CPU, GPU, RAM, IP, sistema operacional e usuário — funcionando como uma marca d\'água transparente, sempre visível e arrastável pela tela, podendo ser minimizado para a bandeja.',
+                    progress: 80,
+                    technology: 'C# Windows Forms',
+                    category: 'Sistema'
+                },
+                {
+                    id: 2,
+                    title: 'CleanCraft',
+                    status: 'active',
+                    startDate: '2025-10-26',
+                    description: 'CleanCraft é uma aplicação desenvolvida para auxiliar o usuário na organização automática de arquivos presentes em sua área de trabalho, nas pastas pessoais (como Documentos, Imagens, Vídeos e Downloads) ou em qualquer outra pasta escolhida. O sistema identifica e agrupa os arquivos por tipo ou extensão, movendo-os para pastas correspondentes.',
+                    progress: 0,
+                    technology: 'C#',
+                    category: 'Utilitário'
+                }
+            ];
+            return res.json({
+                success: true,
+                data: mockProjects,
+                total: mockProjects.length,
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        // Quando o BD estiver disponível, buscar dados reais
+        const result = await pool.request().query(`
+            SELECT 
+                id, title, description, status, progress, 
+                imageUrl, demoUrl, githubUrl, technologies,
+                createdAt, updatedAt
+            FROM Projects 
+            ORDER BY createdAt DESC
+        `);
+        
+        console.log(`[${new Date().toISOString()}] GET /api/projects: ${result.recordset.length} projetos encontrados`);
+        res.json({
+            success: true,
+            data: result.recordset,
+            total: result.recordset.length,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error(`[${new Date().toISOString()}] Erro em GET /api/projects:`, error.message);
+        res.status(500).json({ 
+            success: false,
+            message: 'Erro interno do servidor', 
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
 // Rota de teste
 app.get('/api/test-db', async (req, res) => {
     console.log(`[${new Date().toISOString()}] Recebido GET /api/test-db`);

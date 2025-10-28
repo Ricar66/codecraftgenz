@@ -160,19 +160,23 @@ export const getMockProjects = () => {
   return [
     {
       id: 1,
-      title: 'Em breve',
+      title: 'OverlayCraft',
       status: 'active',
-      startDate: null,
-      description: 'Novo projeto em desenvolvimento. Mais informações serão divulgadas em breve.',
-      progress: 0
+      startDate: '2025-05-26',
+      description: 'Um utilitário em C# Windows Forms que exibe, em tempo real, uma sobreposição flutuante (overlay) com informações do sistema — CPU, GPU, RAM, IP, sistema operacional e usuário — funcionando como uma marca d\'água transparente, sempre visível e arrastável pela tela, podendo ser minimizado para a bandeja.',
+      progress: 80,
+      technology: 'C# Windows Forms',
+      category: 'Sistema'
     },
     {
       id: 2,
-      title: 'Em breve',
+      title: 'CleanCraft',
       status: 'active',
-      startDate: null,
-      description: 'Novo projeto em desenvolvimento. Mais informações serão divulgadas em breve.',
-      progress: 0
+      startDate: '2025-10-26',
+      description: 'CleanCraft é uma aplicação desenvolvida para auxiliar o usuário na organização automática de arquivos presentes em sua área de trabalho, nas pastas pessoais (como Documentos, Imagens, Vídeos e Downloads) ou em qualquer outra pasta escolhida. O sistema identifica e agrupa os arquivos por tipo ou extensão, movendo-os para pastas correspondentes.',
+      progress: 0,
+      technology: 'C#',
+      category: 'Utilitário'
     },
     {
       id: 3,
