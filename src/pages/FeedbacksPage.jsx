@@ -57,6 +57,7 @@ export default function FeedbacksPage() {
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
+          background-attachment: fixed;
         }
 
         /* Overlay idêntico ao da página de projetos */
