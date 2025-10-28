@@ -4,7 +4,7 @@ import { PrismaClient } from '../generated/prisma/index.js';
 // Instância global do Prisma Client
 let prisma;
 
-if (process.env.NODE_ENV === 'production') {
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
   // Em produção, sempre criar uma nova instância
   prisma = new PrismaClient({
     log: ['error'],
