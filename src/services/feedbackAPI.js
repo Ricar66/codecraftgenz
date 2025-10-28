@@ -1,20 +1,23 @@
 // src/services/feedbackAPI.js
 
-const FEEDBACK_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-const MODERATION_ENABLED = (import.meta.env.VITE_FEEDBACK_MODERATION === 'true');
-const STORAGE_KEY = 'cc_feedbacks_v1';
+// A URL base da API é a raiz do nosso próprio servidor,
+// já que o server.js está servindo tanto o frontend quanto a API.
+const API_BASE_URL = '/api'; // Aponta para o nosso próprio backend
 
-// Simple validation and sanitization
+const MODERATION_ENABLED = (import.meta.env.VITE_FEEDBACK_MODERATION === 'true');
+
+// Validação (mantida do seu código original)
 export const FeedbackValidator = {
   types: ['elogio', 'sugestao', 'critica'],
   maxChars: 500,
   validate(feedback) {
     const errors = [];
     if (!feedback) return { isValid: false, errors: ['Feedback ausente'] };
-    const { author = '', company = '', message = '', rating, type, avatarUrl = '' } = feedback;
-    if (author.trim().length === 0 && company.trim().length === 0) {
-      errors.push('Informe seu nome ou a empresa');
-    }
+    const { message = '', rating, type, avatarUrl = '' } = feedback;
+    // Removido a obrigatoriedade de author/company
+    // if (author.trim().length === 0 && company.trim().length === 0) {
+    //   errors.push('Informe seu nome ou a empresa');
+    // }
     if (typeof message !== 'string' || message.trim().length === 0) {
       errors.push('Mensagem é obrigatória');
     }
@@ -27,7 +30,6 @@ export const FeedbackValidator = {
     if (!this.types.includes(type)) {
       errors.push(`Tipo deve ser um de: ${this.types.join(', ')}`);
     }
-    // Optional avatar/logo URL validation
     if (avatarUrl && String(avatarUrl).trim().length > 0) {
       try {
         const u = new URL(String(avatarUrl).trim());
@@ -41,146 +43,151 @@ export const FeedbackValidator = {
     return { isValid: errors.length === 0, errors };
   },
   sanitize(feedback) {
-    const safeText = String(feedback.message || '')
-      .replace(/<[^>]*>/g, '')
-      .slice(0, FeedbackValidator.maxChars);
-    const rawAvatar = String(feedback.avatarUrl || '').trim();
-    let safeAvatar = '';
-    if (rawAvatar) {
-      try {
-        const u = new URL(rawAvatar);
-        if (u.protocol === 'http:' || u.protocol === 'https:') {
-          safeAvatar = rawAvatar;
-        }
-      } catch {
-        safeAvatar = '';
-      }
-    }
+     // A sanitização principal agora acontece no backend
+     // Aqui apenas garantimos os tipos básicos
     return {
-      id: feedback.id || `${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
       author: String(feedback.author || '').trim(),
       company: String(feedback.company || '').trim(),
-      avatarUrl: safeAvatar,
-      message: safeText,
+      avatarUrl: String(feedback.avatarUrl || '').trim(),
+      message: String(feedback.message || '').trim().slice(0, FeedbackValidator.maxChars),
       rating: Number(feedback.rating || 5),
       type: feedback.type,
-      createdAt: new Date().toISOString(),
-      approved: MODERATION_ENABLED ? false : true,
     };
   }
 };
 
-// localStorage fallback store
-function readLocal() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-function writeLocal(list) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-}
-
-// Basic rate-limit: 1 submission per 30s per browser
+// Rate limiting e Honeypot (mantidos do seu código)
 const RATE_LIMIT_MS = 30_000;
 function canSubmitNow() {
-  const last = Number(localStorage.getItem(`${STORAGE_KEY}:last_submit`) || 0);
+  const last = Number(localStorage.getItem(`feedback_last_submit`) || 0); // Chave específica
   const now = Date.now();
   return now - last > RATE_LIMIT_MS;
 }
 function markSubmitted() {
-  localStorage.setItem(`${STORAGE_KEY}:last_submit`, String(Date.now()));
+  localStorage.setItem(`feedback_last_submit`, String(Date.now()));
 }
-
-// Honeypot check (pass a hidden field and verify it's empty)
 export function isSpamSubmission(honeypotValue) {
   return Boolean(honeypotValue && String(honeypotValue).trim().length > 0);
 }
 
-export async function submitFeedback(feedback, { useMockData = true, honeypot = '' } = {}) {
+/**
+ * Envia um novo feedback para a API backend.
+ * @param {object} feedback - Os dados do feedback.
+ * @param {object} options - Opções adicionais, como honeypot.
+ * @returns {Promise<object>} O feedback criado retornado pela API.
+ */
+export async function submitFeedback(feedback, { honeypot = '' } = {}) {
+  // Verificações iniciais (Honeypot, Rate Limit, Validação)
   if (isSpamSubmission(honeypot)) {
-    throw new Error('Submissão identificada como spam');
+    console.warn('Submissão bloqueada: Honeypot preenchido.');
+    throw new Error('Submissão inválida.'); // Mensagem genérica para spam
   }
   if (!canSubmitNow()) {
     throw new Error('Você enviou um feedback há pouco. Tente novamente em instantes.');
   }
   const { isValid, errors } = FeedbackValidator.validate(feedback);
   if (!isValid) {
-    const err = new Error('Campos inválidos');
+    const err = new Error('Campos inválidos: ' + errors.join(', '));
     err.details = errors;
     throw err;
   }
 
-  const sanitized = FeedbackValidator.sanitize(feedback);
+  // Sanitiza os dados antes de enviar
+  const sanitizedData = FeedbackValidator.sanitize(feedback);
 
-  // If backend available, send it there; otherwise store local
-  if (!useMockData) {
-    try {
-      const res = await fetch(`${FEEDBACK_BASE_URL}/feedbacks`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(sanitized),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      markSubmitted();
-      return data;
-    } catch {
-      // fallback local
-      const list = readLocal();
-      list.unshift(sanitized);
-      writeLocal(list);
-      markSubmitted();
-      return sanitized;
+  console.log('Enviando feedback para API:', sanitizedData);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/feedbacks`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(sanitizedData),
+    });
+
+    // Tenta ler o corpo da resposta mesmo se não for OK, pode ter detalhes do erro
+    const responseBody = await response.json().catch(() => ({})); // Retorna {} se não for JSON válido
+
+    if (!response.ok) {
+      console.error('Erro da API ao enviar feedback:', response.status, responseBody);
+      // Usa a mensagem de erro da API se disponível, senão uma genérica
+      throw new Error(responseBody.error || `Erro ${response.status} ao enviar feedback.`);
     }
-  } else {
-    const list = readLocal();
-    list.unshift(sanitized);
-    writeLocal(list);
-    markSubmitted();
-    return sanitized;
+
+    console.log('Feedback enviado com sucesso:', responseBody);
+    markSubmitted(); // Marca como submetido apenas se a API respondeu OK
+    return responseBody; // Retorna o feedback criado pela API (com ID, CreatedAt, etc.)
+
+  } catch (error) {
+    console.error('Falha na requisição de envio de feedback:', error);
+    // Se for um erro de rede, dá uma mensagem mais amigável
+    if (error instanceof TypeError) { // TypeError geralmente indica falha de rede
+        throw new Error('Não foi possível conectar ao servidor. Verifique sua internet.');
+    }
+    // Re-lança o erro (pode ser o erro de validação, rate limit, ou o erro criado a partir da resposta não-OK)
+    throw error;
   }
 }
 
-export async function getFeedbacks({ page = 1, limit = 10, type = 'all', minRating = 1, onlyApproved = true } = {}) {
-  // Try API, fallback local
-  let all = [];
-  try {
-    const res = await fetch(`${FEEDBACK_BASE_URL}/feedbacks?page=${page}&limit=${limit}&type=${type}&minRating=${minRating}&onlyApproved=${onlyApproved}`, {
-      headers: { Accept: 'application/json' }
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    all = Array.isArray(data.items) ? data.items : [];
-  } catch {
-    all = readLocal();
-  }
-
-  // Filter and moderation
-  const filtered = all.filter(f => {
-    const typeOk = type === 'all' ? true : f.type === type;
-    const ratingOk = Number(f.rating || 0) >= Number(minRating || 1);
-    const modOk = onlyApproved ? f.approved === true : true;
-    return typeOk && ratingOk && modOk;
+/**
+ * Busca feedbacks da API backend.
+ * @param {object} options - Opções de paginação e filtros.
+ * @returns {Promise<object>} Objeto com a lista de items e informações de paginação.
+ */
+export async function getFeedbacks({ page = 1, limit = 10, type = 'all', minRating = 1 } = {}) {
+  // Constrói a query string
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    minRating: minRating.toString()
   });
+  if (type !== 'all') {
+    params.append('type', type);
+  }
+  // No backend, a flag `onlyApproved` já é tratada por defeito (Approved = 1)
 
-  // Sort by date desc
-  filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const url = `${API_BASE_URL}/feedbacks?${params.toString()}`;
+  console.log('Buscando feedbacks da API:', url);
 
-  // Pagination
-  const total = filtered.length;
-  const start = (page - 1) * limit;
-  const items = filtered.slice(start, start + limit);
+  try {
+    const response = await fetch(url, {
+      headers: { 'Accept': 'application/json' }
+    });
 
-  return {
-    items,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit)
+    const responseBody = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      console.error('Erro da API ao buscar feedbacks:', response.status, responseBody);
+      throw new Error(responseBody.error || `Erro ${response.status} ao buscar feedbacks.`);
     }
-  };
+
+    // A API backend deve retornar um array de feedbacks diretamente
+    const items = Array.isArray(responseBody) ? responseBody : [];
+    console.log(`Recebidos ${items.length} feedbacks da API.`);
+
+    // Simulamos a paginação aqui, já que o backend retorna apenas TOP 20 por enquanto
+    // Em uma API real, o backend faria a paginação completa
+    const total = items.length; // Ou viria da API se ela suportasse contagem total
+    const totalPages = Math.ceil(total / limit);
+    const paginatedItems = items.slice((page - 1) * limit, page * limit);
+
+    return {
+      items: paginatedItems,
+      pagination: {
+        page,
+        limit,
+        total, // Pode não ser o total real, apenas o total retornado (20)
+        totalPages // Pode não ser o total real
+      }
+    };
+
+  } catch (error) {
+    console.error('Falha na requisição de busca de feedbacks:', error);
+    if (error instanceof TypeError) {
+        throw new Error('Não foi possível conectar ao servidor. Verifique sua internet.');
+    }
+    throw error;
+  }
 }
