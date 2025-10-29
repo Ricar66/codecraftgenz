@@ -297,6 +297,7 @@ img {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 var(--espaco-lg);
+  min-width: 0; /* evita overflow em grids flexíveis */
 }
 
 .container-sm {
@@ -382,6 +383,25 @@ img {
   transform: translateY(-8px);
   box-shadow: 0 20px 40px rgba(209, 43, 242, 0.15);
 }
+
+/* ===== UTILITÁRIOS DE CONTENÇÃO E SCROLL ===== */
+.overflow-auto { overflow: auto; }
+.overflow-x-auto { overflow-x: auto; }
+.overflow-y-auto { overflow-y: auto; }
+.overflow-hidden { overflow: hidden; }
+.min-w-0 { min-width: 0; }
+.max-w-full { max-width: 100%; }
+.max-h-viewport { max-height: 80vh; }
+
+/* Scrollbar consistente (webkit) */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: rgba(255,255,255,0.06); border-radius: 8px; }
+*::-webkit-scrollbar-thumb { background: rgba(209,43,242,0.35); border-radius: 8px; }
+*::-webkit-scrollbar-thumb:hover { background: rgba(209,43,242,0.5); }
+
+/* Evitar que elementos filhos escapem de seus cards/containers */
+.card-container { overflow: hidden; contain: layout paint; border-radius: var(--raio-xl); }
+.content-container { min-width: 0; max-width: 100%; }
 
 /* Botões com melhor visibilidade */
 .btn-alto-contraste {

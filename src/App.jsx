@@ -1,7 +1,7 @@
 // src/App.jsx
 // teste
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 import AdminLayout, { Dashboard, Usuarios, Mentores, Ranking, Projetos, Desafios, Financas, Config } from './admin/AdminLayout.jsx';
 import ProtectedRoute from './admin/ProtectedRoute.jsx';
@@ -48,6 +48,8 @@ function App() {
           <Route path="financas" element={<Financas />} />
           <Route path="config" element={<Config />} />
         </Route>
+        {/* Fallback: qualquer rota desconhecida redireciona para /admin */}
+        <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </div>
   );

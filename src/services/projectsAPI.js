@@ -6,7 +6,7 @@ import { projectsCache, ProjectDataValidator } from '../utils/dataCache.js';
  */
 
 // Configuração base da API
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const API_TIMEOUT = 5000; // 5 segundos - reduzido para evitar timeouts longos
 
 /**
@@ -282,28 +282,21 @@ export const getProjects = async (options = {}) => {
       if (status) params.append('status', status);
       if (tags.length > 0) params.append('tags', tags.join(','));
 
-      const url = `${API_BASE_URL}/projects?${params.toString()}`;
-      
-      const fetchResponse = await fetchWithTimeout(url, {
+      const url = `${API_BASE_URL}/api/projetos`;
+      const data = await fetchWithTimeout(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         }
       });
-
-      if (!fetchResponse.ok) {
-        throw new Error(`HTTP ${fetchResponse.status}: ${fetchResponse.statusText}`);
-      }
-
-      const data = await fetchResponse.json();
       
       response = {
-        data: data.projects || data,
+        data: Array.isArray(data?.data) ? data.data : (Array.isArray(data?.projects) ? data.projects : []),
         pagination: data.pagination || {
           page,
           limit,
-          total: (data.projects || data).length,
+          total: (Array.isArray(data?.data) ? data.data.length : (Array.isArray(data?.projects) ? data.projects.length : 0)),
           totalPages: 1
         },
         meta: {

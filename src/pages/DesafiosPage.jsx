@@ -2,22 +2,82 @@
 import React, { useEffect, useState } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
-import { adminStore } from '../lib/adminStore';
+import { realtime } from '../lib/realtime';
 
 export default function DesafiosPage() {
   const [desafios, setDesafios] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [deliverUrls, setDeliverUrls] = useState({});
+
+  const fetchDesafios = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const res = await fetch('/api/desafios');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const list = Array.isArray(json?.data) ? json.data : [];
+      setDesafios(list);
+    } catch {
+      setError('Falha ao carregar desafios');
+      setDesafios([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const all = adminStore.listDesafios();
-    const visiveis = all.filter(d => d.visible && d.status === 'ativo');
-    setDesafios(visiveis.map(d => ({
-      nome: d.name,
-      descricao: d.objetivo,
-      duracao: `${d.prazoDias} dias`,
-      recompensa: `+${d.recompensaPts} pts`
-    })));
-    setLoading(false);
+    fetchDesafios();
+    const unsub = realtime.subscribe('desafios_changed', () => fetchDesafios());
+    return () => unsub();
   }, []);
+
+  const timeLeft = (iso) => {
+    try {
+      const end = new Date(iso).getTime();
+      const diff = Math.max(0, end - Date.now());
+      const d = Math.floor(diff / (24*60*60*1000));
+      const h = Math.floor((diff % (24*60*60*1000)) / (60*60*1000));
+      const m = Math.floor((diff % (60*60*1000)) / (60*1000));
+      return `${d}d ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}h`;
+    } catch { return '—'; }
+  };
+
+  const participar = async (id) => {
+    // Mock: usa crafter seed 'c1'. Em produção, obter do Auth.
+    const payload = { crafter_id: 'c1' };
+    try {
+      const r = await fetch(`/api/desafios/${id}/inscrever`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const ok = r.ok;
+      const json = await r.json().catch(()=>({}));
+      if (!ok) throw new Error(json?.error || 'Falha ao inscrever');
+      alert('Inscrição realizada!');
+      realtime.publish('desafios_changed', {});
+    } catch (e) {
+      alert(e.message || 'Falha ao inscrever');
+    }
+  };
+
+  const entregar = async (d) => {
+    const url = String(deliverUrls[d.id] || '').trim();
+    if ((d.delivery_type === 'link' || d.delivery_type === 'github') && !/^https?:\/\//i.test(url)) {
+      alert('URL inválida.');
+      return;
+    }
+    const payload = { crafter_id: 'c1', delivery: { url, notes: '' } };
+    try {
+      const r = await fetch(`/api/desafios/${d.id}/entregar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const ok = r.ok;
+      const json = await r.json().catch(()=>({}));
+      if (!ok) throw new Error(json?.error || 'Falha ao enviar');
+      alert('Entrega enviada!');
+      realtime.publish('desafios_changed', {});
+      setDeliverUrls(prev => ({ ...prev, [d.id]: '' }));
+    } catch (e) {
+      alert(e.message || 'Falha ao enviar');
+    }
+  };
 
   return (
     <div className="desafios-page">
@@ -31,21 +91,32 @@ export default function DesafiosPage() {
             <p className="lead">Cada missão CodeCraft é uma oportunidade de testar suas habilidades e crescer como desenvolvedor.</p>
           </header>
 
-          <div className="desafios-grid" aria-busy={loading}>
+          <div className="desafios-grid" aria-busy={loading} aria-live="polite">
             {desafios.map((d) => (
-              <article key={d.nome} className="desafio-card">
+              <article key={d.id} className="desafio-card">
                 <div className="icon" aria-hidden="true" />
-                <h3 className="name">{d.nome}</h3>
-                <p className="desc">{d.descricao}</p>
+                <h3 className="name">{d.name}</h3>
+                <p className="desc">{d.objective}</p>
                 <div className="meta">
-                  <span className="chip">Duração: {d.duracao}</span>
-                  <span className="chip">Recompensa: {d.recompensa}</span>
+                  <span className="chip">Encerra em {timeLeft(d.deadline)}</span>
+                  {d.reward ? (<span className="chip">Recompensa: {d.reward || `+${d.base_points||0} pts`}</span>) : null}
                 </div>
-                <button className="cta">Quero participar!</button>
+                <button className="cta" onClick={()=>participar(d.id)} disabled={d.status!=='active'}>
+                  {d.status==='active' ? 'Quero participar!' : 'Encerrado'}
+                </button>
+                {(d.delivery_type==='link' || d.delivery_type==='github') && (
+                  <div className="delivery" style={{ marginTop: 12, display:'flex', gap:8 }}>
+                    <input aria-label="URL da entrega" placeholder={d.delivery_type==='github' ? 'URL do repositório' : 'URL da entrega'} value={deliverUrls[d.id]||''} onChange={e=>setDeliverUrls(prev=>({ ...prev, [d.id]: e.target.value }))} className="rank-search" />
+                    <button onClick={()=>entregar(d)} disabled={d.status!=='active'}>Enviar</button>
+                  </div>
+                )}
               </article>
             ))}
             {!loading && desafios.length === 0 && (
-              <div className="empty" role="status">Nenhum desafio ativo no momento.</div>
+              <div className="empty" role="status">Nenhum desafio ativo no momento. Novas missões chegam em breve 🚀</div>
+            )}
+            {!loading && error && (
+              <div className="empty" role="alert">{error}</div>
             )}
           </div>
 
@@ -83,6 +154,7 @@ export default function DesafiosPage() {
         .chip { background: rgba(0, 228, 242, 0.12); border: 1px solid rgba(0, 228, 242, 0.35); color: #00E4F2; border-radius: 999px; padding: 6px 10px; }
         .cta { background: #00E4F2; color: #0A0A0F; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-weight: 700; box-shadow: 0 2px 8px rgba(0, 228, 242, 0.28); }
         .cta:hover { filter: brightness(1.1); }
+        .cta[disabled] { background: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); cursor: not-allowed; }
 
         @media (max-width: 1200px) { .section-card { max-width: 1000px; } }
         @media (max-width: 992px) { .desafios-grid { grid-template-columns: 1fr 1fr; } }

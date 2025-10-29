@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { adminStore } from '../../lib/adminStore.js';
 import MentoriaPage from '../MentoriaPage.jsx';

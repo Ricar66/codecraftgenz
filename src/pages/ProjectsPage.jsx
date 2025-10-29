@@ -37,7 +37,7 @@ const ProjectsPage = () => {
       <section className="projects-section">
         <div className="projects-container">
           <div className="section-card">
-            <ProjectsList useAdminStore={true} />
+            <ProjectsList useAdminStore={false} />
           </div>
         </div>
       </section>
@@ -132,6 +132,18 @@ const ProjectsPage = () => {
           padding: 0 var(--espaco-xl);
         }
 
+        .section-card {
+          max-width: 1200px;
+          margin: 0 auto;
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.18);
+          border-radius: var(--raio-xl);
+          backdrop-filter: blur(10px);
+          box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+          padding: var(--espaco-xl);
+          overflow: hidden;
+        }
+
         /* ===== ANIMAÇÕES ===== */
         @keyframes gradientShift {
           0% {
@@ -153,9 +165,7 @@ const ProjectsPage = () => {
             padding: 0 var(--espaco-lg);
           }
 
-          .section-card {
-            padding: 16px;
-          }
+          .section-card { padding: 16px; }
 
           .slogan {
             font-size: clamp(2rem, 6vw, 3rem);
@@ -179,9 +189,7 @@ const ProjectsPage = () => {
             padding: var(--espaco-2xl) 0;
           }
 
-          .section-card {
-            padding: 14px;
-          }
+          .section-card { padding: 14px; }
         }
 
         /* ===== MODO ESCURO (CONSISTENTE) ===== */

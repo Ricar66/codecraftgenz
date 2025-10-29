@@ -6,6 +6,7 @@
   min-height: 400px;
   background: transparent;
   padding: 0; /* o padding vem do section-card na página */
+  overflow: hidden; /* garante que elementos não escapem do container */
 }
 
 /* ===== CABEÇALHO DA SEÇÃO ===== */
@@ -102,6 +103,7 @@
   margin: 0 auto;
   gap: var(--espaco-xl);
   margin-bottom: var(--espaco-3xl);
+  min-width: 0; /* evita overflow horizontal em colunas flexíveis */
 }
 
 /* Garantir máximo de 3 colunas */

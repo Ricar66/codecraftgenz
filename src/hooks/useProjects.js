@@ -405,8 +405,14 @@ const useProjects = (options = {}) => {
    */
   const stats = {
     total: projects.length,
-    inProgress: projects.filter(p => p.status === 'in_progress').length,
-    completed: projects.filter(p => p.status === 'completed').length,
+    inProgress: projects.filter(p => {
+      const s = String(p.status || '').toLowerCase();
+      return s === 'in_progress' || s === 'active' || s.includes('em andamento');
+    }).length,
+    completed: projects.filter(p => {
+      const s = String(p.status || '').toLowerCase();
+      return s === 'completed' || s === 'concluído' || s === 'concluido';
+    }).length,
     averageProgress: projects.length > 0 
       ? Math.round(projects.reduce((acc, p) => acc + (p.progress || 0), 0) / projects.length)
       : 0

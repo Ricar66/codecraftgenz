@@ -1,25 +1,51 @@
 // src/pages/RankingPage.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
 
 export default function RankingPage() {
   const params = new URLSearchParams(window.location.search);
   const isAdmin = params.get('admin') === '1';
+  const [top3, setTop3] = useState([]);
+  const [table, setTable] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 50;
 
-  const podium = [
-    { place: 2, name: 'Lívia Rocha', score: 920, color: 'rgba(209, 43, 242, 0.6)' },
-    { place: 1, name: 'Kaique Ramos', score: 1000, color: '#D12BF2' },
-    { place: 3, name: 'Diego Martins', score: 870, color: 'rgba(209, 43, 242, 0.6)' },
-  ];
+  const fetchRanking = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const res = await fetch('/api/ranking', { headers: { 'Cache-Control': 'no-cache' } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const t3 = Array.isArray(json?.top3) ? json.top3.map(t => ({ place: t.position, name: t.name, score: t.points, reward: t.reward || '' })) : [];
+      const tb = Array.isArray(json?.table) ? json.table.map(r => ({ name: r.name, score: r.points })) : [];
+      setTop3(t3);
+      setTable(tb);
+    } catch {
+      setError('Ranking em processamento. Volte em instantes 🚀');
+      setTop3([]);
+      setTable([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const others = [
-    { name: 'Nina', score: 840 },
-    { name: 'Rafa', score: 820 },
-    { name: 'João', score: 800 },
-    { name: 'Carol', score: 780 },
-    { name: 'Lucas', score: 760 },
-  ];
+  useEffect(() => {
+    fetchRanking();
+    // Lazy import para evitar custo inicial
+    import('../lib/realtime').then(({ realtime }) => {
+      const unsub = realtime.subscribe('ranking_changed', () => { fetchRanking(); });
+      return () => unsub();
+    });
+  }, []);
+
+  const filtered = table.filter(r => r.name.toLowerCase().includes(query.toLowerCase()));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageItems = filtered.slice((page-1)*pageSize, page*pageSize);
 
   return (
     <div className="ranking-page">
@@ -33,44 +59,61 @@ export default function RankingPage() {
             <p className="lead">Os maiores destaques da semana nos projetos CodeCraft.</p>
           </header>
 
-          <div className="podium" aria-label="Pódio dos três melhores">
-            {/* 2º */}
-            <div className="podium-item second">
-              <div className="photo" aria-hidden="true" />
-              <div className="label">
-                <span className="place">2º</span>
-                <span className="name">{podium[0].name}</span>
-                <span className="score">{podium[0].score} pts</span>
+          {loading && (
+            <div className="empty" role="status">Carregando ranking...</div>
+          )}
+          {error && (
+            <div className="error" role="alert">{error}</div>
+          )}
+          {!loading && top3.length === 3 ? (
+            <div className="podium" aria-label="Pódio dos três melhores" aria-live="polite">
+              <div className="podium-item second">
+                <div className="photo" aria-hidden="true" />
+                <div className="label">
+                  <span className="place">2º</span>
+                  <span className="name">{top3.find(p=>p.place===2)?.name || '—'}</span>
+                  <span className="score">{top3.find(p=>p.place===2)?.score ?? 0} pts</span>
+                </div>
+              </div>
+              <div className="podium-item first">
+                <div className="photo" aria-hidden="true" />
+                <div className="crown" title="Campeão" />
+                <div className="label">
+                  <span className="place">1º</span>
+                  <span className="name">{top3.find(p=>p.place===1)?.name || '—'}</span>
+                  <span className="score">{top3.find(p=>p.place===1)?.score ?? 0} pts</span>
+                </div>
+              </div>
+              <div className="podium-item third">
+                <div className="photo" aria-hidden="true" />
+                <div className="label">
+                  <span className="place">3º</span>
+                  <span className="name">{top3.find(p=>p.place===3)?.name || '—'}</span>
+                  <span className="score">{top3.find(p=>p.place===3)?.score ?? 0} pts</span>
+                </div>
               </div>
             </div>
-
-            {/* 1º */}
-            <div className="podium-item first">
-              <div className="photo" aria-hidden="true" />
-              <div className="crown" title="Campeão" />
-              <div className="label">
-                <span className="place">1º</span>
-                <span className="name">{podium[1].name}</span>
-                <span className="score">{podium[1].score} pts</span>
-              </div>
-            </div>
-
-            {/* 3º */}
-            <div className="podium-item third">
-              <div className="photo" aria-hidden="true" />
-              <div className="label">
-                <span className="place">3º</span>
-                <span className="name">{podium[2].name}</span>
-                <span className="score">{podium[2].score} pts</span>
-              </div>
-            </div>
-          </div>
+          ) : (!loading ? (
+            <div className="empty" role="status">Ranking em processamento. Volte em instantes 🚀</div>
+          ) : null)}
 
           <div className="ranking-list">
-            <h3 className="list-title">Demais participantes</h3>
-            <ul>
-              {others.map((o) => (
-                <li key={o.name} className="rank-row">
+            <div className="list-header" style={{ display:'flex', gap:12, alignItems:'center' }}>
+              <h3 className="list-title" style={{ margin: 0 }}>Demais participantes</h3>
+              <input aria-label="Buscar por nome" placeholder="Buscar por nome" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} className="rank-search" />
+              {filtered.length > pageSize ? (
+                <div className="pager" style={{ marginLeft:'auto', display:'flex', gap:8 }}>
+                  <button onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
+                  <span>Página {page} / {totalPages}</span>
+                  <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
+                </div>
+              ) : null}
+            </div>
+            <ul aria-live="polite">
+              {pageItems.length === 0 ? (
+                <li className="rank-row"><span className="rank-name">Nenhum participante</span></li>
+              ) : pageItems.map((o, idx) => (
+                <li key={`${o.name}-${idx}`} className="rank-row">
                   <span className="rank-name">{o.name}</span>
                   <span className="rank-score">{o.score} pts</span>
                 </li>
@@ -111,7 +154,7 @@ export default function RankingPage() {
       <style>{`
         .ranking-page { min-height: 100vh; width: 100%; background: transparent; }
         .section-block { padding: 40px 24px; }
-        .section-card { max-width: 1100px; margin: 0 auto; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: var(--raio-xl); backdrop-filter: blur(10px); box-shadow: 0 6px 24px rgba(0,0,0,0.25); padding: 24px; }
+        .section-card { max-width: 1100px; margin: 0 auto; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: var(--raio-xl); backdrop-filter: blur(10px); box-shadow: 0 6px 24px rgba(0,0,0,0.25); padding: 24px; overflow: hidden; }
         .section-header { text-align: center; margin-bottom: 16px; }
         .title { font-family: var(--fonte-titulos); font-size: clamp(2rem, 4vw, 3rem); color: var(--texto-branco); }
         .subtitle { font-size: clamp(1.25rem, 2.5vw, 1.5rem); color: var(--texto-gelo); margin-top: 8px; }
@@ -134,7 +177,9 @@ export default function RankingPage() {
         .list-title { color: var(--texto-branco); margin-bottom: 8px; }
         .rank-row { display: flex; justify-content: space-between; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
         .rank-name { color: var(--texto-gelo); }
+        .rank-search { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 10px; color: var(--texto-branco); }
         .rank-score { color: var(--texto-branco); font-weight: 700; }
+        .ranking-list ul { max-height: 50vh; overflow-y: auto; }
 
         .admin-panel { margin-top: 24px; background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.18); border-radius: var(--raio-lg); padding: 16px; }
         .admin-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }

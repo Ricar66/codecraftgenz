@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import AdminLayout from '../AdminLayout.jsx';
 import { adminStore } from '../../lib/adminStore.js';
+import AdminLayout, { Mentores } from '../AdminLayout.jsx';
 
 vi.mock('../../context/useAuth', () => ({
   useAuth: () => ({ user: { name: 'Tester', role: 'admin' }, logout: () => {} })
@@ -27,8 +27,12 @@ describe('Admin Mentores - layout e remoção', () => {
 
   it('renderiza cards de mentores e confirma remoção', async () => {
     const { container, unmount } = render(
-      React.createElement(MemoryRouter, { initialEntries: ['/mentores'] },
-        React.createElement(AdminLayout)
+      React.createElement(MemoryRouter, { initialEntries: ['/admin/mentores'] },
+        React.createElement(Routes, null,
+          React.createElement(Route, { path: '/admin', element: React.createElement(AdminLayout) },
+            React.createElement(Route, { path: 'mentores', element: React.createElement(Mentores) })
+          )
+        )
       )
     );
     await act(async () => { await new Promise(r => setTimeout(r, 20)); });

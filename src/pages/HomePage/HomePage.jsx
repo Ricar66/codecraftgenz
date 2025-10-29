@@ -61,6 +61,7 @@ const HomePage = () => {
           border: 1px solid rgba(255, 255, 255, 0.18);
           background: transparent;
           box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+          overflow: hidden; /* garante contenção de pseudo-elementos e children */
         }
         @media (max-width: 768px) {
           .section-card {

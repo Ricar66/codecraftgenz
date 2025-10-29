@@ -1,36 +1,226 @@
 // src/admin/AdminLayout.jsx
 import React from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 
 import { useAuth } from '../context/useAuth';
 import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo, useDesafios, DesafiosRepo, useFinance, FinanceRepo, useRanking, RankingRepo, useLogs } from '../hooks/useAdminRepo';
 import { adminStore } from '../lib/adminStore';
+import { realtime } from '../lib/realtime';
 
 export function Dashboard() {
-  const { data: projects } = useProjects();
-  const { data: desafios } = useDesafios();
-  const { data: logs } = useLogs();
-  const ranking = adminStore.getRanking();
-  // const finance = adminStore.listFinance();
-  const receitaPrevista = projects.filter(p => p.visible && p.status !== 'draft').reduce((acc, p) => acc + (p.price || 0), 0);
+  const [periodo, setPeriodo] = React.useState('30d');
+  const [tipo, setTipo] = React.useState('all');
+  const [statusFiltro, setStatusFiltro] = React.useState('');
+  const pagamentoFiltro = '';
+  const [loading, setLoading] = React.useState(true);
+  const [erro, setErro] = React.useState('');
+  const [resumo, setResumo] = React.useState({ totais: {}, evolucao_mensal: [] });
+  const [projects, setProjects] = React.useState([]);
+  const fetchAll = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      setErro('');
+      const rResumo = await fetch(`/api/dashboard/resumo?periodo=${encodeURIComponent(periodo)}&type=${encodeURIComponent(tipo)}`);
+      if (!rResumo.ok) throw new Error(`HTTP ${rResumo.status}`);
+      const jsonResumo = await rResumo.json();
+      setResumo(jsonResumo);
+
+      const rProj = await fetch(`/api/projetos?all=1`);
+      const jsonProj = await rProj.json().catch(()=>({ data: [] }));
+      setProjects(Array.isArray(jsonProj?.data) ? jsonProj.data : (Array.isArray(jsonProj?.projects) ? jsonProj.projects : []));
+    } catch {
+      setErro('Erro ao sincronizar com o dashboard');
+    } finally { setLoading(false); }
+  }, [periodo, tipo]);
+
+  React.useEffect(() => { fetchAll(); }, [fetchAll]);
+  React.useEffect(() => {
+    const unsub1 = realtime.subscribe('projects_changed', () => fetchAll());
+    const unsub2 = realtime.subscribe('finance_changed', () => fetchAll());
+    return () => { unsub1(); unsub2(); };
+  }, [fetchAll]);
+
+  const toLower = (s) => String(s || '').toLowerCase();
+  const statusMap = (s) => {
+    const v = toLower(s);
+    if (v==='ongoing' || v==='andamento') return 'Ativo';
+    if (v==='completed' || v==='concluído' || v==='concluido' || v==='finalizado') return 'Finalizado';
+    if (v==='draft' || v==='rascunho') return 'Rascunho';
+    return '—';
+  };
+  const withinPeriodo = (dateIso) => {
+    if (!dateIso) return false;
+    const now = new Date();
+    const days = String(periodo).endsWith('d') ? Number(String(periodo).replace('d','')) : 30;
+    const from = new Date(now.getTime() - days*24*60*60*1000);
+    const dt = new Date(dateIso);
+    return dt >= from && dt <= now;
+  };
+  const filteredProjects = projects
+    .filter(p => withinPeriodo(p.startDate))
+    .filter(p => !statusFiltro || statusMap(p.status) === statusFiltro);
+
+  const kpis = resumo?.totais || {};
+  const pieBase = [
+    { key: 'paid', label: 'Paid', value: Number(kpis.receita_paga || 0), color: '#00E4F2' },
+    { key: 'pending', label: 'Pending', value: Number(kpis.receita_pendente || 0), color: '#D12BF2' },
+    { key: 'discount', label: 'Discount', value: Number(kpis.descontos || 0), color: '#68007B' },
+  ];
+  const pieData = pagamentoFiltro ? pieBase.filter(s => s.key === pagamentoFiltro) : pieBase;
+  const barData = [
+    { label: 'Ativos', value: Number(kpis.projetos_ativos || 0), color: '#00E4F2' },
+    { label: 'Finalizados', value: Number(kpis.projetos_finalizados || 0), color: '#D12BF2' },
+    { label: 'Rascunhos', value: Number(kpis.projetos_rascunho || 0), color: '#68007B' },
+  ];
+  const lineSeries = Array.isArray(resumo?.evolucao_mensal) ? resumo.evolucao_mensal : [];
+
+  const exportCsv = () => {
+    const cols = ['Projeto','Status','Valor','Progresso','UltimaAtualizacao'];
+    const rows = filteredProjects.map(p => [
+      p.title,
+      statusMap(p.status),
+      Number(p.price || 0),
+      Number(p.progress || 0),
+      p.startDate || ''
+    ]);
+    const csv = [cols.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `dashboard_${periodo}.csv`; a.click(); URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="admin-content">
-      <h1 className="title">Dashboard</h1>
-      <div className="cards" aria-live="polite">
-        <div className="card"><h3>Projetos em andamento</h3><p>{projects.filter(p => p.status==='ongoing').length}</p><Link to="/admin/projetos" className="link">Ver lista</Link></div>
-        <div className="card"><h3>Desafios ativos</h3><p>{desafios.filter(d => d.status==='ativo').length}</p></div>
-        <div className="card"><h3>Crafters pontuados na semana</h3><p>{ranking.all.length + ranking.top3.length}</p></div>
-        <div className="card"><h3>Receita prevista</h3><p>R$ {receitaPrevista.toLocaleString('pt-BR')}</p></div>
-      </div>
-      <div className="timeline" aria-live="polite">
-        <h2>Últimas ações</h2>
-        <ul>
-          {logs.slice(0,10).map(l => (
-            <li key={l.id}><span className="logType">{l.type}</span> <span className="logMsg">{l.message}</span> <span className="logAt">{new Date(l.at).toLocaleString('pt-BR')}</span></li>
-          ))}
-        </ul>
-      </div>
+      <header className="dashboard-header" style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+        <div>
+          <h1 className="title">Painel CodeCraft Gen-Z – Visão Geral</h1>
+          <p className="muted">{loading ? '🔄 Carregando informações do período…' : (erro ? '❌ Erro ao sincronizar com as finanças.' : '✅ Dados atualizados com sucesso.')}</p>
+        </div>
+        <div style={{ display:'flex', gap:8 }}>
+          <select value={periodo} onChange={e=>setPeriodo(e.target.value)} aria-label="Período">
+            <option value="7d">7 dias</option>
+            <option value="30d">30 dias</option>
+            <option value="90d">90 dias</option>
+          </select>
+          <select value={tipo} onChange={e=>setTipo(e.target.value)} aria-label="Tipo">
+            <option value="all">Todos</option>
+            <option value="projects">Projetos</option>
+          </select>
+          <select value={statusFiltro} onChange={e=>setStatusFiltro(e.target.value)} aria-label="Status projeto">
+            <option value="">Status: Todos</option>
+            <option value="Ativo">Ativo</option>
+            <option value="Finalizado">Finalizado</option>
+            <option value="Rascunho">Rascunho</option>
+          </select>
+          <button className="btn btn-outline" onClick={exportCsv}>Exportar CSV</button>
+        </div>
+      </header>
+
+      <section className="kpis" style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:12 }}>
+        <div className="card" style={{ background:'#F4F4F4', color:'#000' }}><h3>🧩 Projetos Ativos</h3><p>{kpis.projetos_ativos || 0}</p></div>
+        <div className="card" style={{ background:'#F4F4F4', color:'#000' }}><h3>🏁 Projetos Finalizados</h3><p>{kpis.projetos_finalizados || 0}</p></div>
+        <div className="card" style={{ background:'#F4F4F4', color:'#000' }}><h3>💰 Receita Total</h3><p>R$ {(kpis.receita_total || 0).toLocaleString('pt-BR')}</p></div>
+        <div className="card" style={{ background:'#F4F4F4', color:'#000' }}><h3>⏳ Receita Pendente</h3><p>R$ {(kpis.receita_pendente || 0).toLocaleString('pt-BR')}</p></div>
+        <div className="card" style={{ background:'#F4F4F4', color:'#000' }}><h3>📈 Progresso Médio</h3><p>{kpis.media_progresso || 0}%</p></div>
+        <div className="card" style={{ background:'#F4F4F4', color:'#000' }}><h3>💳 Receita Paga</h3><p>R$ {(kpis.receita_paga || 0).toLocaleString('pt-BR')}</p></div>
+      </section>
+
+      <section className="graficos" style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:12, marginTop:16 }}>
+        {/* Linha – evolução mensal */}
+        <div className="chart card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', borderRadius:12, padding:12 }}>
+          <h3 style={{ marginBottom:8 }}>Evolução de Receita</h3>
+          <svg width="100%" height="160" viewBox="0 0 400 160">
+            {(() => {
+              const max = Math.max(1, ...lineSeries.map(s => s.valor));
+              const points = lineSeries.map((s, i) => {
+                const x = (i/(lineSeries.length-1)) * 380 + 10;
+                const y = 150 - (s.valor / max) * 120;
+                return `${x},${y}`;
+              }).join(' ');
+              return (
+                <>
+                  <polyline points={points} fill="none" stroke="#00E4F2" strokeWidth="3" />
+                  {lineSeries.map((s, i) => {
+                    const x = (i/(lineSeries.length-1)) * 380 + 10;
+                    const y = 150 - (s.valor / max) * 120;
+                    return <circle key={i} cx={x} cy={y} r="3" fill="#D12BF2" />;
+                  })}
+                  {lineSeries.map((s, i) => (
+                    <text key={`lbl-${i}`} x={(i/(lineSeries.length-1)) * 380 + 10} y={155} fontSize="10" fill="#fff" textAnchor="middle">{s.mes}</text>
+                  ))}
+                </>
+              );
+            })()}
+          </svg>
+        </div>
+        {/* Pizza – status financeiro */}
+        <div className="chart card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', borderRadius:12, padding:12 }}>
+          <h3 style={{ marginBottom:8 }}>Status Financeiro</h3>
+          {(() => {
+            const total = pieData.reduce((acc, s) => acc + Math.abs(s.value), 0);
+            let acc = 0; const cx=60, cy=60, r=50;
+            return (
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                {pieData.map((s, i) => {
+                  const frac = total>0 ? Math.abs(s.value)/total : 0;
+                  const start = (acc/total) * 2*Math.PI; acc += Math.abs(s.value);
+                  const end = (acc/total) * 2*Math.PI;
+                  const x1 = cx + r*Math.cos(start), y1 = cy + r*Math.sin(start);
+                  const x2 = cx + r*Math.cos(end), y2 = cy + r*Math.sin(end);
+                  const largeArc = frac > 0.5 ? 1 : 0;
+                  const d = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+                  return <path key={i} d={d} fill={s.color} opacity="0.9" />;
+                })}
+              </svg>
+            );
+          })()}
+          <div style={{ display:'grid', gap:6, marginTop:8 }}>
+            {pieData.map((s, i) => (<div key={i} style={{ display:'flex', gap:6, alignItems:'center' }}><span style={{ width:12, height:12, background:s.color, display:'inline-block' }} /> <span>{s.label}</span> <strong style={{ marginLeft:'auto' }}>R$ {s.value.toLocaleString('pt-BR')}</strong></div>))}
+          </div>
+        </div>
+      </section>
+
+      {/* Barras – status projeto + Termômetro progresso */}
+      <section style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginTop:16 }}>
+        <div className="chart card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', borderRadius:12, padding:12 }}>
+          <h3>Distribuição de Projetos</h3>
+          <div style={{ display:'grid', gap:8, marginTop:8 }}>
+            {barData.map((b, i) => (
+              <div key={i} style={{ display:'grid', gridTemplateColumns:'120px 1fr auto', gap:8, alignItems:'center' }}>
+                <span>{b.label}</span>
+                <div style={{ height:12, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.16)', borderRadius:8 }}>
+                  <div style={{ width:`${Math.min(100, b.value*20)}%`, height:'100%', background:b.color, borderRadius:8, transition:'width 300ms ease' }} />
+                </div>
+                <strong>{b.value}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="chart card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', borderRadius:12, padding:12 }}>
+          <h3>Média de Progresso</h3>
+          <div style={{ height:18, background:'#F4F4F4', borderRadius:10 }}>
+            <div style={{ width:`${kpis.media_progresso || 0}%`, height:'100%', background:'#D12BF2', borderRadius:10, transition:'width 300ms ease' }} />
+          </div>
+          <p style={{ marginTop:8 }}>{kpis.media_progresso || 0}%</p>
+        </div>
+      </section>
+
+      {/* Tabela Resumo */}
+      <section style={{ marginTop:16 }}>
+        <h3>Tabela Resumo</h3>
+        <div className="table">
+          <table>
+            <thead><tr><th>Projeto</th><th>Status</th><th>Valor</th><th>Progresso</th><th>Última Atualização</th></tr></thead>
+            <tbody>
+              {filteredProjects.length === 0 ? (
+                <tr><td colSpan="5">⚠️ Sem registros para os filtros aplicados.</td></tr>
+              ) : filteredProjects.map(p => (
+                <tr key={p.id}><td>{p.title}</td><td>{statusMap(p.status)}</td><td>R$ {Number(p.price||0).toLocaleString('pt-BR')}</td><td>{Number(p.progress||0)}%</td><td>{p.startDate ? new Date(p.startDate).toLocaleDateString('pt-BR') : '—'}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }
@@ -199,7 +389,7 @@ export function Mentores() {
   };
   const HistoryList = ({ mentorId }) => {
     const [items, setItems] = React.useState([]);
-    React.useEffect(() => { setItems(MentorsRepo.getHistory(mentorId)); }, [mentorId, loading]);
+    React.useEffect(() => { setItems(MentorsRepo.getHistory(mentorId)); }, [mentorId]);
     return (
       <div className="history" style={{ marginTop: 8 }}>
         {items.length === 0 ? (<div className="muted">Sem histórico</div>) : (
@@ -420,7 +610,84 @@ export function Projetos() {
 export function Desafios() {
   const { data: list, loading, error, refresh } = useDesafios();
   const [form, setForm] = React.useState({ name:'', objetivo:'', prazoDias:7, recompensaPts:100, status:'ativo', visible:true });
-  const onSave = async () => { await DesafiosRepo.upsert(form); setForm({ name:'', objetivo:'', prazoDias:7, recompensaPts:100, status:'ativo', visible:true }); refresh(); };
+  const [editingId, setEditingId] = React.useState(null);
+  const [busy, setBusy] = React.useState(false);
+  const [detailsOpen, setDetailsOpen] = React.useState(null);
+  const [details, setDetails] = React.useState(null);
+  const [detailsLoading, setDetailsLoading] = React.useState(false);
+  const [detailsError, setDetailsError] = React.useState('');
+
+  const onEdit = (d) => {
+    setEditingId(d.id);
+    setForm({
+      id: d.id,
+      name: d.name,
+      objetivo: d.objetivo || d.objective || '',
+      prazoDias: Number(d.prazoDias ?? 7),
+      recompensaPts: Number(d.recompensaPts ?? d.base_points ?? 0),
+      status: d.status || 'ativo',
+      visible: !!d.visible,
+    });
+  };
+
+  const onSave = async () => {
+    setBusy(true);
+    try {
+      const payload = editingId ? { ...form, id: editingId } : form;
+      await DesafiosRepo.upsert(payload);
+      setForm({ name:'', objetivo:'', prazoDias:7, recompensaPts:100, status:'ativo', visible:true });
+      setEditingId(null);
+      refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleVisible = async (d) => {
+    setBusy(true);
+    try {
+      await DesafiosRepo.upsert({ id: d.id, visible: !d.visible });
+      refresh();
+    } finally { setBusy(false); }
+  };
+
+  const toggleStatus = async (d) => {
+    setBusy(true);
+    try {
+      const next = d.status === 'encerrado' ? 'ativo' : 'encerrado';
+      await DesafiosRepo.setStatus(d.id, next);
+      refresh();
+    } finally { setBusy(false); }
+  };
+
+  const fetchDetails = async (id) => {
+    setDetailsLoading(true);
+    setDetailsError('');
+    try {
+      const r = await fetch(`/api/desafios/${id}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const json = await r.json();
+      setDetails(json?.challenge || json);
+    } catch {
+      setDetailsError('Falha ao carregar detalhes');
+    } finally { setDetailsLoading(false); }
+  };
+
+  const openDetails = async (d) => {
+    const next = detailsOpen === d.id ? null : d.id;
+    setDetailsOpen(next);
+    setDetails(null);
+    setDetailsError('');
+    if (next) await fetchDetails(next);
+  };
+
+  React.useEffect(() => {
+    const unsub = realtime.subscribe('desafios_changed', () => {
+      refresh();
+      if (detailsOpen) fetchDetails(detailsOpen);
+    });
+    return () => unsub();
+  }, [detailsOpen, refresh]);
   const [query, setQuery] = React.useState('');
   const [page, setPage] = React.useState(1);
   const pageSize = 5;
@@ -447,7 +714,83 @@ export function Desafios() {
       </div>
       {loading && <p>Carregando...</p>}
       {error && <p role="alert">{error}</p>}
-      <div className="table"><table><thead><tr><th>Nome</th><th>Objetivo</th><th>Prazo (dias)</th><th>Recompensa</th><th>Status</th><th>Visível</th></tr></thead><tbody>{pageItems.length===0 ? (<tr><td colSpan="6">Nenhum desafio</td></tr>) : pageItems.map(d=> (<tr key={d.id}><td>{d.name}</td><td>{d.objetivo}</td><td>{d.prazoDias}</td><td>{d.recompensaPts}</td><td>{d.status}</td><td>{String(d.visible)}</td></tr>))}</tbody></table></div>
+      <div className="table"><table><thead><tr><th>Nome</th><th>Objetivo</th><th>Prazo (dias)</th><th>Recompensa</th><th>Status</th><th>Visível</th><th>Ações</th></tr></thead><tbody>{pageItems.length===0 ? (<tr><td colSpan="7">Nenhum desafio</td></tr>) : pageItems.map(d=> (
+        <React.Fragment key={d.id}>
+          <tr>
+            <td>{d.name}</td>
+            <td>{d.objetivo || d.objective}</td>
+            <td>{d.prazoDias ?? '-'}</td>
+            <td>{d.recompensaPts ?? d.base_points ?? 0}</td>
+            <td>{d.status}</td>
+            <td>{String(d.visible)}</td>
+            <td>
+              <div className="btn-group">
+                <button className="btn btn-secondary" onClick={()=>onEdit(d)}>Editar</button>
+                <button className="btn btn-outline" onClick={()=>toggleVisible(d)} aria-label={`Visibilidade ${d.name}`} disabled={busy}>{d.visible ? 'Ocultar' : 'Exibir'}</button>
+                <button className="btn btn-danger" onClick={()=>toggleStatus(d)} disabled={busy}>{d.status==='encerrado'?'Reabrir':'Encerrar'}</button>
+                <button className="btn btn-outline" onClick={()=>openDetails(d)}>{detailsOpen===d.id?'Fechar detalhes':'Detalhes'}</button>
+              </div>
+            </td>
+          </tr>
+          {detailsOpen===d.id && (
+            <tr>
+              <td colSpan="7">
+                {detailsLoading && (<p>Carregando detalhes...</p>)}
+                {detailsError && (<p role="alert">{detailsError}</p>)}
+                {details && (
+                  <div style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', borderRadius:12, padding:12 }}>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                      <div>
+                        <h4>Inscrições</h4>
+                        {Array.isArray(details.registrations) && details.registrations.length>0 ? (
+                          <ul className="items">
+                            {details.registrations.map(r => (<li key={r.id} className="item"><span>{r.crafter_id}</span><span>{new Date(r.at).toLocaleString('pt-BR')}</span></li>))}
+                          </ul>
+                        ) : (<p>Nenhuma inscrição</p>)}
+                      </div>
+                      <div>
+                        <h4>Entregas</h4>
+                        {Array.isArray(details.submissions) && details.submissions.length>0 ? (
+                          <ul className="items">
+                            {details.submissions.map(s => (
+                              <li key={s.id} className="item" style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr auto', gap:8 }}>
+                                <span>
+                                  <div><strong>{s.crafter_id}</strong></div>
+                                  <div style={{ color:'#A6A6A6' }}>{s.link || s.github || '-'}</div>
+                                </span>
+                                <span>{s.status || 'pending'}</span>
+                                <span>{s.points_awarded ?? 0} pts</span>
+                                <span>
+                                  <select aria-label={`Status submissão ${s.id}`} defaultValue={s.status || 'pending'} id={`status-${s.id}`}>
+                                    <option value="approved">aprovar</option>
+                                    <option value="rejected">reprovar</option>
+                                  </select>
+                                  <input aria-label={`Pontos ${s.id}`} type="number" placeholder="+pts" defaultValue={s.points_awarded ?? details.base_points ?? 0} id={`pts-${s.id}`} style={{ width:80, marginLeft:6 }} />
+                                  <button className="btn btn-primary" style={{ marginLeft:6 }} onClick={async()=>{
+                                    const statusSel = document.getElementById(`status-${s.id}`);
+                                    const ptsInput = document.getElementById(`pts-${s.id}`);
+                                    const status = statusSel?.value || 'approved';
+                                    const pts = Number(ptsInput?.value || 0);
+                                    setBusy(true);
+                                    try {
+                                      await DesafiosRepo.reviewSubmission(s.id, { status, points_awarded: pts });
+                                      await fetchDetails(detailsOpen);
+                                    } finally { setBusy(false); }
+                                  }}>Revisar</button>
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (<p>Nenhuma entrega</p>)}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </td>
+            </tr>
+          )}
+        </React.Fragment>
+      ))}</tbody></table></div>
       <div className="formRow">
         <input aria-label="Nome" placeholder="Nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} />
         <input aria-label="Objetivo" placeholder="Objetivo" value={form.objetivo} onChange={e=>setForm({...form,objetivo:e.target.value})} />
@@ -455,7 +798,8 @@ export function Desafios() {
         <input aria-label="Recompensa" type="number" placeholder="Recompensa (+pts)" value={form.recompensaPts} onChange={e=>setForm({...form,recompensaPts:Number(e.target.value)})} />
         <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="ativo">ativo</option><option value="encerrado">encerrado</option></select>
         <label><input type="checkbox" checked={form.visible} onChange={e=>setForm({...form,visible:e.target.checked})} /> Visível</label>
-        <button onClick={onSave}>Salvar desafio</button>
+        <button className="btn btn-primary" onClick={onSave} disabled={busy} aria-busy={busy}>{editingId ? 'Atualizar' : 'Salvar'} desafio</button>
+        {editingId && (<button className="btn btn-outline" onClick={()=>{ setEditingId(null); setForm({ name:'', objetivo:'', prazoDias:7, recompensaPts:100, status:'ativo', visible:true }); }}>Cancelar edição</button>)}
       </div>
     </div>
   );
@@ -546,7 +890,7 @@ export default function AdminLayout() {
         .menuLink { color: #F4F4F4; text-decoration: none; padding: 10px 12px; border-radius: 10px; font-weight: 600; }
         .menuLink:hover { background: rgba(0,228,242,0.12); }
         .menuLink.active { background: rgba(0,228,242,0.22); color: #042326; }
-        .main { background: transparent; }
+        .main { background: transparent; min-width: 0; }
         .topbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; }
         /* Botões modernos */
         .btn { border: none; border-radius: 10px; padding: 8px 12px; cursor: pointer; font-weight: 600; transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease; }
@@ -558,17 +902,18 @@ export default function AdminLayout() {
         .btn-danger { background: #D12BF2; color: #fff; }
         .btn-group { display: flex; flex-wrap: wrap; gap: 6px; }
         .btn-icon { padding: 8px; width: 36px; height: 36px; display: grid; place-items: center; }
-        .content { padding: 16px; }
+        .content { padding: 16px; min-width: 0; }
         .title { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 700; }
         .cards { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
-        .card { background: #F4F4F4; border: 1px solid rgba(0,228,242,0.2); border-radius: 12px; padding: 12px; }
+        .card { background: #F4F4F4; border: 1px solid rgba(0,228,242,0.2); border-radius: 12px; padding: 12px; overflow: hidden; }
         .timeline { margin-top: 18px; }
         .logType { color: #00E4F2; margin-right: 8px; }
         .logMsg { color: #333; }
         .logAt { color: #A6A6A6; margin-left: 8px; }
-        .items { list-style: none; padding: 0; display: grid; gap: 8px; }
+        .items { list-style: none; padding: 0; display: grid; gap: 8px; max-height: 60vh; overflow-y: auto; }
         .item { background: #F4F4F4; border: 1px solid rgba(0,228,242,0.2); border-radius: 12px; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
         .muted { color: #666; margin-left: 8px; }
+        .table { overflow-x: auto; max-width: 100%; }
         .table table { width: 100%; border-collapse: collapse; }
         .table th, .table td { border-bottom: 1px solid #eee; padding: 8px; text-align: left; }
         .formRow { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; margin-top: 12px; }
@@ -602,7 +947,7 @@ export default function AdminLayout() {
         .badgeNeutral { background: rgba(255,255,255,0.08); color: #F4F4F4; }
         .mentorAdminCard .actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
         @media (max-width: 992px) { .cards { grid-template-columns: repeat(2, 1fr); } .admin-page { grid-template-columns: 220px 1fr; } .mentorAdminGrid { grid-template-columns: 1fr; } .mentorAdminCard { grid-template-columns: 100px 1fr; } .mentorAdminCard .right { justify-items: start; } }
-        @media (max-width: 768px) { .admin-page { grid-template-columns: 1fr; } .sidebar { position: sticky; top: 80px; display: flex; overflow-x: auto; gap: 8px; } .menu { grid-auto-flow: column; grid-auto-columns: max-content; } }
+        @media (max-width: 768px) { .admin-page { grid-template-columns: 1fr; } .sidebar { position: sticky; top: 80px; display: flex; overflow-x: auto; gap: 8px; } .menu { grid-auto-flow: column; grid-auto-columns: max-content; } .cards { grid-template-columns: 1fr; } }
       `}</style>
     </div>
   );
