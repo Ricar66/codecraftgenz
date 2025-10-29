@@ -29,8 +29,9 @@ const ProjectCard = ({
    * @returns {string} Data formatada
    */
   const formatDate = (dateString) => {
+    if (!dateString) return '—';
     const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
+    return isNaN(date.getTime()) ? '—' : date.toLocaleDateString('pt-BR');
   };
 
   /**
@@ -40,8 +41,9 @@ const ProjectCard = ({
    * @returns {string} Texto truncado
    */
   const truncateText = (text, limit) => {
-    if (text.length <= limit) return text;
-    return text.substring(0, limit).trim() + '...';
+    const safe = String(text || '');
+    if (safe.length <= limit) return safe;
+    return safe.substring(0, limit).trim() + '...';
   };
 
   /**
@@ -61,7 +63,7 @@ const ProjectCard = ({
    * @returns {string} Classe CSS para cor do badge
    */
   const getStatusBadgeClass = (status) => {
-    switch (status.toLowerCase()) {
+    switch (String(status || '').toLowerCase()) {
       case 'em andamento':
         return styles.statusInProgress;
       case 'concluído':
@@ -72,24 +74,23 @@ const ProjectCard = ({
         return styles.statusDefault;
     }
   };
-
-  const shouldShowReadMore = project.description.length > maxDescriptionLength;
-  const displayDescription = isExpanded 
-    ? project.description 
-    : truncateText(project.description, maxDescriptionLength);
+  const desc = String(project?.description || '');
+  const shouldShowReadMore = desc.length > maxDescriptionLength;
+  const displayDescription = isExpanded ? desc : truncateText(desc, maxDescriptionLength);
+  const progressValue = typeof project?.progress === 'number' ? project.progress : 0;
 
   return (
     <article className={styles.projectCard} role="article" aria-labelledby={`project-${project.id}-title`}>
       {/* Header do Card */}
       <header className={styles.cardHeader}>
         <h3 id={`project-${project.id}-title`} className={styles.projectTitle}>
-          {project.title}
+          {project?.title || 'Projeto sem título'}
         </h3>
         <span 
-          className={`${styles.statusBadge} ${getStatusBadgeClass(project.status)}`}
-          aria-label={`Status: ${project.status}`}
+          className={`${styles.statusBadge} ${getStatusBadgeClass(project?.status)}`}
+          aria-label={`Status: ${project?.status || '—'}`}
         >
-          {project.status}
+          {project?.status || '—'}
         </span>
       </header>
 
@@ -119,21 +120,21 @@ const ProjectCard = ({
         <div className={styles.progressSection}>
           <div className={styles.progressHeader}>
             <span className={styles.progressLabel}>Progresso</span>
-            <span className={styles.progressPercentage} aria-label={`${project.progress}% concluído`}>
-              {project.progress}%
+            <span className={styles.progressPercentage} aria-label={`${progressValue}% concluído`}>
+              {progressValue}%
             </span>
           </div>
           <div 
             className={styles.progressBar}
             role="progressbar"
-            aria-valuenow={project.progress}
+            aria-valuenow={progressValue}
             aria-valuemin="0"
             aria-valuemax="100"
-            aria-label={`Progresso do projeto: ${project.progress}%`}
+            aria-label={`Progresso do projeto: ${progressValue}%`}
           >
             <div 
-              className={`${styles.progressFill} ${getProgressColor(project.progress)}`}
-              style={{ width: `${project.progress}%` }}
+              className={`${styles.progressFill} ${getProgressColor(progressValue)}`}
+              style={{ width: `${progressValue}%` }}
             />
           </div>
         </div>
