@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { FaStar, FaQuoteLeft, FaUser, FaCalendarAlt } from 'react-icons/fa';
 
-import { useFeedbacks } from '../../hooks/useFeedbacks';
+import useFeedbacks from '../../hooks/useFeedbacks';
 
 import styles from './FeedbackShowcase.module.css';
 

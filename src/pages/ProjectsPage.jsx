@@ -4,8 +4,6 @@ import React from 'react';
 import Navbar from '../components/Navbar/Navbar';
 import ProjectsList from '../components/Projects/ProjectsList';
 
-import './ProjectsPage.css';
-
 /**
  * Página de Projetos
  * Mantém consistência visual com a página inicial usando o mesmo design system

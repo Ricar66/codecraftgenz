@@ -5,8 +5,6 @@ import FeedbackForm from '../components/Feedbacks/FeedbackForm';
 import FeedbackShowcase from '../components/Feedbacks/FeedbackShowcase';
 import Navbar from '../components/Navbar/Navbar';
 
-import './FeedbacksPage.css';
-
 export default function FeedbacksPage() {
   return (
     <div className="feedback-page">
