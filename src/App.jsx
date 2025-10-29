@@ -3,15 +3,16 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 
+import AdminLayout from './admin/AdminLayout.jsx';
+import ProtectedRoute from './admin/ProtectedRoute.jsx';
 import heroBackground from './assets/hero-background.svg';
-
-// Páginas
+import DesafiosPage from './pages/DesafiosPage.jsx';
 import FeedbacksPage from './pages/FeedbacksPage.jsx';
 import HomePage from './pages/HomePage/HomePage.jsx';
-import ProjectsPage from './pages/ProjectsPage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
 import MentoriaPage from './pages/MentoriaPage.jsx';
+import ProjectsPage from './pages/ProjectsPage.jsx';
 import RankingPage from './pages/RankingPage.jsx';
-import DesafiosPage from './pages/DesafiosPage.jsx';
 
 /**
  * Componente principal da aplicação
@@ -32,6 +33,12 @@ function App() {
         <Route path="/mentoria" element={<MentoriaPage />} />
         <Route path="/ranking" element={<RankingPage />} />
         <Route path="/desafios" element={<DesafiosPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/admin/*" element={
+          <ProtectedRoute allowed={["admin","editor"]}>
+            <AdminLayout />
+          </ProtectedRoute>
+        } />
       </Routes>
     </div>
   );

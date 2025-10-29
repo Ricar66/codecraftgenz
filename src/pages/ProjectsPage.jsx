@@ -37,7 +37,7 @@ const ProjectsPage = () => {
       <section className="projects-section">
         <div className="projects-container">
           <div className="section-card">
-            <ProjectsList />
+            <ProjectsList useAdminStore={true} />
           </div>
         </div>
       </section>

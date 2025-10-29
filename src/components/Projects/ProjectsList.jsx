@@ -2,6 +2,7 @@
 import React from 'react';
 
 import useProjects from '../../hooks/useProjects';
+import { adminStore } from '../../lib/adminStore';
 
 import LazyProjectCard from './LazyProjectCard';
 import LoadingSpinner, { ProjectsListSkeleton } from './LoadingSpinner';
@@ -168,7 +169,7 @@ const ProjectsStats = ({ stats, isVisible }) => {
  * Componente principal de listagem de projetos
  * Gerencia todos os estados e renderiza a interface apropriada
  */
-const ProjectsList = () => {
+const ProjectsList = ({ useAdminStore = false }) => {
   const {
     projects,
     loading,
@@ -189,6 +190,11 @@ const ProjectsList = () => {
     timeout: 10000, // 10 segundos
     maxRetries: 3
   });
+
+  // Fonte alternativa via adminStore (sempre calcular sem condicionar hooks)
+  const adminItems = adminStore.listProjects().filter(p => p.visible && p.status !== 'draft');
+  const displayedProjects = useAdminStore ? adminItems : projects;
+  const hasDisplayed = displayedProjects.length > 0;
 
   /**
    * Handler para retry inteligente com limpeza de erro
@@ -213,12 +219,12 @@ const ProjectsList = () => {
    */
   
   // Estado de loading inicial
-  if (loading && projects.length === 0) {
+  if (!useAdminStore && loading && projects.length === 0) {
     return <LoadingState />;
   }
 
   // Estado de erro
-  if (hasError && projects.length === 0) {
+  if (!useAdminStore && hasError && projects.length === 0) {
     return (
       <ErrorState 
         error={error} 
@@ -230,7 +236,7 @@ const ProjectsList = () => {
   }
 
   // Estado vazio (sem projetos)
-  if (isEmpty && !loading) {
+  if (!useAdminStore && isEmpty && !loading) {
     return <EmptyState onRetry={handleRetry} />;
   }
 
@@ -239,18 +245,18 @@ const ProjectsList = () => {
     <div className={styles.container}>
       {/* Cabeçalho da seção */}
       <div className={styles.header}>
-        <h2 className={styles.title}>Projetos em Desenvolvimento</h2>
+        <h2 className={styles.title}>{useAdminStore ? 'Projetos publicados' : 'Projetos em Desenvolvimento'}</h2>
         <p className={styles.subtitle}>
-          Acompanhe o progresso dos nossos projetos mais recentes
+          {useAdminStore ? 'Itens visíveis definidos no Admin' : 'Acompanhe o progresso dos nossos projetos mais recentes'}
         </p>
       </div>
 
       {/* Estatísticas dos projetos */}
-      {hasProjects && <ProjectsStats stats={stats} />}
+      {!useAdminStore && hasProjects && <ProjectsStats stats={stats} />}
 
       {/* Grid simples de projetos - máximo 3 por linha */}
       <div className={styles.projectsGrid}>
-        {projects.map((project) => (
+        {displayedProjects.map((project) => (
           <ProjectCard 
             key={project.id} 
             project={project} 
@@ -259,18 +265,20 @@ const ProjectsList = () => {
       </div>
 
       {/* Footer com informações */}
-      {hasProjects && (
+      {hasDisplayed && (
         <div className={styles.footer}>
           <p className={styles.projectCount}>
-            {projects.length} projeto{projects.length !== 1 ? 's' : ''} encontrado{projects.length !== 1 ? 's' : ''}
+            {displayedProjects.length} projeto{displayedProjects.length !== 1 ? 's' : ''} encontrado{displayedProjects.length !== 1 ? 's' : ''}
           </p>
-          <button 
-            onClick={refetch}
-            className={styles.refreshButton}
-            disabled={loading}
-          >
-            🔄 Atualizar
-          </button>
+          {!useAdminStore && (
+            <button 
+              onClick={refetch}
+              className={styles.refreshButton}
+              disabled={loading}
+            >
+              🔄 Atualizar
+            </button>
+          )}
         </div>
       )}
     </div>

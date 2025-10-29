@@ -1,32 +1,27 @@
 // src/pages/MentoriaPage.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
+import { adminStore } from '../lib/adminStore';
+import { realtime } from '../lib/realtime';
 
 export default function MentoriaPage() {
-  const mentors = [
-    {
-      name: 'Ana Silva',
-      role: 'Tech Lead • Frontend Performance',
-      phone: '(11) 99999-1111',
-      email: 'ana.silva@codecraft.dev',
-      bio: 'Foco em arquitetura front, web vitals e acessibilidade. Mentoria prática orientada a métricas.',
-    },
-    {
-      name: 'Bruno Costa',
-      role: 'Staff Engineer • Backend & Cloud',
-      phone: '(21) 98888-2222',
-      email: 'bruno.costa@codecraft.dev',
-      bio: 'Construção de serviços escaláveis, design de APIs e cultura DevOps. Mentoria mão na massa.',
-    },
-    {
-      name: 'Carla Mendes',
-      role: 'Product Engineer • UX Engineering',
-      phone: '(31) 97777-3333',
-      email: 'carla.mendes@codecraft.dev',
-      bio: 'Integra UX com engenharia, sistemas de design e prototipação rápida. Mentoria voltada a impacto.',
-    },
-  ];
+  const [mentors, setMentors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const all = adminStore.listMentors();
+    setMentors(all.filter(m => m.visible));
+    setLoading(false);
+    const unsub = realtime.subscribe('mentors_changed', ({ mentors }) => {
+      const src = mentors || adminStore.listMentors();
+      setMentors(src.filter(m => m.visible));
+    });
+    const iv = setInterval(() => {
+      const src = adminStore.listMentors();
+      setMentors(src.filter(m => m.visible));
+    }, 10000);
+    return () => { unsub(); clearInterval(iv); };
+  }, []);
 
   return (
     <div className="mentoria-page">
@@ -42,14 +37,14 @@ export default function MentoriaPage() {
             </p>
           </header>
 
-          <div className="mentors-grid">
+          <div className="mentors-grid" aria-busy={loading}>
             {mentors.map((m) => (
               <article key={m.email} className="mentor-card">
                 <div className="avatar" aria-hidden="true" />
                 <div className="info">
                   <div className="header">
                     <h3 className="name">{m.name}</h3>
-                    <p className="role">{m.role}</p>
+                    <p className="role">{m.specialty}</p>
                   </div>
                   <div className="details">
                     <div className="contact">
@@ -61,6 +56,9 @@ export default function MentoriaPage() {
                 </div>
               </article>
             ))}
+            {!loading && mentors.length === 0 && (
+              <div className="empty" role="status">Nenhum mentor visível no momento.</div>
+            )}
           </div>
 
           <div className="section-footer">

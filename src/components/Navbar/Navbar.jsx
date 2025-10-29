@@ -103,13 +103,13 @@ const Navbar = () => {
           </li>
           {/* CTA Button */}
           <li className={styles.navItem}>
-            <a 
-              href="#login" 
+            <Link 
+              to="/login" 
               className={`${styles.navLink} ${styles.navLinkCta}`}
               onClick={closeMobileMenu}
             >
               Entrar
-            </a>
+            </Link>
           </li>
         </ul>
 

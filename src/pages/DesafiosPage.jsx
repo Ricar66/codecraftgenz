@@ -1,14 +1,23 @@
 // src/pages/DesafiosPage.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
+import { adminStore } from '../lib/adminStore';
 
 export default function DesafiosPage() {
-  const desafios = [
-    { nome: 'Refatoração de Performance', descricao: 'Otimizar renderizações e reduzir TTI.', duracao: '7 dias', recompensa: '+200 pts' },
-    { nome: 'API Resiliente', descricao: 'Circuit breaker e retries inteligentes.', duracao: '10 dias', recompensa: '+300 pts' },
-    { nome: 'Design System', descricao: 'Criar tokens e componentes base.', duracao: '14 dias', recompensa: '+400 pts' },
-  ];
+  const [desafios, setDesafios] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const all = adminStore.listDesafios();
+    const visiveis = all.filter(d => d.visible && d.status === 'ativo');
+    setDesafios(visiveis.map(d => ({
+      nome: d.name,
+      descricao: d.objetivo,
+      duracao: `${d.prazoDias} dias`,
+      recompensa: `+${d.recompensaPts} pts`
+    })));
+    setLoading(false);
+  }, []);
 
   return (
     <div className="desafios-page">
@@ -22,7 +31,7 @@ export default function DesafiosPage() {
             <p className="lead">Cada missão CodeCraft é uma oportunidade de testar suas habilidades e crescer como desenvolvedor.</p>
           </header>
 
-          <div className="desafios-grid">
+          <div className="desafios-grid" aria-busy={loading}>
             {desafios.map((d) => (
               <article key={d.nome} className="desafio-card">
                 <div className="icon" aria-hidden="true" />
@@ -35,6 +44,9 @@ export default function DesafiosPage() {
                 <button className="cta">Quero participar!</button>
               </article>
             ))}
+            {!loading && desafios.length === 0 && (
+              <div className="empty" role="status">Nenhum desafio ativo no momento.</div>
+            )}
           </div>
 
           <footer className="section-footer">
