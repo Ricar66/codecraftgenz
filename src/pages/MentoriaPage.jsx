@@ -9,19 +9,66 @@ export default function MentoriaPage() {
   const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    const all = adminStore.listMentors();
-    setMentors(all.filter(m => m.visible));
-    setLoading(false);
+    let aborted = false;
+    setLoading(true);
+    // Consome o endpoint público
+    fetch('/api/mentores')
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+      .then(json => {
+        if (aborted) return;
+        const list = Array.isArray(json?.data) ? json.data : [];
+        // Normaliza campos vindos do endpoint (foto_url → photo)
+        const normalized = list.map(m => ({
+          ...m,
+          photo: m.foto_url || m.photo || null,
+        }));
+        setMentors(normalized.filter(m => m.visible));
+      })
+      .catch(() => {
+        // Fallback local (dev/test): usa adminStore
+        const all = adminStore.listMentors();
+        setMentors(all.filter(m => m.visible));
+      })
+      .finally(() => { if (!aborted) setLoading(false); });
+
     const unsub = realtime.subscribe('mentors_changed', ({ mentors }) => {
-      const src = mentors || adminStore.listMentors();
-      setMentors(src.filter(m => m.visible));
+      // Quando o admin publicar mudanças, atualiza imediatamente
+      if (Array.isArray(mentors)) {
+        const normalized = mentors.map(m => ({ ...m, photo: m.photo || m.foto_url || null }));
+        setMentors(normalized.filter(m => m.visible));
+      } else {
+        // Ou refaz fetch do endpoint
+        fetch('/api/mentores')
+          .then(r => r.ok ? r.json() : Promise.reject())
+          .then(json => {
+            const list = Array.isArray(json?.data) ? json.data : [];
+            const normalized = list.map(m => ({ ...m, photo: m.foto_url || m.photo || null }));
+            setMentors(normalized.filter(m => m.visible));
+          })
+          .catch(() => {/* ignore erro de atualização */});
+      }
     });
-    const pollMs = Number(import.meta.env.VITE_MENTORS_POLL_MS || 5000);
-    const iv = setInterval(() => {
-      const src = adminStore.listMentors();
-      setMentors(src.filter(m => m.visible));
-    }, pollMs);
-    return () => { unsub(); clearInterval(iv); };
+
+    // Em ambiente de teste, evitamos polling para reduzir warnings de act
+    const isTest = typeof process !== 'undefined' && !!process.env?.VITEST_WORKER_ID;
+    const pollMs = Number(import.meta.env.VITE_MENTORS_POLL_MS || (isTest ? 0 : 5000));
+    let iv = null;
+    if (pollMs > 0) {
+      iv = setInterval(() => {
+        fetch('/api/mentores')
+          .then(r => r.ok ? r.json() : Promise.reject())
+          .then(json => {
+            const list = Array.isArray(json?.data) ? json.data : [];
+            const normalized = list.map(m => ({ ...m, photo: m.foto_url || m.photo || null }));
+            setMentors(normalized.filter(m => m.visible));
+          })
+          .catch(() => {
+            const all = adminStore.listMentors();
+            setMentors(all.filter(m => m.visible));
+          });
+      }, pollMs);
+    }
+    return () => { aborted = true; unsub(); if (iv) clearInterval(iv); };
   }, []);
 
   return (
@@ -40,19 +87,19 @@ export default function MentoriaPage() {
 
           <div className="mentors-grid" aria-busy={loading}>
             {mentors.map((m) => (
-              <article key={m.email} className="mentor-card">
+              <article key={m.id || m.email || m.name} className="mentor-card">
                 <div className="avatar" aria-hidden={!!m.photo}>
-                  {m.photo ? (<img src={m.photo} alt={`Foto de ${m.name}`} style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'12px' }} />) : null}
+                  {m.photo ? (<img src={m.photo} alt={`Foto de ${m.name}`} style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />) : null}
                 </div>
                 <div className="info">
                   <div className="header">
                     <h3 className="name">{m.name}</h3>
-                    <p className="role">{m.specialty}</p>
+                    <p className="role">{m.cargo || m.specialty}</p>
                   </div>
                   <div className="details">
                     <div className="contact">
-                      <span className="contact-item" title="Telefone">📱 {m.phone}</span>
-                      <span className="contact-item" title="E-mail">✉️ {m.email}</span>
+                      {m.phone ? (<span className="contact-item" title={m.phone}>📞 {m.phone}</span>) : null}
+                      {m.email ? (<span className="contact-item" title={m.email}>📧 {m.email}</span>) : null}
                     </div>
                     <p className="bio">{m.bio}</p>
                   </div>
@@ -60,7 +107,7 @@ export default function MentoriaPage() {
               </article>
             ))}
             {!loading && mentors.length === 0 && (
-              <div className="empty" role="status">Nenhum mentor visível no momento.</div>
+              <div className="empty" role="status">Nenhum mentor cadastrado no momento. Em breve, novos profissionais inspiradores estarão aqui 🚀</div>
             )}
           </div>
 
@@ -102,12 +149,12 @@ export default function MentoriaPage() {
         .mentors-grid {
           position: relative;
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
           gap: var(--espaco-lg);
           margin-top: var(--espaco-lg);
           padding-top: var(--espaco-md);
-          align-items: stretch; /* faz os itens preencherem a altura da linha */
-          grid-auto-rows: 1fr; /* linhas com alturas proporcionais para cards iguais */
+          align-items: start; /* não força a altura dos itens */
+          /* remove altura forçada das linhas para evitar conteúdo desalinhado */
         }
 
         /* linha de conexão minimalista */
@@ -124,7 +171,7 @@ export default function MentoriaPage() {
 
         .mentor-card {
           display: grid;
-          grid-template-columns: 140px 1fr; /* aumenta a coluna da foto */
+          grid-template-columns: 120px 1fr; /* dá mais espaço para texto */
           gap: var(--espaco-md);
           align-items: start; /* conteúdo começa no topo, permitindo descer com margem */
           background: rgba(255,255,255,0.06);
@@ -133,7 +180,7 @@ export default function MentoriaPage() {
           padding: var(--espaco-md);
           box-shadow: 0 4px 18px rgba(0,0,0,0.22);
           transition: transform 180ms ease, box-shadow 180ms ease;
-          height: 100%;
+          /* não força altura do card para evitar empurrar conteúdo */
           overflow: hidden; /* previne que conteúdos internos ultrapassem os limites do card */
         }
 
@@ -141,24 +188,27 @@ export default function MentoriaPage() {
         .mentor-card:focus-within { outline: 2px solid rgba(139, 92, 246, 0.6); outline-offset: 2px; }
 
         .avatar {
-          width: 120px;
-          height: 120px; /* foto um pouco maior */
-          border-radius: 12px;
-          background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06));
-          border: 1px solid rgba(255,255,255,0.18);
+          width: 100px;
+          height: 100px; /* foto ajustada para liberar espaço */
+          border-radius: 50%;
+          background: linear-gradient(135deg, #D12BF2 0%, #68007B 100%);
+          border: 2px solid rgba(244,244,244,0.6);
+          box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+          overflow: hidden;
         }
 
-        .info { display: flex; flex-direction: column; height: 100%; }
-        .header { display: grid; grid-template-columns: 1fr; align-items: center; gap: 4px; }
-        .details { margin-top: auto; text-align: center; }
+        .info { display: flex; flex-direction: column; gap: var(--espaco-xs); min-width: 0; }
+        .header { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+        .details { margin-top: var(--espaco-xs); text-align: left; }
         .details .bio { margin-top: var(--espaco-sm); }
-        .contact { justify-content: center; }
+        .contact { justify-content: flex-start; min-width: 0; }
 
-        .name { font-weight: 700; color: var(--texto-branco); }
-        .role { color: var(--texto-gelo); font-size: 0.95rem; margin-top: 4px; }
+        .name { font-weight: 700; color: var(--texto-branco); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .role { color: var(--texto-gelo); font-size: 0.95rem; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .contact { display: flex; flex-wrap: wrap; gap: var(--espaco-sm); margin-top: var(--espaco-xs); color: var(--texto-gelo); }
-        .contact-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 6px 10px; }
-        .bio { margin-top: var(--espaco-sm); color: var(--texto-gelo); }
+        .contact-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 6px 10px; max-width: 100%; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .mentor-card:hover .contact-item { border-color: #00E4F2; }
+        .bio { margin-top: var(--espaco-sm); color: var(--texto-gelo); line-height: 1.5; word-break: break-word; hyphens: auto; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
 
         .section-footer { margin-top: 20px; }
         .helper-text { color: var(--texto-gelo); text-align: center; }
@@ -168,14 +218,14 @@ export default function MentoriaPage() {
           .section-card { max-width: 1000px; }
         }
         @media (max-width: 992px) {
-          .mentors-grid { grid-template-columns: 1fr 1fr; }
+          .mentors-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
           .mentors-grid::before { left: 8%; right: 8%; }
         }
         @media (max-width: 768px) {
           .section-card { padding: var(--espaco-lg); }
           .mentors-grid { gap: var(--espaco-md); }
-          .mentor-card { grid-template-columns: 110px 1fr; }
-          .avatar { width: 105px; height: 105px; }
+          .mentor-card { grid-template-columns: 100px 1fr; }
+          .avatar { width: 95px; height: 95px; }
         }
         @media (max-width: 640px) {
           .section-card { padding: var(--espaco-md); }
@@ -183,6 +233,7 @@ export default function MentoriaPage() {
           .mentors-grid::before { display: none; }
           .mentor-card { grid-template-columns: 90px 1fr; }
           .avatar { width: 90px; height: 90px; }
+          .bio { -webkit-line-clamp: 5; }
         }
         @media (prefers-reduced-motion: reduce) {
           .mentor-card { transition: none; }

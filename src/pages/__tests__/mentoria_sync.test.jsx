@@ -34,15 +34,17 @@ describe('Sincronização Mentoria (Admin → Pública)', () => {
     expect(initialCards.length).toBeGreaterThanOrEqual(1);
 
     // Criar novo mentor visível
-    const res = adminStore.createMentor({
+    await act(async () => {
+      const res = adminStore.createMentor({
       name: 'Novo Mentor', specialty: 'Fullstack', bio: 'Ajuda em práticas modernas.',
       email: 'novo@codecraft.dev', phone: '(11) 90000-0000', photo: null,
       status: 'published', visible: true
+      });
+      expect(res.ok).toBe(true);
     });
-    expect(res.ok).toBe(true);
 
     // Espera o ciclo de atualização
-    await new Promise(r => setTimeout(r, 10));
+    await act(async () => { await new Promise(r => setTimeout(r, 10)); });
     const afterCards = container.querySelectorAll('.mentor-card');
     expect(afterCards.length).toBe(initialCards.length + 1);
     unmount();
@@ -56,10 +58,12 @@ describe('Sincronização Mentoria (Admin → Pública)', () => {
 
     // Remover primeiro mentor dos seeds
     const firstVisible = adminStore.listMentors().find(m => m.visible);
-    const rem = adminStore.deleteMentor(firstVisible.id);
-    expect(rem.ok).toBe(true);
+    await act(async () => {
+      const rem = adminStore.deleteMentor(firstVisible.id);
+      expect(rem.ok).toBe(true);
+    });
 
-    await new Promise(r => setTimeout(r, 10));
+    await act(async () => { await new Promise(r => setTimeout(r, 10)); });
     const afterCards = container.querySelectorAll('.mentor-card');
     expect(afterCards.length).toBe(beforeCards.length - 1);
     unmount();

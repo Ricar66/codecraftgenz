@@ -69,6 +69,93 @@ if (process.env.NODE_ENV !== 'production') {
 
 // --- ROTAS DA API ---
 
+// --- Mentores (Mock/Local) ---
+// Armazenamento em memória com seeds básicos
+const mentorsStore = {
+  mentors: [
+    { id: 'm1', name: 'Ana Silva', specialty: 'Frontend Performance', cargo: 'Senior Frontend Engineer', phone: '(11) 99999-1111', email: 'ana.silva@codecraft.dev', bio: 'Foco em arquitetura front e web vitals.', visible: true, photo: null, status: 'published' },
+    { id: 'm2', name: 'Bruno Costa', specialty: 'Backend & Cloud', cargo: 'Principal Backend Engineer', phone: '(21) 98888-2222', email: 'bruno.costa@codecraft.dev', bio: 'Serviços escaláveis e APIs.', visible: true, photo: null, status: 'published' },
+    { id: 'm3', name: 'Carla Mendes', specialty: 'UX Engineering', cargo: 'UX Engineer', phone: '(31) 97777-3333', email: 'carla.mendes@codecraft.dev', bio: 'Design Systems e prototipação.', visible: true, photo: null, status: 'published' },
+  ]
+};
+
+function normalizeMentorInput(body) {
+  const m = { ...body };
+  // compat: aceitar foto_url e mapear para photo
+  if (m.foto_url && !m.photo) m.photo = m.foto_url;
+  // defaults
+  return {
+    id: body.id || null,
+    name: String(m.name || '').trim(),
+    cargo: m.cargo ? String(m.cargo).trim() : '',
+    specialty: String(m.specialty || '').trim(),
+    phone: m.phone ? String(m.phone).trim() : '',
+    email: m.email ? String(m.email).trim() : '',
+    bio: String(m.bio || '').trim(),
+    photo: m.photo || null,
+    visible: Boolean(m.visible),
+    status: m.status || 'draft'
+  };
+}
+
+function publicMentorView(m) {
+  // Ao expor, incluir foto_url para compatibilidade com clientes
+  return {
+    id: m.id,
+    name: m.name,
+    cargo: m.cargo || '',
+    specialty: m.specialty,
+    phone: m.phone || '',
+    email: m.email || '',
+    bio: m.bio,
+    foto_url: m.photo || null,
+    visible: !!m.visible,
+    status: m.status || 'draft'
+  };
+}
+
+// GET /api/mentores → retorna mentores; por padrão apenas visíveis. Use ?all=1 para todos
+app.get('/api/mentores', (req, res) => {
+  const { all } = req.query;
+  const list = all === '1' ? mentorsStore.mentors : mentorsStore.mentors.filter(m => !!m.visible);
+  const payload = list.map(publicMentorView);
+  res.status(200).json({ success: true, data: payload, total: payload.length, timestamp: new Date().toISOString() });
+});
+
+// POST /api/mentores → cria novo mentor
+app.post('/api/mentores', (req, res) => {
+  const input = normalizeMentorInput(req.body || {});
+  if (!input.name || !input.specialty || !input.bio) {
+    return res.status(400).json({ success: false, error: 'Campos obrigatórios: name, specialty, bio' });
+  }
+  const id = `m${mentorsStore.mentors.length + 1}`;
+  const mentor = { ...input, id };
+  mentorsStore.mentors.push(mentor);
+  res.status(201).json({ success: true, mentor: publicMentorView(mentor) });
+});
+
+// PUT /api/mentores/:id → atualiza mentor
+app.put('/api/mentores/:id', (req, res) => {
+  const { id } = req.params;
+  const idx = mentorsStore.mentors.findIndex(m => m.id === id);
+  if (idx === -1) return res.status(404).json({ success: false, error: 'Mentor não encontrado' });
+  const merged = { ...mentorsStore.mentors[idx], ...normalizeMentorInput(req.body || {}) };
+  if (!merged.name || !merged.specialty || !merged.bio) {
+    return res.status(400).json({ success: false, error: 'Campos obrigatórios: name, specialty, bio' });
+  }
+  mentorsStore.mentors[idx] = merged;
+  res.status(200).json({ success: true, mentor: publicMentorView(merged) });
+});
+
+// DELETE /api/mentores/:id → remove mentor
+app.delete('/api/mentores/:id', (req, res) => {
+  const { id } = req.params;
+  const idx = mentorsStore.mentors.findIndex(m => m.id === id);
+  if (idx === -1) return res.status(404).json({ success: false, error: 'Mentor não encontrado' });
+  const [removed] = mentorsStore.mentors.splice(idx, 1);
+  res.status(200).json({ success: true, removed: publicMentorView(removed) });
+});
+
 // GET /api/feedbacks - Busca os últimos feedbacks aprovados
 app.get('/api/feedbacks', async (req, res) => {
     console.log(`[${new Date().toISOString()}] Recebido GET /api/feedbacks`);

@@ -1,6 +1,6 @@
 // src/admin/AdminLayout.jsx
 import React from 'react';
-import { Link, Routes, Route } from 'react-router-dom';
+import { Link, NavLink, Routes, Route, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../context/useAuth';
 import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo, useDesafios, DesafiosRepo, useFinance, FinanceRepo, useRanking, RankingRepo, useLogs } from '../hooks/useAdminRepo';
@@ -104,7 +104,7 @@ function Usuarios() {
 
 function Mentores() {
   const { data: list, loading, error, refresh } = useMentors();
-  const [form, setForm] = React.useState({ name: '', specialty: '', bio: '', email: '', phone: '', photo: '', status: 'draft', visible: false });
+  const [form, setForm] = React.useState({ name: '', specialty: '', bio: '', email: '', phone: '', photo: '', status: 'published', visible: true });
   const [editingId, setEditingId] = React.useState(null);
   const [errors, setErrors] = React.useState({});
   const [busy, setBusy] = React.useState(false);
@@ -147,7 +147,7 @@ function Mentores() {
       } else {
         await MentorsRepo.upsert(form);
       }
-      setForm({ name: '', specialty: '', bio: '', email: '', phone: '', photo: '', status: 'draft', visible: false });
+      setForm({ name: '', specialty: '', bio: '', email: '', phone: '', photo: '', status: 'published', visible: true });
       setEditingId(null);
       setToast('Mentor salvo com sucesso');
       setTimeout(()=> setToast(''), 1800);
@@ -228,18 +228,18 @@ function Mentores() {
           <option value="draft">Rascunho</option>
           <option value="published">Publicado</option>
         </select>
-        <button onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
+        <button className="btn btn-outline btn-icon" onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
         <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
-        <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
+        <button className="btn btn-outline btn-icon" onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
       </div>
       {loading && <p>Carregando...</p>}
       {error && <p role="alert">{error}</p>}
       <div className="formRow" style={{ gridTemplateColumns: 'auto auto auto auto auto' }}>
         <label style={{ alignSelf:'center' }}><input type="checkbox" onChange={e=>onSelectAllPage(e.target.checked)} /> Selecionar página</label>
-        <button onClick={()=>applyBulkStatus('published')}>Status: Publicado</button>
-        <button onClick={()=>applyBulkStatus('draft')}>Status: Rascunho</button>
-        <button onClick={()=>applyBulkVisibility(true)}>Exibir selecionados</button>
-        <button onClick={()=>applyBulkVisibility(false)}>Ocultar selecionados</button>
+        <button className="btn btn-primary" onClick={()=>applyBulkStatus('published')}>Status: Publicado</button>
+        <button className="btn btn-outline" onClick={()=>applyBulkStatus('draft')}>Status: Rascunho</button>
+        <button className="btn btn-secondary" onClick={()=>applyBulkVisibility(true)}>Exibir selecionados</button>
+        <button className="btn btn-outline" onClick={()=>applyBulkVisibility(false)}>Ocultar selecionados</button>
       </div>
 
       <div className="mentorAdminGrid" aria-live="polite">
@@ -269,12 +269,12 @@ function Mentores() {
                 <span className={`badge ${m.status==='published'?'badgeOk':'badgeNeutral'}`}>{m.status || 'draft'}</span>
                 <span className={`badge ${m.visible?'badgeOk':'badgeWarn'}`}>{m.visible ? 'visível' : 'oculto'}</span>
               </div>
-              <div className="actions">
-                <button onClick={()=>onEdit(m)}>Editar</button>
-                <button onClick={()=>onDelete(m.id)}>Remover</button>
-                <button onClick={()=>onUndo(m.id)}>Reverter</button>
-                <button onClick={()=>toggleVisible(m)} aria-label={`Visibilidade ${m.name}`}>{m.visible ? 'Ocultar' : 'Exibir'}</button>
-                <button onClick={()=>setHistoryOpen(historyOpen===m.id?null:m.id)}>{historyOpen===m.id?'Fechar histórico':'Histórico'}</button>
+              <div className="actions btn-group">
+                <button className="btn btn-secondary" onClick={()=>onEdit(m)}>Editar</button>
+                <button className="btn btn-danger" onClick={()=>onDelete(m.id)}>Remover</button>
+                <button className="btn btn-outline" onClick={()=>onUndo(m.id)}>Reverter</button>
+                <button className="btn btn-outline" onClick={()=>toggleVisible(m)} aria-label={`Visibilidade ${m.name}`}>{m.visible ? 'Ocultar' : 'Exibir'}</button>
+                <button className="btn btn-outline" onClick={()=>setHistoryOpen(historyOpen===m.id?null:m.id)}>{historyOpen===m.id?'Fechar histórico':'Histórico'}</button>
               </div>
               {historyOpen===m.id ? (<HistoryList mentorId={m.id} />) : null}
             </div>
@@ -292,7 +292,7 @@ function Mentores() {
         <input aria-label="Enviar foto" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>onPhotoFile(e.target.files?.[0])} />
         <label style={{ alignSelf:'center' }}><input type="checkbox" checked={form.visible} onChange={e=>setForm({...form,visible:e.target.checked})} /> Visível</label>
         <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="draft">Rascunho</option><option value="published">Publicado</option></select>
-        <button onClick={onSave} disabled={busy || Object.keys(errors).length>0} aria-busy={busy}>{editingId ? 'Atualizar' : 'Adicionar'} mentor</button>
+        <button className="btn btn-primary" onClick={onSave} disabled={busy || Object.keys(errors).length>0} aria-busy={busy}>{editingId ? 'Atualizar' : 'Adicionar'} mentor</button>
       </div>
       <div className="errorRow" aria-live="polite">
         {Object.values(errors).length>0 && (
@@ -512,28 +512,30 @@ function Config() {
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
+  const location = useLocation();
   return (
     <div className="admin-page">
       <aside className="sidebar">
         <div className="brand">CodeCraft Gen-Z</div>
         <nav className="menu">
-          <Link to="/admin" className="menuLink">Dashboard</Link>
-          <Link to="/admin/usuarios" className="menuLink">Usuários</Link>
-          <Link to="/admin/mentores" className="menuLink">Mentores</Link>
-          <Link to="/admin/ranking" className="menuLink">Ranking</Link>
-          <Link to="/admin/projetos" className="menuLink">Projetos</Link>
-          <Link to="/admin/desafios" className="menuLink">Desafios</Link>
-          <Link to="/admin/financas" className="menuLink">Finanças</Link>
-          <Link to="/admin/config" className="menuLink">Config</Link>
+          <NavLink to="/admin" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Dashboard</NavLink>
+          <NavLink to="/admin/usuarios" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Usuários</NavLink>
+          <NavLink to="/admin/mentores" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Mentores</NavLink>
+          <NavLink to="/admin/ranking" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Ranking</NavLink>
+          <NavLink to="/admin/projetos" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Projetos</NavLink>
+          <NavLink to="/admin/desafios" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Desafios</NavLink>
+          <NavLink to="/admin/financas" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Finanças</NavLink>
+          <NavLink to="/admin/config" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Config</NavLink>
         </nav>
       </aside>
       <main className="main">
         <header className="topbar">
           <div className="welcome">Olá, {user?.name}</div>
-          <button className="logout" onClick={logout}>Sair</button>
+          <button className="btn btn-danger" onClick={logout}>Sair</button>
         </header>
         <div className="content">
-          <Routes>
+          {/* Força remount ao trocar de rota para evitar necessidade de refresh */}
+          <Routes key={location.pathname}>
             <Route index element={<Dashboard />} />
             <Route path="usuarios" element={<Usuarios />} />
             <Route path="mentores" element={<Mentores />} />
@@ -551,11 +553,21 @@ export default function AdminLayout() {
         .sidebar { background: #68007B; color: #F4F4F4; padding: 16px; border-right: 2px solid rgba(0,228,242,0.3); }
         .brand { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 700; margin-bottom: 12px; }
         .menu { display: grid; gap: 8px; }
-        .menuLink { color: #F4F4F4; text-decoration: none; padding: 8px 10px; border-radius: 8px; }
+        .menuLink { color: #F4F4F4; text-decoration: none; padding: 10px 12px; border-radius: 10px; font-weight: 600; }
         .menuLink:hover { background: rgba(0,228,242,0.12); }
+        .menuLink.active { background: rgba(0,228,242,0.22); color: #042326; }
         .main { background: transparent; }
         .topbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; }
-        .logout { background: #D12BF2; color: white; border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+        /* Botões modernos */
+        .btn { border: none; border-radius: 10px; padding: 8px 12px; cursor: pointer; font-weight: 600; transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease; }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0,0,0,0.18); }
+        .btn:active { transform: translateY(0); box-shadow: none; }
+        .btn-primary { background: #00E4F2; color: #062B31; }
+        .btn-secondary { background: #7A3EF5; color: #fff; }
+        .btn-outline { background: transparent; color: #F4F4F4; border: 1px solid rgba(255,255,255,0.28); }
+        .btn-danger { background: #D12BF2; color: #fff; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 6px; }
+        .btn-icon { padding: 8px; width: 36px; height: 36px; display: grid; place-items: center; }
         .content { padding: 16px; }
         .title { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 700; }
         .cards { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
@@ -571,7 +583,9 @@ export default function AdminLayout() {
         .table th, .table td { border-bottom: 1px solid #eee; padding: 8px; text-align: left; }
         .formRow { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; margin-top: 12px; }
         .formRow input, .formRow select { padding: 8px; border: 1px solid #ccc; border-radius: 8px; }
-        .formRow button { background: #00E4F2; border: none; border-radius: 8px; padding: 8px; cursor: pointer; }
+        .formRow button { background: #00E4F2; color: #062B31; border: none; border-radius: 10px; padding: 8px 10px; cursor: pointer; font-weight: 600; transition: transform 120ms ease, box-shadow 120ms ease; }
+        .formRow button:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0,0,0,0.18); }
+        .formRow .btn { padding: 8px 10px; }
         .formRow input[aria-invalid="true"] { border-color: #D12BF2; outline: none; box-shadow: 0 0 0 2px rgba(209,43,242,0.15); }
         .errorRow { margin-top: 8px; }
         .errorList { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -596,7 +610,7 @@ export default function AdminLayout() {
         .badgeOk { background: rgba(0,228,242,0.2); color: #00E4F2; }
         .badgeWarn { background: rgba(209,43,242,0.15); color: #D12BF2; }
         .badgeNeutral { background: rgba(255,255,255,0.08); color: #F4F4F4; }
-        .mentorAdminCard .actions { display: grid; grid-template-columns: repeat(3, auto); gap: 6px; }
+        .mentorAdminCard .actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
         @media (max-width: 992px) { .cards { grid-template-columns: repeat(2, 1fr); } .admin-page { grid-template-columns: 220px 1fr; } .mentorAdminGrid { grid-template-columns: 1fr; } .mentorAdminCard { grid-template-columns: 100px 1fr; } .mentorAdminCard .right { justify-items: start; } }
         @media (max-width: 768px) { .admin-page { grid-template-columns: 1fr; } .sidebar { position: sticky; top: 80px; display: flex; overflow-x: auto; gap: 8px; } .menu { grid-auto-flow: column; grid-auto-columns: max-content; } }
       `}</style>
