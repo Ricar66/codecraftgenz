@@ -3,7 +3,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 
-import AdminLayout from './admin/AdminLayout.jsx';
+import AdminLayout, { Dashboard, Usuarios, Mentores, Ranking, Projetos, Desafios, Financas, Config } from './admin/AdminLayout.jsx';
 import ProtectedRoute from './admin/ProtectedRoute.jsx';
 import heroBackground from './assets/hero-background.svg';
 import DesafiosPage from './pages/DesafiosPage.jsx';
@@ -34,11 +34,20 @@ function App() {
         <Route path="/ranking" element={<RankingPage />} />
         <Route path="/desafios" element={<DesafiosPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/admin/*" element={
+        <Route path="/admin" element={
           <ProtectedRoute allowed={["admin","editor"]}>
             <AdminLayout />
           </ProtectedRoute>
-        } />
+        }>
+          <Route index element={<Dashboard />} />
+          <Route path="usuarios" element={<Usuarios />} />
+          <Route path="mentores" element={<Mentores />} />
+          <Route path="ranking" element={<Ranking />} />
+          <Route path="projetos" element={<Projetos />} />
+          <Route path="desafios" element={<Desafios />} />
+          <Route path="financas" element={<Financas />} />
+          <Route path="config" element={<Config />} />
+        </Route>
       </Routes>
     </div>
   );

@@ -1,12 +1,12 @@
 // src/admin/AdminLayout.jsx
 import React from 'react';
-import { Link, NavLink, Routes, Route, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet } from 'react-router-dom';
 
 import { useAuth } from '../context/useAuth';
 import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo, useDesafios, DesafiosRepo, useFinance, FinanceRepo, useRanking, RankingRepo, useLogs } from '../hooks/useAdminRepo';
 import { adminStore } from '../lib/adminStore';
 
-function Dashboard() {
+export function Dashboard() {
   const { data: projects } = useProjects();
   const { data: desafios } = useDesafios();
   const { data: logs } = useLogs();
@@ -35,7 +35,7 @@ function Dashboard() {
   );
 }
 
-function Usuarios() {
+export function Usuarios() {
   const { data: list, loading, error, refresh } = useUsers();
   const [form, setForm] = React.useState({ name: '', email: '', password: '', role: 'viewer' });
   const [busy, setBusy] = React.useState(false);
@@ -102,7 +102,7 @@ function Usuarios() {
   );
 }
 
-function Mentores() {
+export function Mentores() {
   const { data: list, loading, error, refresh } = useMentors();
   const [form, setForm] = React.useState({ name: '', specialty: '', bio: '', email: '', phone: '', photo: '', status: 'published', visible: true });
   const [editingId, setEditingId] = React.useState(null);
@@ -323,7 +323,7 @@ function Mentores() {
   );
 }
 
-function Ranking() {
+export function Ranking() {
   const { data: rk, refresh } = useRanking();
   const change = (id, delta) => { RankingRepo.updatePoints(id, delta); refresh(); };
   const [top3, setTop3] = React.useState(rk.top3);
@@ -374,7 +374,7 @@ function Ranking() {
   );
 }
 
-function Projetos() {
+export function Projetos() {
   const { data: list, loading, error, refresh } = useProjects();
   const [form, setForm] = React.useState({ title:'', owner:'', status:'draft', price:0, tags:[], visible:false });
   const onSave = async () => { await ProjectsRepo.upsert(form); setForm({ title:'', owner:'', status:'draft', price:0, tags:[], visible:false }); refresh(); };
@@ -417,7 +417,7 @@ function Projetos() {
   );
 }
 
-function Desafios() {
+export function Desafios() {
   const { data: list, loading, error, refresh } = useDesafios();
   const [form, setForm] = React.useState({ name:'', objetivo:'', prazoDias:7, recompensaPts:100, status:'ativo', visible:true });
   const onSave = async () => { await DesafiosRepo.upsert(form); setForm({ name:'', objetivo:'', prazoDias:7, recompensaPts:100, status:'ativo', visible:true }); refresh(); };
@@ -461,7 +461,7 @@ function Desafios() {
   );
 }
 
-function Financas() {
+export function Financas() {
   const { data: list, loading, error, refresh } = useFinance();
   const onUpdate = async (f, patch) => { await FinanceRepo.update(f.id, patch); refresh(); };
   const onExport = () => {
@@ -485,7 +485,7 @@ function Financas() {
   );
 }
 
-function Config() {
+export function Config() {
   const cfg = adminStore.get().config;
   const { data: logs } = useLogs();
   const [query, setQuery] = React.useState('');
@@ -512,7 +512,6 @@ function Config() {
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
-  const location = useLocation();
   return (
     <div className="admin-page">
       <aside className="sidebar">
@@ -534,17 +533,8 @@ export default function AdminLayout() {
           <button className="btn btn-danger" onClick={logout}>Sair</button>
         </header>
         <div className="content">
-          {/* Força remount ao trocar de rota para evitar necessidade de refresh */}
-          <Routes key={location.pathname}>
-            <Route index element={<Dashboard />} />
-            <Route path="usuarios" element={<Usuarios />} />
-            <Route path="mentores" element={<Mentores />} />
-            <Route path="ranking" element={<Ranking />} />
-            <Route path="projetos" element={<Projetos />} />
-            <Route path="desafios" element={<Desafios />} />
-            <Route path="financas" element={<Financas />} />
-            <Route path="config" element={<Config />} />
-          </Routes>
+          {/* Render das rotas aninhadas controladas pelo App.jsx */}
+          <Outlet />
         </div>
       </main>
 

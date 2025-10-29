@@ -55,7 +55,7 @@ export function useMentors() {
       const list = Array.isArray(json?.data) ? json.data : [];
       const normalized = list.map(m => ({ ...m, photo: m.foto_url || m.photo || null }));
       setData(normalized);
-    } catch (e) {
+    } catch {
       // Fallback: usa adminStore local
       try {
         setData(adminStore.listMentors());
@@ -73,7 +73,6 @@ export function useMentors() {
       fetchAll();
     });
     return () => unsub();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return { data, loading, error, refresh: fetchAll };
@@ -93,7 +92,7 @@ export const MentorsRepo = {
       const json = await r.json();
       realtime.publish('mentors_changed', { mentors: null });
       return { ok: true, mentor: json.mentor };
-    } catch (e) {
+    } catch {
       // Fallback local
       const res = adminStore.upsertMentor(m);
       return res;
@@ -108,7 +107,7 @@ export const MentorsRepo = {
       if (!r.ok) throw new Error('DELETE falhou');
       realtime.publish('mentors_changed', { mentors: null });
       return { ok: true };
-    } catch (e) {
+    } catch {
       const res = adminStore.deleteMentor(id);
       return res;
     }

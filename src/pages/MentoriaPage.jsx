@@ -50,7 +50,7 @@ export default function MentoriaPage() {
     });
 
     // Em ambiente de teste, evitamos polling para reduzir warnings de act
-    const isTest = typeof process !== 'undefined' && !!process.env?.VITEST_WORKER_ID;
+    const isTest = !!import.meta.env?.VITEST_WORKER_ID;
     const pollMs = Number(import.meta.env.VITE_MENTORS_POLL_MS || (isTest ? 0 : 5000));
     let iv = null;
     if (pollMs > 0) {
