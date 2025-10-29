@@ -2,12 +2,16 @@
 // teste
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+
 import heroBackground from './assets/hero-background.svg';
 
 // Páginas
 import FeedbacksPage from './pages/FeedbacksPage.jsx';
 import HomePage from './pages/HomePage/HomePage.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
+import MentoriaPage from './pages/MentoriaPage.jsx';
+import RankingPage from './pages/RankingPage.jsx';
+import DesafiosPage from './pages/DesafiosPage.jsx';
 
 /**
  * Componente principal da aplicação
@@ -25,6 +29,9 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/projetos" element={<ProjectsPage />} />
         <Route path="/feedbacks" element={<FeedbacksPage />} />
+        <Route path="/mentoria" element={<MentoriaPage />} />
+        <Route path="/ranking" element={<RankingPage />} />
+        <Route path="/desafios" element={<DesafiosPage />} />
       </Routes>
     </div>
   );

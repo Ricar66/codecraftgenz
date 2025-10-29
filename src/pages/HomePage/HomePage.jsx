@@ -1,5 +1,6 @@
 // src/pages/HomePage/HomePage.jsx
 import React from 'react';
+ 
 import heroBackground from '../../assets/hero-background.svg';
 import FeaturesSection from '../../components/FeaturesSection/FeaturesSection';
 import FeedbackShowcase from '../../components/Feedbacks/FeedbackShowcase';

@@ -57,7 +57,13 @@ const Navbar = () => {
             </Link>
           </li>
           <li className={styles.navItem}>
-            <a href="#desafios" className={styles.navLink} onClick={closeMobileMenu}>Desafios</a>
+            <Link 
+              to="/desafios"
+              className={`${styles.navLink} ${isActiveLink('/desafios') ? styles.navLinkActive : ''}`}
+              onClick={closeMobileMenu}
+            >
+              Desafios
+            </Link>
           </li>
           <li className={styles.navItem}>
             <Link 
@@ -69,10 +75,22 @@ const Navbar = () => {
             </Link>
           </li>
           <li className={styles.navItem}>
-            <a href="#mentorias" className={styles.navLink} onClick={closeMobileMenu}>Mentorias</a>
+            <Link 
+              to="/mentoria"
+              className={`${styles.navLink} ${isActiveLink('/mentoria') ? styles.navLinkActive : ''}`}
+              onClick={closeMobileMenu}
+            >
+              Mentorias
+            </Link>
           </li>
           <li className={styles.navItem}>
-            <a href="#ranking" className={styles.navLink} onClick={closeMobileMenu}>Ranking</a>
+            <Link 
+              to="/ranking"
+              className={`${styles.navLink} ${isActiveLink('/ranking') ? styles.navLinkActive : ''}`}
+              onClick={closeMobileMenu}
+            >
+              Ranking
+            </Link>
           </li>
           <li className={styles.navItem}>
             <Link 

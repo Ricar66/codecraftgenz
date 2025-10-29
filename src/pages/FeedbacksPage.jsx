@@ -1,7 +1,6 @@
 // src/pages/FeedbacksPage.jsx
 import React from 'react';
-
-import heroBackground from '../assets/hero-background.svg';
+ 
 import FeedbackForm from '../components/Feedbacks/FeedbackForm';
 import Navbar from '../components/Navbar/Navbar';
 
@@ -10,13 +9,11 @@ export default function FeedbacksPage() {
     <div className="feedback-page">
       <Navbar />
       
-      {/* Hero Section - Consistente com outras páginas */}
-      <section 
-        className="hero-section"
-        style={{ backgroundImage: `url(${heroBackground})` }}
-      >
-        <div className="overlay"></div>
-        <div className="hero-container">
+  {/* Hero Section - Consistente com outras páginas */}
+  <section 
+    className="hero-section"
+  >
+    <div className="hero-container">
           <div className="hero-content">
             <div className="text-area">
               <h1 className="slogan">
@@ -43,7 +40,7 @@ export default function FeedbacksPage() {
         .feedback-page {
           min-height: 100vh;
           width: 100%;
-          background-color: var(--fundo-escuro);
+          background-color: transparent;
         }
 
         /* ===== HERO SECTION - IDÊNTICA ÀS OUTRAS PÁGINAS ===== */
@@ -60,36 +57,7 @@ export default function FeedbacksPage() {
           background-attachment: fixed;
         }
 
-        /* Overlay idêntico ao da página de projetos */
-        .overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(
-            135deg,
-            rgba(10, 10, 15, 0.85) 0%,
-            rgba(26, 26, 46, 0.8) 30%,
-            rgba(22, 33, 62, 0.75) 70%,
-            rgba(15, 52, 96, 0.7) 100%
-          );
-          z-index: 1;
-        }
-
-        .overlay::after {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: radial-gradient(
-            ellipse at center,
-            rgba(0, 0, 0, 0.1) 0%,
-            rgba(0, 0, 0, 0.3) 100%
-          );
-        }
+        /* Removido overlay escuro para manter brilho consistente com fundo global */
 
         /* Container do hero */
         .hero-container {
@@ -213,10 +181,10 @@ export default function FeedbacksPage() {
 
         }
 
-        /* ===== MODO ESCURO (CONSISTENTE) ===== */
+        /* ===== MODO ESCURO ===== */
         @media (prefers-color-scheme: dark) {
           .feedback-page {
-            background-color: var(--fundo-escuro);
+            background-color: transparent;
           }
         }
 
