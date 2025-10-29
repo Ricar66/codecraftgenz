@@ -1,7 +1,6 @@
 // prisma/seed.js
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
-import process from 'process';
 
 const prisma = new PrismaClient();
 

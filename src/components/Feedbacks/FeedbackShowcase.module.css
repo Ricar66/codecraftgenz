@@ -8,7 +8,11 @@
   overflow: hidden;
   outline: none;
   
-  /* Background removido - usando apenas o background global do body */
+  /* Background idêntico ao Hero para continuidade visual */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 /* Overlay idêntico ao Hero para manter consistência */

@@ -26,7 +26,11 @@
   align-items: center;
   justify-content: center;
   
-  /* Background removido - usando apenas o background global do body */
+  /* Background - IDÊNTICO À PÁGINA DE PROJETOS */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* background-attachment: fixed; */
   
   /* Transições para animações */
   opacity: 0;

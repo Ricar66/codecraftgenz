@@ -1,8 +1,8 @@
 // src/pages/FeedbacksPage.jsx
 import React from 'react';
 
+import heroBackground from '../assets/hero-background.svg';
 import FeedbackForm from '../components/Feedbacks/FeedbackForm';
-import FeedbackShowcase from '../components/Feedbacks/FeedbackShowcase';
 import Navbar from '../components/Navbar/Navbar';
 
 export default function FeedbacksPage() {
@@ -13,6 +13,7 @@ export default function FeedbacksPage() {
       {/* Hero Section - Consistente com outras páginas */}
       <section 
         className="hero-section"
+        style={{ backgroundImage: `url(${heroBackground})` }}
       >
         <div className="overlay"></div>
         <div className="hero-container">
@@ -45,7 +46,7 @@ export default function FeedbacksPage() {
           background-color: var(--fundo-escuro);
         }
 
-        /* ===== HERO SECTION - SEM BACKGROUND DUPLICADO ===== */
+        /* ===== HERO SECTION - IDÊNTICA ÀS OUTRAS PÁGINAS ===== */
         .hero-section {
           min-height: 100vh;
           width: 100%;
@@ -53,7 +54,10 @@ export default function FeedbacksPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          /* Background removido - usando apenas o background global do body */
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+          background-attachment: fixed;
         }
 
         /* Overlay idêntico ao da página de projetos */

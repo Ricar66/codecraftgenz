@@ -1,10 +1,8 @@
 // src/components/Feedbacks/FeedbackShowcase.jsx
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 
-import { motion, AnimatePresence } from 'framer-motion';
-
-import { FaStar, FaQuoteLeft, FaUser, FaCalendarAlt } from 'react-icons/fa';
-
+import heroBackground from '../../assets/hero-background.svg';
 import useFeedbacks from '../../hooks/useFeedbacks';
 
 import styles from './FeedbackShowcase.module.css';
@@ -153,6 +151,7 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
   return (
     <section 
       className={styles.feedbackShowcase}
+      style={{ backgroundImage: `url(${heroBackground})` }}
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="region"
