@@ -16,6 +16,20 @@
   flex-direction: column;
 }
 
+/* Fundo padrão da Home aplicado globalmente */
+.app-background {
+  min-height: 100vh;
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* Garantir fundo fixo também no mobile */
+@media (max-width: 768px) { .app-background { background-attachment: fixed; } }
+@media (max-width: 480px) { .app-background { background-attachment: fixed; } }
+
 /* Configurações específicas para o ambiente de desenvolvimento */
 @media (prefers-reduced-motion: reduce) {
   *,

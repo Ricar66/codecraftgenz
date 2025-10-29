@@ -2,13 +2,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
-import heroBackground from '../../assets/hero-background.svg';
 import useFeedbacks from '../../hooks/useFeedbacks';
 
 import styles from './FeedbackShowcase.module.css';
 
 const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
-  const { items, loading, error } = useFeedbacks({ autoFetch: true, pageSize: 20 });
+  const { items, loading } = useFeedbacks({ autoFetch: true, pageSize: 20 });
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -136,34 +135,18 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
     );
   }
 
-  if (error) {
-    return (
-      <section className={styles.feedbackShowcase}>
-        <div className={styles.showcaseContainer}>
-          <div className={styles.errorState}>
-            <p>Erro ao carregar feedbacks: {error.message}</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  // Em caso de erro na API, mantemos a experiência com dados de fallback
+  // (não exibimos estado de erro visível para não quebrar o layout da Home)
 
   return (
     <section 
       className={styles.feedbackShowcase}
-      style={{ backgroundImage: `url(${heroBackground})` }}
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="region"
       aria-label="Carrossel de feedbacks"
     >
       <div className={styles.showcaseContainer}>
-        <div className={styles.showcaseHeader}>
-          <h2 className={styles.showcaseTitle}>O que nossos clientes dizem</h2>
-          <p className={styles.showcaseSubtitle}>
-            Experiências reais de quem confia no nosso trabalho
-          </p>
-        </div>
         
         {feedbacks.length === 0 ? (
           <div className={styles.emptyState}>

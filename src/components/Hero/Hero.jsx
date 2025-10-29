@@ -17,9 +17,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-import heroBackground from '../../assets/hero-background.svg';
 import { useAnalytics } from '../../hooks/useAnalytics';
 import Button from '../Button/Button';
+import CrafterModal from '../CallToAction/CrafterModal';
 
 import styles from './Hero.module.css';
 
@@ -31,6 +31,7 @@ import styles from './Hero.module.css';
 const Hero = () => {
   // Estado para controlar animações e interações
   const [isVisible, setIsVisible] = useState(false);
+  const [isCrafterModalOpen, setCrafterModalOpen] = useState(false);
   const [buttonClicks, setButtonClicks] = useState(0);
   
   // Hook personalizado para analytics
@@ -63,15 +64,13 @@ const Hero = () => {
       cta_text: 'Quero ser um Crafter'
     });
 
-    // TODO: Implementar redirecionamento para página de cadastro
-    // window.location.href = '/cadastro';
-    alert(`🚀 Interesse registrado! Clique ${newClickCount}x - Em breve teremos o cadastro!`);
+    // Abre o modal de inscrição para Crafter
+    setCrafterModalOpen(true);
   };
 
   return (
     <section 
       className={`${styles.heroWrapper} ${isVisible ? styles.visible : ''}`}
-      style={{ backgroundImage: `url(${heroBackground})` }}
       aria-label="Seção principal - Banner CodeCraft"
     >
       {/* Container principal do conteúdo */}
@@ -118,8 +117,11 @@ const Hero = () => {
         
       </div>
       
-      {/* Overlay para melhorar legibilidade do texto */}
-      <div className={styles.overlay} aria-hidden="true"></div>
+      {/* Overlay removido para manter um único fundo na Home */}
+
+      {isCrafterModalOpen && (
+        <CrafterModal onClose={() => setCrafterModalOpen(false)} />
+      )}
     </section>
   );
 };

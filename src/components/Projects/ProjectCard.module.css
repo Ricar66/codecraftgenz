@@ -2,10 +2,10 @@
 
 /* ===== CARD PRINCIPAL ===== */
 .projectCard {
-  background-color: var(--fundo-card);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: var(--raio-xl);
   padding: var(--espaco-xl);
-  border: 1px solid rgba(209, 43, 242, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   transition: var(--transicao-normal);
   position: relative;
   overflow: hidden;
@@ -13,6 +13,8 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(6px);
 }
 
 .projectCard::before {
@@ -29,8 +31,8 @@
 
 .projectCard:hover {
   transform: translateY(-8px);
-  box-shadow: var(--sombra-xl);
-  border-color: var(--cor-primaria);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .projectCard:hover::before {
@@ -331,8 +333,8 @@
 /* ===== MODO ESCURO ===== */
 @media (prefers-color-scheme: dark) {
   .projectCard {
-    background-color: var(--fundo-card);
-    border-color: rgba(209, 43, 242, 0.2);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.2);
     color: var(--texto-branco);
   }
   

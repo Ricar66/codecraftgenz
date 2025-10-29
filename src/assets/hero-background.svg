@@ -14,10 +14,10 @@
     </filter>
   </defs>
   
-  <!-- Background -->
+  
   <rect width="1920" height="1080" fill="url(#backgroundGradient)"/>
   
-  <!-- Network connections -->
+  
   <g stroke="#6366f1" stroke-width="1" opacity="0.6">
     <line x1="150" y1="200" x2="350" y2="300" />
     <line x1="350" y1="300" x2="550" y2="250" />
@@ -36,7 +36,7 @@
     <line x1="1200" y1="900" x2="1400" y2="850" />
     <line x1="1400" y1="850" x2="1600" y2="1000" />
     
-    <!-- Cross connections -->
+    
     <line x1="350" y1="300" x2="400" y2="700" />
     <line x1="550" y1="250" x2="600" y2="650" />
     <line x1="750" y1="400" x2="800" y2="800" />
@@ -45,9 +45,9 @@
     <line x1="1350" y1="450" x2="1400" y2="850" />
   </g>
   
-  <!-- Network nodes -->
+  
   <g filter="url(#glow)">
-    <!-- Top row nodes -->
+    
     <circle cx="150" cy="200" r="6" fill="#8b5cf6" />
     <circle cx="350" cy="300" r="8" fill="#a855f7" />
     <circle cx="550" cy="250" r="6" fill="#c084fc" />
@@ -58,7 +58,7 @@
     <circle cx="1550" cy="600" r="8" fill="#06b6d4" />
     <circle cx="1750" cy="550" r="10" fill="#0891b2" />
     
-    <!-- Bottom row nodes -->
+    
     <circle cx="200" cy="600" r="7" fill="#8b5cf6" />
     <circle cx="400" cy="700" r="6" fill="#a855f7" />
     <circle cx="600" cy="650" r="8" fill="#c084fc" />
@@ -68,7 +68,7 @@
     <circle cx="1400" cy="850" r="7" fill="#06b6d4" />
     <circle cx="1600" cy="1000" r="8" fill="#0891b2" />
     
-    <!-- Additional scattered nodes -->
+    
     <circle cx="300" cy="150" r="4" fill="#8b5cf6" />
     <circle cx="700" cy="100" r="5" fill="#a855f7" />
     <circle cx="1100" cy="200" r="4" fill="#c084fc" />

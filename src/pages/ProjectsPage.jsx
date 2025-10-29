@@ -1,7 +1,6 @@
 // src/pages/ProjectsPage.jsx
 import React from 'react';
 
-import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
 import ProjectsList from '../components/Projects/ProjectsList';
 
@@ -14,12 +13,10 @@ const ProjectsPage = () => {
     <div className="projects-page">
       <Navbar />
       
-      {/* Hero Section - Consistente com a página inicial */}
+      {/* Hero Section - limpa, usando o fundo global */}
       <section 
         className="hero-section"
-        style={{ backgroundImage: `url(${heroBackground})` }}
       >
-        <div className="overlay"></div>
         <div className="hero-container">
           <div className="hero-content">
             <div className="text-area">
@@ -39,7 +36,9 @@ const ProjectsPage = () => {
       {/* Lista de Projetos */}
       <section className="projects-section">
         <div className="projects-container">
-          <ProjectsList />
+          <div className="section-card">
+            <ProjectsList />
+          </div>
         </div>
       </section>
 
@@ -48,7 +47,7 @@ const ProjectsPage = () => {
         .projects-page {
           min-height: 100vh;
           width: 100%;
-          background-color: var(--fundo-escuro);
+          background: transparent; /* fundo vem do wrapper global */
         }
 
         /* ===== HERO SECTION - IDÊNTICA À PÁGINA INICIAL ===== */
@@ -64,36 +63,7 @@ const ProjectsPage = () => {
           background-repeat: no-repeat;
         }
 
-        /* Overlay idêntico ao da página inicial */
-        .overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(
-            135deg,
-            rgba(10, 10, 15, 0.85) 0%,
-            rgba(26, 26, 46, 0.8) 30%,
-            rgba(22, 33, 62, 0.75) 70%,
-            rgba(15, 52, 96, 0.7) 100%
-          );
-          z-index: 1;
-        }
-
-        .overlay::after {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: radial-gradient(
-            ellipse at center,
-            rgba(0, 0, 0, 0.1) 0%,
-            rgba(0, 0, 0, 0.3) 100%
-          );
-        }
+        /* Sem overlay: usa o fundo padrão da Home vindo do wrapper global */
 
         /* Container do hero */
         .hero-container {
@@ -151,7 +121,7 @@ const ProjectsPage = () => {
 
         /* ===== SEÇÃO DE PROJETOS ===== */
         .projects-section {
-          background-color: var(--fundo-escuro);
+          background: transparent;
           padding: var(--espaco-3xl) 0;
           position: relative;
         }
@@ -174,13 +144,17 @@ const ProjectsPage = () => {
 
         /* ===== RESPONSIVIDADE ===== */
         @media (max-width: 768px) {
-          .hero-section { background-attachment: scroll; }
+          .hero-section { background-attachment: fixed; }
           .hero-container {
             padding: var(--espaco-2xl) var(--espaco-lg);
           }
 
           .projects-container {
             padding: 0 var(--espaco-lg);
+          }
+
+          .section-card {
+            padding: 16px;
           }
 
           .slogan {
@@ -203,6 +177,10 @@ const ProjectsPage = () => {
 
           .projects-section {
             padding: var(--espaco-2xl) 0;
+          }
+
+          .section-card {
+            padding: 14px;
           }
         }
 

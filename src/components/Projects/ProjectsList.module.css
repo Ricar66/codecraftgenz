@@ -4,8 +4,8 @@
 .container {
   width: 100%;
   min-height: 400px;
-  background-color: var(--fundo-escuro);
-  padding: var(--espaco-3xl) 0;
+  background: transparent;
+  padding: 0; /* o padding vem do section-card na página */
 }
 
 /* ===== CABEÇALHO DA SEÇÃO ===== */
@@ -43,7 +43,7 @@
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 8px;
 }
 
 /* ===== ESTATÍSTICAS DOS PROJETOS ===== */
@@ -131,8 +131,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--fundo-escuro);
+  background: rgba(255, 255, 255, 0.03);
   border-radius: var(--raio-xl);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(4px);
   overflow: hidden;
 }
 

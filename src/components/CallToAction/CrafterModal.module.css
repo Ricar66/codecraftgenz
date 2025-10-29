@@ -1,0 +1,113 @@
+/* src/components/CallToAction/CrafterModal.module.css */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--fundo-card);
+  color: var(--texto-primario);
+  width: 60vw;
+  max-width: 720px;
+  min-width: 320px;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  position: relative;
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: var(--texto-primario);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+}
+
+.row {
+  display: grid;
+  gap: 12px;
+}
+
+.label {
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--borda-suave);
+  background: var(--fundo-claro);
+  color: var(--texto-primario);
+}
+
+.error {
+  color: var(--cor-destaque-acao);
+  font-size: 0.85rem;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.submitBtn {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  background: var(--cor-destaque-acao);
+  color: #fff;
+  cursor: pointer;
+}
+
+.cancelBtn {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--borda-suave);
+  background: transparent;
+  color: var(--texto-primario);
+  cursor: pointer;
+}
+
+.success {
+  text-align: center;
+  font-weight: 600;
+  color: var(--cor-destaque);
+}
+
+@media (max-width: 768px) {
+  .modal {
+    width: 92vw;
+    padding: 18px;
+  }
+}

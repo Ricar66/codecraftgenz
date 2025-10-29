@@ -1,3 +1,4 @@
+/* eslint-env node */
 // prisma/seed.js
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
@@ -94,7 +95,11 @@ async function main() {
 main()
   .catch((e) => {
     console.error('❌ Erro durante o seed:', e);
-    process.exit(1);
+    // eslint-disable-next-line no-undef
+    if (typeof process !== 'undefined' && process.exit) {
+      // eslint-disable-next-line no-undef
+      process.exit(1);
+    }
   })
   .finally(async () => {
     await prisma.$disconnect();

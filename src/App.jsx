@@ -2,6 +2,7 @@
 // teste
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import heroBackground from './assets/hero-background.svg';
 
 // Páginas
 import FeedbacksPage from './pages/FeedbacksPage.jsx';
@@ -14,11 +15,18 @@ import ProjectsPage from './pages/ProjectsPage.jsx';
  */
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/projetos" element={<ProjectsPage />} />
-      <Route path="/feedbacks" element={<FeedbacksPage />} />
-    </Routes>
+    <div 
+      className="app-background"
+      style={{
+        backgroundImage: `url(${heroBackground})`
+      }}
+    >
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/projetos" element={<ProjectsPage />} />
+        <Route path="/feedbacks" element={<FeedbacksPage />} />
+      </Routes>
+    </div>
   );
 }
 

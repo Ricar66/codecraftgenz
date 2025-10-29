@@ -1,24 +1,14 @@
 /* src/components/FeaturesSection/FeaturesSection.module.css */
 
 .featuresSection {
-  /* Usando o "Branco gelo" como fundo da seção  */
-  background: linear-gradient(135deg, var(--fundo-claro) 0%, rgba(244, 244, 244, 0.95) 100%);
+  /* Fundo transparente para herdar o fundo da Home */
+  background: transparent;
   padding: 120px 20px; /* Aumentado o espaçamento interno */
   margin-top: 0; /* Remove margem superior para conectar melhor com o hero */
   position: relative;
 }
 
-/* Adiciona um overlay sutil para melhor separação visual */
-.featuresSection::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--cor-primaria), var(--cor-terciaria));
-  opacity: 0.6;
-}
+/* Removido overlay de separação para manter uma aparência contínua */
 
 .container {
   max-width: 1400px; /* Aumentado para melhor uso do espaço */
