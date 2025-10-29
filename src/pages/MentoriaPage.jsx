@@ -16,10 +16,11 @@ export default function MentoriaPage() {
       const src = mentors || adminStore.listMentors();
       setMentors(src.filter(m => m.visible));
     });
+    const pollMs = Number(import.meta.env.VITE_MENTORS_POLL_MS || 5000);
     const iv = setInterval(() => {
       const src = adminStore.listMentors();
       setMentors(src.filter(m => m.visible));
-    }, 10000);
+    }, pollMs);
     return () => { unsub(); clearInterval(iv); };
   }, []);
 
@@ -40,7 +41,9 @@ export default function MentoriaPage() {
           <div className="mentors-grid" aria-busy={loading}>
             {mentors.map((m) => (
               <article key={m.email} className="mentor-card">
-                <div className="avatar" aria-hidden="true" />
+                <div className="avatar" aria-hidden={!!m.photo}>
+                  {m.photo ? (<img src={m.photo} alt={`Foto de ${m.name}`} style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'12px' }} />) : null}
+                </div>
                 <div className="info">
                   <div className="header">
                     <h3 className="name">{m.name}</h3>

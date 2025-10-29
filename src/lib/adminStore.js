@@ -166,6 +166,10 @@ export const adminStore = {
     this.addLog('mentor_delete', 'Mentor removido');
     return { ok: true };
   },
+  listMentorHistory(mentorId) {
+    const s = ensureStore();
+    return s.mentors_history.filter(h => h.mentorId === mentorId).slice().reverse();
+  },
   undoLastMentorChange(id) {
     const s = ensureStore();
     const entries = s.mentors_history.filter(h => h.mentorId === id);
@@ -184,6 +188,45 @@ export const adminStore = {
     write(s);
     realtime.publish('mentors_changed', { mentors: s.mentors });
     this.addLog('mentor_undo', 'Alteração revertida');
+    return { ok: true };
+  },
+  revertMentorHistory(historyId) {
+    const s = ensureStore();
+    const entry = s.mentors_history.find(h => h.id === historyId);
+    if (!entry) return { ok: false, error: 'Entrada de histórico não encontrada' };
+    const id = entry.mentorId;
+    if (entry.type === 'create') {
+      s.mentors = s.mentors.filter(m => m.id !== id);
+    } else if (entry.type === 'update') {
+      const idx = s.mentors.findIndex(m => m.id === id);
+      if (idx !== -1) s.mentors[idx] = entry.before;
+      else s.mentors.push(entry.before);
+    } else if (entry.type === 'delete') {
+      // restore the deleted snapshot
+      s.mentors.push(entry.before);
+    } else {
+      return { ok: false, error: 'Tipo de histórico não suportado para revert' };
+    }
+    s.mentors_history.push({ id: `mh${s.mentors_history.length + 1}`, type: 'revert', at: nowIso(), mentorId: id, target: historyId });
+    write(s);
+    realtime.publish('mentors_changed', { mentors: s.mentors });
+    this.addLog('mentor_revert', `Reversão aplicada em ${historyId}`);
+    return { ok: true };
+  },
+  bulkUpdateMentors(ids, patch) {
+    const s = ensureStore();
+    for (const id of ids) {
+      const idx = s.mentors.findIndex(x => x.id === id);
+      if (idx === -1) continue;
+      const before = s.mentors[idx];
+      const after = { ...before, ...patch };
+      if (!after.name || !after.specialty || !after.bio) continue;
+      s.mentors[idx] = after;
+      s.mentors_history.push({ id: `mh${s.mentors_history.length + 1}`, type: 'update', at: nowIso(), mentorId: id, before, after });
+    }
+    write(s);
+    realtime.publish('mentors_changed', { mentors: s.mentors });
+    this.addLog('mentor_bulk_update', `Atualização em massa (${ids.length})`);
     return { ok: true };
   },
   // compatível com chamadas existentes

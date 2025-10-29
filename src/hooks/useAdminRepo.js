@@ -56,6 +56,10 @@ export const MentorsRepo = {
   toggleVisible: (m) => adminStore.upsertMentor({ ...m, visible: !m.visible }),
   delete: (id) => adminStore.deleteMentor(id),
   undo: (id) => adminStore.undoLastMentorChange(id),
+  getHistory: (id) => adminStore.listMentorHistory(id),
+  revertHistory: (historyId) => adminStore.revertMentorHistory(historyId),
+  bulkSetStatus: (ids, status) => adminStore.bulkUpdateMentors(ids, { status }),
+  bulkSetVisibility: (ids, visible) => adminStore.bulkUpdateMentors(ids, { visible }),
 };
 
 // Projetos

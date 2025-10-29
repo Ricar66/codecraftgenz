@@ -106,11 +106,18 @@ function Mentores() {
   const { data: list, loading, error, refresh } = useMentors();
   const [form, setForm] = React.useState({ name: '', specialty: '', bio: '', email: '', phone: '', photo: '', status: 'draft', visible: false });
   const [editingId, setEditingId] = React.useState(null);
+  const [errors, setErrors] = React.useState({});
+  const [busy, setBusy] = React.useState(false);
+  const [toast, setToast] = React.useState('');
+  const MAX_PHOTO_BYTES = 256 * 1024; // ~256KB para armazenar com segurança em localStorage
+  const ACCEPT_TYPES = ['image/jpeg','image/png','image/webp'];
   const [query, setQuery] = React.useState('');
   const [filterSpec, setFilterSpec] = React.useState('');
   const [filterStatus, setFilterStatus] = React.useState('');
   const [page, setPage] = React.useState(1);
   const pageSize = 5;
+  const [selected, setSelected] = React.useState(new Set());
+  const [historyOpen, setHistoryOpen] = React.useState(null);
 
   const filtered = list.filter(m =>
     (m.name||'').toLowerCase().includes(query.toLowerCase()) &&
@@ -121,29 +128,98 @@ function Mentores() {
   const pageItems = filtered.slice((page-1)*pageSize, page*pageSize);
 
   const validate = (data) => {
-    const required = ['name','specialty','bio'];
-    for (const k of required) { if (!data[k] || String(data[k]).trim() === '') return `Campo obrigatório: ${k}`; }
-    return null;
+    const next = {};
+    if (!data.name || String(data.name).trim().length < 2) next.name = 'Informe um nome válido';
+    if (!data.specialty || String(data.specialty).trim().length < 2) next.specialty = 'Informe a especialidade';
+    if (!data.bio || String(data.bio).trim().length < 5) next.bio = 'Descrição muito curta';
+    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(data.email))) next.email = 'E-mail inválido';
+    if (data.phone && String(data.phone).trim().length < 8) next.phone = 'Telefone incompleto';
+    return next;
   };
+  React.useEffect(()=>{ setErrors(validate(form)); }, [form]);
   const onSave = async () => {
-    const err = validate(form);
-    if (err) { alert(err); return; }
-    if (editingId) {
-      await MentorsRepo.upsert({ ...form, id: editingId });
-    } else {
-      await MentorsRepo.upsert(form);
+    const errs = validate(form);
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    setBusy(true);
+    try {
+      if (editingId) {
+        await MentorsRepo.upsert({ ...form, id: editingId });
+      } else {
+        await MentorsRepo.upsert(form);
+      }
+      setForm({ name: '', specialty: '', bio: '', email: '', phone: '', photo: '', status: 'draft', visible: false });
+      setEditingId(null);
+      setToast('Mentor salvo com sucesso');
+      setTimeout(()=> setToast(''), 1800);
+      refresh();
+    } finally {
+      setBusy(false);
     }
-    setForm({ name: '', specialty: '', bio: '', email: '', phone: '', photo: '', status: 'draft', visible: false });
-    setEditingId(null);
-    refresh();
+  };
+  const onPhotoFile = async (file) => {
+    if (!file) return;
+    if (!ACCEPT_TYPES.includes(file.type)) { alert('Formato inválido. Use JPEG, PNG ou WEBP.'); return; }
+    if (file.size > MAX_PHOTO_BYTES) { alert('Imagem muito grande. Máximo de ~256KB.'); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      setForm(prev => ({ ...prev, photo: String(dataUrl) }));
+    };
+    reader.readAsDataURL(file);
   };
   const toggleVisible = async (m) => { await MentorsRepo.toggleVisible(m); refresh(); };
   const onEdit = (m) => { setEditingId(m.id); setForm({ name:m.name, specialty:m.specialty, bio:m.bio, email:m.email, phone:m.phone, photo:m.photo||'', status:m.status||'draft', visible: !!m.visible }); };
-  const onDelete = async (id) => { await MentorsRepo.delete(id); refresh(); };
+  const onDelete = async (id) => { if (!window.confirm('Confirma remover este mentor?')) return; await MentorsRepo.delete(id); refresh(); };
   const onUndo = async (id) => { await MentorsRepo.undo(id); refresh(); };
+  const onToggleSelect = (id, checked) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
+  const onSelectAllPage = (checked) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      for (const m of pageItems) { if (checked) next.add(m.id); else next.delete(m.id); }
+      return next;
+    });
+  };
+  const applyBulkStatus = async (status) => {
+    if (selected.size === 0) return;
+    if (!window.confirm(`Aplicar status "${status}" a ${selected.size} mentor(es)?`)) return;
+    await MentorsRepo.bulkSetStatus(Array.from(selected), status);
+    refresh();
+  };
+  const applyBulkVisibility = async (visible) => {
+    if (selected.size === 0) return;
+    if (!window.confirm(`${visible?'Exibir':'Ocultar'} ${selected.size} mentor(es)?`)) return;
+    await MentorsRepo.bulkSetVisibility(Array.from(selected), visible);
+    refresh();
+  };
+  const HistoryList = ({ mentorId }) => {
+    const [items, setItems] = React.useState([]);
+    React.useEffect(() => { setItems(MentorsRepo.getHistory(mentorId)); }, [mentorId, loading]);
+    return (
+      <div className="history" style={{ marginTop: 8 }}>
+        {items.length === 0 ? (<div className="muted">Sem histórico</div>) : (
+          <ul style={{ display:'grid', gap:6 }}>
+            {items.map(h => (
+              <li key={h.id} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto', gap:8 }}>
+                <span className="muted">{h.type}</span>
+                <span>{new Date(h.at).toLocaleString('pt-BR')}</span>
+                <button onClick={async()=>{ if (!window.confirm(`Reverter evento ${h.id}?`)) return; const res = await MentorsRepo.revertHistory(h.id); if (!res.ok) alert(res.error); refresh(); }}>Reverter este</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  };
   return (
     <div className="admin-content">
       <h1 className="title">Mentores</h1>
+      {toast && (<div role="status" aria-live="polite" className="saveToast">{toast}</div>)}
       <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr 1fr auto auto auto' }}>
         <input aria-label="Buscar" placeholder="Buscar por nome" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} />
         <input aria-label="Filtrar especialidade" placeholder="Especialidade" value={filterSpec} onChange={e=>{setFilterSpec(e.target.value); setPage(1);}} />
@@ -158,38 +234,79 @@ function Mentores() {
       </div>
       {loading && <p>Carregando...</p>}
       {error && <p role="alert">{error}</p>}
-      <ul className="items">
-        {pageItems.length===0 ? (<li className="item">Nenhum mentor</li>) : pageItems.map(m => (
-          <li key={m.id} className="item">
-            <span>{m.name}</span>
-            <span className="muted">{m.specialty}</span>
-            <div>
-              <button onClick={()=>onEdit(m)}>Editar</button>
-              <button onClick={()=>onDelete(m.id)}>Remover</button>
-              <button onClick={()=>onUndo(m.id)}>Reverter</button>
-              <button onClick={()=>toggleVisible(m)} aria-label={`Visibilidade ${m.name}`}>{m.visible ? 'Ocultar' : 'Exibir'}</button>
+      <div className="formRow" style={{ gridTemplateColumns: 'auto auto auto auto auto' }}>
+        <label style={{ alignSelf:'center' }}><input type="checkbox" onChange={e=>onSelectAllPage(e.target.checked)} /> Selecionar página</label>
+        <button onClick={()=>applyBulkStatus('published')}>Status: Publicado</button>
+        <button onClick={()=>applyBulkStatus('draft')}>Status: Rascunho</button>
+        <button onClick={()=>applyBulkVisibility(true)}>Exibir selecionados</button>
+        <button onClick={()=>applyBulkVisibility(false)}>Ocultar selecionados</button>
+      </div>
+
+      <div className="mentorAdminGrid" aria-live="polite">
+        {pageItems.length===0 ? (
+          <div className="empty">Nenhum mentor</div>
+        ) : pageItems.map(m => (
+          <article key={m.id} className="mentorAdminCard">
+            <div className="left">
+              <input type="checkbox" aria-label={`Selecionar ${m.name}`} checked={selected.has(m.id)} onChange={e=>onToggleSelect(m.id, e.target.checked)} />
+              <div className="avatar">
+                {m.photo ? (<img src={m.photo} alt={`Foto de ${m.name}`} />) : null}
+              </div>
             </div>
-          </li>
+            <div className="center">
+              <div className="header">
+                <span className="name">{m.name}</span>
+                <span className="spec">{m.specialty}</span>
+              </div>
+              <div className="bio">{m.bio}</div>
+              <div className="contact">
+                <span>📱 {m.phone || '(00) 00000-0000'}</span>
+                <span>✉️ {m.email || 'email@exemplo.com'}</span>
+              </div>
+            </div>
+            <div className="right">
+              <div className="badges">
+                <span className={`badge ${m.status==='published'?'badgeOk':'badgeNeutral'}`}>{m.status || 'draft'}</span>
+                <span className={`badge ${m.visible?'badgeOk':'badgeWarn'}`}>{m.visible ? 'visível' : 'oculto'}</span>
+              </div>
+              <div className="actions">
+                <button onClick={()=>onEdit(m)}>Editar</button>
+                <button onClick={()=>onDelete(m.id)}>Remover</button>
+                <button onClick={()=>onUndo(m.id)}>Reverter</button>
+                <button onClick={()=>toggleVisible(m)} aria-label={`Visibilidade ${m.name}`}>{m.visible ? 'Ocultar' : 'Exibir'}</button>
+                <button onClick={()=>setHistoryOpen(historyOpen===m.id?null:m.id)}>{historyOpen===m.id?'Fechar histórico':'Histórico'}</button>
+              </div>
+              {historyOpen===m.id ? (<HistoryList mentorId={m.id} />) : null}
+            </div>
+          </article>
         ))}
-      </ul>
+      </div>
 
       <div className="formRow" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
-        <input aria-label="Nome" placeholder="Nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} />
-        <input aria-label="Especialidade" placeholder="Especialidade" value={form.specialty} onChange={e=>setForm({...form,specialty:e.target.value})} />
-        <input aria-label="Bio" placeholder="Descrição" value={form.bio} onChange={e=>setForm({...form,bio:e.target.value})} />
-        <input aria-label="E-mail" placeholder="E-mail" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} />
-        <input aria-label="Telefone" placeholder="Telefone" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} />
+        <input aria-label="Nome" placeholder="Nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} aria-invalid={!!errors.name} />
+        <input aria-label="Especialidade" placeholder="Especialidade" value={form.specialty} onChange={e=>setForm({...form,specialty:e.target.value})} aria-invalid={!!errors.specialty} />
+        <input aria-label="Bio" placeholder="Descrição" value={form.bio} onChange={e=>setForm({...form,bio:e.target.value})} aria-invalid={!!errors.bio} />
+        <input aria-label="E-mail" placeholder="E-mail" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} aria-invalid={!!errors.email} />
+        <input aria-label="Telefone" placeholder="Telefone" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} aria-invalid={!!errors.phone} />
         <input aria-label="Foto (URL)" placeholder="Foto (URL)" value={form.photo} onChange={e=>setForm({...form,photo:e.target.value})} />
+        <input aria-label="Enviar foto" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>onPhotoFile(e.target.files?.[0])} />
         <label style={{ alignSelf:'center' }}><input type="checkbox" checked={form.visible} onChange={e=>setForm({...form,visible:e.target.checked})} /> Visível</label>
         <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="draft">Rascunho</option><option value="published">Publicado</option></select>
-        <button onClick={onSave}>{editingId ? 'Atualizar' : 'Adicionar'} mentor</button>
+        <button onClick={onSave} disabled={busy || Object.keys(errors).length>0} aria-busy={busy}>{editingId ? 'Atualizar' : 'Adicionar'} mentor</button>
+      </div>
+      <div className="errorRow" aria-live="polite">
+        {Object.values(errors).length>0 && (
+          <div className="errorList">{Object.values(errors).map((msg, i)=> (<span key={i} className="errorItem">{msg}</span>))}</div>
+        )}
       </div>
 
       {/* Pré-visualização */}
       <div style={{ marginTop: 12 }}>
         <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 12, padding: 12, maxWidth: 600 }}>
           <div style={{ display:'grid', gridTemplateColumns:'100px 1fr', gap: 12 }}>
-            <div style={{ width: 100, height: 100, borderRadius: 12, background: 'linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))', border: '1px solid rgba(255,255,255,0.18)' }} />
+            <div style={{ width: 100, height: 100, borderRadius: 12, background: 'linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))', border: '1px solid rgba(255,255,255,0.18)', overflow: 'hidden' }}>
+              {form.photo ? (<img src={form.photo} alt="Prévia da foto" style={{ width:'100%', height:'100%', objectFit:'cover' }} />) : null}
+            </div>
             <div>
               <div style={{ color:'#fff', fontWeight:700 }}>{form.name || 'Nome do mentor'}</div>
               <div style={{ color:'#A6A6A6' }}>{form.specialty || 'Especialidade'}</div>
@@ -417,14 +534,14 @@ export default function AdminLayout() {
         </header>
         <div className="content">
           <Routes>
-            <Route path="/admin" element={<Dashboard />} />
-            <Route path="/admin/usuarios" element={<Usuarios />} />
-            <Route path="/admin/mentores" element={<Mentores />} />
-            <Route path="/admin/ranking" element={<Ranking />} />
-            <Route path="/admin/projetos" element={<Projetos />} />
-            <Route path="/admin/desafios" element={<Desafios />} />
-            <Route path="/admin/financas" element={<Financas />} />
-            <Route path="/admin/config" element={<Config />} />
+            <Route index element={<Dashboard />} />
+            <Route path="usuarios" element={<Usuarios />} />
+            <Route path="mentores" element={<Mentores />} />
+            <Route path="ranking" element={<Ranking />} />
+            <Route path="projetos" element={<Projetos />} />
+            <Route path="desafios" element={<Desafios />} />
+            <Route path="financas" element={<Financas />} />
+            <Route path="config" element={<Config />} />
           </Routes>
         </div>
       </main>
@@ -455,7 +572,32 @@ export default function AdminLayout() {
         .formRow { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; margin-top: 12px; }
         .formRow input, .formRow select { padding: 8px; border: 1px solid #ccc; border-radius: 8px; }
         .formRow button { background: #00E4F2; border: none; border-radius: 8px; padding: 8px; cursor: pointer; }
-        @media (max-width: 992px) { .cards { grid-template-columns: repeat(2, 1fr); } .admin-page { grid-template-columns: 220px 1fr; } }
+        .formRow input[aria-invalid="true"] { border-color: #D12BF2; outline: none; box-shadow: 0 0 0 2px rgba(209,43,242,0.15); }
+        .errorRow { margin-top: 8px; }
+        .errorList { display: flex; flex-wrap: wrap; gap: 6px; }
+        .errorItem { font-size: 12px; color: #D12BF2; background: rgba(209,43,242,0.12); border: 1px solid rgba(209,43,242,0.2); border-radius: 999px; padding: 4px 8px; }
+        .saveToast { margin-top: 8px; background: rgba(0,228,242,0.15); border: 1px solid rgba(0,228,242,0.3); color: #00E4F2; padding: 6px 10px; border-radius: 8px; animation: fadeInOut 1.8s ease both; }
+        @keyframes fadeInOut { 0% { opacity: 0; transform: translateY(-4px); } 12% { opacity: 1; transform: translateY(0); } 88% { opacity: 1; } 100% { opacity: 0; transform: translateY(-4px); } }
+        /* Mentores - grid responsiva e cards informativos */
+        .mentorAdminGrid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-top: 10px; }
+        .mentorAdminCard { display: grid; grid-template-columns: 120px 1fr 220px; gap: 12px; background: rgba(255,255,255,0.08); border: 1px solid rgba(0,228,242,0.25); border-radius: 12px; padding: 12px; color: #F4F4F4; transition: transform 160ms ease, box-shadow 160ms ease; }
+        .mentorAdminCard:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(0,0,0,0.26); }
+        .mentorAdminCard .left { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
+        .mentorAdminCard .avatar { width: 90px; height: 90px; border-radius: 12px; background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06)); border: 1px solid rgba(255,255,255,0.18); overflow: hidden; }
+        .mentorAdminCard .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .mentorAdminCard .center .header { display: flex; gap: 8px; align-items: baseline; }
+        .mentorAdminCard .name { font-weight: 700; }
+        .mentorAdminCard .spec { color: #A6A6A6; }
+        .mentorAdminCard .bio { margin-top: 6px; color: #D6D6D6; }
+        .mentorAdminCard .contact { display: flex; gap: 12px; margin-top: 6px; color: #BEBEBE; flex-wrap: wrap; }
+        .mentorAdminCard .right { display: grid; gap: 8px; justify-items: end; }
+        .mentorAdminCard .badges { display: flex; gap: 6px; }
+        .badge { font-size: 12px; padding: 4px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.2); }
+        .badgeOk { background: rgba(0,228,242,0.2); color: #00E4F2; }
+        .badgeWarn { background: rgba(209,43,242,0.15); color: #D12BF2; }
+        .badgeNeutral { background: rgba(255,255,255,0.08); color: #F4F4F4; }
+        .mentorAdminCard .actions { display: grid; grid-template-columns: repeat(3, auto); gap: 6px; }
+        @media (max-width: 992px) { .cards { grid-template-columns: repeat(2, 1fr); } .admin-page { grid-template-columns: 220px 1fr; } .mentorAdminGrid { grid-template-columns: 1fr; } .mentorAdminCard { grid-template-columns: 100px 1fr; } .mentorAdminCard .right { justify-items: start; } }
         @media (max-width: 768px) { .admin-page { grid-template-columns: 1fr; } .sidebar { position: sticky; top: 80px; display: flex; overflow-x: auto; gap: 8px; } .menu { grid-auto-flow: column; grid-auto-columns: max-content; } }
       `}</style>
     </div>
