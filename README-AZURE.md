@@ -62,4 +62,4 @@ Para testar a conexão, você pode:
 
 ## Aplicação Web
 
-A aplicação está funcionando normalmente em <http://localhost:8080>, apenas sem acesso ao banco de dados.
+A aplicação está funcionando normalmente em [http://localhost:8080](http://localhost:8080), apenas sem acesso ao banco de dados.

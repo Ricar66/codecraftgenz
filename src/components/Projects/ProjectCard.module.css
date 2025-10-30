@@ -363,3 +363,91 @@
     color: var(--texto-branco);
   }
 }
+
+/* ===== INFORMAÇÕES DO MENTOR ===== */
+.mentorInfo {
+  margin-top: var(--espaco-md);
+  padding: var(--espaco-sm) var(--espaco-md);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--raio-md);
+  border-left: 3px solid var(--cor-primaria);
+}
+
+.mentorLabel {
+  display: block;
+  font-size: var(--texto-sm);
+  color: var(--texto-branco);
+  margin-bottom: var(--espaco-xs);
+}
+
+.mentorEmail {
+  display: block;
+  font-size: var(--texto-xs);
+  color: var(--texto-cinza-digital);
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===== AÇÕES DO CARD ===== */
+.cardActions {
+  margin-top: auto;
+  padding-top: var(--espaco-lg);
+  display: flex;
+  justify-content: center;
+}
+
+.enrollButton {
+  background: linear-gradient(135deg, var(--cor-primaria), var(--cor-terciaria));
+  color: var(--texto-branco);
+  border: none;
+  border-radius: var(--raio-lg);
+  padding: var(--espaco-md) var(--espaco-xl);
+  font-size: var(--texto-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transicao-normal);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 200px;
+}
+
+.enrollButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, var(--cor-terciaria), var(--cor-primaria));
+}
+
+.enrollButton:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.enrollButton:focus {
+  outline: 2px solid var(--cor-primaria);
+  outline-offset: 2px;
+}
+
+/* ===== RESPONSIVIDADE PARA MENTOR E BOTÃO ===== */
+@media (max-width: 768px) {
+  .mentorInfo {
+    margin-top: var(--espaco-sm);
+    padding: var(--espaco-xs) var(--espaco-sm);
+  }
+  
+  .mentorLabel {
+    font-size: var(--texto-xs);
+  }
+  
+  .mentorEmail {
+    font-size: 10px;
+  }
+  
+  .enrollButton {
+    padding: var(--espaco-sm) var(--espaco-lg);
+    font-size: var(--texto-sm);
+  }
+}

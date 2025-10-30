@@ -1,6 +1,4 @@
 // src/components/Projects/LoadingSpinner.jsx
-import React from 'react';
-
 import styles from './LoadingSpinner.module.css';
 
 /**

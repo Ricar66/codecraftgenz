@@ -1,23 +1,27 @@
 # 📊 Status das Migrations - CodeCraft Frontend
 
 ## 🎯 Objetivo
+
 Implementar sistema de migrations profissional usando Prisma para gerenciar o banco de dados Azure SQL de forma versionada e automatizada.
 
 ## ✅ Progresso Concluído
 
 ### 1. Análise da Estrutura Atual ✅
+
 - ✅ Analisado `package.json` - identificadas dependências existentes
 - ✅ Examinado `server.js` - configuração atual do banco
 - ✅ Mapeadas tabelas inferidas: `projects` e `feedbacks`
 - ✅ Identificadas APIs existentes: `/api/projects`, `/api/feedbacks`
 
 ### 2. Escolha e Configuração da Ferramenta ✅
+
 - ✅ **Prisma selecionado** como ORM/Migration tool
 - ✅ Instalado `prisma` e `@prisma/client`
 - ✅ Executado `npx prisma init`
 - ✅ Configurado `prisma/schema.prisma` para SQL Server
 
 ### 3. Setup do Sistema de Migrations ✅
+
 - ✅ Configurado `DATABASE_URL` no `.env`
 - ✅ Atualizado `prisma.config.ts`
 - ✅ Gerado cliente Prisma com `npx prisma generate`
@@ -25,12 +29,14 @@ Implementar sistema de migrations profissional usando Prisma para gerenciar o ba
 - ✅ Adicionados scripts NPM para migrations
 
 ### 4. Migrations Iniciais ✅
+
 - ✅ Criado arquivo de migration manual: `prisma/migrations/20250127000000_init/migration.sql`
 - ✅ Definidos modelos `Project` e `Feedback` no schema
 - ✅ Criado `prisma/seed.js` com dados de exemplo
 - ✅ Implementado `src/services/prismaAPI.js` com APIs Prisma
 
 ### 5. Documentação ✅
+
 - ✅ Criado `README-MIGRATIONS.md` com guia completo
 - ✅ Documentados todos os comandos e fluxos de trabalho
 - ✅ Incluídas instruções de troubleshooting
@@ -38,20 +44,23 @@ Implementar sistema de migrations profissional usando Prisma para gerenciar o ba
 ## ⚠️ Problema Atual
 
 ### 🔴 Erro de Autenticação Azure SQL
-```
+
+```text
 Error: P1000: Authentication failed against database server, 
 the provided database credentials for `CloudSA12565d7a` are not valid.
 ```
 
 **Status**: 🔍 **INVESTIGANDO**
 
-### Diagnóstico Realizado:
+### Diagnóstico Realizado
+
 1. ✅ Testado conexão com script personalizado
 2. ✅ Verificadas credenciais no `.env`
 3. ✅ Corrigida configuração do `server.js`
 4. ❌ **Persistência do erro de login**
 
-### Possíveis Causas:
+### Possíveis Causas
+
 1. **Credenciais Incorretas**: Usuário/senha podem estar desatualizados
 2. **Firewall Azure**: IP local pode não estar autorizado
 3. **Permissões de Banco**: Usuário pode não ter acesso ao database
@@ -60,6 +69,7 @@ the provided database credentials for `CloudSA12565d7a` are not valid.
 ## 🔧 Próximos Passos
 
 ### Opção A: Resolver Problema de Conexão
+
 1. **Verificar credenciais no Azure Portal**
    - Confirmar usuário e senha corretos
    - Verificar se usuário tem permissões no database
@@ -73,6 +83,7 @@ the provided database credentials for `CloudSA12565d7a` are not valid.
    - Validar credenciais diretamente
 
 ### Opção B: Usar Migrations Manuais (Temporário)
+
 1. **Aplicar migrations manualmente**
    - Executar SQL diretamente no Azure Portal
    - Marcar migrations como aplicadas no Prisma
@@ -82,7 +93,8 @@ the provided database credentials for `CloudSA12565d7a` are not valid.
 
 ## 📋 Arquivos Criados/Modificados
 
-### Novos Arquivos:
+### Novos Arquivos
+
 - `prisma/schema.prisma` - Schema do banco
 - `prisma/migrations/20250127000000_init/migration.sql` - Migration inicial
 - `prisma/seed.js` - Dados de exemplo
@@ -91,14 +103,15 @@ the provided database credentials for `CloudSA12565d7a` are not valid.
 - `README-MIGRATIONS.md` - Documentação completa
 - `test-connection.js` - Script de teste de conexão
 
-### Arquivos Modificados:
+### Arquivos Modificados
+
 - `package.json` - Scripts de migration adicionados
 - `.env` - DATABASE_URL configurada
 - `server.js` - Configuração de banco corrigida
 
 ## 🎯 Sistema Pronto Para Uso
 
-**O sistema de migrations está 95% implementado!** 
+**O sistema de migrations está 95% implementado!**
 
 Assim que o problema de conexão for resolvido, você poderá:
 

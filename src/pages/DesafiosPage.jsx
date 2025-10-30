@@ -1,9 +1,9 @@
 // src/pages/DesafiosPage.jsx
 import React, { useEffect, useRef, useState } from 'react';
 
+import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { realtime } from '../lib/realtime';
-import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 
 export default function DesafiosPage() {
   const [desafios, setDesafios] = useState([]);
@@ -34,16 +34,6 @@ export default function DesafiosPage() {
     return () => unsub();
   }, []);
 
-  const timeLeft = (iso) => {
-    try {
-      const end = new Date(iso).getTime();
-      const diff = Math.max(0, end - Date.now());
-      const d = Math.floor(diff / (24*60*60*1000));
-      const h = Math.floor((diff % (24*60*60*1000)) / (60*60*1000));
-      const m = Math.floor((diff % (60*60*1000)) / (60*1000));
-      return `${d}d ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}h`;
-    } catch { return '—'; }
-  };
 
   const participar = async (id) => {
     // Mock: usa crafter seed 'c1'. Em produção, obter do Auth.

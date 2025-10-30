@@ -12,10 +12,12 @@ import styles from './ProjectCard.module.css';
  * @param {string} props.project.id - ID único do projeto
  * Aceita chaves tanto em inglês quanto em português (titulo, data_inicio, descricao, progresso).
  * @param {number} props.maxDescriptionLength - Limite de caracteres para descrição (padrão: 150)
+ * @param {Function} props.onEnroll - Callback para inscrição no projeto
  */
 const ProjectCard = ({ 
   project, 
-  maxDescriptionLength = 150 
+  maxDescriptionLength = 150,
+  onEnroll 
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -86,6 +88,23 @@ const ProjectCard = ({
   const title = project?.title ?? project?.titulo ?? 'Projeto sem título';
   const startDate = project?.startDate ?? project?.data_inicio ?? null;
   const statusLabel = project?.status || '—';
+  
+  // Informações do mentor
+  const mentorName = project?.mentorName || project?.mentor_nome || project?.mentor?.nome || null;
+  const mentorEmail = project?.mentorEmail || project?.mentor_email || project?.mentor?.email || null;
+  const hasMentor = mentorName && mentorEmail;
+
+  /**
+   * Manipula a inscrição no projeto
+   */
+  const handleEnroll = () => {
+    if (onEnroll && typeof onEnroll === 'function') {
+      onEnroll(project);
+    } else {
+      // Fallback: mostrar alerta ou redirecionar para página de inscrição
+      alert(`Inscrição no projeto: ${title}\nEm breve você será redirecionado para o formulário de inscrição.`);
+    }
+  };
 
   return (
     <article className={styles.projectCard} role="article" aria-labelledby={`project-${project.id}-title`}>
@@ -111,6 +130,18 @@ const ProjectCard = ({
           <span className={styles.startDate} aria-label="Data de início">
             <strong>Início:</strong> {formatDate(startDate)}
           </span>
+          
+          {/* Informações do Mentor */}
+          {hasMentor && (
+            <div className={styles.mentorInfo}>
+              <span className={styles.mentorLabel}>
+                <strong>Mentor:</strong> {mentorName}
+              </span>
+              <span className={styles.mentorEmail} title={mentorEmail}>
+                {mentorEmail}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className={styles.description}>
@@ -148,6 +179,17 @@ const ProjectCard = ({
               style={{ width: `${progressValue}%` }}
             />
           </div>
+        </div>
+
+        {/* Botão de Inscrição */}
+        <div className={styles.cardActions}>
+          <button 
+            className={styles.enrollButton}
+            onClick={handleEnroll}
+            aria-label={`Inscrever-se no projeto ${title}`}
+          >
+            Inscrever-se
+          </button>
         </div>
       </div>
     </article>

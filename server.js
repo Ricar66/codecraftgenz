@@ -3,10 +3,14 @@ import process from 'process'; // Mantido do seu código
 import { fileURLToPath } from 'url';
 
 import compression from 'compression'; // Adicionado de volta para performance
+import cors from 'cors'; // Para permitir requisições cross-origin
 import dotenv from 'dotenv'; // Mantido do seu código
 import express from 'express'; // Framework web
 import helmet from 'helmet'; // Para segurança básica (headers HTTP)
 import sql from 'mssql'; // Biblioteca para conectar ao SQL Server / Azure SQL
+
+// Importar módulo SQLite para sistema de equipes
+import { dbOperations } from './src/lib/database.js';
 
 // Carregar variáveis de ambiente de um arquivo .env (apenas para desenvolvimento local)
 // No Azure, as variáveis são lidas das "Configurações de Aplicativo"
@@ -56,6 +60,7 @@ const PORT = process.env.PORT || 8080;
 app.use(helmet({
   contentSecurityPolicy: false,
 }));
+app.use(cors()); // Permitir requisições cross-origin
 app.use(compression()); // Compressão para melhor performance
 app.use(express.json({ limit: '10mb' })); // Para parsing de JSON com limite
 
@@ -156,335 +161,508 @@ app.delete('/api/mentores/:id', (req, res) => {
   res.status(200).json({ success: true, removed: publicMentorView(removed) });
 });
 
-// --- Projetos (Admin/Public, Mock/Local) ---
-const projetosStore = {
-  projetos: [
-    { id: 'p1', title: 'Site Gen-Z', owner: 'Time Alpha', status: 'ongoing', price: 1500, tags: ['web'], visible: true, progress: 65, startDate: new Date(Date.now() - 15*24*60*60*1000).toISOString(), description: 'Site institucional com design system e landing pages.', thumb_url: null },
-    { id: 'p2', title: 'App Mobile', owner: 'Crafter 2', status: 'ongoing', price: 2300, tags: ['mobile'], visible: true, progress: 30, startDate: new Date(Date.now() - 5*24*60*60*1000).toISOString(), description: 'Aplicativo móvel para gestão de tarefas.', thumb_url: null },
-    { id: 'p3', title: 'Design System', owner: 'Time Beta', status: 'draft', price: 0, tags: ['design'], visible: false, progress: 0, startDate: null, description: 'Biblioteca de componentes e tokens.', thumb_url: null },
-  ],
-};
+// --- SISTEMA DE EQUIPES (SQLite) ---
 
-function normalizeProjetoInput(body) {
-  const b = { ...body };
-  const statusRaw = b.status || b.status?.toLowerCase() || 'draft';
-  // aceitar status em PT (rascunho|ongoing|finalizado|arquivado) e mapear
-  const statusMap = (s) => {
-    const v = String(s || '').toLowerCase();
-    if (v === 'rascunho' || v === 'draft') return 'draft';
-    if (v === 'ongoing' || v === 'andamento' || v === 'ativo') return 'ongoing';
-    if (v === 'finalizado' || v === 'concluído' || v === 'concluido' || v === 'completed') return 'concluído';
-    if (v === 'arquivado' || v === 'archived') return 'arquivado';
-    return v || 'draft';
-  };
-  const startDate = b.startDate || b.data_inicio || null;
-  const desc = b.description !== undefined ? b.description : (b.descricao !== undefined ? b.descricao : '');
-  const price = b.price !== undefined ? b.price : (b.preco !== undefined ? b.preco : 0);
-  const progress = b.progress !== undefined ? b.progress : (b.progresso !== undefined ? b.progresso : 0);
-  const visible = b.visible !== undefined ? b.visible : (b.visivel !== undefined ? b.visivel : false);
-  const thumb = b.thumb_url !== undefined ? b.thumb_url : (b.thumb !== undefined ? b.thumb : null);
-  return {
-    id: b.id || null,
-    title: String(b.title || b.titulo || '').trim(),
-    owner: String(b.owner || '').trim(),
-    status: statusMap(statusRaw), // valores internos: draft | ongoing | concluído | arquivado
-    price: Number(price || 0),
-    tags: Array.isArray(b.tags) ? b.tags : [],
-    visible: Boolean(visible),
-    progress: Math.max(0, Math.min(100, Number(progress || 0))),
-    startDate,
-    description: String(desc || '').trim(),
-    thumb_url: thumb || null,
-  };
-}
+// Endpoints para Mentores (SQLite)
+app.get('/api/sqlite/mentores', async (req, res) => {
+  try {
+    const mentores = await dbOperations.getMentores();
+    res.json({ success: true, data: mentores });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
-function publicProjetoView(p) {
-  // Mapeia status para rótulos amigáveis do card público
-  const statusLabel = (() => {
-    const s = String(p.status || '').toLowerCase();
-    if (s === 'ongoing' || s === 'andamento') return 'Em andamento';
-    if (s === 'concluído' || s === 'concluido' || s === 'completed') return 'Concluído';
-    if (s === 'pausado' || s === 'paused') return 'Pausado';
-    if (s === 'arquivado' || s === 'archived') return 'Arquivado';
-    return '—';
-  })();
-  return {
-    id: p.id,
-    title: p.title,
-    status: statusLabel,
-    startDate: p.startDate,
-    description: p.description || `${p.title} por ${p.owner}`,
-    progress: typeof p.progress === 'number' ? p.progress : 0,
-    thumb_url: p.thumb_url || null,
-  };
-}
+app.post('/api/sqlite/mentores', async (req, res) => {
+  try {
+    const { nome, email, telefone, bio } = req.body;
+    if (!nome || !email) {
+      return res.status(400).json({ success: false, error: 'Nome e email são obrigatórios' });
+    }
+    const mentor = await dbOperations.createMentor({ nome, email, telefone, bio });
+    res.status(201).json({ success: true, data: mentor });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.put('/api/sqlite/mentores/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome, email, telefone, bio } = req.body;
+    const mentor = await dbOperations.updateMentor(id, { nome, email, telefone, bio });
+    res.json({ success: true, data: mentor });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Endpoints para Projetos (SQLite)
+app.get('/api/sqlite/projetos', async (req, res) => {
+  try {
+    const { visivel, status } = req.query;
+    const filters = {};
+    if (visivel !== undefined) filters.visivel = visivel === 'true';
+    if (status) filters.status = status;
+    
+    const projetos = await dbOperations.getProjetos(filters);
+    res.json({ success: true, data: projetos });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/sqlite/projetos', async (req, res) => {
+  try {
+    const projeto = await dbOperations.createProjeto(req.body);
+    res.status(201).json({ success: true, data: projeto });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/sqlite/projetos/:id/mentor', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { mentor_id } = req.body;
+    if (!mentor_id) {
+      return res.status(400).json({ success: false, error: 'mentor_id é obrigatório' });
+    }
+    const result = await dbOperations.associateMentorToProjeto(id, mentor_id);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Endpoints para Crafters (SQLite)
+app.get('/api/sqlite/crafters', async (req, res) => {
+  try {
+    const crafters = await dbOperations.getCrafters();
+    res.json({ success: true, data: crafters });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/sqlite/crafters', async (req, res) => {
+  try {
+    const { nome, email, avatar_url } = req.body;
+    if (!nome || !email) {
+      return res.status(400).json({ success: false, error: 'Nome e email são obrigatórios' });
+    }
+    const crafter = await dbOperations.createCrafter({ nome, email, avatar_url });
+    res.status(201).json({ success: true, data: crafter });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Endpoints para Equipes (SQLite)
+app.get('/api/sqlite/equipes', async (req, res) => {
+  try {
+    const equipes = await dbOperations.getEquipes();
+    res.json({ success: true, data: equipes });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/sqlite/equipes', async (req, res) => {
+  try {
+    const { crafter_id, mentor_id, projeto_id, status_inscricao } = req.body;
+    if (!crafter_id || !projeto_id) {
+      return res.status(400).json({ success: false, error: 'crafter_id e projeto_id são obrigatórios' });
+    }
+    const equipe = await dbOperations.createEquipe({ crafter_id, mentor_id, projeto_id, status_inscricao });
+    res.status(201).json({ success: true, data: equipe });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.put('/api/sqlite/equipes/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status_inscricao } = req.body;
+    if (!status_inscricao) {
+      return res.status(400).json({ success: false, error: 'status_inscricao é obrigatório' });
+    }
+    const result = await dbOperations.updateEquipeStatus(id, status_inscricao);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/sqlite/equipes/crafter/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const equipes = await dbOperations.getEquipesByCrafter(id);
+    res.json({ success: true, data: equipes });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Endpoints para Inscrições (SQLite)
+app.post('/api/sqlite/projetos/:id/inscricao', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { crafter_id, status } = req.body;
+    if (!crafter_id) {
+      return res.status(400).json({ success: false, error: 'crafter_id é obrigatório' });
+    }
+    const inscricao = await dbOperations.createInscricao({ 
+      crafter_id, 
+      projeto_id: id, 
+      status: status || 'pendente' 
+    });
+    res.status(201).json({ success: true, data: inscricao });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // GET /api/projetos → lista de projetos; por padrão públicos (visíveis e não draft). Use ?all=1 para admin.
-app.get('/api/projetos', (req, res) => {
-  const { all, status, visivel, periodo } = req.query;
-  let list = projetosStore.projetos.slice();
-  // filtros opcionais
-  if (status) {
-    const s = String(status).toLowerCase();
-    list = list.filter(p => {
-      const ps = String(p.status || '').toLowerCase();
-      if (s === 'ongoing' || s === 'andamento') return ps === 'ongoing' || ps === 'andamento';
-      if (s === 'finalizado' || s === 'concluído' || s === 'concluido' || s === 'completed') return ps === 'concluído' || ps === 'concluido' || ps === 'completed';
-      if (s === 'rascunho' || s === 'draft') return ps === 'draft' || ps === 'rascunho';
-      return true;
-    });
-  }
-  if (visivel !== undefined) {
-    const v = visivel === 'true';
-    list = list.filter(p => !!p.visible === v);
-  }
-  if (periodo) {
-    const days = String(periodo).endsWith('d') ? Number(String(periodo).replace('d','')) : null;
-    if (days) {
-      const now = new Date();
-      const from = new Date(now.getTime() - days*24*60*60*1000);
-      list = list.filter(p => p.startDate && new Date(p.startDate) >= from && new Date(p.startDate) <= now);
+app.get('/api/projetos', async (req, res) => {
+  try {
+    const { all, status, visivel, periodo } = req.query;
+    
+    if (all === '1') {
+      // Admin: lista completa (não pública)
+      const projetos = await dbOperations.getProjetos();
+      return res.status(200).json({ success: true, data: projetos, total: projetos.length, timestamp: new Date().toISOString() });
     }
+    
+    // Pública: aplicar filtros padrão
+    const filters = {};
+    
+    if (visivel !== undefined) {
+      filters.visivel = visivel === 'true';
+    } else {
+      filters.visivel = true; // Por padrão, só visíveis
+    }
+    
+    if (status) {
+      filters.status = status;
+    }
+    
+    let projetos = await dbOperations.getProjetos(filters);
+    
+    // Filtrar por período se especificado
+    if (periodo) {
+      const days = String(periodo).endsWith('d') ? Number(String(periodo).replace('d','')) : null;
+      if (days) {
+        const now = new Date();
+        const from = new Date(now.getTime() - days*24*60*60*1000);
+        projetos = projetos.filter(p => p.data_inicio && new Date(p.data_inicio) >= from && new Date(p.data_inicio) <= now);
+      }
+    }
+    
+    // Filtrar projetos não-draft para API pública
+    const visiveis = projetos.filter(p => p.visivel && p.status !== 'rascunho');
+    const payload = visiveis.map(publicProjetoView);
+    
+    res.status(200).json({ success: true, data: payload, total: payload.length, timestamp: new Date().toISOString() });
+  } catch (error) {
+    console.error('Erro ao buscar projetos:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
-  if (all === '1') {
-    return res.status(200).json({ success: true, data: list, total: list.length, timestamp: new Date().toISOString() });
-  }
-  const visiveis = list.filter(p => !!p.visible && String(p.status).toLowerCase() !== 'draft');
-  const payload = visiveis.map(publicProjetoView);
-  res.status(200).json({ success: true, data: payload, total: payload.length, timestamp: new Date().toISOString() });
 });
 
 // POST /api/projetos → cria projeto (admin)
-app.post('/api/projetos', (req, res) => {
-  const input = normalizeProjetoInput(req.body || {});
-  if (!input.title) return res.status(400).json({ success: false, error: 'Campo obrigatório: title' });
-  const id = `p${projetosStore.projetos.length + 1}`;
-  const novo = { ...input, id };
-  // default startDate
-  if (!novo.startDate && novo.status !== 'draft') novo.startDate = new Date().toISOString();
-  projetosStore.projetos.push(novo);
-  // cria registro financeiro vinculado
-  const fid = `f${financasStore.itens.length + 1}`;
-  const fin = {
-    id: fid,
-    item: `Projeto ${novo.title}`,
-    valor: Number(novo.price || 0),
-    status: 'pending',
-    type: 'project',
-    progress: Number(novo.progress || 0),
-    project_id: id,
-    date: new Date().toISOString(),
-  };
-  financasStore.itens.push(fin);
-  res.status(201).json({ success: true, project: novo, finance: fin });
+app.post('/api/projetos', async (req, res) => {
+  try {
+    const input = normalizeProjetoInput(req.body || {});
+    if (!input.title) return res.status(400).json({ success: false, error: 'Campo obrigatório: title' });
+    
+    // Mapear campos para SQLite
+    const projetoData = {
+      titulo: input.title,
+      descricao: input.description || '',
+      data_inicio: input.startDate || (input.status !== 'draft' ? new Date().toISOString() : null),
+      status: input.status || 'rascunho',
+      preco: Number(input.price || 0),
+      visivel: Boolean(input.visible),
+      thumb_url: input.thumbUrl || null,
+      mentor_id: input.mentorId || null
+    };
+    
+    const projeto = await dbOperations.createProjeto(projetoData);
+    
+    // TODO: Criar registro financeiro se necessário (quando implementarmos finanças no SQLite)
+    
+    res.status(201).json({ success: true, project: projeto });
+  } catch (error) {
+    console.error('Erro ao criar projeto:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
 });
 
 // PUT /api/projetos/:id → atualiza projeto (admin)
-app.put('/api/projetos/:id', (req, res) => {
-  const { id } = req.params;
-  const idx = projetosStore.projetos.findIndex(p => p.id === id);
-  if (idx === -1) return res.status(404).json({ success: false, error: 'Projeto não encontrado' });
-  const merged = { ...projetosStore.projetos[idx], ...normalizeProjetoInput(req.body || {}) };
-  if (!merged.title) return res.status(400).json({ success: false, error: 'Campo obrigatório: title' });
-  // normaliza progresso e aplica regra de finalização automática
-  merged.progress = Math.max(0, Math.min(100, Number(merged.progress || 0)));
-  if (merged.progress === 100) merged.status = 'concluído';
-  projetosStore.projetos[idx] = merged;
-  // sincroniza finanças vinculadas
-  const fidx = financasStore.itens.findIndex(f => f.project_id === id);
-  if (fidx !== -1) {
-    financasStore.itens[fidx] = {
-      ...financasStore.itens[fidx],
-      valor: Number(merged.price || financasStore.itens[fidx].valor || 0),
-      progress: Number(merged.progress || 0),
-      item: `Projeto ${merged.title}`,
-      date: new Date().toISOString(),
+app.put('/api/projetos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Verificar se o projeto existe
+    const projeto = await dbOperations.getProjetoById(id);
+    if (!projeto) {
+      return res.status(404).json({ success: false, error: 'Projeto não encontrado' });
+    }
+    
+    const input = normalizeProjetoInput(req.body || {});
+    if (!input.title) {
+      return res.status(400).json({ success: false, error: 'Campo obrigatório: title' });
+    }
+    
+    // Mapear campos para SQLite
+    const updates = {
+      titulo: input.title,
+      descricao: input.description || projeto.descricao,
+      data_inicio: input.startDate || projeto.data_inicio,
+      status: input.status || projeto.status,
+      preco: Number(input.price || projeto.preco || 0),
+      visivel: input.visible !== undefined ? Boolean(input.visible) : projeto.visivel,
+      thumb_url: input.thumbUrl || projeto.thumb_url,
+      mentor_id: input.mentorId || projeto.mentor_id
     };
-  } else {
-    const fid = `f${financasStore.itens.length + 1}`;
-    financasStore.itens.push({ id: fid, item: `Projeto ${merged.title}`, valor: Number(merged.price || 0), status: 'pending', type: 'project', progress: Number(merged.progress || 0), project_id: id, date: new Date().toISOString() });
+    
+    // Normalizar progresso e aplicar regra de finalização automática
+    if (input.progress !== undefined) {
+      updates.progresso = Math.max(0, Math.min(100, Number(input.progress || 0)));
+      if (updates.progresso === 100) {
+        updates.status = 'concluído';
+      }
+    }
+    
+    const projetoAtualizado = await dbOperations.updateProjeto(id, updates);
+    
+    // TODO: Sincronizar finanças vinculadas quando implementarmos no SQLite
+    
+    res.status(200).json({ success: true, project: projetoAtualizado });
+  } catch (error) {
+    console.error('Erro ao atualizar projeto:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
-  res.status(200).json({ success: true, project: merged });
 });
 
 // PUT /api/projetos/:id/visibilidade → alterna visível
-app.put('/api/projetos/:id/visibilidade', (req, res) => {
-  const { id } = req.params;
-  const idx = projetosStore.projetos.findIndex(p => p.id === id);
-  if (idx === -1) return res.status(404).json({ success: false, error: 'Projeto não encontrado' });
-  const current = projetosStore.projetos[idx];
-  const body = req.body || {};
-  const nextVisible = body.visivel !== undefined ? !!body.visivel : body.visible !== undefined ? !!body.visible : !current.visible;
-  const next = { ...current, visible: nextVisible };
-  projetosStore.projetos[idx] = next;
-  res.status(200).json({ success: true, project: next });
+app.put('/api/projetos/:id/visibilidade', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const projeto = await dbOperations.getProjetoById(id);
+    if (!projeto) {
+      return res.status(404).json({ success: false, error: 'Projeto não encontrado' });
+    }
+    
+    const body = req.body || {};
+    const nextVisible = body.visivel !== undefined ? !!body.visivel : 
+                       body.visible !== undefined ? !!body.visible : 
+                       !projeto.visivel;
+    
+    const projetoAtualizado = await dbOperations.updateProjeto(id, { visivel: nextVisible });
+    
+    res.status(200).json({ success: true, project: projetoAtualizado });
+  } catch (error) {
+    console.error('Erro ao alterar visibilidade do projeto:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
 });
 
 // DELETE /api/projetos/:id → arquiva (não remove)
-app.delete('/api/projetos/:id', (req, res) => {
-  const { id } = req.params;
-  const idx = projetosStore.projetos.findIndex(p => p.id === id);
-  if (idx === -1) return res.status(404).json({ success: false, error: 'Projeto não encontrado' });
-  const current = projetosStore.projetos[idx];
-  const next = { ...current, status: 'arquivado', visible: false };
-  projetosStore.projetos[idx] = next;
-  res.status(200).json({ success: true, project: next });
+app.delete('/api/projetos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const projeto = await dbOperations.getProjetoById(id);
+    if (!projeto) {
+      return res.status(404).json({ success: false, error: 'Projeto não encontrado' });
+    }
+    
+    const projetoAtualizado = await dbOperations.updateProjeto(id, { 
+      status: 'arquivado', 
+      visivel: false 
+    });
+    
+    res.status(200).json({ success: true, project: projetoAtualizado });
+  } catch (error) {
+    console.error('Erro ao arquivar projeto:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
 });
 
 // GET /api/projetos/:id → detalhes
-app.get('/api/projetos/:id', (req, res) => {
-  const { id } = req.params;
-  const p = projetosStore.projetos.find(x => x.id === id);
-  if (!p) return res.status(404).json({ success: false, error: 'Projeto não encontrado' });
-  res.status(200).json({ success: true, project: p });
-});
-
-// --- Finanças (Admin, Mock/Local) ---
-const financasStore = {
-  itens: [
-    { id: 'f1', item: 'Curso Front', valor: 399, status: 'paid', date: new Date('2025-06-10').toISOString(), type: 'course' },
-    { id: 'f2', item: 'Desafio API', valor: 0, status: 'scholarship', date: new Date('2025-06-20').toISOString(), type: 'challenge' },
-    { id: 'f3', item: 'Projeto Mobile', valor: 2300, status: 'pending', date: new Date('2025-09-05').toISOString(), type: 'project', project_id: 'p2', progress: 30 },
-    { id: 'f4', item: 'Projeto Web', valor: 1500, status: 'paid', date: new Date('2025-08-15').toISOString(), type: 'project', project_id: 'p1', progress: 65 },
-    { id: 'f5', item: 'Cupom DEV', valor: -100, status: 'discount', date: new Date('2025-07-01').toISOString(), type: 'discount' },
-  ],
-};
-
-app.get('/api/financas', (req, res) => {
-  const list = financasStore.itens.slice();
-  res.status(200).json({ success: true, data: list, total: list.length, timestamp: new Date().toISOString() });
-});
-
-app.put('/api/financas/:id', (req, res) => {
-  const { id } = req.params;
-  const idx = financasStore.itens.findIndex(f => f.id === id);
-  if (idx === -1) return res.status(404).json({ success: false, error: 'Registro financeiro não encontrado' });
-  const patch = req.body || {};
-  const next = { ...financasStore.itens[idx], ...patch };
-  next.valor = Number(next.valor || 0);
-  next.progress = Math.max(0, Math.min(100, Number(next.progress || 0)));
-  next.date = new Date().toISOString();
-  financasStore.itens[idx] = next;
-  // sincroniza com projeto vinculado (bidirecional)
-  if (next.type === 'project' && next.project_id) {
-    const pidx = projetosStore.projetos.findIndex(p => p.id === next.project_id);
-    if (pidx !== -1) {
-      const proj = { ...projetosStore.projetos[pidx] };
-      if (patch.valor !== undefined) proj.price = Number(next.valor);
-      if (patch.progress !== undefined) proj.progress = Number(next.progress);
-      if (proj.progress === 100) proj.status = 'concluído';
-      projetosStore.projetos[pidx] = proj;
+app.get('/api/projetos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const projeto = await dbOperations.getProjetoById(id);
+    
+    if (!projeto) {
+      return res.status(404).json({ success: false, error: 'Projeto não encontrado' });
     }
+    
+    res.status(200).json({ success: true, project: projeto });
+  } catch (error) {
+    console.error('Erro ao buscar projeto:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
-  res.status(200).json({ success: true, item: financasStore.itens[idx] });
+});
+app.get('/api/financas', async (req, res) => {
+  try {
+    const list = await dbOperations.getFinancas();
+    res.status(200).json({ success: true, data: list, total: list.length, timestamp: new Date().toISOString() });
+  } catch (error) {
+    console.error('Erro ao buscar finanças:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
 });
 
-app.get('/api/financas/export', (req, res) => {
-  const cols = ['id','item','valor','status'];
-  const header = cols.join(',');
-  const rows = financasStore.itens.map(f => cols.map(c => String(f[c]).replaceAll(',', '.')).join(','));
-  const csv = [header, ...rows].join('\n');
-  res.header('Content-Type', 'text/csv');
-  res.status(200).send(csv);
+app.put('/api/financas/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const patch = req.body || {};
+    
+    const updates = { ...patch };
+    updates.valor = Number(updates.valor || 0);
+    updates.progress = Math.max(0, Math.min(100, Number(updates.progress || 0)));
+    updates.date = new Date().toISOString();
+    
+    const updatedFinanca = await dbOperations.updateFinanca(id, updates);
+    
+    if (!updatedFinanca) {
+      return res.status(404).json({ success: false, error: 'Registro financeiro não encontrado' });
+    }
+    
+    // Sincroniza com projeto vinculado (bidirecional)
+    if (updatedFinanca.type === 'project' && updatedFinanca.project_id) {
+      const projectUpdates = {};
+      if (patch.valor !== undefined) projectUpdates.preco = Number(updatedFinanca.valor);
+      if (patch.progress !== undefined) {
+        projectUpdates.progress = Number(updatedFinanca.progress);
+        if (projectUpdates.progress === 100) projectUpdates.status = 'finalizado';
+      }
+      
+      if (Object.keys(projectUpdates).length > 0) {
+        await dbOperations.updateProjeto(updatedFinanca.project_id, projectUpdates);
+      }
+    }
+    
+    res.status(200).json({ success: true, item: updatedFinanca });
+  } catch (error) {
+    console.error('Erro ao atualizar finança:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
+});
+
+app.get('/api/financas/export', async (req, res) => {
+  try {
+    const financas = await dbOperations.getFinancas();
+    const cols = ['id','item','valor','status'];
+    const header = cols.join(',');
+    const rows = financas.map(f => cols.map(c => String(f[c] || '').replaceAll(',', '.')).join(','));
+    const csv = [header, ...rows].join('\n');
+    res.header('Content-Type', 'text/csv');
+    res.status(200).send(csv);
+  } catch (error) {
+    console.error('Erro ao exportar finanças:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
 });
 
 // --- Dashboard resumo ---
-app.get('/api/dashboard/resumo', (req, res) => {
-  const { periodo = '30d' } = req.query;
+app.get('/api/dashboard/resumo', async (req, res) => {
+  try {
+    const { periodo = '30d' } = req.query;
 
-  // Calcula janela de tempo
-  const now = new Date();
-  const days = String(periodo).endsWith('d') ? Number(String(periodo).replace('d','')) : 30;
-  const from = new Date(now.getTime() - days*24*60*60*1000);
+    // Calcula janela de tempo
+    const now = new Date();
+    const days = String(periodo).endsWith('d') ? Number(String(periodo).replace('d','')) : 30;
+    const from = new Date(now.getTime() - days*24*60*60*1000);
 
-  // Filtra projetos por período (usa startDate)
-  const projetosPeriodo = projetosStore.projetos.filter(p => {
-    if (!p.startDate) return false;
-    const dt = new Date(p.startDate);
-    return dt >= from && dt <= now;
-  });
+    // Buscar projetos e finanças
+    const projetos = await dbOperations.getProjetos();
+    const financas = await dbOperations.getFinancas();
 
-  // Contagens de status
-  const toLower = (s) => String(s || '').toLowerCase();
-  const countByStatus = (status) => projetosPeriodo.filter(p => toLower(p.status) === status || (status==='ongoing' && toLower(p.status)==='andamento') || (status==='completed' && (toLower(p.status)==='concluído' || toLower(p.status)==='concluido')) || (status==='draft' && toLower(p.status)==='rascunho')).length;
-  const ativos = countByStatus('ongoing');
-  const finalizados = countByStatus('completed');
-  const rascunhos = countByStatus('draft');
+    // Filtra projetos por período (usa data_inicio)
+    const projetosPeriodo = projetos.filter(p => {
+      if (!p.data_inicio) return false;
+      const dt = new Date(p.data_inicio);
+      return dt >= from && dt <= now;
+    });
 
-  // Progresso médio
-  const mediaProgresso = projetosPeriodo.length > 0 ? Math.round(projetosPeriodo.reduce((acc, p) => acc + Number(p.progress || 0), 0) / projetosPeriodo.length) : 0;
+    // Contagens de status
+    const toLower = (s) => String(s || '').toLowerCase();
+    const countByStatus = (status) => projetosPeriodo.filter(p => {
+      const pStatus = toLower(p.status);
+      return pStatus === status || 
+             (status === 'ongoing' && pStatus === 'ongoing') || 
+             (status === 'completed' && (pStatus === 'finalizado' || pStatus === 'concluído')) || 
+             (status === 'draft' && pStatus === 'rascunho');
+    }).length;
+    
+    const ativos = countByStatus('ongoing');
+    const finalizados = countByStatus('completed');
+    const rascunhos = countByStatus('draft');
 
-  // Finanças por período
-  const financasPeriodo = financasStore.itens.filter(f => {
-    const dt = new Date(f.date || now);
-    return dt >= from && dt <= now;
-  });
-  const soma = (filterFn) => financasPeriodo.filter(filterFn).reduce((acc, f) => acc + Number(f.valor || 0), 0);
-  const receitaTotal = soma(() => true);
-  const receitaPaga = soma(f => f.status === 'paid');
-  const receitaPendente = soma(f => f.status === 'pending');
-  const descontos = soma(f => f.status === 'discount');
+    // Progresso médio (assumindo que não há campo progress na tabela projetos)
+    const mediaProgresso = 0; // Pode ser implementado se necessário
 
-  // Evolução mensal (últimos 4 meses)
-  const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-  const evolucao_mensal = [];
-  for (let i = 3; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const start = new Date(d.getFullYear(), d.getMonth(), 1);
-    const end = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-    const valorMes = financasStore.itens
-      .filter(f => new Date(f.date || now) >= start && new Date(f.date || now) < end)
-      .reduce((acc, f) => acc + Number(f.valor || 0), 0);
-    evolucao_mensal.push({ mes: monthNames[d.getMonth()], valor: valorMes });
+    // Finanças por período
+    const financasPeriodo = financas.filter(f => {
+      const dt = new Date(f.date || now);
+      return dt >= from && dt <= now;
+    });
+    
+    const soma = (filterFn) => financasPeriodo.filter(filterFn).reduce((acc, f) => acc + Number(f.valor || 0), 0);
+    const receitaTotal = soma(() => true);
+    const receitaPaga = soma(f => f.status === 'paid');
+    const receitaPendente = soma(f => f.status === 'pending');
+    const descontos = soma(f => f.status === 'discount');
+
+    // Evolução mensal (últimos 4 meses)
+    const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const evolucao_mensal = [];
+    for (let i = 3; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const start = new Date(d.getFullYear(), d.getMonth(), 1);
+      const end = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+      const valorMes = financas
+        .filter(f => new Date(f.date || now) >= start && new Date(f.date || now) < end)
+        .reduce((acc, f) => acc + Number(f.valor || 0), 0);
+      evolucao_mensal.push({ mes: monthNames[d.getMonth()], valor: valorMes });
+    }
+
+    const payload = {
+      totais: {
+        projetos_ativos: ativos,
+        projetos_finalizados: finalizados,
+        projetos_rascunho: rascunhos,
+        receita_total: receitaTotal,
+        receita_pendente: receitaPendente,
+        receita_paga: receitaPaga,
+        media_progresso: mediaProgresso,
+        receita_liquida: receitaTotal - descontos,
+        descontos: descontos,
+      },
+      evolucao_mensal,
+    };
+
+    res.status(200).json(payload);
+  } catch (error) {
+    console.error('Erro ao buscar resumo do dashboard:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
-
-  const payload = {
-    totais: {
-      projetos_ativos: ativos,
-      projetos_finalizados: finalizados,
-      projetos_rascunho: rascunhos,
-      receita_total: receitaTotal,
-      receita_pendente: receitaPendente,
-      receita_paga: receitaPaga,
-      media_progresso: mediaProgresso,
-      receita_liquida: receitaTotal - descontos,
-      descontos: descontos,
-    },
-    evolucao_mensal,
-  };
-
-  res.status(200).json(payload);
 });
 
 // --- Ranking (Mock/Local) ---
-function currentWeekRef() {
-  const d = new Date();
-  const onejan = new Date(d.getFullYear(),0,1);
-  const week = Math.ceil((((d - onejan) / 86400000) + onejan.getDay()+1)/7);
-  const weekStr = String(week).padStart(2,'0');
-  return `${d.getFullYear()}-${weekStr}`;
+function _currentWeekRef() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const week = Math.ceil(((now - new Date(year, 0, 1)) / 86400000 + new Date(year, 0, 1).getDay() + 1) / 7);
+  return `${year}-W${week.toString().padStart(2, '0')}`;
 }
-
-const rankingStore = {
-  week_ref: currentWeekRef(),
-  crafters: [
-    { id: 'c1', name: 'Lívia Rocha', points: 920, avatar_url: null, active: true },
-    { id: 'c2', name: 'Kaique Ramos', points: 1000, avatar_url: null, active: true },
-    { id: 'c3', name: 'Diego Martins', points: 870, avatar_url: null, active: true },
-    { id: 'c4', name: 'Nina', points: 840, avatar_url: null, active: true },
-    { id: 'c5', name: 'Rafa', points: 820, avatar_url: null, active: true },
-    { id: 'c6', name: 'João', points: 800, avatar_url: null, active: true },
-  ],
-  top3: [
-    { crafter_id: 'c2', position: 1, reward: 'Badge Ouro' },
-    { crafter_id: 'c1', position: 2, reward: 'Badge Prata' },
-    { crafter_id: 'c3', position: 3, reward: 'Badge Bronze' },
-  ],
-  updated_at: new Date().toISOString(),
-  updated_by: 'seed',
-  history: [],
-  filters: { min_points: 0, max_points: null, active_only: true, search: '' },
-};
 
 // Server-side notifier (no-op placeholder for realtime)
 function notifyRealtime() {
@@ -492,152 +670,292 @@ function notifyRealtime() {
   // This function serves as a placeholder to satisfy linter and future server-side events.
 }
 
-function getRankingPayload() {
-  const actives = rankingStore.crafters.filter(c => c.active !== false)
-    .slice().sort((a,b)=>b.points-a.points);
-  const inactives = rankingStore.crafters.filter(c => c.active === false)
-    .slice().sort((a,b)=>b.points-a.points);
-  const merged = [...actives, ...inactives];
-  const table = merged.map(c => ({ crafter_id: c.id, name: c.name, points: c.points, last_update: rankingStore.updated_at }));
-  // Enriquecer top3 com nome/points se faltar
-  const byId = new Map(rankingStore.crafters.map(c => [c.id, c]));
-  const top3 = rankingStore.top3
-    .slice()
-    .sort((a,b)=>a.position-b.position)
-    .map(t => ({ ...t, name: byId.get(t.crafter_id)?.name || 'N/A', points: byId.get(t.crafter_id)?.points || 0 }));
-  return {
-    week_ref: rankingStore.week_ref,
-    top3,
-    table,
-    updated_at: rankingStore.updated_at,
-    updated_by: rankingStore.updated_by,
-    filters: rankingStore.filters,
-  };
-}
-
-app.get('/api/ranking', (req, res) => {
-  res.set('Cache-Control', 'public, max-age=60');
-  res.status(200).json(getRankingPayload());
-});
-
-app.put('/api/ranking/points/:crafter_id', (req, res) => {
-  const { crafter_id } = req.params;
-  const { delta, set } = req.body || {};
-  const idx = rankingStore.crafters.findIndex(c => c.id === crafter_id);
-  if (idx === -1) return res.status(404).json({ success: false, error: 'Crafter não encontrado' });
-  const before = rankingStore.crafters[idx].points;
-  let next = before;
-  if (typeof set === 'number') next = set;
-  else if (typeof delta === 'number') next = before + delta;
-  next = Math.max(0, Number(next));
-  rankingStore.crafters[idx].points = next;
-  rankingStore.updated_at = new Date().toISOString();
-  rankingStore.updated_by = req.headers['x-user-id'] || 'local-admin';
-  rankingStore.history.push({ at: rankingStore.updated_at, actor: rankingStore.updated_by, action: 'score_change', crafter_id, before, after: next, diff: next-before });
-  notifyRealtime('ranking_changed');
-  res.set('Cache-Control', 'no-store');
-  res.status(200).json({ success: true });
-});
-
-app.put('/api/ranking/top3', (req, res) => {
-  const body = req.body || {};
-  const arr = Array.isArray(body.top3) ? body.top3 : [];
-  if (arr.length !== 3) return res.status(400).json({ success: false, error: 'Top 3 deve conter três entradas' });
-  const positions = new Set(arr.map(x => x.position));
-  const ids = new Set(arr.map(x => x.crafter_id));
-  if (!(positions.has(1) && positions.has(2) && positions.has(3))) return res.status(400).json({ success: false, error: 'Posições inválidas: 1,2,3 obrigatórias' });
-  if (ids.size !== 3) return res.status(400).json({ success: false, error: 'Top 3 deve conter crafters distintos' });
-  // Validar se crafter existe
-  for (const x of arr) {
-    if (!rankingStore.crafters.find(c => c.id === x.crafter_id)) return res.status(404).json({ success: false, error: `Crafter inexistente: ${x.crafter_id}` });
+app.get('/api/ranking', async (req, res) => {
+  try {
+    const rankingData = await dbOperations.getRankingData();
+    res.set('Cache-Control', 'public, max-age=60');
+    res.status(200).json(rankingData);
+  } catch (error) {
+    console.error('Erro ao buscar ranking:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
-  rankingStore.top3 = arr.map(x => ({ crafter_id: x.crafter_id, position: x.position, reward: x.reward || '' }));
-  rankingStore.updated_at = new Date().toISOString();
-  rankingStore.updated_by = req.headers['x-user-id'] || 'local-admin';
-  rankingStore.history.push({ at: rankingStore.updated_at, actor: rankingStore.updated_by, action: 'top3_update' });
-  notifyRealtime('ranking_changed');
-  res.set('Cache-Control', 'no-store');
-  res.status(200).json({ success: true });
+});
+
+app.put('/api/ranking/points/:crafter_id', async (req, res) => {
+  try {
+    const { crafter_id } = req.params;
+    const { delta, set } = req.body || {};
+    const actor = req.headers['x-user-id'] || 'local-admin';
+    
+    let finalDelta = 0;
+    if (typeof set === 'number') {
+      // Se for para definir um valor absoluto, precisamos calcular o delta
+      const crafter = await dbOperations.getCrafters();
+      const currentCrafter = crafter.find(c => c.id === crafter_id);
+      if (!currentCrafter) {
+        return res.status(404).json({ success: false, error: 'Crafter não encontrado' });
+      }
+      finalDelta = set - (currentCrafter.points || 0);
+    } else if (typeof delta === 'number') {
+      finalDelta = delta;
+    } else {
+      return res.status(400).json({ success: false, error: 'Delta ou set deve ser fornecido' });
+    }
+    
+    const result = await dbOperations.updateCrafterPoints(crafter_id, finalDelta, actor);
+    
+    // Atualizar configurações do ranking
+    await dbOperations.updateRankingSettings({
+      updated_at: new Date().toISOString(),
+      updated_by: actor
+    });
+    
+    notifyRealtime('ranking_changed');
+    res.set('Cache-Control', 'no-store');
+    res.status(200).json({ success: true, result });
+  } catch (error) {
+    console.error('Erro ao atualizar pontos:', error);
+    res.status(500).json({ success: false, error: error.message || 'Erro interno do servidor' });
+  }
+});
+
+app.put('/api/ranking/top3', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const arr = Array.isArray(body.top3) ? body.top3 : [];
+    const actor = req.headers['x-user-id'] || 'local-admin';
+    
+    if (arr.length !== 3) {
+      return res.status(400).json({ success: false, error: 'Top 3 deve conter três entradas' });
+    }
+    
+    const positions = new Set(arr.map(x => x.position));
+    const ids = new Set(arr.map(x => x.crafter_id));
+    
+    if (!(positions.has(1) && positions.has(2) && positions.has(3))) {
+      return res.status(400).json({ success: false, error: 'Posições inválidas: 1,2,3 obrigatórias' });
+    }
+    
+    if (ids.size !== 3) {
+      return res.status(400).json({ success: false, error: 'Top 3 deve conter crafters distintos' });
+    }
+    
+    // Validar se crafters existem
+    const crafters = await dbOperations.getCrafters();
+    for (const x of arr) {
+      if (!crafters.find(c => c.id === x.crafter_id)) {
+        return res.status(404).json({ success: false, error: `Crafter inexistente: ${x.crafter_id}` });
+      }
+    }
+    
+    const top3Data = arr.map(x => ({ 
+      crafter_id: x.crafter_id, 
+      position: x.position, 
+      reward: x.reward || '' 
+    }));
+    
+    await dbOperations.updateTop3(top3Data, actor);
+    
+    notifyRealtime('ranking_changed');
+    res.set('Cache-Control', 'no-store');
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Erro ao atualizar top3:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
 });
 
 // Audit logs endpoint
-app.get('/api/ranking/audit', (req, res) => {
-  const logs = rankingStore.history.slice().reverse(); // Most recent first
-  res.status(200).json({ data: logs });
+app.get('/api/ranking/audit', async (req, res) => {
+  try {
+    const logs = await dbOperations.getRankingHistory();
+    res.status(200).json({ data: logs });
+  } catch (error) {
+    console.error('Erro ao buscar histórico do ranking:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
 });
 
 // Ranking filters (admin state persistence)
-app.put('/api/ranking/filters', (req, res) => {
-  const f = req.body || {};
-  const next = {
-    min_points: typeof f.min_points === 'number' ? f.min_points : (rankingStore.filters.min_points || 0),
-    max_points: typeof f.max_points === 'number' ? f.max_points : (rankingStore.filters.max_points ?? null),
-    active_only: f.active_only !== undefined ? !!f.active_only : !!rankingStore.filters.active_only,
-    search: typeof f.search === 'string' ? f.search : (rankingStore.filters.search || ''),
-  };
-  rankingStore.filters = next;
-  rankingStore.updated_at = new Date().toISOString();
-  rankingStore.updated_by = req.headers['x-user-id'] || 'local-admin';
-  rankingStore.history.push({ id: `aud${rankingStore.history.length+1}`, actor: rankingStore.updated_by, action: 'filters_update', at: rankingStore.updated_at, diff: next });
-  res.status(200).json({ success: true, filters: next });
+app.put('/api/ranking/filters', async (req, res) => {
+  try {
+    const f = req.body || {};
+    const actor = req.headers['x-user-id'] || 'local-admin';
+    
+    const filters = {
+      min_points: typeof f.min_points === 'number' ? f.min_points : 0,
+      max_points: typeof f.max_points === 'number' ? f.max_points : null,
+      active_only: f.active_only !== undefined ? !!f.active_only : true,
+      search: typeof f.search === 'string' ? f.search : '',
+      updated_at: new Date().toISOString(),
+      updated_by: actor
+    };
+    
+    await dbOperations.updateRankingSettings(filters);
+    
+    // Criar histórico
+    await dbOperations.createLog({
+      type: 'filters_update',
+      actor,
+      data: { filters }
+    });
+    
+    res.status(200).json({ success: true, filters });
+  } catch (error) {
+    console.error('Erro ao atualizar filtros:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
 });
 
 // Crafters CRUD
-app.get('/api/crafters', (req, res) => {
-  const list = rankingStore.crafters.map(c => ({ id: c.id, name: c.name, avatar_url: c.avatar_url || null, active: c.active !== false }));
-  res.status(200).json({ success: true, data: list });
-});
-app.post('/api/crafters', (req, res) => {
-  const body = req.body || {};
-  if (!body.name) return res.status(400).json({ success: false, error: 'Campo obrigatório: name' });
-  const id = `c${rankingStore.crafters.length + 1}`;
-  const crafter = { id, name: String(body.name).trim(), avatar_url: body.avatar_url || null, points: Math.max(0, Number(body.points || 0)), active: body.active !== false };
-  rankingStore.crafters.push(crafter);
-  rankingStore.updated_at = new Date().toISOString();
-  rankingStore.updated_by = req.headers['x-user-id'] || 'local-admin';
-  rankingStore.history.push({ id: `aud${rankingStore.history.length+1}`, actor: rankingStore.updated_by, action: 'crafter_create', at: rankingStore.updated_at, crafter_id: id });
-  notifyRealtime('ranking_changed');
-  res.status(201).json({ success: true, crafter });
-});
-app.put('/api/crafters/:id', (req, res) => {
-  const { id } = req.params;
-  const idx = rankingStore.crafters.findIndex(c => c.id === id);
-  if (idx === -1) return res.status(404).json({ success: false, error: 'Crafter não encontrado' });
-  const before = rankingStore.crafters[idx];
-  const patch = req.body || {};
-  const next = { 
-    ...before, 
-    name: patch.name !== undefined ? String(patch.name).trim() : before.name,
-    avatar_url: patch.avatar_url !== undefined ? patch.avatar_url : before.avatar_url,
-    points: patch.points !== undefined ? Math.max(0, Number(patch.points)) : before.points,
-    active: patch.active !== undefined ? !!patch.active : before.active,
-  };
-  rankingStore.crafters[idx] = next;
-  rankingStore.updated_at = new Date().toISOString();
-  rankingStore.updated_by = req.headers['x-user-id'] || 'local-admin';
-  rankingStore.history.push({ id: `aud${rankingStore.history.length+1}`, actor: rankingStore.updated_by, action: 'crafter_update', at: rankingStore.updated_at, crafter_id: id, diff: { name: next.name, points: next.points, active: next.active } });
-  notifyRealtime('ranking_changed');
-  res.status(200).json({ success: true, crafter: next });
+app.get('/api/crafters', async (req, res) => {
+  try {
+    const crafters = await dbOperations.getCrafters();
+    const list = crafters.map(c => ({ 
+      id: c.id, 
+      name: c.nome, 
+      avatar_url: c.avatar_url || null, 
+      active: c.active !== 0 
+    }));
+    res.status(200).json({ success: true, data: list });
+  } catch (error) {
+    console.error('Erro ao buscar crafters:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
 });
 
-// --- Desafios (Mock/Local) ---
-function addDays(days) {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return d.toISOString();
+app.post('/api/crafters', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const actor = req.headers['x-user-id'] || 'local-admin';
+    
+    if (!body.name) {
+      return res.status(400).json({ success: false, error: 'Campo obrigatório: name' });
+    }
+    
+    const crafterData = {
+      nome: String(body.name).trim(),
+      email: body.email || '',
+      avatar_url: body.avatar_url || null,
+      points: Math.max(0, Number(body.points || 0)),
+      active: body.active !== false ? 1 : 0
+    };
+    
+    const crafter = await dbOperations.createCrafter(crafterData);
+    
+    // Criar histórico
+    await dbOperations.createLog({
+      type: 'crafter_create',
+      actor,
+      data: { crafter_id: crafter.id }
+    });
+    
+    notifyRealtime('ranking_changed');
+    res.status(201).json({ success: true, crafter });
+  } catch (error) {
+    console.error('Erro ao criar crafter:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
+});
+
+app.put('/api/crafters/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const patch = req.body || {};
+    const actor = req.headers['x-user-id'] || 'local-admin';
+    
+    const updates = {};
+    
+    if (patch.name !== undefined) {
+      updates.nome = String(patch.name).trim();
+    }
+    if (patch.avatar_url !== undefined) {
+      updates.avatar_url = patch.avatar_url;
+    }
+    if (patch.points !== undefined) {
+      updates.points = Math.max(0, Number(patch.points));
+    }
+    if (patch.active !== undefined) {
+      updates.active = patch.active ? 1 : 0;
+    }
+    
+    const updatedCrafter = await dbOperations.updateCrafter(id, updates);
+    
+    if (!updatedCrafter) {
+      return res.status(404).json({ success: false, error: 'Crafter não encontrado' });
+    }
+    
+    // Criar histórico
+    await dbOperations.createLog({
+      type: 'crafter_update',
+      actor,
+      data: { 
+        crafter_id: id, 
+        updates: { 
+          name: updatedCrafter.nome, 
+          points: updatedCrafter.points, 
+          active: updatedCrafter.active 
+        } 
+      }
+    });
+    
+    // Atualizar configurações do ranking
+    await dbOperations.updateRankingSettings({
+      updated_at: new Date().toISOString(),
+      updated_by: actor
+    });
+    
+    notifyRealtime('ranking_changed');
+    res.status(200).json({ success: true, crafter: updatedCrafter });
+  } catch (error) {
+    console.error('Erro ao atualizar crafter:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
+});
+
+// --- Helper Functions ---
+
+/**
+ * Converte um projeto interno para visualização pública
+ * Remove campos sensíveis e formata dados para o frontend
+ */
+function publicProjetoView(p) {
+  return {
+    id: p.id,
+    title: p.titulo,
+    description: p.descricao,
+    startDate: p.data_inicio,
+    status: p.status,
+    price: p.preco,
+    visible: !!p.visivel,
+    thumbUrl: p.thumb_url,
+    mentorId: p.mentor_id,
+    createdAt: p.created_at,
+    updatedAt: p.updated_at
+  };
 }
 
-const desafiosStore = {
-  challenges: [
-    { id: 'd1', name: 'API Resiliente', objective: 'Implementar Circuit Breaker e Retry com backoff', description: 'Projete uma API resiliente sob falhas.\nInclua métricas e fallback.', deadline: addDays(7), base_points: 300, reward: 'Badge Resilience', status: 'active', criteria: ['inovacao','execucao','apresentacao'], delivery_type: 'github', visible: true, difficulty: 'intermediate', tags: ['web','ia'], thumb_url: null, created_by: 'u1', updated_at: new Date().toISOString() },
-    { id: 'd2', name: 'Refatoração de Performance', objective: 'Otimizar TTI e eliminiar layout thrashing', description: 'Escolha um projeto e reduza tempo interativo.', deadline: addDays(10), base_points: 200, reward: 'Badge Performance', status: 'active', criteria: ['execucao','apresentacao'], delivery_type: 'link', visible: true, difficulty: 'starter', tags: ['web'], thumb_url: null, created_by: 'u1', updated_at: new Date().toISOString() },
-    { id: 'd3', name: 'Sistema de Design', objective: 'Crie um DS com tokens e docs', description: 'Documente princípios, tokens e componentes.', deadline: addDays(-2), base_points: 250, reward: 'Badge Designer', status: 'archived', criteria: ['inovacao','apresentacao'], delivery_type: 'file', visible: false, difficulty: 'pro', tags: ['design'], thumb_url: null, created_by: 'u1', updated_at: new Date().toISOString() },
-  ],
-  submissions: [],
-  registrations: [],
-  logs: [],
-};
+/**
+ * Normaliza e valida dados de entrada para projetos
+ * Garante que os campos estejam no formato correto
+ */
+function normalizeProjetoInput(input) {
+  return {
+    title: String(input.title || '').trim(),
+    description: String(input.description || '').trim(),
+    startDate: input.startDate || null,
+    status: input.status || 'rascunho',
+    price: Number(input.price || 0),
+    visible: Boolean(input.visible),
+    thumbUrl: input.thumbUrl || null,
+    mentorId: input.mentorId || null
+  };
+}
 
+/**
+ * Converte um desafio interno para visualização pública
+ * Remove campos sensíveis e formata dados para o frontend
+ */
 function publicChallenge(c) {
   return {
     id: c.id,
@@ -658,207 +976,333 @@ function publicChallenge(c) {
   };
 }
 
+// --- Desafios (SQLite) ---
+function _addDays(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString();
+}
+
 function isDeadlinePassed(deadlineIso) {
   try { return new Date(deadlineIso).getTime() < Date.now(); } catch { return false; }
 }
 
-app.get('/api/desafios', (req, res) => {
-  const { status, visible, all } = req.query;
-  let list = desafiosStore.challenges.slice();
-  if (all === '1') {
-    // Admin: lista completa (não pública)
-    return res.status(200).json({ success: true, data: list, total: list.length });
+app.get('/api/desafios', async (req, res) => {
+  try {
+    const { status, visible, all } = req.query;
+    
+    if (all === '1') {
+      // Admin: lista completa (não pública)
+      const desafios = await dbOperations.getDesafios();
+      return res.status(200).json({ success: true, data: desafios, total: desafios.length });
+    }
+    
+    // Pública: aplicar filtros padrão
+    const filters = {};
+    
+    if (visible !== undefined) {
+      filters.visible = visible === 'true';
+    } else {
+      filters.visible = true; // Por padrão, só visíveis
+    }
+    
+    if (status) {
+      filters.status = status;
+    } else {
+      filters.status = 'active'; // Por padrão, só ativos
+    }
+    
+    const desafios = await dbOperations.getDesafios(filters);
+    
+    res.set('Cache-Control', 'public, max-age=60');
+    res.status(200).json({ success: true, data: desafios.map(publicChallenge), total: desafios.length });
+  } catch (error) {
+    console.error('Erro ao buscar desafios:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
-  // Pública: aplicar filtros padrão
-  if (visible !== undefined) {
-    const v = visible === 'true';
-    list = list.filter(c => !!c.visible === v);
-  } else {
-    list = list.filter(c => !!c.visible);
+});
+
+app.get('/api/desafios/:id', async (req, res) => {
+  try {
+    const desafio = await dbOperations.getDesafioById(req.params.id);
+    if (!desafio || !desafio.visible) {
+      return res.status(404).json({ success: false, error: 'Desafio não encontrado' });
+    }
+    res.set('Cache-Control', 'public, max-age=60');
+    res.status(200).json({ success: true, challenge: publicChallenge(desafio) });
+  } catch (error) {
+    console.error('Erro ao buscar desafio:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
-  if (status) {
-    list = list.filter(c => c.status === status);
-  } else {
-    list = list.filter(c => c.status === 'active');
+});
+
+app.post('/api/desafios', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const required = ['name','objective','deadline','delivery_type'];
+    for (const k of required) { 
+      if (!body[k]) return res.status(400).json({ success:false, error:`Campo obrigatório: ${k}` }); 
+    }
+    
+    const desafioData = {
+      name: String(body.name).trim(),
+      objective: String(body.objective).trim(),
+      description: String(body.description || '').trim(),
+      deadline: body.deadline,
+      base_points: Math.max(0, Number(body.base_points || 0)),
+      reward: String(body.reward || '').trim(),
+      status: body.status || 'active',
+      criteria: Array.isArray(body.criteria) ? body.criteria : [],
+      delivery_type: body.delivery_type,
+      visible: Boolean(body.visible),
+      difficulty: body.difficulty || 'starter',
+      tags: Array.isArray(body.tags) ? body.tags : [],
+      thumb_url: body.thumb_url || null,
+      created_by: req.headers['x-user-id'] || 'local-admin'
+    };
+    
+    const desafio = await dbOperations.createDesafio(desafioData);
+    res.set('Cache-Control', 'no-store');
+    res.status(201).json({ success: true, challenge: publicChallenge(desafio) });
+  } catch (error) {
+    console.error('Erro ao criar desafio:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
-  // Ordenação padrão: por deadline ascendente
-  list = list.slice().sort((a,b)=>{
-    const da = a.deadline ? new Date(a.deadline).getTime() : Infinity;
-    const db = b.deadline ? new Date(b.deadline).getTime() : Infinity;
-    return da - db;
-  });
-  res.set('Cache-Control', 'public, max-age=60');
-  res.status(200).json({ success: true, data: list.map(publicChallenge), total: list.length });
 });
 
-app.get('/api/desafios/:id', (req, res) => {
-  const c = desafiosStore.challenges.find(x => x.id === req.params.id);
-  if (!c || !c.visible) return res.status(404).json({ success: false, error: 'Desafio não encontrado' });
-  res.set('Cache-Control', 'public, max-age=60');
-  res.status(200).json({ success: true, challenge: publicChallenge(c) });
+app.put('/api/desafios/:id', async (req, res) => {
+  try {
+    const desafio = await dbOperations.getDesafioById(req.params.id);
+    if (!desafio) return res.status(404).json({ success:false, error:'Desafio não encontrado' });
+    
+    const patch = req.body || {};
+    if (patch.base_points !== undefined) {
+      patch.base_points = Math.max(0, Number(patch.base_points));
+    }
+    
+    await dbOperations.updateDesafio(req.params.id, patch);
+    const updatedDesafio = await dbOperations.getDesafioById(req.params.id);
+    
+    res.set('Cache-Control', 'no-store');
+    res.status(200).json({ success: true, challenge: publicChallenge(updatedDesafio) });
+  } catch (error) {
+    console.error('Erro ao atualizar desafio:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
 });
 
-app.post('/api/desafios', (req, res) => {
-  const body = req.body || {};
-  const required = ['name','objective','deadline','delivery_type'];
-  for (const k of required) { if (!body[k]) return res.status(400).json({ success:false, error:`Campo obrigatório: ${k}` }); }
-  const id = `d${desafiosStore.challenges.length + 1}`;
-  const c = {
-    id,
-    name: String(body.name).trim(),
-    objective: String(body.objective).trim(),
-    description: String(body.description || '').trim(),
-    deadline: body.deadline,
-    base_points: Math.max(0, Number(body.base_points || 0)),
-    reward: String(body.reward || '').trim(),
-    status: body.status || 'active',
-    criteria: Array.isArray(body.criteria) ? body.criteria : [],
-    delivery_type: body.delivery_type,
-    visible: Boolean(body.visible),
-    difficulty: body.difficulty || 'starter',
-    tags: Array.isArray(body.tags) ? body.tags : [],
-    thumb_url: body.thumb_url || null,
-    created_by: req.headers['x-user-id'] || 'local-admin',
-    updated_at: new Date().toISOString(),
-  };
-  desafiosStore.challenges.push(c);
-  desafiosStore.logs.push({ id: `lg${desafiosStore.logs.length+1}`, type: 'create', at: c.updated_at, actor: c.created_by, challenge_id: id });
-  res.set('Cache-Control', 'no-store');
-  res.status(201).json({ success: true, challenge: publicChallenge(c) });
-});
-
-app.put('/api/desafios/:id', (req, res) => {
-  const idx = desafiosStore.challenges.findIndex(x => x.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ success:false, error:'Desafio não encontrado' });
-  const before = desafiosStore.challenges[idx];
-  const patch = req.body || {};
-  const next = { ...before, ...patch, base_points: Math.max(0, Number(patch.base_points ?? before.base_points)), updated_at: new Date().toISOString() };
-  desafiosStore.challenges[idx] = next;
-  desafiosStore.logs.push({ id: `lg${desafiosStore.logs.length+1}`, type: 'update', at: next.updated_at, actor: req.headers['x-user-id'] || 'local-admin', challenge_id: next.id });
-  res.set('Cache-Control', 'no-store');
-  res.status(200).json({ success: true, challenge: publicChallenge(next) });
-});
-
-app.put('/api/desafios/:id/status', (req, res) => {
-  const idx = desafiosStore.challenges.findIndex(x => x.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ success:false, error:'Desafio não encontrado' });
-  const { status } = req.body || {};
-  if (!['draft','active','closed','archived'].includes(status)) return res.status(400).json({ success:false, error:'Status inválido' });
-  const next = { ...desafiosStore.challenges[idx], status, updated_at: new Date().toISOString() };
-  desafiosStore.challenges[idx] = next;
-  desafiosStore.logs.push({ id: `lg${desafiosStore.logs.length+1}`, type: 'status_change', at: next.updated_at, actor: req.headers['x-user-id'] || 'local-admin', challenge_id: next.id, status });
-  res.set('Cache-Control', 'no-store');
-  res.status(200).json({ success: true });
+app.put('/api/desafios/:id/status', async (req, res) => {
+  try {
+    const desafio = await dbOperations.getDesafioById(req.params.id);
+    if (!desafio) return res.status(404).json({ success:false, error:'Desafio não encontrado' });
+    
+    const { status } = req.body || {};
+    if (!['draft','active','closed','archived'].includes(status)) {
+      return res.status(400).json({ success:false, error:'Status inválido' });
+    }
+    
+    await dbOperations.updateDesafio(req.params.id, { status });
+    res.set('Cache-Control', 'no-store');
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Erro ao atualizar status do desafio:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
 });
 
 // Alterna visibilidade
-app.put('/api/desafios/:id/visibility', (req, res) => {
-  const idx = desafiosStore.challenges.findIndex(x => x.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ success:false, error:'Desafio não encontrado' });
-  const body = req.body || {};
-  const current = desafiosStore.challenges[idx];
-  const nextVisible = body.visible !== undefined ? !!body.visible : !current.visible;
-  const next = { ...current, visible: nextVisible, updated_at: new Date().toISOString() };
-  desafiosStore.challenges[idx] = next;
-  desafiosStore.logs.push({ id: `lg${desafiosStore.logs.length+1}`, type: 'visibility', at: next.updated_at, actor: req.headers['x-user-id'] || 'local-admin', challenge_id: next.id, visible: next.visible });
-  res.status(200).json({ success: true, challenge: publicChallenge(next) });
-});
-
-app.post('/api/desafios/:id/inscrever', (req, res) => {
-  const { crafter_id } = req.body || {};
-  const c = desafiosStore.challenges.find(x => x.id === req.params.id);
-  if (!c || !c.visible) return res.status(404).json({ success:false, error:'Desafio não encontrado' });
-  if (c.status !== 'active') return res.status(400).json({ success:false, error:'Desafio não aceita novas inscrições' });
-  if (isDeadlinePassed(c.deadline)) return res.status(400).json({ success:false, error:'Prazo encerrado para novas inscrições' });
-  if (!crafter_id) return res.status(400).json({ success:false, error:'Crafter obrigatório' });
-  if (desafiosStore.registrations.some(r => r.challenge_id === c.id && r.crafter_id === crafter_id)) return res.status(409).json({ success:false, error:'Inscrição já existente' });
-  const reg = { id: `rg${desafiosStore.registrations.length+1}`, challenge_id: c.id, crafter_id, enrolled_at: new Date().toISOString() };
-  desafiosStore.registrations.push(reg);
-  desafiosStore.logs.push({ id: `lg${desafiosStore.logs.length+1}`, type: 'register', at: reg.enrolled_at, actor: crafter_id, challenge_id: c.id });
-  res.set('Cache-Control', 'no-store');
-  res.status(201).json({ success:true, registration: reg });
-});
-
-app.post('/api/desafios/:id/entregar', (req, res) => {
-  const body = req.body || {};
-  const { crafter_id, delivery } = body;
-  const c = desafiosStore.challenges.find(x => x.id === req.params.id);
-  if (!c || !c.visible) return res.status(404).json({ success:false, error:'Desafio não encontrado' });
-  if (c.status !== 'active') return res.status(400).json({ success:false, error:'Desafio encerrado para novas entregas' });
-  if (isDeadlinePassed(c.deadline)) return res.status(400).json({ success:false, error:'Prazo encerrado para novas entregas' });
-  if (!crafter_id) return res.status(400).json({ success:false, error:'Crafter obrigatório' });
-  if (!delivery || typeof delivery !== 'object') return res.status(400).json({ success:false, error:'Entrega inválida' });
-  // validação conforme tipo
-  if (c.delivery_type === 'link' || c.delivery_type === 'github') {
-    const url = String(delivery.url || '').trim();
-    if (!url || !/^https?:\/\//i.test(url)) return res.status(400).json({ success:false, error:'URL inválida' });
+app.put('/api/desafios/:id/visibility', async (req, res) => {
+  try {
+    const desafio = await dbOperations.getDesafioById(req.params.id);
+    if (!desafio) return res.status(404).json({ success:false, error:'Desafio não encontrado' });
+    
+    const body = req.body || {};
+    const nextVisible = body.visible !== undefined ? !!body.visible : !desafio.visible;
+    
+    await dbOperations.updateDesafio(req.params.id, { visible: nextVisible });
+    const updatedDesafio = await dbOperations.getDesafioById(req.params.id);
+    
+    res.status(200).json({ success: true, challenge: publicChallenge(updatedDesafio) });
+  } catch (error) {
+    console.error('Erro ao atualizar visibilidade do desafio:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
-  // mock: para file, aceitar apenas metadados; upload real viria depois
-  const sub = {
-    id: `s${desafiosStore.submissions.length+1}`,
-    challenge_id: c.id,
-    crafter_id,
-    submitted_at: new Date().toISOString(),
-    delivery: { url: delivery.url || '', notes: String(delivery.notes || '').trim() },
-    score: null,
-    status: 'submitted',
-    review: null,
-  };
-  desafiosStore.submissions.push(sub);
-  desafiosStore.logs.push({ id: `lg${desafiosStore.logs.length+1}`, type: 'submit', at: sub.submitted_at, actor: crafter_id, challenge_id: c.id, submission_id: sub.id });
-  res.set('Cache-Control', 'no-store');
-  res.status(201).json({ success:true, submission: sub });
+});
+
+app.post('/api/desafios/:id/inscrever', async (req, res) => {
+  try {
+    const { crafter_id } = req.body || {};
+    const desafio = await dbOperations.getDesafioById(req.params.id);
+    
+    if (!desafio || !desafio.visible) {
+      return res.status(404).json({ success:false, error:'Desafio não encontrado' });
+    }
+    if (desafio.status !== 'active') {
+      return res.status(400).json({ success:false, error:'Desafio não aceita novas inscrições' });
+    }
+    if (isDeadlinePassed(desafio.deadline)) {
+      return res.status(400).json({ success:false, error:'Prazo encerrado para novas inscrições' });
+    }
+    if (!crafter_id) {
+      return res.status(400).json({ success:false, error:'Crafter obrigatório' });
+    }
+    
+    // Verificar se já existe inscrição
+    const existingInscricao = await dbOperations.checkInscricaoDesafio(crafter_id, req.params.id);
+    if (existingInscricao) {
+      return res.status(409).json({ success:false, error:'Inscrição já existente' });
+    }
+    
+    const inscricao = await dbOperations.createInscricaoDesafio({
+      crafter_id,
+      desafio_id: req.params.id
+    });
+    
+    res.set('Cache-Control', 'no-store');
+    res.status(201).json({ success:true, registration: inscricao });
+  } catch (error) {
+    console.error('Erro ao inscrever no desafio:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
+});
+
+app.post('/api/desafios/:id/entregar', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const { crafter_id, delivery } = body;
+    const challengeId = req.params.id;
+    
+    // Verificar se o desafio existe e está visível
+    const desafio = await dbOperations.getDesafioById(challengeId);
+    if (!desafio || !desafio.visible) {
+      return res.status(404).json({ success: false, error: 'Desafio não encontrado' });
+    }
+    
+    if (desafio.status !== 'active') {
+      return res.status(400).json({ success: false, error: 'Desafio encerrado para novas entregas' });
+    }
+    
+    if (isDeadlinePassed(desafio.deadline)) {
+      return res.status(400).json({ success: false, error: 'Prazo encerrado para novas entregas' });
+    }
+    
+    if (!crafter_id) {
+      return res.status(400).json({ success: false, error: 'Crafter obrigatório' });
+    }
+    
+    if (!delivery || typeof delivery !== 'object') {
+      return res.status(400).json({ success: false, error: 'Entrega inválida' });
+    }
+    
+    // Validação conforme tipo
+    if (desafio.delivery_type === 'link' || desafio.delivery_type === 'github') {
+      const url = String(delivery.url || '').trim();
+      if (!url || !/^https?:\/\//i.test(url)) {
+        return res.status(400).json({ success: false, error: 'URL inválida' });
+      }
+    }
+    
+    // Criar submission
+    const submissionData = {
+      challenge_id: challengeId,
+      crafter_id,
+      delivery: {
+        url: delivery.url || '',
+        notes: String(delivery.notes || '').trim()
+      }
+    };
+    
+    const submission = await dbOperations.createSubmission(submissionData);
+    
+    // Criar log da ação
+    await dbOperations.createLog({
+      type: 'submit',
+      actor: crafter_id,
+      challenge_id: challengeId,
+      submission_id: submission.id
+    });
+    
+    res.set('Cache-Control', 'no-store');
+    res.status(201).json({ success: true, submission });
+  } catch (error) {
+    console.error('Erro ao entregar desafio:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
 });
 
 // Lista submissions de um desafio (admin)
-app.get('/api/desafios/:id/submissions', (req, res) => {
-  const items = desafiosStore.submissions.filter(s => s.challenge_id === req.params.id);
-  res.status(200).json({ success: true, data: items, total: items.length });
+app.get('/api/desafios/:id/submissions', async (req, res) => {
+  try {
+    const challengeId = req.params.id;
+    const submissions = await dbOperations.getSubmissionsByChallenge(challengeId);
+    res.status(200).json({ success: true, data: submissions, total: submissions.length });
+  } catch (error) {
+    console.error('Erro ao buscar submissions:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
 });
 
 app.put('/api/submissions/:id/review', async (req, res) => {
-  const idx = desafiosStore.submissions.findIndex(x => x.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ success:false, error:'Submission não encontrada' });
-  const body = req.body || {};
-  const allowed = ['reviewed','approved','rejected'];
-  if (!allowed.includes(body.status)) return res.status(400).json({ success:false, error:'Status de review inválido' });
-  const before = desafiosStore.submissions[idx];
-  const next = {
-    ...before,
-    status: body.status,
-    score: typeof body.score === 'number' ? body.score : before.score,
-    review: {
+  try {
+    const submissionId = req.params.id;
+    const submission = await dbOperations.getSubmissionById(submissionId);
+    
+    if (!submission) {
+      return res.status(404).json({ success: false, error: 'Submission não encontrada' });
+    }
+    
+    const body = req.body || {};
+    const allowed = ['reviewed', 'approved', 'rejected'];
+    if (!allowed.includes(body.status)) {
+      return res.status(400).json({ success: false, error: 'Status de review inválido' });
+    }
+    
+    const reviewData = {
       by: req.headers['x-user-id'] || 'local-admin',
       notes: String(body.review?.notes || '').trim(),
       criteria_scores: body.review?.criteria_scores || {},
-    }
-  };
-  desafiosStore.submissions[idx] = next;
-  const logAt = new Date().toISOString();
-  desafiosStore.logs.push({ id: `lg${desafiosStore.logs.length+1}`, type: 'review', at: logAt, actor: next.review.by, challenge_id: next.challenge_id, submission_id: next.id, status: next.status });
-  // Integração Ranking opcional
-  try {
-    if (next.status === 'approved') {
-      const challenge = desafiosStore.challenges.find(c => c.id === next.challenge_id);
-      const delta = Math.max(0, Number(challenge?.base_points || 0));
-      if (delta > 0) {
-        await fetch(`http://localhost:${PORT}/api/ranking/points/${next.crafter_id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ delta })
-        });
+    };
+    
+    const updates = {
+      status: body.status,
+      score: typeof body.score === 'number' ? body.score : submission.score,
+      review: reviewData
+    };
+    
+    const updatedSubmission = await dbOperations.updateSubmission(submissionId, updates);
+    
+    // Criar log da ação
+    await dbOperations.createLog({
+      type: 'review',
+      actor: reviewData.by,
+      challenge_id: submission.challenge_id,
+      submission_id: submissionId,
+      data: { status: body.status }
+    });
+    
+    // Integração Ranking opcional
+    try {
+      if (body.status === 'approved') {
+        const desafio = await dbOperations.getDesafioById(submission.challenge_id);
+        const delta = Math.max(0, Number(desafio?.base_points || 0));
+        if (delta > 0) {
+          await fetch(`http://localhost:${PORT}/api/ranking/points/${submission.crafter_id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ delta })
+          });
+        }
       }
+    } catch (err) {
+      console.warn(`[${new Date().toISOString()}] Falha na integração de pontos do Ranking`, err?.message || err);
     }
-  } catch (err) {
-    console.warn(`[${new Date().toISOString()}] Falha na integração de pontos do Ranking`, err?.message || err);
+    
+    res.set('Cache-Control', 'no-store');
+    res.status(200).json({ success: true, submission: updatedSubmission });
+  } catch (error) {
+    console.error('Erro ao revisar submission:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
-  res.set('Cache-Control', 'no-store');
-  res.status(200).json({ success:true, submission: next });
-});
-
-app.get('/api/crafters', (req, res) => {
-  const list = rankingStore.crafters.map(c => ({ id: c.id, name: c.name, avatar: c.avatar }));
-  res.status(200).json({ success: true, data: list });
 });
 
 // GET /api/feedbacks - Busca os últimos feedbacks aprovados

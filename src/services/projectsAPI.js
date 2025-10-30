@@ -92,14 +92,14 @@ export const fetchProjects = async (filters = {}) => {
       }
     });
 
-    const url = `${API_BASE_URL}/api/projects${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `${API_BASE_URL}/api/projetos${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     
     const data = await fetchWithTimeout(url, {
       method: 'GET',
     });
 
     return {
-      projects: data.projects || [],
+      projects: data.data || [],
       total: data.total || 0,
       hasMore: data.hasMore || false,
       ...data
@@ -140,12 +140,12 @@ export const fetchProjectById = async (projectId) => {
       throw new APIError('ID do projeto é obrigatório', 400);
     }
 
-    const url = `${API_BASE_URL}/api/projects/${projectId}`;
+    const url = `${API_BASE_URL}/api/projetos/${projectId}`;
     const data = await fetchWithTimeout(url, {
       method: 'GET',
     });
 
-    return data.project || data;
+    return data.data || data;
   } catch (error) {
     console.error(`Erro ao buscar projeto ${projectId}:`, error);
     throw error;
@@ -282,7 +282,7 @@ export const getProjects = async (options = {}) => {
       if (status) params.append('status', status);
       if (tags.length > 0) params.append('tags', tags.join(','));
 
-      const url = `${API_BASE_URL}/api/projetos${options.publicOnly ? '?visivel=true' : ''}`;
+      const url = `${API_BASE_URL}/api/sqlite/projetos${options.publicOnly ? '?visivel=true' : ''}`;
       const data = await fetchWithTimeout(url, {
         method: 'GET',
         headers: {
@@ -291,12 +291,31 @@ export const getProjects = async (options = {}) => {
         }
       });
       
+      // Mapeia campos do SQLite para o formato esperado
+      const projects = Array.isArray(data?.data) ? data.data : (Array.isArray(data?.projects) ? data.projects : []);
+      console.log('🔍 Dados originais do SQLite:', projects);
+      
+      const mappedProjects = projects.map(project => ({
+        ...project,
+        title: project.titulo || project.title,
+        description: project.descricao || project.description,
+        createdAt: project.created_at || project.createdAt,
+        updatedAt: project.updated_at || project.updatedAt,
+        startDate: project.data_inicio || project.startDate,
+        thumbUrl: project.thumb_url || project.thumbUrl,
+        mentorId: project.mentor_id || project.mentorId,
+        mentorName: project.mentor_nome || project.mentorName,
+        mentorEmail: project.mentor_email || project.mentorEmail
+      }));
+      
+      console.log('🔄 Dados mapeados:', mappedProjects);
+      
       response = {
-        data: Array.isArray(data?.data) ? data.data : (Array.isArray(data?.projects) ? data.projects : []),
+        data: mappedProjects,
         pagination: data.pagination || {
           page,
           limit,
-          total: (Array.isArray(data?.data) ? data.data.length : (Array.isArray(data?.projects) ? data.projects.length : 0)),
+          total: mappedProjects.length,
           totalPages: 1
         },
         meta: {
@@ -361,20 +380,6 @@ export const getProjects = async (options = {}) => {
     
     throw error;
   }
-};
-
-/**
- * Utilitário para validar dados de projeto
- * @param {Object} project - Dados do projeto
- * @returns {boolean} True se válido
- */
-export const validateProject = (project) => {
-  const requiredFields = ['id', 'title', 'status', 'startDate', 'description', 'progress'];
-  
-  return requiredFields.every(field => {
-    const value = project[field];
-    return value !== undefined && value !== null && value !== '';
-  });
 };
 
 // Exporta a classe de erro para uso externo

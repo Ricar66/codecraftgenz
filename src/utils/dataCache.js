@@ -170,13 +170,16 @@ class DataCache {
  */
 export class ProjectDataValidator {
   static requiredFields = ['id', 'title', 'description', 'status'];
-  static validStatuses = ['active', 'completed', 'paused', 'cancelled'];
+  static validStatuses = ['active', 'completed', 'paused', 'cancelled', 'ongoing', 'rascunho', 'finalizado'];
   
   /**
    * Valida um projeto individual
    */
   static validateProject(project) {
     const errors = [];
+    
+    console.log('🔍 Validando projeto:', project);
+    console.log('📋 Campos obrigatórios:', this.requiredFields);
     
     // Verifica campos obrigatórios
     for (const field of this.requiredFields) {

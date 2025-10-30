@@ -1,6 +1,4 @@
 // src/assets/components/Button/Button.jsx
-import React from 'react';
-
 // Estilos
 import styles from './Button.module.css';
 
