@@ -1,9 +1,9 @@
 // src/admin/AdminLayout.jsx
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+ 
 import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import ProjectCard from '../components/Projects/ProjectCard.jsx';
-
 import { useAuth } from '../context/useAuth';
 import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo, useDesafios, DesafiosRepo, useFinance, FinanceRepo, useRanking, RankingRepo, useLogs } from '../hooks/useAdminRepo';
 import { adminStore } from '../lib/adminStore';
@@ -596,13 +596,14 @@ export function Projetos() {
       </div>
       {loading && <p>Carregando...</p>}
       {error && <p role="alert">{error}</p>}
-      <div className="table"><table><thead><tr><th>Título</th><th>Owner</th><th>Status</th><th>Preço</th><th>Progresso</th><th>Visível</th><th>Ações</th></tr></thead><tbody>{pageItems.length===0 ? (<tr><td colSpan="7">Nenhum projeto</td></tr>) : pageItems.map(p=> (
+      <div className="table"><table><thead><tr><th>Título</th><th>Owner</th><th>Status</th><th>Preço</th><th>Progresso</th><th>📝</th><th>Visível</th><th>Ações</th></tr></thead><tbody>{pageItems.length===0 ? (<tr><td colSpan="8">Nenhum projeto</td></tr>) : pageItems.map(p=> (
         <tr key={p.id}>
           <td>{p.title || p.titulo}</td>
           <td>{p.owner}</td>
           <td>{p.status}</td>
           <td>R$ {p.price ?? p.preco ?? 0}</td>
           <td>{p.progress ?? p.progresso ?? 0}%</td>
+          <td title={(p.description || p.descricao || '').slice(0, 200)}>{String(p.description || p.descricao || '').slice(0, 80) || '—'}</td>
           <td>{String(p.visible ?? p.visivel)}</td>
           <td>
             <div className="btn-group">
@@ -613,7 +614,7 @@ export function Projetos() {
           </td>
         </tr>
       ))}</tbody></table></div>
-      <div className="formRow">
+      <div className="formRow" style={{ gridTemplateColumns: 'repeat(6, minmax(0,1fr))' }}>
         <input aria-label="Título" placeholder="Título" value={form.titulo} onChange={e=>setForm({...form,titulo:e.target.value})} />
         <input aria-label="Owner" placeholder="Owner" value={form.owner} onChange={e=>setForm({...form,owner:e.target.value})} />
         <input aria-label="Thumb URL" placeholder="Thumb URL" value={form.thumb_url} onChange={e=>setForm({...form,thumb_url:e.target.value})} />
@@ -621,6 +622,7 @@ export function Projetos() {
         <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="rascunho">rascunho</option><option value="ongoing">andamento</option><option value="finalizado">finalizado</option><option value="arquivado">arquivado</option></select>
         <input aria-label="Preço" placeholder="Preço" type="number" value={form.preco} onChange={e=>setForm({...form,preco:Number(e.target.value)})} />
         <input aria-label="Progresso" type="range" min="0" max="100" value={form.progresso} onChange={e=>setForm({...form,progresso:Number(e.target.value)})} />
+        <textarea aria-label="Descrição do Projeto" placeholder="Descreva brevemente o objetivo e escopo do projeto..." maxLength={500} required value={form.descricao} onChange={e=>setForm({...form,descricao:e.target.value})} style={{ gridColumn: '1 / -1', minHeight: 80, resize: 'vertical' }} />
         <label><input type="checkbox" checked={form.visivel} onChange={e=>setForm({...form,visivel:e.target.checked})} /> Visível</label>
         <button onClick={onSave}>Salvar projeto</button>
       </div>
@@ -676,19 +678,6 @@ export function Desafios() {
       status: d.status || 'draft',
       visible: !!d.visible,
     });
-  };
-
-  const onSave = async () => {
-    setBusy(true);
-    try {
-      const payload = editingId ? { ...form, id: editingId } : form;
-      await DesafiosRepo.upsert(payload);
-      setForm({ name:'', objetivo:'', prazoDias:7, recompensaPts:100, status:'ativo', visible:true });
-      setEditingId(null);
-      refresh();
-    } finally {
-      setBusy(false);
-    }
   };
 
   const toggleVisible = async (d) => {

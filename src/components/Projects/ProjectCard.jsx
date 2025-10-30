@@ -78,9 +78,10 @@ const ProjectCard = ({
         return styles.statusDefault;
     }
   };
-  const desc = String(project?.description ?? project?.descricao ?? '');
+  const descRaw = project?.description ?? project?.descricao;
+  const desc = String(descRaw ?? '').trim();
   const shouldShowReadMore = desc.length > maxDescriptionLength;
-  const displayDescription = isExpanded ? desc : truncateText(desc, maxDescriptionLength);
+  const displayDescription = desc.length === 0 ? 'Sem descrição cadastrada.' : (isExpanded ? desc : truncateText(desc, maxDescriptionLength));
   const progressValue = typeof project?.progress === 'number' ? project.progress : (typeof project?.progresso === 'number' ? project.progresso : 0);
   const title = project?.title ?? project?.titulo ?? 'Projeto sem título';
   const startDate = project?.startDate ?? project?.data_inicio ?? null;

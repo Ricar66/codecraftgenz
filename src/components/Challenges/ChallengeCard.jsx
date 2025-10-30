@@ -1,4 +1,5 @@
 import React from 'react';
+
 import styles from './ChallengeCard.module.css';
 
 function formatDate(iso) {

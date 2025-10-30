@@ -209,7 +209,9 @@ const ProjectsList = ({ useAdminStore = false }) => {
   const orderedProjects = sortProjects(displayedProjects);
 
   React.useEffect(() => {
-    const unsub = realtime.subscribe('projects_changed', () => { try { refetch(); } catch {} });
+    const unsub = realtime.subscribe('projects_changed', () => {
+      try { refetch(); } catch (err) { console.warn('projects_changed refetch error', err); }
+    });
     return () => unsub();
   }, [refetch]);
   const hasDisplayed = displayedProjects.length > 0;

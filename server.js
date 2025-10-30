@@ -468,12 +468,12 @@ function currentWeekRef() {
 const rankingStore = {
   week_ref: currentWeekRef(),
   crafters: [
-    { id: 'c1', name: 'Lívia Rocha', points: 920, avatar: null },
-    { id: 'c2', name: 'Kaique Ramos', points: 1000, avatar: null },
-    { id: 'c3', name: 'Diego Martins', points: 870, avatar: null },
-    { id: 'c4', name: 'Nina', points: 840, avatar: null },
-    { id: 'c5', name: 'Rafa', points: 820, avatar: null },
-    { id: 'c6', name: 'João', points: 800, avatar: null },
+    { id: 'c1', name: 'Lívia Rocha', points: 920, avatar_url: null, active: true },
+    { id: 'c2', name: 'Kaique Ramos', points: 1000, avatar_url: null, active: true },
+    { id: 'c3', name: 'Diego Martins', points: 870, avatar_url: null, active: true },
+    { id: 'c4', name: 'Nina', points: 840, avatar_url: null, active: true },
+    { id: 'c5', name: 'Rafa', points: 820, avatar_url: null, active: true },
+    { id: 'c6', name: 'João', points: 800, avatar_url: null, active: true },
   ],
   top3: [
     { crafter_id: 'c2', position: 1, reward: 'Badge Ouro' },
@@ -483,13 +483,22 @@ const rankingStore = {
   updated_at: new Date().toISOString(),
   updated_by: 'seed',
   history: [],
+  filters: { min_points: 0, max_points: null, active_only: true, search: '' },
 };
 
+// Server-side notifier (no-op placeholder for realtime)
+function notifyRealtime() {
+  // In dev, frontend listens to its own realtime bus.
+  // This function serves as a placeholder to satisfy linter and future server-side events.
+}
+
 function getRankingPayload() {
-  const table = rankingStore.crafters
-    .slice()
-    .sort((a,b)=>b.points-a.points)
-    .map(c => ({ crafter_id: c.id, name: c.name, points: c.points, last_update: rankingStore.updated_at }));
+  const actives = rankingStore.crafters.filter(c => c.active !== false)
+    .slice().sort((a,b)=>b.points-a.points);
+  const inactives = rankingStore.crafters.filter(c => c.active === false)
+    .slice().sort((a,b)=>b.points-a.points);
+  const merged = [...actives, ...inactives];
+  const table = merged.map(c => ({ crafter_id: c.id, name: c.name, points: c.points, last_update: rankingStore.updated_at }));
   // Enriquecer top3 com nome/points se faltar
   const byId = new Map(rankingStore.crafters.map(c => [c.id, c]));
   const top3 = rankingStore.top3
@@ -502,6 +511,7 @@ function getRankingPayload() {
     table,
     updated_at: rankingStore.updated_at,
     updated_by: rankingStore.updated_by,
+    filters: rankingStore.filters,
   };
 }
 
@@ -524,6 +534,7 @@ app.put('/api/ranking/points/:crafter_id', (req, res) => {
   rankingStore.updated_at = new Date().toISOString();
   rankingStore.updated_by = req.headers['x-user-id'] || 'local-admin';
   rankingStore.history.push({ at: rankingStore.updated_at, actor: rankingStore.updated_by, action: 'score_change', crafter_id, before, after: next, diff: next-before });
+  notifyRealtime('ranking_changed');
   res.set('Cache-Control', 'no-store');
   res.status(200).json({ success: true });
 });
@@ -544,8 +555,63 @@ app.put('/api/ranking/top3', (req, res) => {
   rankingStore.updated_at = new Date().toISOString();
   rankingStore.updated_by = req.headers['x-user-id'] || 'local-admin';
   rankingStore.history.push({ at: rankingStore.updated_at, actor: rankingStore.updated_by, action: 'top3_update' });
+  notifyRealtime('ranking_changed');
   res.set('Cache-Control', 'no-store');
   res.status(200).json({ success: true });
+});
+
+// Ranking filters (admin state persistence)
+app.put('/api/ranking/filters', (req, res) => {
+  const f = req.body || {};
+  const next = {
+    min_points: typeof f.min_points === 'number' ? f.min_points : (rankingStore.filters.min_points || 0),
+    max_points: typeof f.max_points === 'number' ? f.max_points : (rankingStore.filters.max_points ?? null),
+    active_only: f.active_only !== undefined ? !!f.active_only : !!rankingStore.filters.active_only,
+    search: typeof f.search === 'string' ? f.search : (rankingStore.filters.search || ''),
+  };
+  rankingStore.filters = next;
+  rankingStore.updated_at = new Date().toISOString();
+  rankingStore.updated_by = req.headers['x-user-id'] || 'local-admin';
+  rankingStore.history.push({ id: `aud${rankingStore.history.length+1}`, actor: rankingStore.updated_by, action: 'filters_update', at: rankingStore.updated_at, diff: next });
+  res.status(200).json({ success: true, filters: next });
+});
+
+// Crafters CRUD
+app.get('/api/crafters', (req, res) => {
+  const list = rankingStore.crafters.map(c => ({ id: c.id, name: c.name, avatar_url: c.avatar_url || null, active: c.active !== false }));
+  res.status(200).json({ success: true, data: list });
+});
+app.post('/api/crafters', (req, res) => {
+  const body = req.body || {};
+  if (!body.name) return res.status(400).json({ success: false, error: 'Campo obrigatório: name' });
+  const id = `c${rankingStore.crafters.length + 1}`;
+  const crafter = { id, name: String(body.name).trim(), avatar_url: body.avatar_url || null, points: Math.max(0, Number(body.points || 0)), active: body.active !== false };
+  rankingStore.crafters.push(crafter);
+  rankingStore.updated_at = new Date().toISOString();
+  rankingStore.updated_by = req.headers['x-user-id'] || 'local-admin';
+  rankingStore.history.push({ id: `aud${rankingStore.history.length+1}`, actor: rankingStore.updated_by, action: 'crafter_create', at: rankingStore.updated_at, crafter_id: id });
+  notifyRealtime('ranking_changed');
+  res.status(201).json({ success: true, crafter });
+});
+app.put('/api/crafters/:id', (req, res) => {
+  const { id } = req.params;
+  const idx = rankingStore.crafters.findIndex(c => c.id === id);
+  if (idx === -1) return res.status(404).json({ success: false, error: 'Crafter não encontrado' });
+  const before = rankingStore.crafters[idx];
+  const patch = req.body || {};
+  const next = { 
+    ...before, 
+    name: patch.name !== undefined ? String(patch.name).trim() : before.name,
+    avatar_url: patch.avatar_url !== undefined ? patch.avatar_url : before.avatar_url,
+    points: patch.points !== undefined ? Math.max(0, Number(patch.points)) : before.points,
+    active: patch.active !== undefined ? !!patch.active : before.active,
+  };
+  rankingStore.crafters[idx] = next;
+  rankingStore.updated_at = new Date().toISOString();
+  rankingStore.updated_by = req.headers['x-user-id'] || 'local-admin';
+  rankingStore.history.push({ id: `aud${rankingStore.history.length+1}`, actor: rankingStore.updated_by, action: 'crafter_update', at: rankingStore.updated_at, crafter_id: id, diff: { name: next.name, points: next.points, active: next.active } });
+  notifyRealtime('ranking_changed');
+  res.status(200).json({ success: true, crafter: next });
 });
 
 // --- Desafios (Mock/Local) ---

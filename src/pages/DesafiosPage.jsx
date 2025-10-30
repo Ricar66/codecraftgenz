@@ -1,5 +1,5 @@
 // src/pages/DesafiosPage.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
 import { realtime } from '../lib/realtime';
@@ -80,6 +80,13 @@ export default function DesafiosPage() {
     }
   };
 
+  const scrollerRef = useRef(null);
+  const scrollBy = (dir) => {
+    const el = scrollerRef.current; if (!el) return;
+    const amount = Math.round(el.clientWidth * 0.9);
+    el.scrollBy({ left: dir * amount, behavior: 'smooth' });
+  };
+
   return (
     <div className="desafios-page">
       <Navbar />
@@ -92,35 +99,38 @@ export default function DesafiosPage() {
             <p className="lead">Cada missão CodeCraft é uma oportunidade de testar suas habilidades e crescer como desenvolvedor.</p>
           </header>
 
-          <div className="desafios-grid" aria-busy={loading} aria-live="polite">
-            {desafios.map((d) => (
-              <div key={d.id}>
-                <ChallengeCard challenge={d} />
-                <div style={{ display:'flex', gap:8, marginTop:8 }}>
-                  <button className="cta" onClick={()=>participar(d.id)} disabled={d.status!=='active'}>
-                    {d.status==='active' ? 'Quero participar!' : 'Encerrado'}
-                  </button>
-                  {(d.delivery_type==='link' || d.delivery_type==='github') && (
-                    <div className="delivery" style={{ display:'flex', gap:8 }}>
-                      <input aria-label="URL da entrega" placeholder={d.delivery_type==='github' ? 'URL do repositório' : 'URL da entrega'} value={deliverUrls[d.id]||''} onChange={e=>setDeliverUrls(prev=>({ ...prev, [d.id]: e.target.value }))} className="rank-search" />
-                      <button onClick={()=>entregar(d)} disabled={d.status!=='active'}>Enviar</button>
-                    </div>
-                  )}
+          <div className="carousel">
+            <button className="nav left" onClick={()=>scrollBy(-1)} aria-label="Ver anteriores">⬅️</button>
+            <div className="track" ref={scrollerRef} aria-busy={loading} aria-live="polite">
+              {desafios.map((d) => (
+                <div key={d.id} className="snap">
+                  <ChallengeCard challenge={d} />
+                  <div style={{ display:'flex', gap:8, marginTop:8 }}>
+                    <button className="cta" onClick={()=>participar(d.id)} disabled={d.status!=='active'}>
+                      {d.status==='active' ? 'Quero participar!' : 'Encerrado'}
+                    </button>
+                    {(d.delivery_type==='link' || d.delivery_type==='github') && (
+                      <div className="delivery" style={{ display:'flex', gap:8 }}>
+                        <input aria-label="URL da entrega" placeholder={d.delivery_type==='github' ? 'URL do repositório' : 'URL da entrega'} value={deliverUrls[d.id]||''} onChange={e=>setDeliverUrls(prev=>({ ...prev, [d.id]: e.target.value }))} className="rank-search" />
+                        <button onClick={()=>entregar(d)} disabled={d.status!=='active'}>Enviar</button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <button className="nav right" onClick={()=>scrollBy(1)} aria-label="Ver próximos">➡️</button>
+          </div>
             {!loading && desafios.length === 0 && (
               <div className="empty" role="status">Nenhum desafio ativo no momento. Volte em breve 🚀</div>
             )}
             {!loading && error && (
               <div className="empty" role="alert">{error}</div>
             )}
+            <footer className="section-footer">
+              <p className="helper-text">Nossos desafios não são apenas testes. São experiências que transformam Crafters em verdadeiros criadores do amanhã.</p>
+            </footer>
           </div>
-
-          <footer className="section-footer">
-            <p className="helper-text">Nossos desafios não são apenas testes. São experiências que transformam Crafters em verdadeiros criadores do amanhã.</p>
-          </footer>
-        </div>
       </section>
 
       <style>{`
@@ -137,12 +147,15 @@ export default function DesafiosPage() {
         .subtitle { font-size: clamp(1.25rem, 2.5vw, 1.5rem); color: var(--texto-gelo); margin-top: var(--espaco-xs); }
         .lead { font-size: 1.05rem; color: var(--texto-gelo); margin-top: var(--espaco-sm); }
 
-        .desafios-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espaco-lg); margin-top: var(--espaco-lg); align-items: stretch; grid-auto-rows: 1fr; }
-        .desafios-grid::before { content: ''; display: block; height: 2px; background: linear-gradient(90deg, rgba(0, 228, 242, 0.5), rgba(0, 228, 242, 0.1)); margin-bottom: var(--espaco-sm); }
-
-        .desafio-card { background: rgba(104, 0, 123, 0.14); border: 1px solid rgba(0, 228, 242, 0.5); border-radius: var(--raio-lg); padding: var(--espaco-md); box-shadow: 0 4px 16px rgba(104, 0, 123, 0.28); transition: transform 180ms ease, box-shadow 180ms ease; height: 100%; overflow: hidden; }
-        .desafio-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 228, 242, 0.32); }
-        .desafio-card:focus-within { outline: 2px solid rgba(0, 228, 242, 0.7); outline-offset: 2px; }
+        /* Carousel */
+        .carousel { position: relative; margin-top: var(--espaco-lg); }
+        .track { display: flex; gap: var(--espaco-lg); overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding: var(--espaco-sm); }
+        .track::-webkit-scrollbar { height: 8px; }
+        .track::-webkit-scrollbar-thumb { background: rgba(0,228,242,0.35); border-radius: 999px; }
+        .snap { scroll-snap-align: start; flex: 0 0 auto; min-width: 320px; max-width: 360px; }
+        .nav { position: absolute; top: 50%; transform: translateY(-50%); background: #D12BF2; color: #fff; border: none; border-radius: 999px; width: 36px; height: 36px; display: grid; place-items: center; box-shadow: 0 6px 14px rgba(0,0,0,0.2); cursor: pointer; }
+        .nav.left { left: 4px; }
+        .nav.right { right: 4px; }
 
         .icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #68007B, #00E4F2); margin-bottom: var(--espaco-xs); }
         .name { color: #00E4F2; font-weight: 700; }
@@ -154,9 +167,9 @@ export default function DesafiosPage() {
         .cta[disabled] { background: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); cursor: not-allowed; }
 
         @media (max-width: 1200px) { .section-card { max-width: 1000px; } }
-        @media (max-width: 992px) { .desafios-grid { grid-template-columns: 1fr 1fr; } }
-        @media (max-width: 768px) { .section-card { padding: var(--espaco-lg); } .desafios-grid { gap: var(--espaco-md); } }
-        @media (max-width: 640px) { .section-card { padding: var(--espaco-md); } .desafios-grid { grid-template-columns: 1fr; } .desafios-grid::before { display: none; } }
+        @media (max-width: 992px) { .snap { min-width: 300px; max-width: 340px; } }
+        @media (max-width: 768px) { .section-card { padding: var(--espaco-lg); } .snap { min-width: 280px; max-width: 320px; } }
+        @media (max-width: 640px) { .section-card { padding: var(--espaco-md); } .snap { min-width: 260px; max-width: 300px; } }
         @media (prefers-reduced-motion: reduce) { .desafio-card { transition: none; } }
      `}</style>
     </div>
