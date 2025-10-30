@@ -560,6 +560,12 @@ app.put('/api/ranking/top3', (req, res) => {
   res.status(200).json({ success: true });
 });
 
+// Audit logs endpoint
+app.get('/api/ranking/audit', (req, res) => {
+  const logs = rankingStore.history.slice().reverse(); // Most recent first
+  res.status(200).json({ data: logs });
+});
+
 // Ranking filters (admin state persistence)
 app.put('/api/ranking/filters', (req, res) => {
   const f = req.body || {};

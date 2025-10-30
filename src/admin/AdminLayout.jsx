@@ -516,52 +516,323 @@ export function Mentores() {
 }
 
 export function Ranking() {
-  const { data: rk, refresh } = useRanking();
-  const change = (id, delta) => { RankingRepo.updatePoints(id, delta); refresh(); };
-  const [top3, setTop3] = React.useState(rk.top3);
-  const onSaveTop3 = () => { RankingRepo.setTop3(top3); refresh(); };
+  const { data: rk, loading, error, refresh } = useRanking();
+  const [busy, setBusy] = React.useState(false);
+  const [filters, setFilters] = React.useState({ search: '', min_points: '', max_points: '', active_only: true, sort: 'points' });
+  const [selectedCrafters, setSelectedCrafters] = React.useState(new Set());
+  const [bulkAction, setBulkAction] = React.useState({ type: '', value: '' });
+  const [crafterForm, setCrafterForm] = React.useState({ name: '', avatar_url: '', points: 0, active: true });
+  const [showAuditLogs, setShowAuditLogs] = React.useState(false);
+  const [auditLogs, setAuditLogs] = React.useState([]);
+
+  // Podium management
+  const [top3, setTop3] = React.useState(rk.top3 || []);
+  const [podiumRewards, setPodiumRewards] = React.useState({});
+
+  React.useEffect(() => {
+    if (rk.top3) {
+      setTop3(rk.top3);
+      const rewards = {};
+      rk.top3.forEach(t => rewards[t.position] = t.reward || '');
+      setPodiumRewards(rewards);
+    }
+  }, [rk.top3]);
+
+  const change = async (id, delta, reason = '') => {
+    setBusy(true);
+    try {
+      await RankingRepo.updatePoints(id, { delta, reason: reason || `Ajuste manual ${delta > 0 ? '+' : ''}${delta}` });
+      refresh();
+    } finally { setBusy(false); }
+  };
+
+  const setPoints = async (id, points, reason = '') => {
+    setBusy(true);
+    try {
+      await RankingRepo.updatePoints(id, { set: points, reason: reason || `Definir ${points} pontos` });
+      refresh();
+    } finally { setBusy(false); }
+  };
+
+  const onSaveTop3 = async () => {
+    setBusy(true);
+    try {
+      const payload = top3.map((t, i) => ({
+        crafter_id: t.id,
+        position: i + 1,
+        reward: podiumRewards[i + 1] || ''
+      }));
+      await RankingRepo.setTop3(payload);
+      refresh();
+    } finally { setBusy(false); }
+  };
+
+  const createCrafter = async () => {
+    setBusy(true);
+    try {
+      const response = await fetch('/api/crafters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(crafterForm)
+      });
+      if (!response.ok) throw new Error('Falha ao criar crafter');
+      setCrafterForm({ name: '', avatar_url: '', points: 0, active: true });
+      refresh();
+    } finally { setBusy(false); }
+  };
+
+  const updateCrafter = async (id, updates) => {
+    setBusy(true);
+    try {
+      const response = await fetch(`/api/crafters/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (!response.ok) throw new Error('Falha ao atualizar crafter');
+      refresh();
+    } finally { setBusy(false); }
+  };
+
+  // Filter and sort crafters
+  const filteredCrafters = React.useMemo(() => {
+    let crafters = [...(rk.all || [])];
+    
+    if (filters.search) {
+      crafters = crafters.filter(c => 
+        c.name.toLowerCase().includes(filters.search.toLowerCase())
+      );
+    }
+    
+    if (filters.min_points) {
+      crafters = crafters.filter(c => c.points >= Number(filters.min_points));
+    }
+    
+    if (filters.max_points) {
+      crafters = crafters.filter(c => c.points <= Number(filters.max_points));
+    }
+    
+    if (filters.active_only) {
+      crafters = crafters.filter(c => c.active !== false);
+    }
+    
+    if (filters.sort === 'points') {
+      crafters.sort((a, b) => b.points - a.points);
+    } else if (filters.sort === 'name') {
+      crafters.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    
+    return crafters;
+  }, [rk.all, filters]);
+
+  const resetFilters = () => {
+    setFilters({ search: '', min_points: '', max_points: '', active_only: true, sort: 'points' });
+  };
+
+  if (loading) return <div className="admin-content"><h1 className="title">Ranking</h1><p>Carregando...</p></div>;
+  if (error) return <div className="admin-content"><h1 className="title">Ranking</h1><p role="alert">{error}</p></div>;
+
   return (
     <div className="admin-content">
       <h1 className="title">Ranking</h1>
-      <h3>Top 3</h3>
-      <ul className="items">
-        {top3.map((c, idx) => (
-          <li key={c.id}
-              className="item"
-              draggable
-              onDragStart={(e)=>{ e.dataTransfer.setData('text/plain', String(idx)); }}
-              onDragOver={(e)=> e.preventDefault()}
-              onDrop={(e)=>{
-                const from = Number(e.dataTransfer.getData('text/plain'));
-                const to = idx;
-                if (Number.isNaN(from)) return;
-                const next = [...top3];
-                const [moved] = next.splice(from,1);
-                next.splice(to,0,moved);
-                setTop3(next);
-              }}
+      
+      {/* Podium Editor */}
+      <section style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <h3>Editor de Pódio</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1rem' }}>
+          {[1, 2, 3].map(position => {
+            const crafter = top3.find(t => t.position === position) || top3[position - 1];
+            return (
+              <div key={position} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ fontWeight: 600, color: '#D12BF2' }}>Posição {position}</label>
+                <select 
+                  value={crafter?.id || ''} 
+                  onChange={e => {
+                    const selected = rk.all.find(c => c.id === e.target.value);
+                    if (selected) {
+                      const newTop3 = [...top3];
+                      newTop3[position - 1] = { ...selected, position };
+                      setTop3(newTop3);
+                    }
+                  }}
+                >
+                  <option value="">Selecionar crafter</option>
+                  {rk.all.map(c => (
+                    <option key={c.id} value={c.id}>{c.name} ({c.points} pts)</option>
+                  ))}
+                </select>
+                <input 
+                  placeholder="Recompensa (opcional)"
+                  value={podiumRewards[position] || ''}
+                  onChange={e => setPodiumRewards(prev => ({ ...prev, [position]: e.target.value }))}
+                />
+              </div>
+            );
+          })}
+        </div>
+        <div className="formRow">
+          <button className="btn btn-primary" onClick={onSaveTop3} disabled={busy}>
+            Salvar Pódio 🚀
+          </button>
+          <button className="btn btn-outline" onClick={() => { setTop3([]); setPodiumRewards({}); }}>
+            Limpar Pódio
+          </button>
+        </div>
+      </section>
+
+      {/* Crafter Management */}
+      <section style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <h3>Gerenciar Crafters</h3>
+        <div className="formRow">
+          <input 
+            placeholder="Nome do crafter"
+            value={crafterForm.name}
+            onChange={e => setCrafterForm(prev => ({ ...prev, name: e.target.value }))}
+          />
+          <input 
+            placeholder="Avatar URL (opcional)"
+            value={crafterForm.avatar_url}
+            onChange={e => setCrafterForm(prev => ({ ...prev, avatar_url: e.target.value }))}
+          />
+          <input 
+            type="number"
+            placeholder="Pontos iniciais"
+            value={crafterForm.points}
+            onChange={e => setCrafterForm(prev => ({ ...prev, points: Number(e.target.value) }))}
+          />
+          <label>
+            <input 
+              type="checkbox"
+              checked={crafterForm.active}
+              onChange={e => setCrafterForm(prev => ({ ...prev, active: e.target.checked }))}
+            />
+            Ativo
+          </label>
+          <button className="btn btn-primary" onClick={createCrafter} disabled={busy || !crafterForm.name}>
+            Adicionar Crafter
+          </button>
+        </div>
+      </section>
+
+      {/* Filters */}
+      <section style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <h3>Filtros</h3>
+        <div className="formRow">
+          <input 
+            placeholder="Buscar por nome"
+            value={filters.search}
+            onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
+          />
+          <input 
+            type="number"
+            placeholder="Pontos mín."
+            value={filters.min_points}
+            onChange={e => setFilters(prev => ({ ...prev, min_points: e.target.value }))}
+          />
+          <input 
+            type="number"
+            placeholder="Pontos máx."
+            value={filters.max_points}
+            onChange={e => setFilters(prev => ({ ...prev, max_points: e.target.value }))}
+          />
+          <select 
+            value={filters.sort}
+            onChange={e => setFilters(prev => ({ ...prev, sort: e.target.value }))}
           >
-            <span>{c.name}</span>
-            <span>{c.points} pts</span>
-            <div><button onClick={()=>change(c.id, +10)}>+10</button><button onClick={()=>change(c.id, -10)}>-10</button></div>
-          </li>
-        ))}
-      </ul>
-      <div className="formRow">
-        {rk.all.slice(0,3).map((c, i) => (
-          <select key={i} value={top3[i]?.id || ''} onChange={e=>{
-            const selected = [...rk.top3, ...rk.all].find(x=>x.id===e.target.value);
-            const next = [...top3]; next[i] = selected; setTop3(next);
-          }} aria-label={`Posição ${i+1}`}>
-            {[...rk.top3, ...rk.all].map(x => (<option key={x.id} value={x.id}>{x.name}</option>))}
+            <option value="points">Ordenar por pontos</option>
+            <option value="name">Ordenar por nome</option>
           </select>
-        ))}
-        <button onClick={onSaveTop3}>Salvar Top 3</button>
-      </div>
-      <h3>Tabela geral</h3>
-      <ul className="items">
-        {[...rk.all].map(c => (<li key={c.id} className="item"><span>{c.name}</span><span>{c.points} pts</span><div><button onClick={()=>change(c.id, +10)}>+10</button><button onClick={()=>change(c.id, -10)}>-10</button></div></li>))}
-      </ul>
+          <label>
+            <input 
+              type="checkbox"
+              checked={filters.active_only}
+              onChange={e => setFilters(prev => ({ ...prev, active_only: e.target.checked }))}
+            />
+            Apenas ativos
+          </label>
+          <button className="btn btn-outline" onClick={resetFilters}>
+            Reset Filtros
+          </button>
+        </div>
+      </section>
+
+      {/* Crafters Table */}
+      <section style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <h3>Tabela Geral</h3>
+        <div className="table">
+          <table>
+            <thead>
+              <tr>
+                <th>Pos</th>
+                <th>Avatar</th>
+                <th>Nome</th>
+                <th>Pontos</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCrafters.map((c, index) => (
+                <tr key={c.id}>
+                  <td>{index + 1}</td>
+                  <td>
+                    {c.avatar_url ? (
+                      <img src={c.avatar_url} alt={c.name} style={{ width: 32, height: 32, borderRadius: '50%' }} />
+                    ) : (
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#D12BF2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '12px' }}>
+                        {c.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </td>
+                  <td>{c.name}</td>
+                  <td>{c.points} pts</td>
+                  <td>
+                    <span style={{ padding: '4px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: c.active !== false ? 'rgba(0, 228, 242, 0.2)' : 'rgba(255, 255, 255, 0.1)', color: c.active !== false ? '#00E4F2' : 'rgba(255, 255, 255, 0.6)' }}>
+                      {c.active !== false ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="btn-group">
+                      <button className="btn btn-sm" onClick={() => change(c.id, 10)} disabled={busy}>+10</button>
+                      <button className="btn btn-sm" onClick={() => change(c.id, -10)} disabled={busy}>-10</button>
+                      <button 
+                        className="btn btn-sm btn-outline" 
+                        onClick={() => {
+                          const points = prompt('Definir pontos:', c.points);
+                          if (points !== null && !isNaN(points)) {
+                            setPoints(c.id, Number(points));
+                          }
+                        }}
+                        disabled={busy}
+                      >
+                        SET
+                      </button>
+                      <button 
+                        className="btn btn-sm btn-danger" 
+                        onClick={() => {
+                          if (window.confirm(`Zerar pontos de ${c.name}?`)) {
+                            setPoints(c.id, 0, 'Zerado pelo admin');
+                          }
+                        }}
+                        disabled={busy}
+                      >
+                        Zerar
+                      </button>
+                      <button 
+                        className="btn btn-sm btn-outline" 
+                        onClick={() => updateCrafter(c.id, { active: !c.active })}
+                        disabled={busy}
+                      >
+                        {c.active !== false ? 'Desativar' : 'Ativar'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }
