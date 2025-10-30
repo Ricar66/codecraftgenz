@@ -6,7 +6,7 @@ import { projectsCache, ProjectDataValidator } from '../utils/dataCache.js';
  */
 
 // Configuração base da API
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = '';
 const API_TIMEOUT = 5000; // 5 segundos - reduzido para evitar timeouts longos
 
 /**
@@ -282,7 +282,7 @@ export const getProjects = async (options = {}) => {
       if (status) params.append('status', status);
       if (tags.length > 0) params.append('tags', tags.join(','));
 
-      const url = `${API_BASE_URL}/api/projetos`;
+      const url = `${API_BASE_URL}/api/projetos${options.publicOnly ? '?visivel=true' : ''}`;
       const data = await fetchWithTimeout(url, {
         method: 'GET',
         headers: {

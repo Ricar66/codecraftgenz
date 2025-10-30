@@ -10,11 +10,7 @@ import styles from './ProjectCard.module.css';
  * @param {Object} props - Propriedades do componente
  * @param {Object} props.project - Dados do projeto
  * @param {string} props.project.id - ID único do projeto
- * @param {string} props.project.title - Título do projeto
- * @param {string} props.project.status - Status do projeto (ex: "Em andamento")
- * @param {string} props.project.startDate - Data de início (formato ISO)
- * @param {string} props.project.description - Descrição do projeto
- * @param {number} props.project.progress - Progresso do projeto (0-100)
+ * Aceita chaves tanto em inglês quanto em português (titulo, data_inicio, descricao, progresso).
  * @param {number} props.maxDescriptionLength - Limite de caracteres para descrição (padrão: 150)
  */
 const ProjectCard = ({ 
@@ -65,32 +61,46 @@ const ProjectCard = ({
   const getStatusBadgeClass = (status) => {
     switch (String(status || '').toLowerCase()) {
       case 'em andamento':
+      case 'ongoing':
         return styles.statusInProgress;
       case 'concluído':
+      case 'concluido':
+      case 'finalizado':
+      case 'completed':
         return styles.statusCompleted;
       case 'pausado':
+      case 'paused':
         return styles.statusPaused;
+      case 'arquivado':
+      case 'archived':
+        return styles.statusDefault;
       default:
         return styles.statusDefault;
     }
   };
-  const desc = String(project?.description || '');
+  const desc = String(project?.description ?? project?.descricao ?? '');
   const shouldShowReadMore = desc.length > maxDescriptionLength;
   const displayDescription = isExpanded ? desc : truncateText(desc, maxDescriptionLength);
-  const progressValue = typeof project?.progress === 'number' ? project.progress : 0;
+  const progressValue = typeof project?.progress === 'number' ? project.progress : (typeof project?.progresso === 'number' ? project.progresso : 0);
+  const title = project?.title ?? project?.titulo ?? 'Projeto sem título';
+  const startDate = project?.startDate ?? project?.data_inicio ?? null;
+  const statusLabel = project?.status || '—';
 
   return (
     <article className={styles.projectCard} role="article" aria-labelledby={`project-${project.id}-title`}>
       {/* Header do Card */}
       <header className={styles.cardHeader}>
+        {project?.thumb_url ? (
+          <img src={project.thumb_url} alt="Thumb do projeto" className={styles.thumb} />
+        ) : null}
         <h3 id={`project-${project.id}-title`} className={styles.projectTitle}>
-          {project?.title || 'Projeto sem título'}
+          {title}
         </h3>
         <span 
-          className={`${styles.statusBadge} ${getStatusBadgeClass(project?.status)}`}
-          aria-label={`Status: ${project?.status || '—'}`}
+          className={`${styles.statusBadge} ${getStatusBadgeClass(statusLabel)}`}
+          aria-label={`Status: ${statusLabel || '—'}`}
         >
-          {project?.status || '—'}
+          {statusLabel || '—'}
         </span>
       </header>
 
@@ -98,7 +108,7 @@ const ProjectCard = ({
       <div className={styles.cardContent}>
         <div className={styles.projectInfo}>
           <span className={styles.startDate} aria-label="Data de início">
-            <strong>Início:</strong> {formatDate(project.startDate)}
+            <strong>Início:</strong> {formatDate(startDate)}
           </span>
         </div>
 

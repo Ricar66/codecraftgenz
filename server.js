@@ -159,25 +159,42 @@ app.delete('/api/mentores/:id', (req, res) => {
 // --- Projetos (Admin/Public, Mock/Local) ---
 const projetosStore = {
   projetos: [
-    { id: 'p1', title: 'Site Gen-Z', owner: 'Time Alpha', status: 'ongoing', price: 1500, tags: ['web'], visible: true, progress: 65, startDate: new Date(Date.now() - 15*24*60*60*1000).toISOString(), description: 'Site institucional com design system e landing pages.' },
-    { id: 'p2', title: 'App Mobile', owner: 'Crafter 2', status: 'ongoing', price: 2300, tags: ['mobile'], visible: true, progress: 30, startDate: new Date(Date.now() - 5*24*60*60*1000).toISOString(), description: 'Aplicativo móvel para gestão de tarefas.' },
-    { id: 'p3', title: 'Design System', owner: 'Time Beta', status: 'draft', price: 0, tags: ['design'], visible: false, progress: 0, startDate: null, description: 'Biblioteca de componentes e tokens.' },
+    { id: 'p1', title: 'Site Gen-Z', owner: 'Time Alpha', status: 'ongoing', price: 1500, tags: ['web'], visible: true, progress: 65, startDate: new Date(Date.now() - 15*24*60*60*1000).toISOString(), description: 'Site institucional com design system e landing pages.', thumb_url: null },
+    { id: 'p2', title: 'App Mobile', owner: 'Crafter 2', status: 'ongoing', price: 2300, tags: ['mobile'], visible: true, progress: 30, startDate: new Date(Date.now() - 5*24*60*60*1000).toISOString(), description: 'Aplicativo móvel para gestão de tarefas.', thumb_url: null },
+    { id: 'p3', title: 'Design System', owner: 'Time Beta', status: 'draft', price: 0, tags: ['design'], visible: false, progress: 0, startDate: null, description: 'Biblioteca de componentes e tokens.', thumb_url: null },
   ],
 };
 
 function normalizeProjetoInput(body) {
   const b = { ...body };
+  const statusRaw = b.status || b.status?.toLowerCase() || 'draft';
+  // aceitar status em PT (rascunho|ongoing|finalizado|arquivado) e mapear
+  const statusMap = (s) => {
+    const v = String(s || '').toLowerCase();
+    if (v === 'rascunho' || v === 'draft') return 'draft';
+    if (v === 'ongoing' || v === 'andamento' || v === 'ativo') return 'ongoing';
+    if (v === 'finalizado' || v === 'concluído' || v === 'concluido' || v === 'completed') return 'concluído';
+    if (v === 'arquivado' || v === 'archived') return 'arquivado';
+    return v || 'draft';
+  };
+  const startDate = b.startDate || b.data_inicio || null;
+  const desc = b.description !== undefined ? b.description : (b.descricao !== undefined ? b.descricao : '');
+  const price = b.price !== undefined ? b.price : (b.preco !== undefined ? b.preco : 0);
+  const progress = b.progress !== undefined ? b.progress : (b.progresso !== undefined ? b.progresso : 0);
+  const visible = b.visible !== undefined ? b.visible : (b.visivel !== undefined ? b.visivel : false);
+  const thumb = b.thumb_url !== undefined ? b.thumb_url : (b.thumb !== undefined ? b.thumb : null);
   return {
     id: b.id || null,
-    title: String(b.title || '').trim(),
+    title: String(b.title || b.titulo || '').trim(),
     owner: String(b.owner || '').trim(),
-    status: b.status || 'draft', // valores: draft | ongoing | concluído | pausado
-    price: Number(b.price || 0),
+    status: statusMap(statusRaw), // valores internos: draft | ongoing | concluído | arquivado
+    price: Number(price || 0),
     tags: Array.isArray(b.tags) ? b.tags : [],
-    visible: Boolean(b.visible),
-    progress: typeof b.progress === 'number' ? Math.max(0, Math.min(100, b.progress)) : 0,
-    startDate: b.startDate || null,
-    description: String(b.description || '').trim(),
+    visible: Boolean(visible),
+    progress: Math.max(0, Math.min(100, Number(progress || 0))),
+    startDate,
+    description: String(desc || '').trim(),
+    thumb_url: thumb || null,
   };
 }
 
@@ -188,6 +205,7 @@ function publicProjetoView(p) {
     if (s === 'ongoing' || s === 'andamento') return 'Em andamento';
     if (s === 'concluído' || s === 'concluido' || s === 'completed') return 'Concluído';
     if (s === 'pausado' || s === 'paused') return 'Pausado';
+    if (s === 'arquivado' || s === 'archived') return 'Arquivado';
     return '—';
   })();
   return {
@@ -197,6 +215,7 @@ function publicProjetoView(p) {
     startDate: p.startDate,
     description: p.description || `${p.title} por ${p.owner}`,
     progress: typeof p.progress === 'number' ? p.progress : 0,
+    thumb_url: p.thumb_url || null,
   };
 }
 
@@ -286,6 +305,30 @@ app.put('/api/projetos/:id', (req, res) => {
     financasStore.itens.push({ id: fid, item: `Projeto ${merged.title}`, valor: Number(merged.price || 0), status: 'pending', type: 'project', progress: Number(merged.progress || 0), project_id: id, date: new Date().toISOString() });
   }
   res.status(200).json({ success: true, project: merged });
+});
+
+// PUT /api/projetos/:id/visibilidade → alterna visível
+app.put('/api/projetos/:id/visibilidade', (req, res) => {
+  const { id } = req.params;
+  const idx = projetosStore.projetos.findIndex(p => p.id === id);
+  if (idx === -1) return res.status(404).json({ success: false, error: 'Projeto não encontrado' });
+  const current = projetosStore.projetos[idx];
+  const body = req.body || {};
+  const nextVisible = body.visivel !== undefined ? !!body.visivel : body.visible !== undefined ? !!body.visible : !current.visible;
+  const next = { ...current, visible: nextVisible };
+  projetosStore.projetos[idx] = next;
+  res.status(200).json({ success: true, project: next });
+});
+
+// DELETE /api/projetos/:id → arquiva (não remove)
+app.delete('/api/projetos/:id', (req, res) => {
+  const { id } = req.params;
+  const idx = projetosStore.projetos.findIndex(p => p.id === id);
+  if (idx === -1) return res.status(404).json({ success: false, error: 'Projeto não encontrado' });
+  const current = projetosStore.projetos[idx];
+  const next = { ...current, status: 'arquivado', visible: false };
+  projetosStore.projetos[idx] = next;
+  res.status(200).json({ success: true, project: next });
 });
 
 // GET /api/projetos/:id → detalhes
@@ -514,9 +557,9 @@ function addDays(days) {
 
 const desafiosStore = {
   challenges: [
-    { id: 'd1', name: 'API Resiliente', objective: 'Implementar Circuit Breaker e Retry com backoff', description: 'Projete uma API resiliente sob falhas.\nInclua métricas e fallback.', deadline: addDays(7), base_points: 300, reward: 'Badge Resilience', status: 'active', criteria: ['inovacao','execucao','apresentacao'], delivery_type: 'github', visible: true, difficulty: 'intermediate', tags: ['web','ia'], created_by: 'u1', updated_at: new Date().toISOString() },
-    { id: 'd2', name: 'Refatoração de Performance', objective: 'Otimizar TTI e eliminiar layout thrashing', description: 'Escolha um projeto e reduza tempo interativo.', deadline: addDays(10), base_points: 200, reward: 'Badge Performance', status: 'active', criteria: ['execucao','apresentacao'], delivery_type: 'link', visible: true, difficulty: 'starter', tags: ['web'], created_by: 'u1', updated_at: new Date().toISOString() },
-    { id: 'd3', name: 'Sistema de Design', objective: 'Crie um DS com tokens e docs', description: 'Documente princípios, tokens e componentes.', deadline: addDays(-2), base_points: 250, reward: 'Badge Designer', status: 'archived', criteria: ['inovacao','apresentacao'], delivery_type: 'file', visible: false, difficulty: 'pro', tags: ['design'], created_by: 'u1', updated_at: new Date().toISOString() },
+    { id: 'd1', name: 'API Resiliente', objective: 'Implementar Circuit Breaker e Retry com backoff', description: 'Projete uma API resiliente sob falhas.\nInclua métricas e fallback.', deadline: addDays(7), base_points: 300, reward: 'Badge Resilience', status: 'active', criteria: ['inovacao','execucao','apresentacao'], delivery_type: 'github', visible: true, difficulty: 'intermediate', tags: ['web','ia'], thumb_url: null, created_by: 'u1', updated_at: new Date().toISOString() },
+    { id: 'd2', name: 'Refatoração de Performance', objective: 'Otimizar TTI e eliminiar layout thrashing', description: 'Escolha um projeto e reduza tempo interativo.', deadline: addDays(10), base_points: 200, reward: 'Badge Performance', status: 'active', criteria: ['execucao','apresentacao'], delivery_type: 'link', visible: true, difficulty: 'starter', tags: ['web'], thumb_url: null, created_by: 'u1', updated_at: new Date().toISOString() },
+    { id: 'd3', name: 'Sistema de Design', objective: 'Crie um DS com tokens e docs', description: 'Documente princípios, tokens e componentes.', deadline: addDays(-2), base_points: 250, reward: 'Badge Designer', status: 'archived', criteria: ['inovacao','apresentacao'], delivery_type: 'file', visible: false, difficulty: 'pro', tags: ['design'], thumb_url: null, created_by: 'u1', updated_at: new Date().toISOString() },
   ],
   submissions: [],
   registrations: [],
@@ -538,6 +581,7 @@ function publicChallenge(c) {
     visible: !!c.visible,
     difficulty: c.difficulty,
     tags: c.tags,
+    thumb_url: c.thumb_url || null,
     updated_at: c.updated_at,
   };
 }
@@ -547,13 +591,30 @@ function isDeadlinePassed(deadlineIso) {
 }
 
 app.get('/api/desafios', (req, res) => {
-  const { status } = req.query;
-  let list = desafiosStore.challenges.filter(c => !!c.visible);
+  const { status, visible, all } = req.query;
+  let list = desafiosStore.challenges.slice();
+  if (all === '1') {
+    // Admin: lista completa (não pública)
+    return res.status(200).json({ success: true, data: list, total: list.length });
+  }
+  // Pública: aplicar filtros padrão
+  if (visible !== undefined) {
+    const v = visible === 'true';
+    list = list.filter(c => !!c.visible === v);
+  } else {
+    list = list.filter(c => !!c.visible);
+  }
   if (status) {
     list = list.filter(c => c.status === status);
   } else {
     list = list.filter(c => c.status === 'active');
   }
+  // Ordenação padrão: por deadline ascendente
+  list = list.slice().sort((a,b)=>{
+    const da = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+    const db = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+    return da - db;
+  });
   res.set('Cache-Control', 'public, max-age=60');
   res.status(200).json({ success: true, data: list.map(publicChallenge), total: list.length });
 });
@@ -584,6 +645,7 @@ app.post('/api/desafios', (req, res) => {
     visible: Boolean(body.visible),
     difficulty: body.difficulty || 'starter',
     tags: Array.isArray(body.tags) ? body.tags : [],
+    thumb_url: body.thumb_url || null,
     created_by: req.headers['x-user-id'] || 'local-admin',
     updated_at: new Date().toISOString(),
   };
@@ -609,12 +671,25 @@ app.put('/api/desafios/:id/status', (req, res) => {
   const idx = desafiosStore.challenges.findIndex(x => x.id === req.params.id);
   if (idx === -1) return res.status(404).json({ success:false, error:'Desafio não encontrado' });
   const { status } = req.body || {};
-  if (!['active','closed','archived'].includes(status)) return res.status(400).json({ success:false, error:'Status inválido' });
+  if (!['draft','active','closed','archived'].includes(status)) return res.status(400).json({ success:false, error:'Status inválido' });
   const next = { ...desafiosStore.challenges[idx], status, updated_at: new Date().toISOString() };
   desafiosStore.challenges[idx] = next;
   desafiosStore.logs.push({ id: `lg${desafiosStore.logs.length+1}`, type: 'status_change', at: next.updated_at, actor: req.headers['x-user-id'] || 'local-admin', challenge_id: next.id, status });
   res.set('Cache-Control', 'no-store');
   res.status(200).json({ success: true });
+});
+
+// Alterna visibilidade
+app.put('/api/desafios/:id/visibility', (req, res) => {
+  const idx = desafiosStore.challenges.findIndex(x => x.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ success:false, error:'Desafio não encontrado' });
+  const body = req.body || {};
+  const current = desafiosStore.challenges[idx];
+  const nextVisible = body.visible !== undefined ? !!body.visible : !current.visible;
+  const next = { ...current, visible: nextVisible, updated_at: new Date().toISOString() };
+  desafiosStore.challenges[idx] = next;
+  desafiosStore.logs.push({ id: `lg${desafiosStore.logs.length+1}`, type: 'visibility', at: next.updated_at, actor: req.headers['x-user-id'] || 'local-admin', challenge_id: next.id, visible: next.visible });
+  res.status(200).json({ success: true, challenge: publicChallenge(next) });
 });
 
 app.post('/api/desafios/:id/inscrever', (req, res) => {
@@ -661,6 +736,12 @@ app.post('/api/desafios/:id/entregar', (req, res) => {
   desafiosStore.logs.push({ id: `lg${desafiosStore.logs.length+1}`, type: 'submit', at: sub.submitted_at, actor: crafter_id, challenge_id: c.id, submission_id: sub.id });
   res.set('Cache-Control', 'no-store');
   res.status(201).json({ success:true, submission: sub });
+});
+
+// Lista submissions de um desafio (admin)
+app.get('/api/desafios/:id/submissions', (req, res) => {
+  const items = desafiosStore.submissions.filter(s => s.challenge_id === req.params.id);
+  res.status(200).json({ success: true, data: items, total: items.length });
 });
 
 app.put('/api/submissions/:id/review', async (req, res) => {

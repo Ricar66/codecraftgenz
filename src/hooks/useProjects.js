@@ -20,10 +20,10 @@ import { globalPerformanceMonitor } from '../utils/performanceMonitor';
 const useProjects = (options = {}) => {
   const {
     autoFetch = true,
-    useMock = true, // Temporariamente forçando dados mock devido à API indisponível
+    useMock = false,
     filters = {},
-    refetchInterval = null,
-    timeout = 10000, // 10 segundos
+    refetchInterval = 30000,
+    timeout = 10000,
     maxRetries = 3
   } = options;
 
@@ -122,7 +122,8 @@ const useProjects = (options = {}) => {
       const response = await getProjects({
         ...mergedOptions,
         useCache: true,
-        useMockData: useMock
+        useMockData: useMock,
+        publicOnly: !options.useAdminStore
       });
 
       // Limpa o timeout se a requisição foi bem-sucedida
@@ -272,7 +273,7 @@ const useProjects = (options = {}) => {
         setLoading(false);
       }
     }
-  }, [useMock, timeout, maxRetries]); // Dependências estáveis - removido retryCount e filters
+  }, [useMock, timeout, maxRetries]);
 
   /**
    * Função para retry com backoff exponencial

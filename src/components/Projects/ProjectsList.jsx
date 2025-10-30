@@ -3,6 +3,7 @@ import React from 'react';
 
 import useProjects from '../../hooks/useProjects';
 import { adminStore } from '../../lib/adminStore';
+import { realtime } from '../../lib/realtime';
 
 import LazyProjectCard from './LazyProjectCard';
 import LoadingSpinner, { ProjectsListSkeleton } from './LoadingSpinner';
@@ -42,11 +43,8 @@ const EmptyState = ({ onRetry }) => (
         />
       </svg>
     </div>
-    <h3 className={styles.emptyTitle}>Nenhum projeto em andamento</h3>
-    <p className={styles.emptyDescription}>
-      No momento não há projetos ativos para exibir. 
-      Novos projetos aparecerão aqui quando forem iniciados.
-    </p>
+    <h3 className={styles.emptyTitle}>Nenhum projeto visível no momento. Volte em breve 🚀</h3>
+    <p className={styles.emptyDescription}></p>
     <button 
       className={styles.retryButton}
       onClick={onRetry}
@@ -184,16 +182,36 @@ const ProjectsList = ({ useAdminStore = false }) => {
     stats
   } = useProjects({
     autoFetch: true,
-    useMockData: true,
+    useMock: false,
     filters: {},
-    refetchInterval: 30000, // 30 segundos
-    timeout: 10000, // 10 segundos
-    maxRetries: 3
+    refetchInterval: 30000,
+    timeout: 10000,
+    maxRetries: 3,
+    useAdminStore
   });
 
   // Fonte alternativa via adminStore (sempre calcular sem condicionar hooks)
   const adminItems = adminStore.listProjects().filter(p => p.visible && p.status !== 'draft');
   const displayedProjects = useAdminStore ? adminItems : projects;
+  const sortProjects = (list) => {
+    const toStatusValue = (p) => String(p.status || '').toLowerCase();
+    const getDate = (p) => p.data_inicio || p.startDate || null;
+    return list.slice().sort((a, b) => {
+      const sa = toStatusValue(a), sb = toStatusValue(b);
+      const aIsDraft = sa.includes('rascunho') || sa === 'draft';
+      const bIsDraft = sb.includes('rascunho') || sb === 'draft';
+      if (aIsDraft !== bIsDraft) return aIsDraft ? 1 : -1;
+      const da = getDate(a) ? new Date(getDate(a)).getTime() : 0;
+      const db = getDate(b) ? new Date(getDate(b)).getTime() : 0;
+      return db - da;
+    });
+  };
+  const orderedProjects = sortProjects(displayedProjects);
+
+  React.useEffect(() => {
+    const unsub = realtime.subscribe('projects_changed', () => { try { refetch(); } catch {} });
+    return () => unsub();
+  }, [refetch]);
   const hasDisplayed = displayedProjects.length > 0;
 
   /**
@@ -256,7 +274,7 @@ const ProjectsList = ({ useAdminStore = false }) => {
 
       {/* Grid simples de projetos - máximo 3 por linha */}
       <div className={styles.projectsGrid}>
-        {displayedProjects.map((project) => (
+        {orderedProjects.map((project) => (
           <ProjectCard 
             key={project.id} 
             project={project} 
@@ -268,7 +286,7 @@ const ProjectsList = ({ useAdminStore = false }) => {
       {hasDisplayed && (
         <div className={styles.footer}>
           <p className={styles.projectCount}>
-            {displayedProjects.length} projeto{displayedProjects.length !== 1 ? 's' : ''} encontrado{displayedProjects.length !== 1 ? 's' : ''}
+            {orderedProjects.length} projeto{orderedProjects.length !== 1 ? 's' : ''} encontrado{orderedProjects.length !== 1 ? 's' : ''}
           </p>
           {!useAdminStore && (
             <button 

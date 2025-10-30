@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
 import { realtime } from '../lib/realtime';
+import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 
 export default function DesafiosPage() {
   const [desafios, setDesafios] = useState([]);
@@ -93,27 +94,23 @@ export default function DesafiosPage() {
 
           <div className="desafios-grid" aria-busy={loading} aria-live="polite">
             {desafios.map((d) => (
-              <article key={d.id} className="desafio-card">
-                <div className="icon" aria-hidden="true" />
-                <h3 className="name">{d.name}</h3>
-                <p className="desc">{d.objective}</p>
-                <div className="meta">
-                  <span className="chip">Encerra em {timeLeft(d.deadline)}</span>
-                  {d.reward ? (<span className="chip">Recompensa: {d.reward || `+${d.base_points||0} pts`}</span>) : null}
+              <div key={d.id}>
+                <ChallengeCard challenge={d} />
+                <div style={{ display:'flex', gap:8, marginTop:8 }}>
+                  <button className="cta" onClick={()=>participar(d.id)} disabled={d.status!=='active'}>
+                    {d.status==='active' ? 'Quero participar!' : 'Encerrado'}
+                  </button>
+                  {(d.delivery_type==='link' || d.delivery_type==='github') && (
+                    <div className="delivery" style={{ display:'flex', gap:8 }}>
+                      <input aria-label="URL da entrega" placeholder={d.delivery_type==='github' ? 'URL do repositório' : 'URL da entrega'} value={deliverUrls[d.id]||''} onChange={e=>setDeliverUrls(prev=>({ ...prev, [d.id]: e.target.value }))} className="rank-search" />
+                      <button onClick={()=>entregar(d)} disabled={d.status!=='active'}>Enviar</button>
+                    </div>
+                  )}
                 </div>
-                <button className="cta" onClick={()=>participar(d.id)} disabled={d.status!=='active'}>
-                  {d.status==='active' ? 'Quero participar!' : 'Encerrado'}
-                </button>
-                {(d.delivery_type==='link' || d.delivery_type==='github') && (
-                  <div className="delivery" style={{ marginTop: 12, display:'flex', gap:8 }}>
-                    <input aria-label="URL da entrega" placeholder={d.delivery_type==='github' ? 'URL do repositório' : 'URL da entrega'} value={deliverUrls[d.id]||''} onChange={e=>setDeliverUrls(prev=>({ ...prev, [d.id]: e.target.value }))} className="rank-search" />
-                    <button onClick={()=>entregar(d)} disabled={d.status!=='active'}>Enviar</button>
-                  </div>
-                )}
-              </article>
+              </div>
             ))}
             {!loading && desafios.length === 0 && (
-              <div className="empty" role="status">Nenhum desafio ativo no momento. Novas missões chegam em breve 🚀</div>
+              <div className="empty" role="status">Nenhum desafio ativo no momento. Volte em breve 🚀</div>
             )}
             {!loading && error && (
               <div className="empty" role="alert">{error}</div>

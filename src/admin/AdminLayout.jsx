@@ -1,6 +1,8 @@
 // src/admin/AdminLayout.jsx
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
+import ProjectCard from '../components/Projects/ProjectCard.jsx';
 
 import { useAuth } from '../context/useAuth';
 import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo, useDesafios, DesafiosRepo, useFinance, FinanceRepo, useRanking, RankingRepo, useLogs } from '../hooks/useAdminRepo';
@@ -566,13 +568,13 @@ export function Ranking() {
 
 export function Projetos() {
   const { data: list, loading, error, refresh } = useProjects();
-  const [form, setForm] = React.useState({ title:'', owner:'', status:'draft', price:0, tags:[], visible:false });
-  const onSave = async () => { await ProjectsRepo.upsert(form); setForm({ title:'', owner:'', status:'draft', price:0, tags:[], visible:false }); refresh(); };
+  const [form, setForm] = React.useState({ titulo:'', owner:'', descricao:'', data_inicio:'', status:'rascunho', preco:0, progresso:0, visivel:false, thumb_url:'', tags:[] });
+  const onSave = async () => { await ProjectsRepo.upsert(form); setForm({ titulo:'', owner:'', descricao:'', data_inicio:'', status:'rascunho', preco:0, progresso:0, visivel:false, thumb_url:'', tags:[] }); refresh(); };
   const [query, setQuery] = React.useState('');
   const [page, setPage] = React.useState(1);
   const pageSize = 5;
   const filtered = list.filter(p =>
-    (p.title||'').toLowerCase().includes(query.toLowerCase()) ||
+    (p.title||p.titulo||'').toLowerCase().includes(query.toLowerCase()) ||
     (p.owner||'').toLowerCase().includes(query.toLowerCase()) ||
     (p.status||'').toLowerCase().includes(query.toLowerCase())
   );
@@ -594,22 +596,62 @@ export function Projetos() {
       </div>
       {loading && <p>Carregando...</p>}
       {error && <p role="alert">{error}</p>}
-      <div className="table"><table><thead><tr><th>Título</th><th>Owner</th><th>Status</th><th>Preço</th><th>Visível</th></tr></thead><tbody>{pageItems.length===0 ? (<tr><td colSpan="5">Nenhum projeto</td></tr>) : pageItems.map(p=> (<tr key={p.id}><td>{p.title}</td><td>{p.owner}</td><td>{p.status}</td><td>R$ {p.price}</td><td>{String(p.visible)}</td></tr>))}</tbody></table></div>
+      <div className="table"><table><thead><tr><th>Título</th><th>Owner</th><th>Status</th><th>Preço</th><th>Progresso</th><th>Visível</th><th>Ações</th></tr></thead><tbody>{pageItems.length===0 ? (<tr><td colSpan="7">Nenhum projeto</td></tr>) : pageItems.map(p=> (
+        <tr key={p.id}>
+          <td>{p.title || p.titulo}</td>
+          <td>{p.owner}</td>
+          <td>{p.status}</td>
+          <td>R$ {p.price ?? p.preco ?? 0}</td>
+          <td>{p.progress ?? p.progresso ?? 0}%</td>
+          <td>{String(p.visible ?? p.visivel)}</td>
+          <td>
+            <div className="btn-group">
+              <button className="btn btn-secondary" onClick={()=>setForm({ id:p.id, titulo:p.title||p.titulo||'', owner:p.owner||'', descricao:p.description||p.descricao||'', data_inicio:p.startDate||p.data_inicio||'', status:p.status||'rascunho', preco:p.price??0, progresso:p.progress??0, visivel:p.visible??false, thumb_url:p.thumb_url||'', tags:p.tags||[] })}>Editar</button>
+              <button className="btn btn-outline" onClick={()=>ProjectsRepo.publish(p.id, !(p.visible ?? p.visivel))}>{(p.visible ?? p.visivel) ? 'Ocultar' : 'Publicar'}</button>
+              <button className="btn btn-danger" onClick={async()=>{ if(!window.confirm('Arquivar este projeto?')) return; await fetch(`/api/projetos/${p.id}`, { method:'DELETE' }); refresh(); }}>Arquivar</button>
+            </div>
+          </td>
+        </tr>
+      ))}</tbody></table></div>
       <div className="formRow">
-        <input aria-label="Título" placeholder="Título" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} />
+        <input aria-label="Título" placeholder="Título" value={form.titulo} onChange={e=>setForm({...form,titulo:e.target.value})} />
         <input aria-label="Owner" placeholder="Owner" value={form.owner} onChange={e=>setForm({...form,owner:e.target.value})} />
-        <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="draft">rascunho</option><option value="ongoing">andamento</option><option value="concluído">concluído</option></select>
-        <input aria-label="Preço" placeholder="Preço" type="number" value={form.price} onChange={e=>setForm({...form,price:Number(e.target.value)})} />
-        <label><input type="checkbox" checked={form.visible} onChange={e=>setForm({...form,visible:e.target.checked})} /> Visível</label>
+        <input aria-label="Thumb URL" placeholder="Thumb URL" value={form.thumb_url} onChange={e=>setForm({...form,thumb_url:e.target.value})} />
+        <input aria-label="Data de início" type="date" value={form.data_inicio} onChange={e=>setForm({...form,data_inicio:e.target.value})} />
+        <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="rascunho">rascunho</option><option value="ongoing">andamento</option><option value="finalizado">finalizado</option><option value="arquivado">arquivado</option></select>
+        <input aria-label="Preço" placeholder="Preço" type="number" value={form.preco} onChange={e=>setForm({...form,preco:Number(e.target.value)})} />
+        <input aria-label="Progresso" type="range" min="0" max="100" value={form.progresso} onChange={e=>setForm({...form,progresso:Number(e.target.value)})} />
+        <label><input type="checkbox" checked={form.visivel} onChange={e=>setForm({...form,visivel:e.target.checked})} /> Visível</label>
         <button onClick={onSave}>Salvar projeto</button>
+      </div>
+      {/* Preview de Card idêntico ao público */}
+      <div style={{ marginTop: 12 }}>
+        <div style={{ maxWidth: 600 }}>
+          <ProjectPreviewCard form={form} />
+        </div>
       </div>
     </div>
   );
 }
 
+function ProjectPreviewCard({ form }) {
+  const project = {
+    id: 'preview',
+    titulo: form.titulo,
+    owner: form.owner,
+    descricao: form.descricao,
+    data_inicio: form.data_inicio,
+    status: form.status,
+    progresso: form.progresso,
+    thumb_url: form.thumb_url,
+  };
+  // Usa o mesmo componente público para garantir paridade visual
+  return <ProjectCard project={project} />;
+}
+
 export function Desafios() {
   const { data: list, loading, error, refresh } = useDesafios();
-  const [form, setForm] = React.useState({ name:'', objetivo:'', prazoDias:7, recompensaPts:100, status:'ativo', visible:true });
+  const [form, setForm] = React.useState({ name:'', objective:'', description:'', deadline:'', difficulty:'starter', tags:[], reward:'', base_points:0, delivery_type:'link', thumb_url:'', status:'draft', visible:true });
   const [editingId, setEditingId] = React.useState(null);
   const [busy, setBusy] = React.useState(false);
   const [detailsOpen, setDetailsOpen] = React.useState(null);
@@ -622,10 +664,16 @@ export function Desafios() {
     setForm({
       id: d.id,
       name: d.name,
-      objetivo: d.objetivo || d.objective || '',
-      prazoDias: Number(d.prazoDias ?? 7),
-      recompensaPts: Number(d.recompensaPts ?? d.base_points ?? 0),
-      status: d.status || 'ativo',
+      objective: d.objective || '',
+      description: d.description || '',
+      deadline: d.deadline || '',
+      difficulty: d.difficulty || 'starter',
+      tags: Array.isArray(d.tags)?d.tags:[],
+      reward: d.reward || '',
+      base_points: Number(d.base_points ?? 0),
+      delivery_type: d.delivery_type || 'link',
+      thumb_url: d.thumb_url || '',
+      status: d.status || 'draft',
       visible: !!d.visible,
     });
   };
@@ -646,7 +694,7 @@ export function Desafios() {
   const toggleVisible = async (d) => {
     setBusy(true);
     try {
-      await DesafiosRepo.upsert({ id: d.id, visible: !d.visible });
+      await fetch(`/api/desafios/${d.id}/visibility`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ visible: !d.visible }) });
       refresh();
     } finally { setBusy(false); }
   };
@@ -654,7 +702,7 @@ export function Desafios() {
   const toggleStatus = async (d) => {
     setBusy(true);
     try {
-      const next = d.status === 'encerrado' ? 'ativo' : 'encerrado';
+      const next = d.status === 'closed' ? 'active' : 'closed';
       await DesafiosRepo.setStatus(d.id, next);
       refresh();
     } finally { setBusy(false); }
@@ -693,7 +741,7 @@ export function Desafios() {
   const pageSize = 5;
   const filtered = list.filter(d =>
     (d.name||'').toLowerCase().includes(query.toLowerCase()) ||
-    (d.objetivo||'').toLowerCase().includes(query.toLowerCase()) ||
+    (d.objective||'').toLowerCase().includes(query.toLowerCase()) ||
     (d.status||'').toLowerCase().includes(query.toLowerCase())
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -714,27 +762,26 @@ export function Desafios() {
       </div>
       {loading && <p>Carregando...</p>}
       {error && <p role="alert">{error}</p>}
-      <div className="table"><table><thead><tr><th>Nome</th><th>Objetivo</th><th>Prazo (dias)</th><th>Recompensa</th><th>Status</th><th>Visível</th><th>Ações</th></tr></thead><tbody>{pageItems.length===0 ? (<tr><td colSpan="7">Nenhum desafio</td></tr>) : pageItems.map(d=> (
+      <div className="table"><table><thead><tr><th>Nome</th><th>Status</th><th>Deadline</th><th>Base points</th><th>Visível</th><th>Ações</th></tr></thead><tbody>{pageItems.length===0 ? (<tr><td colSpan="6">Nenhum desafio</td></tr>) : pageItems.map(d=> (
         <React.Fragment key={d.id}>
           <tr>
             <td>{d.name}</td>
-            <td>{d.objetivo || d.objective}</td>
-            <td>{d.prazoDias ?? '-'}</td>
-            <td>{d.recompensaPts ?? d.base_points ?? 0}</td>
             <td>{d.status}</td>
+            <td>{d.deadline ? new Date(d.deadline).toLocaleString('pt-BR') : '—'}</td>
+            <td>{d.base_points ?? 0}</td>
             <td>{String(d.visible)}</td>
             <td>
               <div className="btn-group">
                 <button className="btn btn-secondary" onClick={()=>onEdit(d)}>Editar</button>
                 <button className="btn btn-outline" onClick={()=>toggleVisible(d)} aria-label={`Visibilidade ${d.name}`} disabled={busy}>{d.visible ? 'Ocultar' : 'Exibir'}</button>
-                <button className="btn btn-danger" onClick={()=>toggleStatus(d)} disabled={busy}>{d.status==='encerrado'?'Reabrir':'Encerrar'}</button>
+                <button className="btn btn-danger" onClick={()=>toggleStatus(d)} disabled={busy}>{d.status==='closed'?'Reabrir':'Encerrar'}</button>
                 <button className="btn btn-outline" onClick={()=>openDetails(d)}>{detailsOpen===d.id?'Fechar detalhes':'Detalhes'}</button>
               </div>
             </td>
           </tr>
           {detailsOpen===d.id && (
             <tr>
-              <td colSpan="7">
+              <td colSpan="6">
                 {detailsLoading && (<p>Carregando detalhes...</p>)}
                 {detailsError && (<p role="alert">{detailsError}</p>)}
                 {details && (
@@ -756,16 +803,16 @@ export function Desafios() {
                               <li key={s.id} className="item" style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr auto', gap:8 }}>
                                 <span>
                                   <div><strong>{s.crafter_id}</strong></div>
-                                  <div style={{ color:'#A6A6A6' }}>{s.link || s.github || '-'}</div>
+                                  <div style={{ color:'#A6A6A6' }}>{s.delivery?.url || '-'}</div>
                                 </span>
-                                <span>{s.status || 'pending'}</span>
-                                <span>{s.points_awarded ?? 0} pts</span>
+                                <span>{s.status || 'submitted'}</span>
+                                <span>{s.score ?? 0} pts</span>
                                 <span>
-                                  <select aria-label={`Status submissão ${s.id}`} defaultValue={s.status || 'pending'} id={`status-${s.id}`}>
+                                  <select aria-label={`Status submissão ${s.id}`} defaultValue={s.status || 'submitted'} id={`status-${s.id}`}>
                                     <option value="approved">aprovar</option>
                                     <option value="rejected">reprovar</option>
                                   </select>
-                                  <input aria-label={`Pontos ${s.id}`} type="number" placeholder="+pts" defaultValue={s.points_awarded ?? details.base_points ?? 0} id={`pts-${s.id}`} style={{ width:80, marginLeft:6 }} />
+                                  <input aria-label={`Pontos ${s.id}`} type="number" placeholder="+pts" defaultValue={s.score ?? details.base_points ?? 0} id={`pts-${s.id}`} style={{ width:80, marginLeft:6 }} />
                                   <button className="btn btn-primary" style={{ marginLeft:6 }} onClick={async()=>{
                                     const statusSel = document.getElementById(`status-${s.id}`);
                                     const ptsInput = document.getElementById(`pts-${s.id}`);
@@ -773,7 +820,7 @@ export function Desafios() {
                                     const pts = Number(ptsInput?.value || 0);
                                     setBusy(true);
                                     try {
-                                      await DesafiosRepo.reviewSubmission(s.id, { status, points_awarded: pts });
+                                      await DesafiosRepo.reviewSubmission(s.id, { status, score: pts, review: { notes: '', criteria_scores: {} } });
                                       await fetchDetails(detailsOpen);
                                     } finally { setBusy(false); }
                                   }}>Revisar</button>
@@ -791,18 +838,51 @@ export function Desafios() {
           )}
         </React.Fragment>
       ))}</tbody></table></div>
-      <div className="formRow">
-        <input aria-label="Nome" placeholder="Nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} />
-        <input aria-label="Objetivo" placeholder="Objetivo" value={form.objetivo} onChange={e=>setForm({...form,objetivo:e.target.value})} />
-        <input aria-label="Prazo" type="number" placeholder="Prazo (dias)" value={form.prazoDias} onChange={e=>setForm({...form,prazoDias:Number(e.target.value)})} />
-        <input aria-label="Recompensa" type="number" placeholder="Recompensa (+pts)" value={form.recompensaPts} onChange={e=>setForm({...form,recompensaPts:Number(e.target.value)})} />
-        <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="ativo">ativo</option><option value="encerrado">encerrado</option></select>
-        <label><input type="checkbox" checked={form.visible} onChange={e=>setForm({...form,visible:e.target.checked})} /> Visível</label>
-        <button className="btn btn-primary" onClick={onSave} disabled={busy} aria-busy={busy}>{editingId ? 'Atualizar' : 'Salvar'} desafio</button>
-        {editingId && (<button className="btn btn-outline" onClick={()=>{ setEditingId(null); setForm({ name:'', objetivo:'', prazoDias:7, recompensaPts:100, status:'ativo', visible:true }); }}>Cancelar edição</button>)}
+      <div className="formRow" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
+        <input aria-label="Nome" placeholder="Nome" value={form?.name||''} onChange={e=>setForm({...form,name:e.target.value})} />
+        <input aria-label="Objetivo" placeholder="Objetivo" value={form?.objective||''} onChange={e=>setForm({...form,objective:e.target.value})} />
+        <input aria-label="Descrição" placeholder="Descrição" value={form?.description||''} onChange={e=>setForm({...form,description:e.target.value})} />
+        <input aria-label="Deadline" type="datetime-local" value={form?.deadline||''} onChange={e=>setForm({...form,deadline:e.target.value})} />
+        <select value={form?.difficulty||'starter'} onChange={e=>setForm({...form,difficulty:e.target.value})}><option value="starter">Starter</option><option value="intermediate">Intermediário</option><option value="pro">Pro</option></select>
+        <input aria-label="Tags (vírgula)" placeholder="Tags" value={Array.isArray(form.tags)?form.tags.join(','):''} onChange={e=>setForm({...form,tags:e.target.value.split(',').map(s=>s.trim()).filter(Boolean)})} />
+        <input aria-label="Recompensa" placeholder="Recompensa" value={form?.reward||''} onChange={e=>setForm({...form,reward:e.target.value})} />
+        <input aria-label="Base points" type="number" min="0" value={Number(form?.base_points||0)} onChange={e=>setForm({...form,base_points:Number(e.target.value)})} />
+        <select value={form?.delivery_type||'link'} onChange={e=>setForm({...form,delivery_type:e.target.value})}><option value="link">Link</option><option value="github">GitHub</option><option value="file">File</option></select>
+        <input aria-label="Thumb URL" placeholder="Thumb URL" value={form?.thumb_url||''} onChange={e=>setForm({...form,thumb_url:e.target.value})} />
+        <select value={form?.status||'draft'} onChange={e=>setForm({...form,status:e.target.value})}><option value="draft">Rascunho</option><option value="active">Ativo</option><option value="closed">Encerrado</option><option value="archived">Arquivado</option></select>
+        <label><input type="checkbox" checked={!!form?.visible} onChange={e=>setForm({...form,visible:e.target.checked})} /> Visível</label>
+        <button className="btn btn-primary" onClick={async()=>{ setBusy(true); try { const payload = editingId?{ ...form, id: editingId }: form; await DesafiosRepo.upsert(payload); setEditingId(null); setForm({ name:'', objective:'', description:'', deadline:'', difficulty:'starter', tags:[], reward:'', base_points:0, delivery_type:'link', thumb_url:'', status:'draft', visible:true }); refresh(); } finally { setBusy(false); } }} disabled={busy} aria-busy={busy}>{editingId ? 'Atualizar' : 'Salvar'} desafio</button>
+        {editingId && (<button className="btn btn-outline" onClick={()=>{ setEditingId(null); setForm({ name:'', objective:'', description:'', deadline:'', difficulty:'starter', tags:[], reward:'', base_points:0, delivery_type:'link', thumb_url:'', status:'draft', visible:true }); }}>Cancelar edição</button>)}
+      </div>
+      {/* Pré-visualização */}
+      <div style={{ marginTop: 12 }}>
+        <div style={{ maxWidth: 600 }}>
+          <ChallengePreviewCard form={form} />
+        </div>
       </div>
     </div>
   );
+}
+
+function ChallengePreviewCard({ form }) {
+  const challenge = {
+    id: 'preview',
+    name: form.name,
+    objective: form.objective,
+    description: form.description,
+    deadline: form.deadline,
+    base_points: form.base_points,
+    reward: form.reward,
+    status: form.status,
+    visible: form.visible,
+    difficulty: form.difficulty,
+    tags: form.tags,
+    delivery_type: form.delivery_type,
+    thumb_url: form.thumb_url,
+    created_by: 'preview',
+    updated_at: new Date().toISOString(),
+  };
+  return <ChallengeCard challenge={challenge} />;
 }
 
 export function Financas() {
@@ -883,6 +963,8 @@ export default function AdminLayout() {
       </main>
 
       <style>{`
+        /* Global containment for admin area */
+        .admin-content, .admin-content * { box-sizing: border-box; }
         .admin-page { min-height: calc(100vh - 80px); display: grid; grid-template-columns: 260px 1fr; }
         .sidebar { background: #68007B; color: #F4F4F4; padding: 16px; border-right: 2px solid rgba(0,228,242,0.3); }
         .brand { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 700; margin-bottom: 12px; }
@@ -893,31 +975,33 @@ export default function AdminLayout() {
         .main { background: transparent; min-width: 0; }
         .topbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; }
         /* Botões modernos */
-        .btn { border: none; border-radius: 10px; padding: 8px 12px; cursor: pointer; font-weight: 600; transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease; }
+        .btn { border: none; border-radius: 10px; padding: 8px 12px; cursor: pointer; font-weight: 600; transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease; font-size: 14px; min-height: 36px; max-width: 100%; }
         .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0,0,0,0.18); }
         .btn:active { transform: translateY(0); box-shadow: none; }
         .btn-primary { background: #00E4F2; color: #062B31; }
         .btn-secondary { background: #7A3EF5; color: #fff; }
         .btn-outline { background: transparent; color: #F4F4F4; border: 1px solid rgba(255,255,255,0.28); }
         .btn-danger { background: #D12BF2; color: #fff; }
-        .btn-group { display: flex; flex-wrap: wrap; gap: 6px; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .btn-group .btn { flex: 0 0 auto; }
         .btn-icon { padding: 8px; width: 36px; height: 36px; display: grid; place-items: center; }
         .content { padding: 16px; min-width: 0; }
         .title { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 700; }
         .cards { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
-        .card { background: #F4F4F4; border: 1px solid rgba(0,228,242,0.2); border-radius: 12px; padding: 12px; overflow: hidden; }
+        .card { background: #F4F4F4; border: 1px solid rgba(0,228,242,0.2); border-radius: 12px; padding: 12px; overflow: hidden; min-width: 0; }
         .timeline { margin-top: 18px; }
         .logType { color: #00E4F2; margin-right: 8px; }
         .logMsg { color: #333; }
         .logAt { color: #A6A6A6; margin-left: 8px; }
-        .items { list-style: none; padding: 0; display: grid; gap: 8px; max-height: 60vh; overflow-y: auto; }
+        .items { list-style: none; padding: 0; display: grid; gap: 8px; max-height: 60vh; overflow-y: auto; min-width: 0; }
         .item { background: #F4F4F4; border: 1px solid rgba(0,228,242,0.2); border-radius: 12px; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
         .muted { color: #666; margin-left: 8px; }
         .table { overflow-x: auto; max-width: 100%; }
         .table table { width: 100%; border-collapse: collapse; }
         .table th, .table td { border-bottom: 1px solid #eee; padding: 8px; text-align: left; }
-        .formRow { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; margin-top: 12px; }
-        .formRow input, .formRow select { padding: 8px; border: 1px solid #ccc; border-radius: 8px; }
+        .formRow { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; margin-top: 12px; align-items: center; }
+        .formRow > * { min-width: 0; }
+        .formRow input, .formRow select { padding: 8px; border: 1px solid #ccc; border-radius: 8px; height: 36px; }
         .formRow button { background: #00E4F2; color: #062B31; border: none; border-radius: 10px; padding: 8px 10px; cursor: pointer; font-weight: 600; transition: transform 120ms ease, box-shadow 120ms ease; }
         .formRow button:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0,0,0,0.18); }
         .formRow .btn { padding: 8px 10px; }
@@ -929,25 +1013,44 @@ export default function AdminLayout() {
         @keyframes fadeInOut { 0% { opacity: 0; transform: translateY(-4px); } 12% { opacity: 1; transform: translateY(0); } 88% { opacity: 1; } 100% { opacity: 0; transform: translateY(-4px); } }
         /* Mentores - grid responsiva e cards informativos */
         .mentorAdminGrid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-top: 10px; }
-        .mentorAdminCard { display: grid; grid-template-columns: 120px 1fr 220px; gap: 12px; background: rgba(255,255,255,0.08); border: 1px solid rgba(0,228,242,0.25); border-radius: 12px; padding: 12px; color: #F4F4F4; transition: transform 160ms ease, box-shadow 160ms ease; }
+        .mentorAdminCard { display: grid; grid-template-columns: 120px 1fr minmax(220px, 28%); gap: 12px; background: rgba(255,255,255,0.08); border: 1px solid rgba(0,228,242,0.25); border-radius: 12px; padding: 12px; color: #F4F4F4; transition: transform 160ms ease, box-shadow 160ms ease; min-width: 0; }
         .mentorAdminCard:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(0,0,0,0.26); }
-        .mentorAdminCard .left { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
+        .mentorAdminCard .left { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; min-width: 0; }
         .mentorAdminCard .avatar { width: 90px; height: 90px; border-radius: 12px; background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06)); border: 1px solid rgba(255,255,255,0.18); overflow: hidden; }
         .mentorAdminCard .avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .mentorAdminCard .center .header { display: flex; gap: 8px; align-items: baseline; }
+        .mentorAdminCard .center { min-width: 0; }
+        .mentorAdminCard .center .header { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
         .mentorAdminCard .name { font-weight: 700; }
         .mentorAdminCard .spec { color: #A6A6A6; }
-        .mentorAdminCard .bio { margin-top: 6px; color: #D6D6D6; }
-        .mentorAdminCard .contact { display: flex; gap: 12px; margin-top: 6px; color: #BEBEBE; flex-wrap: wrap; }
-        .mentorAdminCard .right { display: grid; gap: 8px; justify-items: end; }
+        .mentorAdminCard .bio { margin-top: 6px; color: #D6D6D6; overflow: hidden; text-overflow: ellipsis; }
+        .mentorAdminCard .contact { display: flex; gap: 12px; margin-top: 6px; color: #BEBEBE; flex-wrap: wrap; min-width: 0; }
+        .mentorAdminCard .right { display: grid; gap: 8px; justify-items: end; min-width: 0; }
         .mentorAdminCard .badges { display: flex; gap: 6px; }
         .badge { font-size: 12px; padding: 4px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.2); }
         .badgeOk { background: rgba(0,228,242,0.2); color: #00E4F2; }
         .badgeWarn { background: rgba(209,43,242,0.15); color: #D12BF2; }
         .badgeNeutral { background: rgba(255,255,255,0.08); color: #F4F4F4; }
-        .mentorAdminCard .actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
-        @media (max-width: 992px) { .cards { grid-template-columns: repeat(2, 1fr); } .admin-page { grid-template-columns: 220px 1fr; } .mentorAdminGrid { grid-template-columns: 1fr; } .mentorAdminCard { grid-template-columns: 100px 1fr; } .mentorAdminCard .right { justify-items: start; } }
-        @media (max-width: 768px) { .admin-page { grid-template-columns: 1fr; } .sidebar { position: sticky; top: 80px; display: flex; overflow-x: auto; gap: 8px; } .menu { grid-auto-flow: column; grid-auto-columns: max-content; } .cards { grid-template-columns: 1fr; } }
+        .mentorAdminCard .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+        .mentorAdminCard .actions .btn { min-width: 110px; }
+        @media (max-width: 992px) { 
+          .cards { grid-template-columns: repeat(2, 1fr); }
+          .admin-page { grid-template-columns: 220px 1fr; }
+          .mentorAdminGrid { grid-template-columns: 1fr; }
+          .mentorAdminCard { grid-template-columns: 100px 1fr; }
+          .mentorAdminCard .right { justify-items: start; }
+        }
+        @media (max-width: 768px) { 
+          .admin-page { grid-template-columns: 1fr; }
+          .sidebar { position: sticky; top: 80px; display: flex; overflow-x: auto; gap: 8px; }
+          .menu { grid-auto-flow: column; grid-auto-columns: max-content; }
+          .cards { grid-template-columns: 1fr; }
+          .formRow { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 576px) {
+          .mentorAdminCard { grid-template-columns: 1fr; }
+          .mentorAdminCard .actions { justify-content: stretch; }
+          .mentorAdminCard .actions .btn { flex: 1 1 100%; min-width: 0; }
+        }
       `}</style>
     </div>
   );

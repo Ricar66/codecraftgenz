@@ -1,0 +1,10 @@
+.card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: var(--raio-xl); padding: var(--espaco-md); box-shadow: 0 6px 24px rgba(0,0,0,0.25); overflow: hidden; }
+.header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.thumb { width:64px; height:64px; border-radius:12px; object-fit:cover; border:1px solid rgba(255,255,255,0.18); }
+.name { font-family: var(--fonte-titulos); font-weight:700; color:#F4F4F4; }
+.pill { padding:6px 10px; border-radius:999px; border:1px solid rgba(0,228,242,0.35); color:#00E4F2; background: rgba(0,228,242,0.12); font-weight:600; }
+.tags { display:flex; flex-wrap:wrap; gap:6px; }
+.objective { color: var(--texto-gelo); margin-top:8px; }
+.meta { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.countdown { color:#00E4F2; }
+.reward { color:#D12BF2; }

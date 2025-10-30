@@ -218,7 +218,7 @@ export function useDesafios() {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch('/api/desafios');
+      const res = await fetch('/api/desafios?all=1');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       const list = Array.isArray(json?.data) ? json.data : [];
