@@ -25,8 +25,8 @@ jobs:
 
       - name: npm install, build, and test
         run: |
-          npm install
-          npm run build --if-present
+          npm ci --production=false
+          npm run build
           npm run test --if-present
 
       - name: Upload artifact for deployment job
@@ -61,6 +61,7 @@ jobs:
         with:
           app-name: 'codecraftgenz'
           slot-name: 'Production'
-          app-settings: 'WEBSITE_NODE_DEFAULT_VERSION=18-lts'
+          app-settings: 'WEBSITE_NODE_DEFAULT_VERSION=18-lts SCM_DO_BUILD_DURING_DEPLOYMENT=false'
+          package: '.'
           startup-command: 'npm start'
           
