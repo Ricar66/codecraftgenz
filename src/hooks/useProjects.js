@@ -48,13 +48,6 @@ const useProjects = (options = {}) => {
    * @returns {Promise<Array>} Lista de projetos
    */
   const fetchProjects = useCallback(async (fetchOptions = {}) => {
-    // Log de depuração para rastrear chamadas
-    console.log('🔄 fetchProjects chamado:', {
-      timestamp: new Date().toISOString(),
-      retryCount,
-      isMounted: isMountedRef.current,
-      options: { ...options, ...fetchOptions }
-    });
 
     // Inicia medição de performance
     const measureId = `fetch-projects-${Date.now()}`;
