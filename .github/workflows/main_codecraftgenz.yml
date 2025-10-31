@@ -62,4 +62,5 @@ jobs:
           app-name: 'codecraftgenz'
           slot-name: 'Production'
           app-settings: 'WEBSITE_NODE_DEFAULT_VERSION=18-lts'
+          startup-command: 'npm start'
           
