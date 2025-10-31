@@ -519,11 +519,7 @@ export function Ranking() {
   const { data: rk, loading, error, refresh } = useRanking();
   const [busy, setBusy] = React.useState(false);
   const [filters, setFilters] = React.useState({ search: '', min_points: '', max_points: '', active_only: true, sort: 'points' });
-  const [selectedCrafters, setSelectedCrafters] = React.useState(new Set());
-  const [bulkAction, setBulkAction] = React.useState({ type: '', value: '' });
   const [crafterForm, setCrafterForm] = React.useState({ name: '', avatar_url: '', points: 0, active: true });
-  const [showAuditLogs, setShowAuditLogs] = React.useState(false);
-  const [auditLogs, setAuditLogs] = React.useState([]);
 
   // Podium management
   const [top3, setTop3] = React.useState(rk.top3 || []);
@@ -1208,6 +1204,7 @@ export default function AdminLayout() {
           <NavLink to="/admin/ranking" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Ranking</NavLink>
           <NavLink to="/admin/projetos" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Projetos</NavLink>
           <NavLink to="/admin/desafios" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Desafios</NavLink>
+          <NavLink to="/admin/inscricoes" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Inscrições</NavLink>
           <NavLink to="/admin/financas" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Finanças</NavLink>
           <NavLink to="/admin/config" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Config</NavLink>
         </nav>

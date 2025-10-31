@@ -3,8 +3,9 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-import AdminLayout, { Dashboard, Usuarios, Mentores, Ranking, Projetos, Desafios, Financas, Config } from './admin/AdminLayout.jsx';
 import AdminEquipes from './admin/AdminEquipes.jsx';
+import AdminInscricoes from './admin/AdminInscricoes';
+import AdminLayout, { Dashboard, Usuarios, Mentores, Ranking, Projetos, Desafios, Financas, Config } from './admin/AdminLayout.jsx';
 import ProtectedRoute from './admin/ProtectedRoute.jsx';
 import heroBackground from './assets/hero-background.svg';
 import DesafiosPage from './pages/DesafiosPage.jsx';
@@ -47,6 +48,7 @@ function App() {
           <Route path="ranking" element={<Ranking />} />
           <Route path="projetos" element={<Projetos />} />
           <Route path="desafios" element={<Desafios />} />
+          <Route path="inscricoes" element={<AdminInscricoes />} />
           <Route path="financas" element={<Financas />} />
           <Route path="config" element={<Config />} />
         </Route>

@@ -7,12 +7,9 @@ import useFeedbacks from '../../hooks/useFeedbacks';
 export default function FeedbackForm() {
   const { submit } = useFeedbacks({ autoFetch: false });
   const navigate = useNavigate();
-  const [author, setAuthor] = useState('');
-  const [company, setCompany] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
-  const [message, setMessage] = useState('');
-  const [rating, setRating] = useState(5);
-  const [type, setType] = useState('elogio');
+  const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
+  const [mensagem, setMensagem] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -20,28 +17,33 @@ export default function FeedbackForm() {
   const [validationErrors, setValidationErrors] = useState({});
 
   const maxChars = 500;
-  const remaining = maxChars - message.length;
+  const remaining = maxChars - mensagem.length;
 
   // Validação em tempo real
   useEffect(() => {
     const errors = {};
     
-    if (message.trim() && message.length < 10) {
-      errors.message = 'O feedback deve ter pelo menos 10 caracteres';
+    if (mensagem.trim() && mensagem.length < 10) {
+      errors.mensagem = 'O feedback deve ter pelo menos 10 caracteres';
     }
     
-    if (avatarUrl && !avatarUrl.match(/^https?:\/\/.+/)) {
-      errors.avatarUrl = 'URL deve começar com http:// ou https://';
+    if (email && !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      errors.email = 'Email deve ter um formato válido';
     }
     
     setValidationErrors(errors);
-  }, [message, avatarUrl]);
+  }, [mensagem, email]);
 
   async function onSubmit(e) {
     e.preventDefault();
     
     // Validação final
-    if (!message.trim()) {
+    if (!nome.trim()) {
+      setError('O campo nome é obrigatório');
+      return;
+    }
+    
+    if (!mensagem.trim()) {
       setError('O campo de feedback é obrigatório');
       return;
     }
@@ -56,14 +58,11 @@ export default function FeedbackForm() {
     setSuccess(null);
     
     try {
-      await submit({ author, company, avatarUrl, message, rating: Number(rating), type }, { honeypot });
+      await submit({ nome, email, mensagem }, { honeypot });
       setSuccess('Feedback enviado com sucesso! Redirecionando...');
-      setAuthor(''); 
-      setCompany(''); 
-      setAvatarUrl(''); 
-      setMessage(''); 
-      setRating(5); 
-      setType('elogio'); 
+      setNome(''); 
+      setEmail(''); 
+      setMensagem(''); 
       setHoneypot('');
       setValidationErrors({});
       
@@ -81,58 +80,64 @@ export default function FeedbackForm() {
   return (
     <form onSubmit={onSubmit} className="feedback-form" aria-label="Formulário de feedback">
       <div className="form-group">
-        <label htmlFor="author" className="form-label">
-          Nome
+        <label htmlFor="nome" className="form-label">
+          Nome *
         </label>
         <input 
-          id="author" 
-          name="author" 
+          id="nome" 
+          name="nome" 
           type="text" 
-          value={author} 
-          onChange={(e) => setAuthor(e.target.value)} 
+          value={nome} 
+          onChange={(e) => setNome(e.target.value)} 
           placeholder="Seu nome" 
           className="form-input"
-          aria-required="false" 
+          aria-required="true" 
+          required
         />
       </div>
 
       <div className="form-group">
-        <label htmlFor="company" className="form-label">
-          Empresa
+        <label htmlFor="email" className="form-label">
+          Email
         </label>
         <input 
-          id="company" 
-          name="company" 
-          type="text" 
-          value={company} 
-          onChange={(e) => setCompany(e.target.value)} 
-          placeholder="Nome da empresa" 
-          className="form-input"
+          id="email" 
+          name="email" 
+          type="email" 
+          value={email} 
+          onChange={(e) => setEmail(e.target.value)} 
+          placeholder="seu@email.com" 
+          className={`form-input ${validationErrors.email ? 'error' : ''}`}
           aria-required="false" 
         />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="avatarUrl" className="form-label">
-          Foto do cliente ou logo (URL)
-        </label>
-        <input 
-          id="avatarUrl" 
-          name="avatarUrl" 
-          type="url" 
-          value={avatarUrl} 
-          onChange={(e) => setAvatarUrl(e.target.value)} 
-          placeholder="https://..." 
-          className={`form-input ${validationErrors.avatarUrl ? 'error' : ''}`}
-          aria-required="false"
-          aria-describedby={validationErrors.avatarUrl ? 'avatarUrl-error' : undefined}
-        />
-        {validationErrors.avatarUrl && (
-          <span id="avatarUrl-error" className="error-message" role="alert">
-            {validationErrors.avatarUrl}
-          </span>
+        {validationErrors.email && (
+          <span className="error-message">{validationErrors.email}</span>
         )}
       </div>
+
+      <div className="form-group">
+        <label htmlFor="mensagem" className="form-label">
+          Sua mensagem *
+          <span className="char-counter">
+            {remaining} caracteres restantes
+          </span>
+        </label>
+        <textarea 
+          id="mensagem" 
+          name="mensagem" 
+          value={mensagem} 
+          onChange={(e) => setMensagem(e.target.value)} 
+          placeholder="Compartilhe sua experiência, sugestão ou feedback..." 
+          className={`form-textarea ${validationErrors.mensagem ? 'error' : ''}`}
+          maxLength={maxChars}
+          rows="6"
+          aria-required="true" 
+          required
+        />
+        {validationErrors.mensagem && (
+          <span className="error-message">{validationErrors.mensagem}</span>
+        )}
+       </div>
 
       {/* Honeypot hidden field */}
       <div className="honeypot" aria-hidden="true">
@@ -145,73 +150,6 @@ export default function FeedbackForm() {
           onChange={(e) => setHoneypot(e.target.value)} 
           tabIndex="-1"
         />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="message" className="form-label required">
-          Feedback *
-        </label>
-        <textarea 
-          id="message" 
-          name="message" 
-          value={message} 
-          onChange={(e) => setMessage(e.target.value.slice(0, maxChars))} 
-          rows={4} 
-          placeholder="Escreva seu feedback detalhado aqui..." 
-          className={`form-textarea ${validationErrors.message ? 'error' : ''}`}
-          aria-required="true"
-          aria-describedby="message-counter message-error"
-        />
-        <div className="textarea-footer">
-          <span id="message-counter" className="char-counter" aria-live="polite">
-            {remaining} caracteres restantes
-          </span>
-          {validationErrors.message && (
-            <span id="message-error" className="error-message" role="alert">
-              {validationErrors.message}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="form-row">
-        <div className="form-group">
-          <label htmlFor="rating" className="form-label">
-            Avaliação
-          </label>
-          <div className="rating-container">
-            {[1,2,3,4,5].map(n => (
-              <button
-                key={n}
-                type="button"
-                className={`star-button ${n <= rating ? 'active' : ''}`}
-                onClick={() => setRating(n)}
-                aria-label={`${n} estrela${n > 1 ? 's' : ''}`}
-              >
-                ★
-              </button>
-            ))}
-            <span className="rating-text">{rating} estrela{rating > 1 ? 's' : ''}</span>
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="type" className="form-label">
-            Tipo
-          </label>
-          <select 
-            id="type" 
-            name="type" 
-            value={type} 
-            onChange={(e) => setType(e.target.value)} 
-            className="form-select"
-            aria-required="true"
-          >
-            <option value="elogio">💝 Elogio</option>
-            <option value="sugestao">💡 Sugestão</option>
-            <option value="critica">🔍 Crítica</option>
-          </select>
-        </div>
       </div>
 
       {error && (

@@ -9,9 +9,13 @@ export default function AdminEquipes() {
   const [activeTab, setActiveTab] = useState('mentores');
 
   // Estados para formulários
-  const [novoMentor, setNovoMentor] = useState({ nome: '', email: '', telefone: '', bio: '' });
   const [novoCrafter, setNovoCrafter] = useState({ nome: '', email: '', avatar_url: '' });
-  const [novaEquipe, setNovaEquipe] = useState({ mentor_id: '', crafter_id: '', projeto_id: '', status_inscricao: 'inscrito' });
+  const [novaEquipe, setNovaEquipe] = useState({ 
+    mentor_id: '', 
+    crafter_ids: [], // Mudança: array de crafters ao invés de um único crafter
+    projeto_id: '', 
+    status_inscricao: 'inscrito' 
+  });
   const [mentorProjeto, setMentorProjeto] = useState({ projeto_id: '', mentor_id: '' });
 
   // Carregar dados iniciais
@@ -23,7 +27,7 @@ export default function AdminEquipes() {
     try {
       setLoading(true);
       const [mentoresRes, projetosRes, craftersRes, equipesRes] = await Promise.all([
-        fetch('http://localhost:8080/api/sqlite/mentores'),
+        fetch('/api/mentores?all=1'), // Usar a API de mentores existente
         fetch('http://localhost:8080/api/sqlite/projetos'),
         fetch('http://localhost:8080/api/sqlite/crafters'),
         fetch('http://localhost:8080/api/sqlite/equipes')
@@ -36,7 +40,17 @@ export default function AdminEquipes() {
         equipesRes.json()
       ]);
 
-      setMentores(mentoresData.data || []);
+      // Normalizar dados dos mentores da API existente
+      const mentoresNormalizados = (mentoresData || []).map(mentor => ({
+        id: mentor.id,
+        nome: mentor.name || mentor.nome,
+        email: mentor.email,
+        telefone: mentor.phone || mentor.telefone,
+        bio: mentor.bio,
+        visible: mentor.visible
+      }));
+
+      setMentores(mentoresNormalizados);
       setProjetos(projetosData.data || []);
       setCrafters(craftersData.data || []);
       setEquipes(equipesData.data || []);
@@ -47,23 +61,7 @@ export default function AdminEquipes() {
     }
   };
 
-  const criarMentor = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch('http://localhost:8080/api/sqlite/mentores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(novoMentor)
-      });
-      
-      if (response.ok) {
-        setNovoMentor({ nome: '', email: '', telefone: '', bio: '' });
-        carregarDados();
-      }
-    } catch (error) {
-      console.error('Erro ao criar mentor:', error);
-    }
-  };
+
 
   const criarCrafter = async (e) => {
     e.preventDefault();
@@ -104,18 +102,46 @@ export default function AdminEquipes() {
   const criarEquipe = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8080/api/sqlite/equipes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(novaEquipe)
-      });
+      // Validar se pelo menos um crafter foi selecionado
+      if (novaEquipe.crafter_ids.length === 0) {
+        alert('Selecione pelo menos um crafter para a equipe');
+        return;
+      }
+
+      // Criar uma equipe para cada crafter selecionado
+      const promises = novaEquipe.crafter_ids.map(crafter_id => 
+        fetch('http://localhost:8080/api/sqlite/equipes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mentor_id: novaEquipe.mentor_id,
+            crafter_id: crafter_id,
+            projeto_id: novaEquipe.projeto_id,
+            status_inscricao: novaEquipe.status_inscricao
+          })
+        })
+      );
+
+      const responses = await Promise.all(promises);
       
-      if (response.ok) {
-        setNovaEquipe({ mentor_id: '', crafter_id: '', projeto_id: '', status_inscricao: 'inscrito' });
+      // Verificar se todas as requisições foram bem-sucedidas
+      const allSuccessful = responses.every(response => response.ok);
+      
+      if (allSuccessful) {
+        setNovaEquipe({ 
+          mentor_id: '', 
+          crafter_ids: [], 
+          projeto_id: '', 
+          status_inscricao: 'inscrito' 
+        });
         carregarDados();
+        alert(`Equipe criada com sucesso! ${novaEquipe.crafter_ids.length} crafter(s) adicionado(s).`);
+      } else {
+        throw new Error('Algumas equipes não puderam ser criadas');
       }
     } catch (error) {
       console.error('Erro ao criar equipe:', error);
+      alert('Erro ao criar equipe: ' + error.message);
     }
   };
 
@@ -169,39 +195,39 @@ export default function AdminEquipes() {
       {activeTab === 'mentores' && (
         <div className="tab-content">
           <div className="section">
-            <h2>Criar Novo Mentor</h2>
-            <form onSubmit={criarMentor} className="form">
-              <div className="form-row">
-                <input
-                  type="text"
-                  placeholder="Nome"
-                  value={novoMentor.nome}
-                  onChange={(e) => setNovoMentor({...novoMentor, nome: e.target.value})}
-                  required
-                />
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={novoMentor.email}
-                  onChange={(e) => setNovoMentor({...novoMentor, email: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-row">
-                <input
-                  type="tel"
-                  placeholder="Telefone"
-                  value={novoMentor.telefone}
-                  onChange={(e) => setNovoMentor({...novoMentor, telefone: e.target.value})}
-                />
-                <textarea
-                  placeholder="Bio"
-                  value={novoMentor.bio}
-                  onChange={(e) => setNovoMentor({...novoMentor, bio: e.target.value})}
-                />
-              </div>
-              <button type="submit" className="btn btn-primary">Criar Mentor</button>
-            </form>
+            <h2>Mentores Disponíveis</h2>
+            <p className="info-text">
+              Os mentores são gerenciados na <strong>página de Mentores</strong> do sistema. 
+              Aqui você pode visualizar todos os mentores disponíveis para associar às equipes.
+            </p>
+            <div className="table-container">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Telefone</th>
+                    <th>Status</th>
+                    <th>Bio</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mentores.map(mentor => (
+                    <tr key={mentor.id}>
+                      <td>{mentor.nome}</td>
+                      <td>{mentor.email}</td>
+                      <td>{mentor.telefone || '-'}</td>
+                      <td>
+                        <span className={`status ${mentor.visible ? 'status-ativo' : 'status-inativo'}`}>
+                          {mentor.visible ? 'Visível' : 'Oculto'}
+                        </span>
+                      </td>
+                      <td>{mentor.bio ? mentor.bio.substring(0, 50) + '...' : '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div className="section">
@@ -233,32 +259,6 @@ export default function AdminEquipes() {
               </div>
               <button type="submit" className="btn btn-primary">Criar Crafter</button>
             </form>
-          </div>
-
-          <div className="section">
-            <h2>Mentores Cadastrados</h2>
-            <div className="table-container">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Nome</th>
-                    <th>Email</th>
-                    <th>Telefone</th>
-                    <th>Bio</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mentores.map(mentor => (
-                    <tr key={mentor.id}>
-                      <td>{mentor.nome}</td>
-                      <td>{mentor.email}</td>
-                      <td>{mentor.telefone || '-'}</td>
-                      <td>{mentor.bio ? mentor.bio.substring(0, 50) + '...' : '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
           </div>
         </div>
       )}
@@ -329,18 +329,39 @@ export default function AdminEquipes() {
                 </select>
               </div>
               <div className="form-row">
-                <select
-                  value={novaEquipe.crafter_id}
-                  onChange={(e) => setNovaEquipe({...novaEquipe, crafter_id: e.target.value})}
-                  required
-                >
-                  <option value="">Selecione um Crafter</option>
-                  {crafters.map(crafter => (
-                    <option key={crafter.id} value={crafter.id}>
-                      {crafter.nome}
-                    </option>
-                  ))}
-                </select>
+                <div className="multi-select-container">
+                  <label>Crafters da Equipe (selecione múltiplos):</label>
+                  <div className="crafters-selection">
+                    {crafters.map(crafter => (
+                      <label key={crafter.id} className="checkbox-item">
+                        <input
+                          type="checkbox"
+                          checked={novaEquipe.crafter_ids.includes(crafter.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNovaEquipe({
+                                ...novaEquipe, 
+                                crafter_ids: [...novaEquipe.crafter_ids, crafter.id]
+                              });
+                            } else {
+                              setNovaEquipe({
+                                ...novaEquipe, 
+                                crafter_ids: novaEquipe.crafter_ids.filter(id => id !== crafter.id)
+                              });
+                            }
+                          }}
+                        />
+                        <span className="crafter-info">
+                          <strong>{crafter.nome}</strong>
+                          <small>{crafter.email}</small>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  <small className="help-text">
+                    Selecionados: {novaEquipe.crafter_ids.length} crafter(s)
+                  </small>
+                </div>
                 <select
                   value={novaEquipe.status_inscricao}
                   onChange={(e) => setNovaEquipe({...novaEquipe, status_inscricao: e.target.value})}
@@ -367,52 +388,97 @@ export default function AdminEquipes() {
                   <tr>
                     <th>Projeto</th>
                     <th>Mentor</th>
-                    <th>Crafter</th>
+                    <th>Crafters</th>
                     <th>Status</th>
                     <th>Data Inscrição</th>
                     <th>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {equipes.map(equipe => {
-                    const projeto = projetos.find(p => p.id === equipe.projeto_id);
-                    const mentor = mentores.find(m => m.id === equipe.mentor_id);
-                    const crafter = crafters.find(c => c.id === equipe.crafter_id);
+                  {(() => {
+                    // Agrupar equipes por projeto e mentor
+                    const equipesAgrupadas = {};
                     
-                    return (
-                      <tr key={equipe.id}>
-                        <td>{projeto?.titulo || 'N/A'}</td>
-                        <td>{mentor?.nome || 'N/A'}</td>
-                        <td>{crafter?.nome || 'N/A'}</td>
-                        <td>
-                          <span className={`status status-${equipe.status_inscricao}`}>
-                            {equipe.status_inscricao}
-                          </span>
-                        </td>
-                        <td>{equipe.data_inscricao ? new Date(equipe.data_inscricao).toLocaleDateString() : '-'}</td>
-                        <td>
-                          <div className="btn-group">
-                            {equipe.status_inscricao === 'inscrito' && (
-                              <button 
-                                className="btn btn-sm btn-secondary"
-                                onClick={() => alterarStatusEquipe(equipe.id, 'confirmado')}
-                              >
-                                Confirmar
-                              </button>
-                            )}
-                            {equipe.status_inscricao === 'confirmado' && (
-                              <button 
-                                className="btn btn-sm btn-primary"
-                                onClick={() => alterarStatusEquipe(equipe.id, 'finalizado')}
-                              >
-                                Finalizar
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                    equipes.forEach(equipe => {
+                      const key = `${equipe.projeto_id}-${equipe.mentor_id}`;
+                      if (!equipesAgrupadas[key]) {
+                        equipesAgrupadas[key] = {
+                          projeto_id: equipe.projeto_id,
+                          mentor_id: equipe.mentor_id,
+                          status_inscricao: equipe.status_inscricao,
+                          data_inscricao: equipe.data_inscricao,
+                          crafters: [],
+                          equipe_ids: []
+                        };
+                      }
+                      equipesAgrupadas[key].crafters.push(equipe.crafter_id);
+                      equipesAgrupadas[key].equipe_ids.push(equipe.id);
+                    });
+
+                    return Object.values(equipesAgrupadas).map((grupoEquipe, index) => {
+                      const projeto = projetos.find(p => p.id === grupoEquipe.projeto_id);
+                      const mentor = mentores.find(m => m.id === grupoEquipe.mentor_id);
+                      const craftersEquipe = grupoEquipe.crafters.map(crafterId => 
+                        crafters.find(c => c.id === crafterId)
+                      ).filter(Boolean);
+                      
+                      return (
+                        <tr key={`grupo-${index}`}>
+                          <td>{projeto?.titulo || 'N/A'}</td>
+                          <td>{mentor?.nome || 'N/A'}</td>
+                          <td>
+                            <div className="crafters-list">
+                              {craftersEquipe.map((crafter, idx) => (
+                                <span key={crafter.id} className="crafter-tag">
+                                  {crafter.nome}
+                                  {idx < craftersEquipe.length - 1 && ', '}
+                                </span>
+                              ))}
+                              <small className="crafters-count">
+                                ({craftersEquipe.length} crafter{craftersEquipe.length !== 1 ? 's' : ''})
+                              </small>
+                            </div>
+                          </td>
+                          <td>
+                            <span className={`status status-${grupoEquipe.status_inscricao}`}>
+                              {grupoEquipe.status_inscricao}
+                            </span>
+                          </td>
+                          <td>{grupoEquipe.data_inscricao ? new Date(grupoEquipe.data_inscricao).toLocaleDateString() : '-'}</td>
+                          <td>
+                            <div className="btn-group">
+                              {grupoEquipe.status_inscricao === 'inscrito' && (
+                                <button 
+                                  className="btn btn-sm btn-secondary"
+                                  onClick={() => {
+                                    // Alterar status de todas as equipes do grupo
+                                    grupoEquipe.equipe_ids.forEach(equipeId => 
+                                      alterarStatusEquipe(equipeId, 'confirmado')
+                                    );
+                                  }}
+                                >
+                                  Confirmar
+                                </button>
+                              )}
+                              {grupoEquipe.status_inscricao === 'confirmado' && (
+                                <button 
+                                  className="btn btn-sm btn-primary"
+                                  onClick={() => {
+                                    // Alterar status de todas as equipes do grupo
+                                    grupoEquipe.equipe_ids.forEach(equipeId => 
+                                      alterarStatusEquipe(equipeId, 'finalizado')
+                                    );
+                                  }}
+                                >
+                                  Finalizar
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()}
                 </tbody>
               </table>
             </div>
@@ -465,10 +531,89 @@ export default function AdminEquipes() {
           transition: border-color 0.2s ease;
         }
         .form input:focus, .form select:focus, .form textarea:focus { 
-          outline: none; 
           border-color: #00E4F2; 
+          outline: none; 
         }
         .form textarea { resize: vertical; min-height: 80px; }
+        
+        /* Estilos para seleção múltipla de crafters */
+        .multi-select-container { 
+          grid-column: 1 / -1; 
+          margin-bottom: 16px; 
+        }
+        .multi-select-container label { 
+          display: block; 
+          margin-bottom: 8px; 
+          font-weight: 600; 
+          color: #042326; 
+        }
+        .crafters-selection { 
+          display: grid; 
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+          gap: 12px; 
+          max-height: 200px; 
+          overflow-y: auto; 
+          padding: 12px; 
+          border: 2px solid #e0e0e0; 
+          border-radius: 8px; 
+          background: #f9f9f9; 
+        }
+        .checkbox-item { 
+          display: flex; 
+          align-items: center; 
+          gap: 8px; 
+          padding: 8px; 
+          background: white; 
+          border-radius: 6px; 
+          cursor: pointer; 
+          transition: all 0.2s ease; 
+        }
+        .checkbox-item:hover { 
+          background: #f0f9ff; 
+          border-color: #00E4F2; 
+        }
+        .checkbox-item input[type="checkbox"] { 
+          margin: 0; 
+          cursor: pointer; 
+        }
+        .crafter-info { 
+          display: flex; 
+          flex-direction: column; 
+          gap: 2px; 
+        }
+        .crafter-info strong { 
+          font-size: 14px; 
+          color: #042326; 
+        }
+        .crafter-info small { 
+          font-size: 12px; 
+          color: #666; 
+        }
+        .help-text { 
+          display: block; 
+          margin-top: 8px; 
+          font-size: 12px; 
+          color: #666; 
+          font-style: italic; 
+        }
+        
+        .crafters-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+
+        .crafter-tag {
+          display: inline-block;
+          font-weight: 500;
+        }
+
+        .crafters-count {
+          color: #666;
+          font-size: 0.875rem;
+          margin-top: 0.25rem;
+          display: block;
+        }
         
         .table-container { overflow-x: auto; }
         .table { 

@@ -16,13 +16,13 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
   const feedbacks = useMemo(() => {
     if (items && items.length > 0) {
       return items.map(item => ({
-        id: item.ID || item.id,
-        text: item.Message || item.message,
-        author: item.Author || item.Company || item.author || item.company || 'Anônimo',
-        rating: item.Rating || item.rating || 5,
-        avatarUrl: item.AvatarUrl || item.avatarUrl,
-        createdAt: item.CreatedAt || item.createdAt,
-        type: item.Type || item.type
+        id: item.id,
+        text: item.mensagem,
+        author: item.nome || 'Anônimo',
+        rating: 5, // Rating fixo para feedbacks da página inicial
+        avatarUrl: null, // Não temos avatars nos novos feedbacks
+        createdAt: item.data_criacao,
+        type: 'feedback'
       }));
     }
     

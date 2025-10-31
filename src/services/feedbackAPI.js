@@ -8,50 +8,44 @@ const MODERATION_ENABLED = (import.meta.env.VITE_FEEDBACK_MODERATION === 'true')
 
 // Validação (mantida do seu código original)
 export const FeedbackValidator = {
-  types: ['elogio', 'sugestao', 'critica'],
   maxChars: 500,
+
   validate(feedback) {
     const errors = [];
     if (!feedback) return { isValid: false, errors: ['Feedback ausente'] };
-    const { message = '', rating, type, avatarUrl = '' } = feedback;
-    // Removido a obrigatoriedade de author/company
-    // if (author.trim().length === 0 && company.trim().length === 0) {
-    //   errors.push('Informe seu nome ou a empresa');
-    // }
-    if (typeof message !== 'string' || message.trim().length === 0) {
+    const { nome = '', mensagem = '', email = '' } = feedback;
+
+    // Validação do nome
+    if (!nome.trim()) {
+      errors.push('Nome é obrigatório');
+    }
+
+    // Validação da mensagem
+    if (!mensagem.trim()) {
       errors.push('Mensagem é obrigatória');
+    } else if (mensagem.length < 10) {
+      errors.push('Mensagem deve ter pelo menos 10 caracteres');
+    } else if (mensagem.length > FeedbackValidator.maxChars) {
+      errors.push(`Mensagem deve ter no máximo ${FeedbackValidator.maxChars} caracteres`);
     }
-    if (message.length > this.maxChars) {
-      errors.push(`Mensagem deve ter no máximo ${this.maxChars} caracteres`);
+
+    // Validação do email (opcional, mas se fornecido deve ser válido)
+    if (email && !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      errors.push('Email deve ter um formato válido');
     }
-    if (typeof rating !== 'number' || rating < 1 || rating > 5) {
-      errors.push('Avaliação deve ser de 1 a 5 estrelas');
-    }
-    if (!this.types.includes(type)) {
-      errors.push(`Tipo deve ser um de: ${this.types.join(', ')}`);
-    }
-    if (avatarUrl && String(avatarUrl).trim().length > 0) {
-      try {
-        const u = new URL(String(avatarUrl).trim());
-        if (!(u.protocol === 'http:' || u.protocol === 'https:')) {
-          errors.push('Avatar/logo deve ser uma URL válida (http/https)');
-        }
-      } catch {
-        errors.push('Avatar/logo deve ser uma URL válida (http/https)');
-      }
-    }
-    return { isValid: errors.length === 0, errors };
-  },
-  sanitize(feedback) {
-     // A sanitização principal agora acontece no backend
-     // Aqui apenas garantimos os tipos básicos
+
     return {
-      author: String(feedback.author || '').trim(),
-      company: String(feedback.company || '').trim(),
-      avatarUrl: String(feedback.avatarUrl || '').trim(),
-      message: String(feedback.message || '').trim().slice(0, FeedbackValidator.maxChars),
-      rating: Number(feedback.rating || 5),
-      type: feedback.type,
+      isValid: errors.length === 0,
+      errors
+    };
+  },
+
+  sanitize(feedback) {
+    return {
+      nome: String(feedback.nome || '').trim(),
+      email: String(feedback.email || '').trim(),
+      mensagem: String(feedback.mensagem || '').trim().slice(0, FeedbackValidator.maxChars),
+      origem: feedback.origem || 'pagina_inicial'
     };
   }
 };
@@ -136,17 +130,15 @@ export async function submitFeedback(feedback, { honeypot = '' } = {}) {
  * @param {object} options - Opções de paginação e filtros.
  * @returns {Promise<object>} Objeto com a lista de items e informações de paginação.
  */
-export async function getFeedbacks({ page = 1, limit = 10, type = 'all', minRating = 1 } = {}) {
+export async function getFeedbacks({ page = 1, limit = 10, origem = 'pagina_inicial' } = {}) {
   // Constrói a query string
   const params = new URLSearchParams({
-    page: page.toString(),
-    limit: limit.toString(),
-    minRating: minRating.toString()
+    limit: limit.toString()
   });
-  if (type !== 'all') {
-    params.append('type', type);
+  
+  if (origem) {
+    params.append('origem', origem);
   }
-  // No backend, a flag `onlyApproved` já é tratada por defeito (Approved = 1)
 
   const url = `${API_BASE_URL}/feedbacks?${params.toString()}`;
   console.log('Buscando feedbacks da API:', url);
@@ -163,13 +155,12 @@ export async function getFeedbacks({ page = 1, limit = 10, type = 'all', minRati
       throw new Error(responseBody.error || `Erro ${response.status} ao buscar feedbacks.`);
     }
 
-    // A API backend deve retornar um array de feedbacks diretamente
+    // A API backend retorna um array de feedbacks diretamente
     const items = Array.isArray(responseBody) ? responseBody : [];
     console.log(`Recebidos ${items.length} feedbacks da API.`);
 
-    // Simulamos a paginação aqui, já que o backend retorna apenas TOP 20 por enquanto
-    // Em uma API real, o backend faria a paginação completa
-    const total = items.length; // Ou viria da API se ela suportasse contagem total
+    // Simulamos a paginação aqui
+    const total = items.length;
     const totalPages = Math.ceil(total / limit);
     const paginatedItems = items.slice((page - 1) * limit, page * limit);
 
@@ -178,8 +169,8 @@ export async function getFeedbacks({ page = 1, limit = 10, type = 'all', minRati
       pagination: {
         page,
         limit,
-        total, // Pode não ser o total real, apenas o total retornado (20)
-        totalPages // Pode não ser o total real
+        total,
+        totalPages
       }
     };
 

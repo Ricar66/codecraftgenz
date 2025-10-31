@@ -24,7 +24,7 @@ function ensureStore() {
   if (existing) return existing;
   const seed = {
     users: [
-      { id: 'u1', name: 'Admin', email: 'admin@codecraft.dev', role: 'admin', status: 'active', password: 'Admin!123' },
+      { id: 'u1', name: 'Admin', email: 'admin@codecraft.dev', role: 'admin', status: 'active', password: null },
     ],
     mentors: [
       { id: 'm1', name: 'Ana Silva', specialty: 'Frontend Performance', phone: '(11) 99999-1111', email: 'ana.silva@codecraft.dev', bio: 'Foco em arquitetura front e web vitals.', visible: true, photo: null, status: 'published' },

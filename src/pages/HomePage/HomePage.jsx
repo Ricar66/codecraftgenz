@@ -1,9 +1,9 @@
 // src/pages/HomePage/HomePage.jsx
-import React from 'react';
+import React, { useState } from 'react';
  
 import heroBackground from '../../assets/hero-background.svg';
+import CrafterModal from '../../components/CrafterModal/CrafterModal';
 import FeaturesSection from '../../components/FeaturesSection/FeaturesSection';
-import FeedbackShowcase from '../../components/Feedbacks/FeedbackShowcase';
 import Hero from '../../components/Hero/Hero';
 import Navbar from '../../components/Navbar/Navbar';
 
@@ -12,20 +12,24 @@ import Navbar from '../../components/Navbar/Navbar';
  * Mantém consistência visual com a página de projetos usando o mesmo design system
  */
 const HomePage = () => {
+  const [isCrafterModalOpen, setIsCrafterModalOpen] = useState(false);
+
   return (
     <div className="home-page">
       <Navbar />
       <div className="section-block">
-        <Hero />
+        <Hero onCrafterClick={() => setIsCrafterModalOpen(true)} />
       </div>
       <div className="section-block">
         <div className="section-card">
           <FeaturesSection />
         </div>
       </div>
-      <div className="section-block feedback-section">
-        <FeedbackShowcase />
-      </div>
+
+      <CrafterModal 
+        isOpen={isCrafterModalOpen} 
+        onClose={() => setIsCrafterModalOpen(false)} 
+      />
 
       <style>{`
         /* ===== CONTAINER PRINCIPAL ===== */
@@ -69,9 +73,6 @@ const HomePage = () => {
             border-radius: var(--raio-lg);
           }
         }
-        
-        /* ===== SEÇÃO DE FEEDBACKS NO FINAL ===== */
-        .feedback-section { padding: 0; }
       `}</style>
     </div>
   );

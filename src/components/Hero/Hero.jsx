@@ -19,19 +19,18 @@ import { Link } from 'react-router-dom';
 
 import { useAnalytics } from '../../hooks/useAnalytics';
 import Button from '../Button/Button';
-import CrafterModal from '../CallToAction/CrafterModal';
 
 import styles from './Hero.module.css';
 
 /**
  * Componente Hero - Banner principal da aplicação
  * 
+ * @param {Function} onCrafterClick - Callback para abrir o modal do crafter
  * @returns {JSX.Element} Seção hero com slogan, descrição e CTA
  */
-const Hero = () => {
+const Hero = ({ onCrafterClick }) => {
   // Estado para controlar animações e interações
   const [isVisible, setIsVisible] = useState(false);
-  const [isCrafterModalOpen, setCrafterModalOpen] = useState(false);
   const [buttonClicks, setButtonClicks] = useState(0);
   
   // Hook personalizado para analytics
@@ -65,7 +64,9 @@ const Hero = () => {
     });
 
     // Abre o modal de inscrição para Crafter
-    setCrafterModalOpen(true);
+    if (onCrafterClick) {
+      onCrafterClick();
+    }
   };
 
   return (
@@ -118,10 +119,6 @@ const Hero = () => {
       </div>
       
       {/* Overlay removido para manter um único fundo na Home */}
-
-      {isCrafterModalOpen && (
-        <CrafterModal onClose={() => setCrafterModalOpen(false)} />
-      )}
     </section>
   );
 };

@@ -7,14 +7,14 @@ export default function useFeedbacks(options = {}) {
   const {
     autoFetch = true,
     pageSize = 5,
-    moderationEnabled = (import.meta.env.VITE_FEEDBACK_MODERATION === 'true')
+    origem = 'pagina_inicial'
   } = options;
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState({ type: 'all', minRating: 1 });
+  const [filters, setFilters] = useState({ origem });
   const [pagination, setPagination] = useState({ page: 1, limit: pageSize, total: 0, totalPages: 0 });
 
   const fetchAll = useCallback(async (opts = {}) => {
@@ -24,9 +24,7 @@ export default function useFeedbacks(options = {}) {
       const res = await getFeedbacks({
         page: opts.page || page,
         limit: pageSize,
-        type: opts.type ?? filters.type,
-        minRating: opts.minRating ?? filters.minRating,
-        onlyApproved: moderationEnabled,
+        origem: opts.origem ?? filters.origem,
       });
       setItems(res.items);
       setPagination(res.pagination);
@@ -35,7 +33,7 @@ export default function useFeedbacks(options = {}) {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, filters.type, filters.minRating, moderationEnabled]);
+  }, [page, pageSize, filters.origem]);
 
   const submit = useCallback(async (data, { honeypot = '' } = {}) => {
     const { isValid, errors } = FeedbackValidator.validate(data);
@@ -48,7 +46,7 @@ export default function useFeedbacks(options = {}) {
       const err = new Error('Submissão identificada como spam');
       throw err;
     }
-    const saved = await submitFeedback(data, { useMockData: true, honeypot });
+    const saved = await submitFeedback(data, { useMockData: false, honeypot });
     await fetchAll({ page: 1 });
     return saved;
   }, [fetchAll]);

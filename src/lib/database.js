@@ -49,7 +49,7 @@ function initializeTables() {
       mentor_id INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (mentor_id) REFERENCES mentores(id)
+      FOREIGN KEY (mentor_id) REFERENCES mentores(id) ON DELETE SET NULL ON UPDATE CASCADE
     )
   `);
 
@@ -94,9 +94,9 @@ function initializeTables() {
       status_inscricao TEXT CHECK(status_inscricao IN ('inscrito', 'confirmado', 'finalizado')) DEFAULT 'inscrito',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (mentor_id) REFERENCES mentores(id),
-      FOREIGN KEY (crafter_id) REFERENCES crafters(id),
-      FOREIGN KEY (projeto_id) REFERENCES projetos(id),
+      FOREIGN KEY (mentor_id) REFERENCES mentores(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        FOREIGN KEY (crafter_id) REFERENCES crafters(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE CASCADE ON UPDATE CASCADE,
       UNIQUE(crafter_id, projeto_id)
     )
   `);
@@ -111,8 +111,8 @@ function initializeTables() {
       data_inscricao TEXT DEFAULT CURRENT_TIMESTAMP,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (crafter_id) REFERENCES crafters(id),
-      FOREIGN KEY (projeto_id) REFERENCES projetos(id),
+      FOREIGN KEY (crafter_id) REFERENCES crafters(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE CASCADE ON UPDATE CASCADE,
       UNIQUE(crafter_id, projeto_id)
     )
   `);
@@ -231,6 +231,34 @@ function initializeTables() {
     )
   `);
 
+  // Tabela feedbacks (feedbacks da página inicial e admin)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS feedbacks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nome TEXT NOT NULL,
+      email TEXT,
+      mensagem TEXT NOT NULL,
+      origem TEXT CHECK(origem IN ('pagina_inicial', 'admin', 'outro')) DEFAULT 'pagina_inicial',
+      data_criacao TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Tabela inscricoes_crafters (inscrições do formulário "Quero ser um Crafter")
+  db.run(`
+    CREATE TABLE IF NOT EXISTS inscricoes_crafters (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nome TEXT NOT NULL,
+      email TEXT NOT NULL,
+      telefone TEXT,
+      cidade TEXT,
+      estado TEXT,
+      area_interesse TEXT,
+      mensagem TEXT,
+      status TEXT CHECK(status IN ('pendente', 'contato_realizado', 'rejeitado', 'confirmado')) DEFAULT 'pendente',
+      data_inscricao TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Adicionar coluna points na tabela crafters se não existir
   db.run(`ALTER TABLE crafters ADD COLUMN points INTEGER DEFAULT 0`, () => {
     // Ignora erro se coluna já existir
@@ -241,7 +269,40 @@ function initializeTables() {
     // Ignora erro se coluna já existir
   });
 
-  console.log('Tabelas do banco SQLite inicializadas com sucesso');
+  // Criar índices para otimização de performance
+  db.exec(`
+    -- Índices para consultas frequentes
+    CREATE INDEX IF NOT EXISTS idx_projetos_mentor_id ON projetos(mentor_id);
+    CREATE INDEX IF NOT EXISTS idx_projetos_status ON projetos(status);
+    CREATE INDEX IF NOT EXISTS idx_crafters_email ON crafters(email);
+    CREATE INDEX IF NOT EXISTS idx_crafters_points ON crafters(points DESC);
+    CREATE INDEX IF NOT EXISTS idx_crafters_active ON crafters(active);
+    CREATE INDEX IF NOT EXISTS idx_equipes_crafter_id ON equipes(crafter_id);
+    CREATE INDEX IF NOT EXISTS idx_equipes_mentor_id ON equipes(mentor_id);
+    CREATE INDEX IF NOT EXISTS idx_equipes_projeto_id ON equipes(projeto_id);
+    CREATE INDEX IF NOT EXISTS idx_equipes_status ON equipes(status_inscricao);
+    CREATE INDEX IF NOT EXISTS idx_inscricoes_crafter_id ON inscricoes(crafter_id);
+    CREATE INDEX IF NOT EXISTS idx_inscricoes_projeto_id ON inscricoes(projeto_id);
+    CREATE INDEX IF NOT EXISTS idx_inscricoes_status ON inscricoes(status);
+    CREATE INDEX IF NOT EXISTS idx_desafios_status ON desafios(status);
+    CREATE INDEX IF NOT EXISTS idx_desafios_visible ON desafios(visible);
+    CREATE INDEX IF NOT EXISTS idx_desafios_deadline ON desafios(deadline);
+    CREATE INDEX IF NOT EXISTS idx_inscricoes_desafios_crafter ON inscricoes_desafios(crafter_id);
+    CREATE INDEX IF NOT EXISTS idx_inscricoes_desafios_desafio ON inscricoes_desafios(desafio_id);
+    CREATE INDEX IF NOT EXISTS idx_submissions_challenge ON submissions(challenge_id);
+    CREATE INDEX IF NOT EXISTS idx_submissions_crafter ON submissions(crafter_id);
+    CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
+    CREATE INDEX IF NOT EXISTS idx_logs_type ON logs(type);
+    CREATE INDEX IF NOT EXISTS idx_logs_challenge ON logs(challenge_id);
+    CREATE INDEX IF NOT EXISTS idx_feedbacks_origem ON feedbacks(origem);
+    CREATE INDEX IF NOT EXISTS idx_feedbacks_data ON feedbacks(data_criacao);
+    CREATE INDEX IF NOT EXISTS idx_inscricoes_crafters_status ON inscricoes_crafters(status);
+    CREATE INDEX IF NOT EXISTS idx_inscricoes_crafters_data ON inscricoes_crafters(data_inscricao);
+    CREATE INDEX IF NOT EXISTS idx_ranking_history_at ON ranking_history(at);
+    CREATE INDEX IF NOT EXISTS idx_ranking_history_crafter ON ranking_history(crafter_id);
+  `);
+
+  console.log('Tabelas e índices do banco SQLite inicializados com sucesso');
 }
 
 // Funções auxiliares para operações no banco
@@ -1068,6 +1129,120 @@ const dbOperations = {
           else {
             // Buscar finança atualizada
             db.get('SELECT * FROM financas WHERE id = ?', [id], (getErr, row) => {
+              if (getErr) reject(getErr);
+              else resolve(row);
+            });
+          }
+        }
+      );
+    });
+  },
+
+  // Feedbacks
+  async createFeedback(feedback) {
+    return new Promise((resolve, reject) => {
+      const { nome, email, mensagem, origem } = feedback;
+      db.run(
+        'INSERT INTO feedbacks (nome, email, mensagem, origem) VALUES (?, ?, ?, ?)',
+        [nome, email || null, mensagem, origem || 'pagina_inicial'],
+        function(err) {
+          if (err) reject(err);
+          else {
+            // Buscar feedback criado
+            db.get('SELECT * FROM feedbacks WHERE id = ?', [this.lastID], (getErr, row) => {
+              if (getErr) reject(getErr);
+              else resolve(row);
+            });
+          }
+        }
+      );
+    });
+  },
+
+  async getFeedbacks(filters = {}) {
+    return new Promise((resolve, reject) => {
+      let query = 'SELECT * FROM feedbacks';
+      const conditions = [];
+      const values = [];
+
+      if (filters.origem) {
+        conditions.push('origem = ?');
+        values.push(filters.origem);
+      }
+
+      if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
+      }
+
+      query += ' ORDER BY data_criacao DESC';
+
+      if (filters.limit) {
+        query += ' LIMIT ?';
+        values.push(parseInt(filters.limit));
+      }
+
+      db.all(query, values, (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
+      });
+    });
+  },
+
+  // Inscrições Crafters
+  async createInscricaoCrafter(inscricao) {
+    return new Promise((resolve, reject) => {
+      const { nome, email, telefone, cidade, estado, area_interesse, mensagem } = inscricao;
+      db.run(
+        'INSERT INTO inscricoes_crafters (nome, email, telefone, cidade, estado, area_interesse, mensagem) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [nome, email, telefone || null, cidade || null, estado || null, area_interesse || null, mensagem || null],
+        function(err) {
+          if (err) reject(err);
+          else {
+            // Buscar inscrição criada
+            db.get('SELECT * FROM inscricoes_crafters WHERE id = ?', [this.lastID], (getErr, row) => {
+              if (getErr) reject(getErr);
+              else resolve(row);
+            });
+          }
+        }
+      );
+    });
+  },
+
+  async getInscricoesCrafters(filters = {}) {
+    return new Promise((resolve, reject) => {
+      let query = 'SELECT * FROM inscricoes_crafters';
+      const conditions = [];
+      const values = [];
+
+      if (filters.status) {
+        conditions.push('status = ?');
+        values.push(filters.status);
+      }
+
+      if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
+      }
+
+      query += ' ORDER BY data_inscricao DESC';
+
+      db.all(query, values, (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
+      });
+    });
+  },
+
+  async updateInscricaoCrafterStatus(id, status) {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE inscricoes_crafters SET status = ? WHERE id = ?',
+        [status, id],
+        function(err) {
+          if (err) reject(err);
+          else {
+            // Buscar inscrição atualizada
+            db.get('SELECT * FROM inscricoes_crafters WHERE id = ?', [id], (getErr, row) => {
               if (getErr) reject(getErr);
               else resolve(row);
             });

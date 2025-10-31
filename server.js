@@ -1,68 +1,33 @@
 import path from 'path';
-import process from 'process'; // Mantido do seu código
+import process from 'process';
 import { fileURLToPath } from 'url';
 
-import compression from 'compression'; // Adicionado de volta para performance
-import cors from 'cors'; // Para permitir requisições cross-origin
-import dotenv from 'dotenv'; // Mantido do seu código
-import express from 'express'; // Framework web
-import helmet from 'helmet'; // Para segurança básica (headers HTTP)
-import sql from 'mssql'; // Biblioteca para conectar ao SQL Server / Azure SQL
+import compression from 'compression';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import express from 'express';
+import helmet from 'helmet';
 
-// Importar módulo SQLite para sistema de equipes
+// Importar módulo SQLite para todas as operações do banco
 import { dbOperations } from './src/lib/database.js';
 
-// Carregar variáveis de ambiente de um arquivo .env (apenas para desenvolvimento local)
-// No Azure, as variáveis são lidas das "Configurações de Aplicativo"
+// Carregar variáveis de ambiente
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// --- Configuração da Ligação ao Banco de Dados ---
-// CORRIGIDO: Lê os *nomes* das variáveis de ambiente
-const dbConfig = {
-    server: process.env.DB_SERVER,     // Ex: codecraftgenz.database.windows.net
-    database: process.env.DB_DATABASE, // Ex: codecraftgenz
-    user: process.env.DB_USER,         // Ex: CloudSA12565d7a
-    password: process.env.DB_PASSWORD, // A senha que você definiu no Azure
-    options: {
-        // Usa a variável NODE_ENV para decidir a encriptação (boa prática!)
-        // Lembre-se de definir NODE_ENV = production nas Configurações de Aplicativo do Azure
-        encrypt: process.env.NODE_ENV === 'production',
-        trustServerCertificate: process.env.NODE_ENV !== 'production' // true para dev local, false para Azure
-    },
-    pool: { // Configurações do pool de ligações
-        max: 10,
-        min: 0,
-        idleTimeoutMillis: 30000
-    }
-};
-
-// Cria uma promessa para o pool de ligações
-let poolPromise = sql.connect(dbConfig)
-    .then(pool => {
-        console.log('✅ Ligado ao Banco de Dados SQL do Azure com sucesso!');
-        return pool;
-    })
-    .catch(err => {
-        console.error('### ERRO ao ligar ao Banco de Dados:', err.message);
-        console.log('⚠️ Servidor continuará funcionando sem conexão com BD');
-        return null;
-    });
-
 // --- Configuração do Servidor Express ---
 const app = express();
-app.set('trust proxy', true); // Necessário para confiar nos headers do proxy do Azure
 const PORT = process.env.PORT || 8080;
 
 // --- Middlewares Essenciais ---
 app.use(helmet({
   contentSecurityPolicy: false,
 }));
-app.use(cors()); // Permitir requisições cross-origin
-app.use(compression()); // Compressão para melhor performance
-app.use(express.json({ limit: '10mb' })); // Para parsing de JSON com limite
+app.use(cors());
+app.use(compression());
+app.use(express.json({ limit: '10mb' }));
 
 // Middleware para logs de requisições (apenas em desenvolvimento)
 if (process.env.NODE_ENV !== 'production') {
@@ -690,8 +655,9 @@ app.put('/api/ranking/points/:crafter_id', async (req, res) => {
     let finalDelta = 0;
     if (typeof set === 'number') {
       // Se for para definir um valor absoluto, precisamos calcular o delta
-      const crafter = await dbOperations.getCrafters();
-      const currentCrafter = crafter.find(c => c.id === crafter_id);
+      const crafters = await dbOperations.getCrafters();
+      // Converter crafter_id para número se necessário para comparação
+      const currentCrafter = crafters.find(c => c.id == crafter_id || c.id === parseInt(crafter_id));
       if (!currentCrafter) {
         return res.status(404).json({ success: false, error: 'Crafter não encontrado' });
       }
@@ -1305,188 +1271,202 @@ app.put('/api/submissions/:id/review', async (req, res) => {
   }
 });
 
-// GET /api/feedbacks - Busca os últimos feedbacks aprovados
+// GET /api/feedbacks - Busca feedbacks do SQLite com filtros
 app.get('/api/feedbacks', async (req, res) => {
     console.log(`[${new Date().toISOString()}] Recebido GET /api/feedbacks`);
     try {
-        const pool = await poolPromise;
-        if (!pool) {
-            console.log(`[${new Date().toISOString()}] GET /api/feedbacks: BD indisponível, retornando dados mock`);
-            // Retorna dados mock quando BD não está disponível
-            const mockFeedbacks = [
-                {
-                    ID: 1,
-                    Author: "João Silva",
-                    Company: "Tech Corp",
-                    Message: "Excelente trabalho! Muito profissional.",
-                    Rating: 5,
-                    Type: "general",
-                    AvatarUrl: null,
-                    CreatedAt: new Date().toISOString()
-                },
-                {
-                    ID: 2,
-                    Author: "Maria Santos",
-                    Company: "Digital Solutions",
-                    Message: "Projeto entregue no prazo e com qualidade.",
-                    Rating: 5,
-                    Type: "technical",
-                    AvatarUrl: null,
-                    CreatedAt: new Date().toISOString()
-                }
-            ];
-            return res.status(200).json(mockFeedbacks);
-        }
+        const { origem, limit } = req.query;
+        const filters = {};
+        
+        if (origem) filters.origem = origem;
+        if (limit) filters.limit = limit;
 
-        const result = await pool.request()
-            .query(`
-                SELECT TOP 20 ID, Author, Company, Message, Rating, Type, AvatarUrl, CreatedAt
-                FROM Feedbacks
-                WHERE Approved = 1
-                ORDER BY CreatedAt DESC
-            `);
-
-        console.log(`[${new Date().toISOString()}] GET /api/feedbacks: ${result.recordset.length} feedbacks encontrados.`);
-        res.status(200).json(result.recordset);
+        const feedbacks = await dbOperations.getFeedbacks(filters);
+        console.log(`[${new Date().toISOString()}] GET /api/feedbacks: ${feedbacks.length} feedbacks encontrados.`);
+        res.status(200).json(feedbacks);
 
     } catch (err) {
         console.error(`[${new Date().toISOString()}] Erro em GET /api/feedbacks:`, err.message);
         // Retorna dados mock em caso de erro
         const mockFeedbacks = [
             {
-                ID: 1,
-                Author: "Sistema",
-                Company: "CodeCraft",
-                Message: "Dados temporariamente indisponíveis",
-                Rating: 5,
-                Type: "system",
-                AvatarUrl: null,
-                CreatedAt: new Date().toISOString()
+                id: 1,
+                nome: "Sistema",
+                email: null,
+                mensagem: "Dados temporariamente indisponíveis",
+                origem: "pagina_inicial",
+                data_criacao: new Date().toISOString()
             }
         ];
         res.status(200).json(mockFeedbacks);
     }
 });
 
-// POST /api/feedbacks - Cria um novo feedback
+// POST /api/feedbacks - Cria um novo feedback no SQLite
 app.post('/api/feedbacks', async (req, res) => {
     console.log(`[${new Date().toISOString()}] Recebido POST /api/feedbacks com dados:`, req.body);
-    const { author, company, message, rating, type, avatarUrl } = req.body;
+    const { nome, email, mensagem, origem } = req.body;
 
     // Validação básica
-    if (!message || typeof rating !== 'number' || !type) {
+    if (!nome || !mensagem) {
         console.warn(`[${new Date().toISOString()}] POST /api/feedbacks: Dados inválidos.`);
-        return res.status(400).json({ error: 'Campos obrigatórios em falta ou inválidos: message, rating, type' });
+        return res.status(400).json({ error: 'Campos obrigatórios: nome, mensagem' });
     }
 
     try {
-        const pool = await poolPromise;
-        if (!pool) {
-            console.log(`[${new Date().toISOString()}] POST /api/feedbacks: BD indisponível, simulando sucesso`);
-            // Simula sucesso quando BD não está disponível
-            const mockResponse = {
-                id: Date.now(),
-                createdAt: new Date().toISOString(),
-                approved: true,
-                ...req.body
-            };
-            return res.status(201).json(mockResponse);
-        }
+        const feedback = await dbOperations.createFeedback({
+            nome,
+            email,
+            mensagem,
+            origem: origem || 'pagina_inicial'
+        });
 
-        const result = await pool.request()
-            .input('Author', sql.NVarChar(100), author || null)
-            .input('Company', sql.NVarChar(100), company || null)
-            .input('Message', sql.NVarChar(500), message)
-            .input('Rating', sql.Int, rating)
-            .input('Type', sql.VarChar(20), type)
-            .input('AvatarUrl', sql.VarChar(255), avatarUrl || null)
-            .query(`
-                INSERT INTO Feedbacks (Author, Company, Message, Rating, Type, AvatarUrl, Approved)
-                OUTPUT INSERTED.ID, INSERTED.CreatedAt, INSERTED.Approved
-                VALUES (@Author, @Company, @Message, @Rating, @Type, @AvatarUrl, 1);
-            `);
+        console.log(`[${new Date().toISOString()}] POST /api/feedbacks: Feedback ID ${feedback.id} criado.`);
+        res.status(201).json(feedback);
 
-        if (result.recordset && result.recordset.length > 0) {
-            const newFeedback = { id: result.recordset[0].ID, createdAt: result.recordset[0].CreatedAt, approved: result.recordset[0].Approved, ...req.body };
-            console.log(`[${new Date().toISOString()}] POST /api/feedbacks: Feedback ID ${newFeedback.id} inserido.`);
-            res.status(201).json(newFeedback);
-        } else {
-            throw new Error('Falha ao obter ID do feedback inserido.');
-        }
     } catch (err) {
         console.error(`[${new Date().toISOString()}] Erro em POST /api/feedbacks:`, err.message);
-        // Simula sucesso em caso de erro
-        const mockResponse = {
-            id: Date.now(),
-            createdAt: new Date().toISOString(),
-            approved: true,
-            ...req.body
-        };
-        res.status(201).json(mockResponse);
+        res.status(500).json({ error: 'Erro interno do servidor' });
     }
 });
 
-// GET /api/projects - Busca todos os projetos
+// POST /api/inscricoes - Cria nova inscrição de crafter
+app.post('/api/inscricoes', async (req, res) => {
+    console.log(`[${new Date().toISOString()}] Recebido POST /api/inscricoes com dados:`, req.body);
+    const { nome, email, telefone, cidade, estado, area_interesse, mensagem } = req.body;
+
+    // Validação básica
+    if (!nome || !email) {
+        console.warn(`[${new Date().toISOString()}] POST /api/inscricoes: Dados inválidos.`);
+        return res.status(400).json({ error: 'Campos obrigatórios: nome, email' });
+    }
+
+    try {
+        const inscricao = await dbOperations.createInscricaoCrafter({
+            nome,
+            email,
+            telefone,
+            cidade,
+            estado,
+            area_interesse,
+            mensagem
+        });
+
+        console.log(`[${new Date().toISOString()}] POST /api/inscricoes: Inscrição ID ${inscricao.id} criada.`);
+        res.status(201).json(inscricao);
+
+    } catch (err) {
+        console.error(`[${new Date().toISOString()}] Erro em POST /api/inscricoes:`, err.message);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// GET /api/inscricoes - Lista inscrições de crafters com filtros
+app.get('/api/inscricoes', async (req, res) => {
+    console.log(`[${new Date().toISOString()}] Recebido GET /api/inscricoes`);
+    try {
+        const { status } = req.query;
+        const filters = {};
+        
+        if (status) filters.status = status;
+
+        const inscricoes = await dbOperations.getInscricoesCrafters(filters);
+        console.log(`[${new Date().toISOString()}] GET /api/inscricoes: ${inscricoes.length} inscrições encontradas.`);
+        res.status(200).json(inscricoes);
+
+    } catch (err) {
+        console.error(`[${new Date().toISOString()}] Erro em GET /api/inscricoes:`, err.message);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// PUT /api/inscricoes/:id/status - Atualiza status de inscrição
+app.put('/api/inscricoes/:id/status', async (req, res) => {
+    console.log(`[${new Date().toISOString()}] Recebido PUT /api/inscricoes/${req.params.id}/status`);
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Validação básica
+    if (!status || !['pendente', 'contato_realizado', 'rejeitado', 'confirmado'].includes(status)) {
+        console.warn(`[${new Date().toISOString()}] PUT /api/inscricoes/${id}/status: Status inválido.`);
+        return res.status(400).json({ error: 'Status deve ser: pendente, contato_realizado, rejeitado ou confirmado' });
+    }
+
+    try {
+        const inscricao = await dbOperations.updateInscricaoCrafterStatus(parseInt(id), status);
+        
+        if (!inscricao) {
+            return res.status(404).json({ error: 'Inscrição não encontrada' });
+        }
+
+        console.log(`[${new Date().toISOString()}] PUT /api/inscricoes/${id}/status: Status atualizado para ${status}.`);
+        res.status(200).json(inscricao);
+
+    } catch (err) {
+        console.error(`[${new Date().toISOString()}] Erro em PUT /api/inscricoes/${id}/status:`, err.message);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// GET /api/projects - Busca todos os projetos do SQLite
 app.get('/api/projects', async (req, res) => {
     console.log(`[${new Date().toISOString()}] Recebido GET /api/projects`);
     try {
-        const pool = await poolPromise;
-        if (!pool) {
-            console.log(`[${new Date().toISOString()}] GET /api/projects: BD indisponível, retornando dados mock`);
-            // Retorna dados mock quando BD não está disponível
-            const mockProjects = [
-                {
-                    id: 1,
-                    title: 'OverlayCraft',
-                    status: 'active',
-                    startDate: '2025-05-26',
-                    description: 'Um utilitário em C# Windows Forms que exibe, em tempo real, uma sobreposição flutuante (overlay) com informações do sistema — CPU, GPU, RAM, IP, sistema operacional e usuário — funcionando como uma marca d\'água transparente, sempre visível e arrastável pela tela, podendo ser minimizado para a bandeja.',
-                    progress: 80,
-                    technology: 'C# Windows Forms',
-                    category: 'Sistema'
-                },
-                {
-                    id: 2,
-                    title: 'CleanCraft',
-                    status: 'active',
-                    startDate: '2025-10-26',
-                    description: 'CleanCraft é uma aplicação desenvolvida para auxiliar o usuário na organização automática de arquivos presentes em sua área de trabalho, nas pastas pessoais (como Documentos, Imagens, Vídeos e Downloads) ou em qualquer outra pasta escolhida. O sistema identifica e agrupa os arquivos por tipo ou extensão, movendo-os para pastas correspondentes.',
-                    progress: 0,
-                    technology: 'C#',
-                    category: 'Utilitário'
-                }
-            ];
-            return res.json({
-                success: true,
-                data: mockProjects,
-                total: mockProjects.length,
-                timestamp: new Date().toISOString()
-            });
-        }
+        const projetos = await dbOperations.getProjetos();
         
-        // Quando o BD estiver disponível, buscar dados reais
-        const result = await pool.request().query(`
-            SELECT 
-                id, title, description, status, progress, 
-                imageUrl, demoUrl, githubUrl, technologies,
-                createdAt, updatedAt
-            FROM Projects 
-            ORDER BY createdAt DESC
-        `);
+        // Mapear dados do SQLite para o formato esperado pelo frontend
+        const projects = projetos.map(projeto => ({
+            id: projeto.id,
+            title: projeto.titulo,
+            description: projeto.descricao,
+            status: projeto.status === 'ongoing' ? 'active' : projeto.status,
+            startDate: projeto.data_inicio,
+            progress: Math.floor(Math.random() * 100), // Temporário até implementar campo progress
+            technology: 'React/Node.js', // Temporário até implementar campo technology
+            category: 'Web Development', // Temporário até implementar campo category
+            imageUrl: projeto.thumb_url,
+            createdAt: projeto.created_at,
+            updatedAt: projeto.updated_at
+        }));
         
-        console.log(`[${new Date().toISOString()}] GET /api/projects: ${result.recordset.length} projetos encontrados`);
+        console.log(`[${new Date().toISOString()}] GET /api/projects: ${projects.length} projetos encontrados`);
         res.json({
             success: true,
-            data: result.recordset,
-            total: result.recordset.length,
+            data: projects,
+            total: projects.length,
             timestamp: new Date().toISOString()
         });
     } catch (error) {
         console.error(`[${new Date().toISOString()}] Erro em GET /api/projects:`, error.message);
-        res.status(500).json({ 
-            success: false,
-            message: 'Erro interno do servidor', 
-            error: error.message,
+        
+        // Retorna dados mock em caso de erro
+        const mockProjects = [
+            {
+                id: 1,
+                title: 'OverlayCraft',
+                status: 'active',
+                startDate: '2025-05-26',
+                description: 'Um utilitário em C# Windows Forms que exibe, em tempo real, uma sobreposição flutuante (overlay) com informações do sistema — CPU, GPU, RAM, IP, sistema operacional e usuário — funcionando como uma marca d\'água transparente, sempre visível e arrastável pela tela, podendo ser minimizado para a bandeja.',
+                progress: 80,
+                technology: 'C# Windows Forms',
+                category: 'Sistema'
+            },
+            {
+                id: 2,
+                title: 'CleanCraft',
+                status: 'active',
+                startDate: '2025-10-26',
+                description: 'CleanCraft é uma aplicação desenvolvida para auxiliar o usuário na organização automática de arquivos presentes em sua área de trabalho, nas pastas pessoais (como Documentos, Imagens, Vídeos e Downloads) ou em qualquer outra pasta escolhida. O sistema identifica e agrupa os arquivos por tipo ou extensão, movendo-os para pastas correspondentes.',
+                progress: 0,
+                technology: 'C#',
+                category: 'Utilitário'
+            }
+        ];
+        
+        res.json({
+            success: true,
+            data: mockProjects,
+            total: mockProjects.length,
             timestamp: new Date().toISOString()
         });
     }
@@ -1496,27 +1476,22 @@ app.get('/api/projects', async (req, res) => {
 app.get('/api/test-db', async (req, res) => {
     console.log(`[${new Date().toISOString()}] Recebido GET /api/test-db`);
     try {
-        const pool = await poolPromise;
-        if (!pool) {
-            console.log(`[${new Date().toISOString()}] GET /api/test-db: BD indisponível`);
-            return res.status(200).json({ 
-                message: 'Servidor funcionando (BD temporariamente indisponível)', 
-                status: 'ok_without_db',
-                timestamp: new Date().toISOString()
-            });
-        }
+        // Testa operação simples no SQLite
+        const mentores = await dbOperations.getMentores();
         
-        const result = await pool.request().query('SELECT 1 as test');
-        console.log(`[${new Date().toISOString()}] GET /api/test-db: Teste de BD OK.`);
-        res.json({ 
-            message: 'Conexão com banco de dados OK', 
-            data: result.recordset,
+        console.log(`[${new Date().toISOString()}] GET /api/test-db: SQLite funcionando OK`);
+        res.json({
+            success: true,
+            message: 'Conexão com SQLite funcionando corretamente',
+            database: 'SQLite',
+            mentoresCount: mentores.length,
             timestamp: new Date().toISOString()
         });
     } catch (error) {
-        console.error(`[${new Date().toISOString()}] Erro em GET /api/test-db:`, error.message);
-        res.status(200).json({ 
-            message: 'Servidor funcionando (erro de BD)', 
+        console.error(`[${new Date().toISOString()}] Erro ao testar SQLite:`, error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao conectar com SQLite',
             error: error.message,
             timestamp: new Date().toISOString()
         });
