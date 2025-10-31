@@ -61,5 +61,5 @@ jobs:
         with:
           app-name: 'codecraftgenz'
           slot-name: 'Production'
-          package: .
+          app-settings: 'WEBSITE_NODE_DEFAULT_VERSION=18-lts'
           
