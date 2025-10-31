@@ -1,13 +1,17 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import dotenv from 'dotenv';
 import sqlite3 from 'sqlite3';
+
+// Carregar variáveis de ambiente
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Caminho para o arquivo do banco de dados
-const dbPath = path.join(__dirname, '../../database.sqlite');
+const dbPath = process.env.SQLITE_DB_PATH || path.join(__dirname, '../../database.sqlite');
 
 // Criar conexão com o banco
 const sqlite = sqlite3.verbose();

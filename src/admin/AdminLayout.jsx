@@ -638,9 +638,32 @@ export function Ranking() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1rem' }}>
           {[1, 2, 3].map(position => {
             const crafter = top3.find(t => t.position === position) || top3[position - 1];
+            const isSelected = crafter?.id;
+            const isDuplicate = isSelected && top3.filter(t => t.id === crafter.id).length > 1;
+            
             return (
-              <div key={position} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <label style={{ fontWeight: 600, color: '#D12BF2' }}>Posição {position}</label>
+              <div key={position} style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '0.5rem',
+                padding: '1rem',
+                border: `2px solid ${isDuplicate ? '#ff4444' : isSelected ? '#D12BF2' : 'rgba(255,255,255,0.1)'}`,
+                borderRadius: '8px',
+                background: isDuplicate ? 'rgba(255,68,68,0.1)' : isSelected ? 'rgba(209,43,242,0.1)' : 'transparent'
+              }}>
+                <label style={{ 
+                  fontWeight: 600, 
+                  color: isDuplicate ? '#ff4444' : '#D12BF2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  Posição {position}
+                  {position === 1 && '🥇'}
+                  {position === 2 && '🥈'}
+                  {position === 3 && '🥉'}
+                  {isDuplicate && <span style={{ color: '#ff4444', fontSize: '0.8rem' }}>⚠️ Duplicado</span>}
+                </label>
                 <select 
                   value={crafter?.id || ''} 
                   onChange={e => {
@@ -649,7 +672,15 @@ export function Ranking() {
                       const newTop3 = [...top3];
                       newTop3[position - 1] = { ...selected, position };
                       setTop3(newTop3);
+                    } else {
+                      const newTop3 = [...top3];
+                      newTop3[position - 1] = null;
+                      setTop3(newTop3.filter(Boolean));
                     }
+                  }}
+                  style={{
+                    border: isDuplicate ? '2px solid #ff4444' : '1px solid rgba(255,255,255,0.2)',
+                    background: isDuplicate ? 'rgba(255,68,68,0.1)' : 'rgba(0,0,0,0.3)'
                   }}
                 >
                   <option value="">Selecionar crafter</option>
@@ -661,18 +692,123 @@ export function Ranking() {
                   placeholder="Recompensa (opcional)"
                   value={podiumRewards[position] || ''}
                   onChange={e => setPodiumRewards(prev => ({ ...prev, [position]: e.target.value }))}
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    background: 'rgba(0,0,0,0.3)',
+                    color: 'white',
+                    padding: '0.5rem',
+                    borderRadius: '4px'
+                  }}
                 />
+                {isSelected && (
+                  <div style={{ fontSize: '0.8rem', color: '#888', marginTop: '0.25rem' }}>
+                    {crafter.points} pontos
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
+        
+        {/* Validação e Status */}
+        <div style={{ marginBottom: '1rem' }}>
+          {(() => {
+            const selectedIds = top3.filter(t => t?.id).map(t => t.id);
+            const hasDuplicates = selectedIds.length !== new Set(selectedIds).size;
+            const isComplete = top3.length === 3 && top3.every(t => t?.id);
+            const isEmpty = top3.length === 0;
+            
+            if (hasDuplicates) {
+              return (
+                <div style={{ 
+                  padding: '0.75rem', 
+                  background: 'rgba(255,68,68,0.1)', 
+                  border: '1px solid #ff4444', 
+                  borderRadius: '6px',
+                  color: '#ff4444',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  ⚠️ <strong>Erro:</strong> Não é possível selecionar o mesmo crafter em múltiplas posições
+                </div>
+              );
+            }
+            
+            if (isComplete) {
+              return (
+                <div style={{ 
+                  padding: '0.75rem', 
+                  background: 'rgba(34,197,94,0.1)', 
+                  border: '1px solid #22c55e', 
+                  borderRadius: '6px',
+                  color: '#22c55e',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  ✅ <strong>Pódio completo!</strong> Pronto para salvar
+                </div>
+              );
+            }
+            
+            if (!isEmpty && selectedIds.length > 0) {
+              return (
+                <div style={{ 
+                  padding: '0.75rem', 
+                  background: 'rgba(251,191,36,0.1)', 
+                  border: '1px solid #fbbf24', 
+                  borderRadius: '6px',
+                  color: '#fbbf24',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  ⏳ <strong>Pódio incompleto:</strong> Selecione crafters para todas as 3 posições
+                </div>
+              );
+            }
+            
+            return null;
+          })()}
+        </div>
         <div className="formRow">
-          <button className="btn btn-primary" onClick={onSaveTop3} disabled={busy}>
-            Salvar Pódio 🚀
-          </button>
-          <button className="btn btn-outline" onClick={() => { setTop3([]); setPodiumRewards({}); }}>
-            Limpar Pódio
-          </button>
+          {(() => {
+            const selectedIds = top3.filter(t => t?.id).map(t => t.id);
+            const hasDuplicates = selectedIds.length !== new Set(selectedIds).size;
+            const isComplete = top3.length === 3 && top3.every(t => t?.id);
+            const hasSelection = selectedIds.length > 0;
+            
+            return (
+              <>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={onSaveTop3} 
+                  disabled={busy || !isComplete || hasDuplicates}
+                  style={{
+                    opacity: (!isComplete || hasDuplicates) ? 0.5 : 1,
+                    cursor: (!isComplete || hasDuplicates) ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {busy ? 'Salvando...' : 'Salvar Pódio 🚀'}
+                </button>
+                <button 
+                  className="btn btn-outline" 
+                  onClick={() => {
+                    setTop3([]);
+                    setPodiumRewards({});
+                  }}
+                  disabled={busy || !hasSelection}
+                  style={{
+                    opacity: !hasSelection ? 0.5 : 1,
+                    cursor: !hasSelection ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  Limpar Pódio
+                </button>
+              </>
+            );
+          })()}
         </div>
       </section>
 
