@@ -138,6 +138,8 @@ const useProjects = (options = {}) => {
       setProjects(response.data || []);
       setIsEmpty((response.data || []).length === 0);
       setLastFetch(new Date());
+      // Encerrar loading imediatamente em caminho de sucesso (além do finally)
+      setLoading(false);
       setRetryCount(0);
 
       // Log de informações úteis

@@ -208,10 +208,19 @@ const ProjectsList = ({ useAdminStore = false }) => {
   };
   const orderedProjects = sortProjects(displayedProjects);
 
+  // Debounce simples para evitar refetch em cascata ao receber eventos em burst
+  const refetchCooldownRef = React.useRef(0);
   React.useEffect(() => {
-    const unsub = realtime.subscribe('projects_changed', () => {
+    const handler = () => {
+      const now = Date.now();
+      if (now - refetchCooldownRef.current < 1000) {
+        // Ignora eventos dentro de 1s
+        return;
+      }
+      refetchCooldownRef.current = now;
       try { refetch(); } catch (err) { console.warn('projects_changed refetch error', err); }
-    });
+    };
+    const unsub = realtime.subscribe('projects_changed', handler);
     return () => unsub();
   }, [refetch]);
   const hasDisplayed = displayedProjects.length > 0;
