@@ -39,91 +39,89 @@ if (process.env.NODE_ENV !== 'production') {
 
 // --- ROTAS DA API ---
 
-// --- Mentores (Mock/Local) ---
-// Armazenamento em memória com seeds básicos
-const mentorsStore = {
-  mentors: [
-    { id: 'm1', name: 'Ana Silva', specialty: 'Frontend Performance', cargo: 'Senior Frontend Engineer', phone: '(11) 99999-1111', email: 'ana.silva@codecraft.dev', bio: 'Foco em arquitetura front e web vitals.', visible: true, photo: null, status: 'published' },
-    { id: 'm2', name: 'Bruno Costa', specialty: 'Backend & Cloud', cargo: 'Principal Backend Engineer', phone: '(21) 98888-2222', email: 'bruno.costa@codecraft.dev', bio: 'Serviços escaláveis e APIs.', visible: true, photo: null, status: 'published' },
-    { id: 'm3', name: 'Carla Mendes', specialty: 'UX Engineering', cargo: 'UX Engineer', phone: '(31) 97777-3333', email: 'carla.mendes@codecraft.dev', bio: 'Design Systems e prototipação.', visible: true, photo: null, status: 'published' },
-  ]
-};
-
-function normalizeMentorInput(body) {
-  const m = { ...body };
-  // compat: aceitar foto_url e mapear para photo
-  if (m.foto_url && !m.photo) m.photo = m.foto_url;
-  // defaults
+// --- Mentores (SQLite) ---
+function normalizeMentorDbInput(body) {
+  const b = body || {};
   return {
-    id: body.id || null,
-    name: String(m.name || '').trim(),
-    cargo: m.cargo ? String(m.cargo).trim() : '',
-    specialty: String(m.specialty || '').trim(),
-    phone: m.phone ? String(m.phone).trim() : '',
-    email: m.email ? String(m.email).trim() : '',
-    bio: String(m.bio || '').trim(),
-    photo: m.photo || null,
-    visible: Boolean(m.visible),
-    status: m.status || 'draft'
+    nome: String(b.nome || b.name || '').trim(),
+    email: String(b.email || '').trim(),
+    telefone: b.telefone ? String(b.telefone).trim() : (b.phone ? String(b.phone).trim() : ''),
+    bio: String(b.bio || '').trim()
   };
 }
 
-function publicMentorView(m) {
-  // Ao expor, incluir foto_url para compatibilidade com clientes
+function publicMentorFromDb(row) {
   return {
-    id: m.id,
-    name: m.name,
-    cargo: m.cargo || '',
-    specialty: m.specialty,
-    phone: m.phone || '',
-    email: m.email || '',
-    bio: m.bio,
-    foto_url: m.photo || null,
-    visible: !!m.visible,
-    status: m.status || 'draft'
+    id: row.id,
+    name: row.nome,
+    cargo: '',
+    specialty: '',
+    phone: row.telefone || '',
+    email: row.email || '',
+    bio: row.bio || '',
+    foto_url: null,
+    visible: true,
+    status: 'published'
   };
 }
 
-// GET /api/mentores → retorna mentores; por padrão apenas visíveis. Use ?all=1 para todos
-app.get('/api/mentores', (req, res) => {
-  const { all } = req.query;
-  const list = all === '1' ? mentorsStore.mentors : mentorsStore.mentors.filter(m => !!m.visible);
-  const payload = list.map(publicMentorView);
-  res.status(200).json({ success: true, data: payload, total: payload.length, timestamp: new Date().toISOString() });
-});
-
-// POST /api/mentores → cria novo mentor
-app.post('/api/mentores', (req, res) => {
-  const input = normalizeMentorInput(req.body || {});
-  if (!input.name || !input.specialty || !input.bio) {
-    return res.status(400).json({ success: false, error: 'Campos obrigatórios: name, specialty, bio' });
+// GET /api/mentores → agora busca no SQLite
+app.get('/api/mentores', async (req, res) => {
+  try {
+    const rows = await dbOperations.getMentores();
+    const payload = rows.map(publicMentorFromDb);
+    res.status(200).json({ success: true, data: payload, total: payload.length, timestamp: new Date().toISOString() });
+  } catch (error) {
+    console.error('Erro ao listar mentores:', error.message);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
-  const id = `m${mentorsStore.mentors.length + 1}`;
-  const mentor = { ...input, id };
-  mentorsStore.mentors.push(mentor);
-  res.status(201).json({ success: true, mentor: publicMentorView(mentor) });
 });
 
-// PUT /api/mentores/:id → atualiza mentor
-app.put('/api/mentores/:id', (req, res) => {
-  const { id } = req.params;
-  const idx = mentorsStore.mentors.findIndex(m => m.id === id);
-  if (idx === -1) return res.status(404).json({ success: false, error: 'Mentor não encontrado' });
-  const merged = { ...mentorsStore.mentors[idx], ...normalizeMentorInput(req.body || {}) };
-  if (!merged.name || !merged.specialty || !merged.bio) {
-    return res.status(400).json({ success: false, error: 'Campos obrigatórios: name, specialty, bio' });
+// POST /api/mentores → cria mentor no SQLite
+app.post('/api/mentores', async (req, res) => {
+  try {
+    const input = normalizeMentorDbInput(req.body);
+    if (!input.nome || !input.email) {
+      return res.status(400).json({ success: false, error: 'Campos obrigatórios: nome, email' });
+    }
+    const created = await dbOperations.createMentor(input);
+    res.status(201).json({ success: true, mentor: publicMentorFromDb(created) });
+  } catch (error) {
+    console.error('Erro ao criar mentor:', error.message);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
-  mentorsStore.mentors[idx] = merged;
-  res.status(200).json({ success: true, mentor: publicMentorView(merged) });
 });
 
-// DELETE /api/mentores/:id → remove mentor
-app.delete('/api/mentores/:id', (req, res) => {
-  const { id } = req.params;
-  const idx = mentorsStore.mentors.findIndex(m => m.id === id);
-  if (idx === -1) return res.status(404).json({ success: false, error: 'Mentor não encontrado' });
-  const [removed] = mentorsStore.mentors.splice(idx, 1);
-  res.status(200).json({ success: true, removed: publicMentorView(removed) });
+// PUT /api/mentores/:id → atualiza mentor no SQLite
+app.put('/api/mentores/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await dbOperations.getMentorById(id);
+    if (!existing) return res.status(404).json({ success: false, error: 'Mentor não encontrado' });
+    const input = normalizeMentorDbInput(req.body);
+    if (!input.nome || !input.email) {
+      return res.status(400).json({ success: false, error: 'Campos obrigatórios: nome, email' });
+    }
+    await dbOperations.updateMentor(id, input);
+    res.status(200).json({ success: true, mentor: publicMentorFromDb({ id: Number(id), ...input }) });
+  } catch (error) {
+    console.error('Erro ao atualizar mentor:', error.message);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
+});
+
+// DELETE /api/mentores/:id → remove mentor no SQLite
+app.delete('/api/mentores/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await dbOperations.getMentorById(id);
+    if (!existing) return res.status(404).json({ success: false, error: 'Mentor não encontrado' });
+    const result = await dbOperations.deleteMentor(id);
+    res.status(200).json({ success: true, removed: publicMentorFromDb(existing), meta: result });
+  } catch (error) {
+    console.error('Erro ao remover mentor:', error.message);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
 });
 
 // --- SISTEMA DE EQUIPES (SQLite) ---

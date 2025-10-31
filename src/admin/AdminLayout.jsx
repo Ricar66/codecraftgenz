@@ -6,7 +6,6 @@ import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import ProjectCard from '../components/Projects/ProjectCard.jsx';
 import { useAuth } from '../context/useAuth';
 import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo, useDesafios, DesafiosRepo, useFinance, FinanceRepo, useRanking, RankingRepo, useLogs } from '../hooks/useAdminRepo';
-import { adminStore } from '../lib/adminStore';
 import { realtime } from '../lib/realtime';
 
 export function Dashboard() {
@@ -256,7 +255,10 @@ export function Usuarios() {
         <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
         <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
         <button onClick={()=>{
-          const csv = adminStore.exportUsersCsv();
+          // Gera CSV dos usuários atuais
+          const headers = 'id,name,email,role,status\n';
+          const rows = filtered.map(u => `${u.id},${u.name},${u.email},${u.role},${u.status}`).join('\n');
+          const csv = headers + rows;
           const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a'); a.href = url; a.download = 'usuarios.csv'; a.click(); URL.revokeObjectURL(url);
@@ -991,7 +993,10 @@ export function Projetos() {
         <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
         <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
         <button onClick={()=>{
-          const csv = adminStore.exportProjectsCsv();
+          // Gera CSV dos projetos atuais
+          const headers = 'id,title,status,price,visible,startDate\n';
+          const rows = filtered.map(p => `${p.id},"${p.title}",${p.status},${p.price || 0},${p.visible},${p.startDate || ''}`).join('\n');
+          const csv = headers + rows;
           const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a'); a.href = url; a.download = 'projetos.csv'; a.click(); URL.revokeObjectURL(url);
@@ -1146,7 +1151,10 @@ export function Desafios() {
         <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
         <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
         <button onClick={()=>{
-          const csv = adminStore.exportDesafiosCsv();
+          // Gera CSV dos desafios atuais
+          const headers = 'id,name,objective,status,visible,deadline,base_points\n';
+          const rows = filtered.map(d => `${d.id},"${d.name}","${d.objective}",${d.status},${d.visible},${d.deadline || ''},${d.base_points || 0}`).join('\n');
+          const csv = headers + rows;
           const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a'); a.href = url; a.download = 'desafios.csv'; a.click(); URL.revokeObjectURL(url);
@@ -1302,7 +1310,8 @@ export function Financas() {
 }
 
 export function Config() {
-  const cfg = adminStore.get().config;
+  // Configuração simples sem adminStore
+  const cfg = { theme: 'dark', version: '1.0.0' };
   const { data: logs } = useLogs();
   const [query, setQuery] = React.useState('');
   const filtered = logs.filter(l =>

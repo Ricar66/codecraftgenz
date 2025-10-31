@@ -268,7 +268,7 @@ const useProjects = (options = {}) => {
         setLoading(false);
       }
     }
-  }, [useMock, timeout, maxRetries]);
+  }, [useMock, timeout, maxRetries, options, retryCount, filters, loading]);
 
   /**
    * Função para retry com backoff exponencial
@@ -369,7 +369,7 @@ const useProjects = (options = {}) => {
         intervalRef.current = null;
       }
     };
-  }, [autoFetch, refetchInterval]); // Removido fetchProjects das dependências para evitar loop infinito
+  }, [autoFetch, refetchInterval]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Cleanup ao desmontar componente

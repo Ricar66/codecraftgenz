@@ -2,51 +2,40 @@
 import React, { useEffect, useState } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
-import { adminStore } from '../lib/adminStore';
 import { realtime } from '../lib/realtime';
 
 export default function MentoriaPage() {
   const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    let aborted = false;
-    setLoading(true);
-    // Consome o endpoint público
-    fetch('/api/mentores')
-      .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-      .then(json => {
-        if (aborted) return;
-        const list = Array.isArray(json?.data) ? json.data : [];
-        // Normaliza campos vindos do endpoint (foto_url → photo)
-        const normalized = list.map(m => ({
-          ...m,
-          photo: m.foto_url || m.photo || null,
-        }));
-        setMentors(normalized.filter(m => m.visible));
-      })
-      .catch(() => {
-        // Fallback local (dev/test): usa adminStore
-        const all = adminStore.listMentors();
-        setMentors(all.filter(m => m.visible));
-      })
-      .finally(() => { if (!aborted) setLoading(false); });
-
-    const unsub = realtime.subscribe('mentors_changed', ({ mentors }) => {
-      // Quando o admin publicar mudanças, atualiza imediatamente
-      if (Array.isArray(mentors)) {
-        const normalized = mentors.map(m => ({ ...m, photo: m.photo || m.foto_url || null }));
-        setMentors(normalized.filter(m => m.visible));
-      } else {
-        // Ou refaz fetch do endpoint
-        fetch('/api/mentores')
-          .then(r => r.ok ? r.json() : Promise.reject())
-          .then(json => {
-            const list = Array.isArray(json?.data) ? json.data : [];
-            const normalized = list.map(m => ({ ...m, photo: m.foto_url || m.photo || null }));
-            setMentors(normalized.filter(m => m.visible));
-          })
-          .catch(() => {/* ignore erro de atualização */});
+  
+  const fetchMentors = async () => {
+    try {
+      const response = await fetch('/api/mentores');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
+      const json = await response.json();
+      const list = Array.isArray(json?.data) ? json.data : [];
+      // Normaliza campos vindos do endpoint (foto_url → photo)
+      const normalized = list.map(m => ({
+        ...m,
+        photo: m.foto_url || m.photo || null,
+      }));
+      setMentors(normalized.filter(m => m.visible));
+    } catch (error) {
+      console.error('Erro ao carregar mentores:', error);
+      setMentors([]); // Em caso de erro, lista vazia
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMentors();
+
+    const unsub = realtime.subscribe('mentors_changed', () => {
+      // Quando o admin publicar mudanças, refaz fetch do endpoint
+      fetchMentors();
     });
 
     // Em ambiente de teste, evitamos polling para reduzir warnings de act
@@ -63,12 +52,12 @@ export default function MentoriaPage() {
             setMentors(normalized.filter(m => m.visible));
           })
           .catch(() => {
-            const all = adminStore.listMentors();
-            setMentors(all.filter(m => m.visible));
+            // If API fails, set empty array
+            setMentors([]);
           });
       }, pollMs);
     }
-    return () => { aborted = true; unsub(); if (iv) clearInterval(iv); };
+    return () => { unsub(); if (iv) clearInterval(iv); };
   }, []);
 
   return (

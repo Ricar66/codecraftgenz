@@ -1,6 +1,8 @@
 // src/admin/AdminInscricoes.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 
+import styles from './AdminInscricoes.module.css';
+
 const AdminInscricoes = () => {
   const [inscricoes, setInscricoes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -124,9 +126,9 @@ const AdminInscricoes = () => {
 
   if (loading) {
     return (
-      <div className="admin-content">
-        <div className="loading-state">
-          <div className="spinner"></div>
+      <div className={styles.adminContent}>
+        <div className={styles.loadingState}>
+          <div className={styles.spinner}></div>
           <p>Carregando inscrições...</p>
         </div>
       </div>
@@ -135,11 +137,11 @@ const AdminInscricoes = () => {
 
   if (error) {
     return (
-      <div className="admin-content">
-        <div className="error-state">
+      <div className={styles.adminContent}>
+        <div className={styles.errorState}>
           <h2>Erro ao carregar inscrições</h2>
           <p>{error}</p>
-          <button onClick={fetchInscricoes} className="retry-btn">
+          <button onClick={fetchInscricoes} className={styles.retryBtn}>
             Tentar novamente
           </button>
         </div>
@@ -148,29 +150,29 @@ const AdminInscricoes = () => {
   }
 
   return (
-    <div className="admin-content">
-      <div className="page-header">
+    <div className={styles.adminContent}>
+      <div className={styles.pageHeader}>
         <h1>Inscrições de Crafters</h1>
         <p>Gerencie as inscrições recebidas através do formulário "Quero ser um Crafter"</p>
       </div>
 
-        <div className="filters-section">
-        <div className="search-box">
+        <div className={styles.filtersSection}>
+        <div className={styles.searchBox}>
           <input
             type="text"
             placeholder="Buscar por nome, email, cidade, estado ou área..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
+            className={styles.searchInput}
           />
         </div>
         
-        <div className="filters-row">
-          <div className="status-filter">
+        <div className={styles.filtersRow}>
+          <div className={styles.statusFilter}>
             <select
               value={filtroStatus}
               onChange={(e) => setFiltroStatus(e.target.value)}
-              className="status-select"
+              className={styles.statusSelect}
             >
               <option value="">Todos os status</option>
               {statusOptions.map(option => (
@@ -181,11 +183,11 @@ const AdminInscricoes = () => {
             </select>
           </div>
 
-          <div className="area-filter">
+          <div className={styles.areaFilter}>
             <select
               value={filtroArea}
               onChange={(e) => setFiltroArea(e.target.value)}
-              className="area-select"
+              className={styles.areaSelect}
             >
               <option value="">Todas as áreas</option>
               {areasInteresse.map(area => (
@@ -196,11 +198,11 @@ const AdminInscricoes = () => {
             </select>
           </div>
 
-          <div className="date-filter">
+          <div className={styles.dateFilter}>
             <select
               value={filtroData}
               onChange={(e) => setFiltroData(e.target.value)}
-              className="date-select"
+              className={styles.dateSelect}
             >
               <option value="">Todas as datas</option>
               <option value="hoje">Hoje</option>
@@ -212,15 +214,15 @@ const AdminInscricoes = () => {
         </div>
       </div>
 
-      <div className="stats">
+      <div className={styles.stats}>
         <span className="stat-item">
           Total: {filteredInscricoes.length}
         </span>
       </div>
 
-      <div className="inscricoes-grid">
+      <div className={styles.inscricoesGrid}>
         {filteredInscricoes.length === 0 ? (
-          <div className="empty-state">
+          <div className={styles.emptyState}>
             <h3>Nenhuma inscrição encontrada</h3>
             <p>
               {searchTerm || filtroStatus || filtroArea || filtroData
@@ -233,32 +235,32 @@ const AdminInscricoes = () => {
             const statusInfo = getStatusInfo(inscricao.status);
             
             return (
-              <div key={inscricao.id} className="inscricao-card">
-                <div className="card-header">
+              <div key={inscricao.id} className={styles.inscricaoCard}>
+                <div className={styles.cardHeader}>
                   <h3>{inscricao.nome}</h3>
                   <div 
-                    className="status-badge"
+                    className={styles.statusBadge}
                     style={{ backgroundColor: statusInfo.color }}
                   >
                     {statusInfo.label}
                   </div>
                 </div>
 
-                <div className="card-content">
-                  <div className="info-row">
+                <div className={styles.cardContent}>
+                  <div className={styles.infoRow}>
                     <strong>Email:</strong>
                     <a href={`mailto:${inscricao.email}`}>{inscricao.email}</a>
                   </div>
                   
                   {inscricao.telefone && (
-                    <div className="info-row">
+                    <div className={styles.infoRow}>
                       <strong>Telefone:</strong>
                       <span>{inscricao.telefone}</span>
                     </div>
                   )}
                   
                   {(inscricao.cidade || inscricao.estado) && (
-                    <div className="info-row">
+                    <div className={styles.infoRow}>
                       <strong>Localização:</strong>
                       <span>
                         {[inscricao.cidade, inscricao.estado].filter(Boolean).join(', ')}
@@ -267,30 +269,30 @@ const AdminInscricoes = () => {
                   )}
                   
                   {inscricao.area_interesse && (
-                    <div className="info-row">
+                    <div className={styles.infoRow}>
                       <strong>Área de Interesse:</strong>
-                      <span className="area-tag">{inscricao.area_interesse}</span>
+                      <span className={styles.areaTag}>{inscricao.area_interesse}</span>
                     </div>
                   )}
                   
                   {inscricao.mensagem && (
-                    <div className="info-row message-row">
+                    <div className={`${styles.infoRow} ${styles.messageRow}`}>
                       <strong>Mensagem:</strong>
-                      <p className="message-text">{inscricao.mensagem}</p>
+                      <p className={styles.messageText}>{inscricao.mensagem}</p>
                     </div>
                   )}
                   
-                  <div className="info-row">
+                  <div className={styles.infoRow}>
                     <strong>Data da Inscrição:</strong>
                     <span>{formatDate(inscricao.data_inscricao)}</span>
                   </div>
                 </div>
 
-                <div className="card-actions">
+                <div className={styles.cardActions}>
                   <select
                     value={inscricao.status}
                     onChange={(e) => updateStatus(inscricao.id, e.target.value)}
-                    className="status-select-inline"
+                    className={styles.statusSelectInline}
                   >
                     {statusOptions.map(option => (
                       <option key={option.value} value={option.value}>
@@ -304,259 +306,6 @@ const AdminInscricoes = () => {
           })
         )}
       </div>
-
-      <style jsx>{`
-        .admin-content {
-          padding: 2rem;
-          max-width: 1200px;
-          margin: 0 auto;
-        }
-
-        .page-header {
-          margin-bottom: 2rem;
-        }
-
-        .page-header h1 {
-          color: #2c3e50;
-          margin-bottom: 0.5rem;
-        }
-
-        .page-header p {
-          color: #7f8c8d;
-          font-size: 1.1rem;
-        }
-
-        .filters-section {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          margin-bottom: 2rem;
-        }
-
-        .search-box {
-          width: 100%;
-        }
-
-        .search-input {
-          width: 100%;
-          padding: 0.75rem;
-          border: 2px solid #e1e8ed;
-          border-radius: 8px;
-          font-size: 1rem;
-        }
-
-        .search-input:focus {
-          outline: none;
-          border-color: #3498db;
-        }
-
-        .filters-row {
-          display: flex;
-          gap: 1rem;
-          flex-wrap: wrap;
-        }
-
-        .status-filter,
-        .area-filter,
-        .date-filter {
-          flex: 1;
-          min-width: 200px;
-        }
-
-        .status-select,
-        .area-select,
-        .date-select {
-          width: 100%;
-          padding: 0.75rem;
-          border: 2px solid #e1e8ed;
-          border-radius: 8px;
-          font-size: 1rem;
-          background: white;
-        }
-
-        .stats {
-          color: #7f8c8d;
-          font-weight: 500;
-        }
-
-        .inscricoes-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-          gap: 1.5rem;
-        }
-
-        .inscricao-card {
-          background: white;
-          border-radius: 12px;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-          overflow: hidden;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .inscricao-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .card-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 1.5rem 1.5rem 1rem;
-          border-bottom: 1px solid #f1f3f4;
-        }
-
-        .card-header h3 {
-          margin: 0;
-          color: #2c3e50;
-          font-size: 1.2rem;
-        }
-
-        .status-badge {
-          color: white;
-          padding: 0.25rem 0.75rem;
-          border-radius: 20px;
-          font-size: 0.875rem;
-          font-weight: 600;
-          text-transform: uppercase;
-        }
-
-        .card-content {
-          padding: 0 1.5rem 1rem;
-        }
-
-        .info-row {
-          display: flex;
-          margin-bottom: 0.75rem;
-          gap: 0.5rem;
-        }
-
-        .info-row strong {
-          min-width: 120px;
-          color: #2c3e50;
-          font-weight: 600;
-        }
-
-        .info-row a {
-          color: #3498db;
-          text-decoration: none;
-        }
-
-        .info-row a:hover {
-          text-decoration: underline;
-        }
-
-        .area-tag {
-          background: #e8f4fd;
-          color: #2980b9;
-          padding: 0.25rem 0.5rem;
-          border-radius: 4px;
-          font-size: 0.875rem;
-          font-weight: 500;
-        }
-
-        .message-row {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-
-        .message-text {
-          margin: 0.5rem 0 0 0;
-          padding: 0.75rem;
-          background: #f8f9fa;
-          border-radius: 6px;
-          line-height: 1.5;
-          color: #495057;
-          width: 100%;
-          box-sizing: border-box;
-        }
-
-        .card-actions {
-          padding: 1rem 1.5rem;
-          border-top: 1px solid #f1f3f4;
-          background: #f8f9fa;
-        }
-
-        .status-select-inline {
-          width: 100%;
-          padding: 0.5rem;
-          border: 1px solid #dee2e6;
-          border-radius: 6px;
-          background: white;
-          font-size: 0.875rem;
-        }
-
-        .loading-state,
-        .error-state,
-        .empty-state {
-          text-align: center;
-          padding: 3rem;
-          color: #7f8c8d;
-        }
-
-        .spinner {
-          width: 40px;
-          height: 40px;
-          border: 4px solid #f3f3f3;
-          border-top: 4px solid #3498db;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin: 0 auto 1rem;
-        }
-
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
-        .retry-btn {
-          background: #3498db;
-          color: white;
-          border: none;
-          padding: 0.75rem 1.5rem;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 1rem;
-        }
-
-        .retry-btn:hover {
-          background: #2980b9;
-        }
-
-        @media (max-width: 768px) {
-          .admin-content {
-            padding: 1rem;
-          }
-
-          .filters-section {
-            flex-direction: column;
-            align-items: stretch;
-          }
-
-          .filters-row {
-            flex-direction: column;
-          }
-
-          .status-filter,
-          .area-filter,
-          .date-filter {
-            min-width: auto;
-          }
-
-          .inscricoes-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .info-row {
-            flex-direction: column;
-            gap: 0.25rem;
-          }
-
-          .info-row strong {
-            min-width: auto;
-          }
-        }
-      `}</style>
     </div>
   );
 };

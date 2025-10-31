@@ -2,7 +2,6 @@
 import React from 'react';
 
 import useProjects from '../../hooks/useProjects';
-import { adminStore } from '../../lib/adminStore';
 import { realtime } from '../../lib/realtime';
 
 import LazyProjectCard from './LazyProjectCard';
@@ -190,9 +189,9 @@ const ProjectsList = ({ useAdminStore = false }) => {
     useAdminStore
   });
 
-  // Fonte alternativa via adminStore (sempre calcular sem condicionar hooks)
-  const adminItems = adminStore.listProjects().filter(p => p.visible && p.status !== 'draft');
-  const displayedProjects = useAdminStore ? adminItems : projects;
+  // Como agora tudo vem da API, não precisamos mais do adminStore
+  // useAdminStore é mantido apenas para compatibilidade, mas sempre usa projects da API
+  const displayedProjects = projects;
   const sortProjects = (list) => {
     const toStatusValue = (p) => String(p.status || '').toLowerCase();
     const getDate = (p) => p.data_inicio || p.startDate || null;

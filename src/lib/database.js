@@ -358,6 +358,15 @@ const dbOperations = {
     });
   },
 
+  async deleteMentor(id) {
+    return new Promise((resolve, reject) => {
+      db.run('DELETE FROM mentores WHERE id = ?', [id], function(err) {
+        if (err) reject(err);
+        else resolve({ success: true, deleted: this.changes > 0 });
+      });
+    });
+  },
+
   // Projetos
   async createProjeto(projeto) {
     return new Promise((resolve, reject) => {

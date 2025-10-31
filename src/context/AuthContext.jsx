@@ -2,9 +2,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { adminStore } from '../lib/adminStore';
-
 import { AuthContext } from './AuthCore';
+
+// Usuário admin padrão (sem adminStore)
+const DEFAULT_ADMIN = {
+  id: 'u1',
+  name: 'Admin',
+  email: 'admin@codecraft.dev',
+  role: 'admin',
+  status: 'active'
+};
 
 function getStoredSession() {
   try {
@@ -37,18 +44,12 @@ function useAuthProvider() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // inicializa storage interno e semente
-    adminStore.initSeeds();
-
     const s = getStoredSession();
-    if (s?.token) {
-      const u = adminStore.getUserById(s.userId);
-      if (u) {
-        setUser(u);
-        setToken(s.token);
-      } else {
-        clearStoredSession();
-      }
+    if (s?.token && s?.userId === DEFAULT_ADMIN.id) {
+      setUser(DEFAULT_ADMIN);
+      setToken(s.token);
+    } else {
+      clearStoredSession();
     }
     setLoading(false);
   }, []);
@@ -65,32 +66,30 @@ function useAuthProvider() {
       return { ok: false, error: 'Muitas tentativas. Tente novamente em alguns minutos.' };
     }
 
-    const result = await adminStore.verifyCredentials(email, password);
-    if (!result.ok) {
+    // Verificação simples de credenciais (sem adminStore)
+    if (email === DEFAULT_ADMIN.email && password === 'admin') {
+      // sucesso
+      localStorage.setItem('cc_login_attempts', JSON.stringify({ count: 0, windowStart: Date.now() }));
+      const tokenValue = `token-${DEFAULT_ADMIN.id}-${Date.now()}`;
+      const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24h
+      const session = { token: tokenValue, userId: DEFAULT_ADMIN.id, role: DEFAULT_ADMIN.role, expiresAt };
+      setStoredSession(session);
+      setUser(DEFAULT_ADMIN);
+      setToken(tokenValue);
+      console.log('Login realizado:', DEFAULT_ADMIN.email);
+      navigate('/admin');
+      return { ok: true };
+    } else {
       attempts.count += 1;
       localStorage.setItem('cc_login_attempts', JSON.stringify(attempts));
-      return { ok: false, error: result.error || 'Credenciais inválidas' };
+      return { ok: false, error: 'Credenciais inválidas' };
     }
-
-    // sucesso
-    localStorage.setItem('cc_login_attempts', JSON.stringify({ count: 0, windowStart: Date.now() }));
-    const u = result.user;
-    const tokenValue = `token-${u.id}-${Date.now()}`;
-    const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24h
-    const session = { token: tokenValue, userId: u.id, role: u.role, expiresAt };
-    setStoredSession(session);
-    setUser(u);
-    setToken(tokenValue);
-    adminStore.addLog('login', `${u.email} fez login`);
-    navigate('/admin');
-    return { ok: true };
   }, [navigate]);
 
   const logout = useCallback(() => {
     const s = getStoredSession();
     if (s?.userId) {
-      const u = adminStore.getUserById(s.userId);
-      if (u) adminStore.addLog('logout', `${u.email} fez logout`);
+      console.log('Logout realizado:', DEFAULT_ADMIN.email);
     }
     clearStoredSession();
     setUser(null);
