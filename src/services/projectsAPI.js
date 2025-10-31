@@ -92,7 +92,7 @@ export const fetchProjects = async (filters = {}) => {
       }
     });
 
-    const url = `${API_BASE_URL}/api/projects${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `${API_BASE_URL}/api/projetos${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     
     const data = await fetchWithTimeout(url, {
       method: 'GET',
@@ -282,7 +282,7 @@ export const getProjects = async (options = {}) => {
       if (status) params.append('status', status);
       if (tags.length > 0) params.append('tags', tags.join(','));
 
-      const url = `${API_BASE_URL}/api/projects${options.publicOnly ? '?visivel=true' : ''}`;
+      const url = `${API_BASE_URL}/api/projetos${options.publicOnly ? '?visivel=true' : ''}`;
       const data = await fetchWithTimeout(url, {
         method: 'GET',
         headers: {
