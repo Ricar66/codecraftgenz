@@ -104,7 +104,6 @@ const useProjects = (options = {}) => {
       setError(null);
 
       const mergedOptions = {
-        useMockData: useMock,
         filters: { ...filters, ...fetchOptions.filters },
         signal: abortControllerRef.current.signal,
         ...fetchOptions
@@ -115,7 +114,6 @@ const useProjects = (options = {}) => {
       const response = await getProjects({
         ...mergedOptions,
         useCache: true,
-        useMockData: useMock,
         publicOnly: !options.useAdminStore
       });
 
@@ -177,26 +175,9 @@ const useProjects = (options = {}) => {
 
       // Trata diferentes tipos de erro com fallbacks robustos
       if (error.name === 'AbortError') {
-        // Timeout - tenta fallback para dados mock se não estiver usando
-        if (!useMock && retryCount === 0) {
-          console.warn('Timeout na API real, tentando fallback para dados mock...');
-          try {
-            const fallbackData = await getProjects({ useMockData: true });
-            setProjects(fallbackData);
-            setIsEmpty(fallbackData.length === 0);
-            setLastFetch(new Date());
-            setError({
-              message: 'Usando dados offline devido a problemas de conectividade',
-              status: 200,
-              type: 'fallback_success',
-              canRetry: true,
-              isFallback: true
-            });
-            setLoading(false);
-            return fallbackData;
-          } catch (fallbackError) {
-            console.error('Fallback também falhou:', fallbackError);
-          }
+        // Timeout - erro de conectividade
+        if (retryCount === 0) {
+          console.warn('Timeout na API, tentando novamente...');
         }
         
         setRetryCount(prev => prev + 1);
@@ -208,27 +189,8 @@ const useProjects = (options = {}) => {
           retryIn: Math.min(2000 * Math.pow(2, retryCount), 10000) // Backoff exponencial
         });
       } else if (error.status >= 500) {
-        // Erro de servidor - tenta fallback para dados mock
-        if (!useMock) {
-          console.warn('Erro de servidor, tentando fallback para dados mock...');
-          try {
-            const fallbackData = await getProjects({ useMockData: true });
-            setProjects(fallbackData);
-            setIsEmpty(fallbackData.length === 0);
-            setLastFetch(new Date());
-            setError({
-              message: 'Servidor temporariamente indisponível. Exibindo dados offline.',
-              status: 200,
-              type: 'fallback_success',
-              canRetry: true,
-              isFallback: true
-            });
-            setLoading(false);
-            return fallbackData;
-          } catch (fallbackError) {
-            console.error('Fallback também falhou:', fallbackError);
-          }
-        }
+        // Erro de servidor
+        console.warn('Erro de servidor detectado:', error.message);
         
         setRetryCount(prev => prev + 1);
         setError({
@@ -268,7 +230,7 @@ const useProjects = (options = {}) => {
         setLoading(false);
       }
     }
-  }, [useMock, timeout, maxRetries, options, retryCount, filters, loading]);
+  }, [timeout, maxRetries, options, retryCount, filters, loading]);
 
   /**
    * Função para retry com backoff exponencial

@@ -1,6 +1,7 @@
 import path from 'path';
 import process from 'process';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 
 import compression from 'compression';
 import cors from 'cors';
@@ -40,7 +41,6 @@ if (process.env.NODE_ENV !== 'production') {
 // --- ROTAS DA API ---
 
 // --- Autenticação (SQLite) ---
-const crypto = require('crypto');
 
 // Função para criar hash da senha
 function hashPassword(password) {
@@ -198,7 +198,7 @@ app.post('/api/auth/users', async (req, res) => {
     const newUser = await dbOperations.createUser(userData);
     
     // Retornar sem senha
-    const { senha_hash, ...userResponse } = newUser;
+    const { senha_hash: _, ...userResponse } = newUser;
     
     res.status(201).json({ 
       success: true, 
@@ -218,6 +218,109 @@ app.post('/api/auth/users', async (req, res) => {
         error: 'Erro interno do servidor' 
       });
     }
+  }
+});
+
+// PUT /api/auth/users/:id → atualizar usuário (apenas admin)
+app.put('/api/auth/users/:id', async (req, res) => {
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Acesso não autorizado' 
+      });
+    }
+
+    const currentUser = await dbOperations.getUserById(userId);
+    if (!currentUser || currentUser.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Acesso negado. Apenas administradores.' 
+      });
+    }
+
+    const { id } = req.params;
+    const { nome, email, role, status } = req.body;
+
+    const updateData = {};
+    if (nome) updateData.nome = nome;
+    if (email) updateData.email = email;
+    if (role) updateData.role = role;
+    if (status) updateData.status = status;
+
+    const updatedUser = await dbOperations.updateUser(id, updateData);
+    
+    if (!updatedUser) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Usuário não encontrado' 
+      });
+    }
+
+    // Retornar sem senha
+    const { senha_hash: _, ...userResponse } = updatedUser;
+    
+    res.status(200).json({ 
+      success: true, 
+      user: userResponse 
+    });
+
+  } catch (error) {
+    console.error('Erro ao atualizar usuário:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// PATCH /api/auth/users/:id/toggle-status → alternar status do usuário (apenas admin)
+app.patch('/api/auth/users/:id/toggle-status', async (req, res) => {
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Acesso não autorizado' 
+      });
+    }
+
+    const currentUser = await dbOperations.getUserById(userId);
+    if (!currentUser || currentUser.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Acesso negado. Apenas administradores.' 
+      });
+    }
+
+    const { id } = req.params;
+    
+    const user = await dbOperations.getUserById(id);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Usuário não encontrado' 
+      });
+    }
+
+    const newStatus = user.status === 'ativo' ? 'inativo' : 'ativo';
+    const updatedUser = await dbOperations.updateUser(id, { status: newStatus });
+    
+    // Retornar sem senha
+    const { senha_hash: _, ...userResponse } = updatedUser;
+    
+    res.status(200).json({ 
+      success: true, 
+      user: userResponse 
+    });
+
+  } catch (error) {
+    console.error('Erro ao alternar status do usuário:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Erro interno do servidor' 
+    });
   }
 });
 
