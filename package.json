@@ -49,12 +49,9 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.15",
     "terser": "^5.44.0",
-    "vite": "npm:rolldown-vite@7.1.14",
+    "vite": "^5.4.0",
     "vite-plugin-pwa": "^1.1.0",
     "vitest": "^4.0.3"
-  },
-  "overrides": {
-    "vite": "npm:rolldown-vite@7.1.14"
   },
   "engines": {
     "node": ">=18"
