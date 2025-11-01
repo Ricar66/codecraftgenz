@@ -1528,60 +1528,6 @@ const dbOperations = {
     });
   },
 
-  // Buscar usuário por ID
-  async getUserById(id) {
-    return new Promise((resolve, reject) => {
-      db.get(
-        'SELECT id, nome, email, role, status, ultimo_login, tentativas_login, created_at, updated_at FROM usuarios WHERE id = ?',
-        [id],
-        (err, row) => {
-          if (err) reject(err);
-          else resolve(row);
-        }
-      );
-    });
-  },
-
-  // Criar novo usuário
-  async createUser(userData) {
-    return new Promise((resolve, reject) => {
-      const { nome, email, senha_hash, role, status } = userData;
-      db.run(
-        'INSERT INTO usuarios (nome, email, senha_hash, role, status) VALUES (?, ?, ?, ?, ?)',
-        [nome, email, senha_hash, role || 'user', status || 'active'],
-        function(err) {
-          if (err) reject(err);
-          else resolve(this.lastID);
-        }
-      );
-    });
-  },
-
-  // Atualizar usuário
-  async updateUser(id, userData) {
-    return new Promise((resolve, reject) => {
-      const fields = [];
-      const values = [];
-      
-      Object.keys(userData).forEach(key => {
-        if (userData[key] !== undefined) {
-          fields.push(`${key} = ?`);
-          values.push(userData[key]);
-        }
-      });
-      
-      fields.push('updated_at = CURRENT_TIMESTAMP');
-      values.push(id);
-      
-      const sql = `UPDATE usuarios SET ${fields.join(', ')} WHERE id = ?`;
-      
-      db.run(sql, values, function(err) {
-        if (err) reject(err);
-        else resolve(this.changes > 0);
-      });
-    });
-  },
-
   // Atualizar status do usuário
   async updateUserStatus(id, status) {
     return new Promise((resolve, reject) => {
@@ -1631,7 +1577,7 @@ const dbOperations = {
                   details: data.details,
                   created_at: row.created_at
                 };
-              } catch (e) {
+              } catch {
                 return {
                   id: row.id,
                   actor: row.actor,
@@ -1645,9 +1591,9 @@ const dbOperations = {
             resolve(processedLogs);
           }
         }
-      });
-    };
+      );
+    });
   }
-
+};
 
 export { db, dbOperations };

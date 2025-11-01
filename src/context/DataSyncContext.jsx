@@ -115,6 +115,7 @@ export function DataSyncProvider({ children }) {
 }
 
 // Hook para usar o contexto
+// eslint-disable-next-line react-refresh/only-export-components
 export function useDataSyncContext() {
   const context = useContext(DataSyncContext);
   if (!context) {
@@ -124,4 +125,5 @@ export function useDataSyncContext() {
 }
 
 // Export padrão para compatibilidade
+// eslint-disable-next-line react-refresh/only-export-components
 export { useDataSyncContext as useDataSync };

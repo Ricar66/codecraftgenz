@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+
 import { useDataSync } from '../context/DataSyncContext.jsx';
 
 export default function AdminCrafters() {
@@ -37,9 +38,7 @@ export default function AdminCrafters() {
   // Usar dados sincronizados do contexto
   const {
     crafters,
-    teams,
     projects,
-    mentors,
     loading,
     error,
     createCrafter,
