@@ -60,7 +60,7 @@ O CodeCraft Gen-Z é uma plataforma completa para gerenciamento de projetos, men
 
 ### **Frontend (React + Vite)**
 
-```
+```text
 src/
 ├── admin/                    # Módulos administrativos
 │   ├── AdminDashboard.jsx   # Dashboard principal
@@ -84,7 +84,7 @@ src/
 
 ### **Backend (Node.js + Express)**
 
-```
+```text
 server.js                    # Servidor principal
 ├── APIs de Usuários        # /api/usuarios/*
 ├── APIs de Dashboard       # /api/dashboard/*

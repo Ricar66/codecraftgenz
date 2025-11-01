@@ -235,7 +235,6 @@ export default function AdminCrafters() {
           </button>
         </div>
       </div>
-      </div>
 
       {/* Controles de filtro e busca */}
       <div className="controls">

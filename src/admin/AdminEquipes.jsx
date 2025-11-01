@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+
 import { useDataSync } from '../context/DataSyncContext.jsx';
 
 export default function AdminEquipes() {
@@ -12,8 +13,6 @@ export default function AdminEquipes() {
     createTeam,
     updateTeamStatus,
     removeCrafterFromTeam,
-    craftersWithTeamInfo,
-    groupedTeams,
     availableCrafters,
     notifyDataChange
   } = useDataSync();
@@ -261,7 +260,6 @@ export default function AdminEquipes() {
       {error && (
         <div className="message error">
           {error}
-          <button onClick={() => setError('')} className="close-message">×</button>
         </div>
       )}
 

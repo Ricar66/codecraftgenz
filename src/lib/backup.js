@@ -379,13 +379,8 @@ class BackupManager {
    * Funções auxiliares para buscar dados específicos
    */
   async getFinancialData() {
-    try {
-      // Implementar busca de dados financeiros
-      return [];
-    } catch (error) {
-      console.error('Erro ao buscar dados financeiros:', error);
-      return [];
-    }
+    // Implementar busca de dados financeiros
+    return [];
   }
 
   async getSystemLogs() {
@@ -398,23 +393,13 @@ class BackupManager {
   }
 
   async getInscricoes() {
-    try {
-      // Implementar busca de inscrições
-      return [];
-    } catch (error) {
-      console.error('Erro ao buscar inscrições:', error);
-      return [];
-    }
+    // Implementar busca de inscrições
+    return [];
   }
 
   async getDesafios() {
-    try {
-      // Implementar busca de desafios
-      return [];
-    } catch (error) {
-      console.error('Erro ao buscar desafios:', error);
-      return [];
-    }
+    // Implementar busca de desafios
+    return [];
   }
 
   /**
