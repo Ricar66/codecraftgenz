@@ -1141,13 +1141,13 @@ const dbOperations = {
 
   async createFinanca(financa) {
     return new Promise((resolve, reject) => {
-      const { id, item, valor, status, date, type, project_id, progress } = financa;
+      const { item, valor, status, date, type, project_id, progress, created_at, updated_at } = financa;
       db.run(
-        'INSERT INTO financas (id, item, valor, status, date, type, project_id, progress) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [id, item, valor, status || 'pending', date || new Date().toISOString(), type || 'other', project_id, progress || 0],
+        'INSERT INTO financas (item, valor, status, date, type, project_id, progress, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [item, valor, status || 'pending', date || new Date().toISOString(), type || 'other', project_id, progress || 0, created_at || new Date().toISOString(), updated_at || new Date().toISOString()],
         function(err) {
           if (err) reject(err);
-          else resolve({ id, ...financa });
+          else resolve({ id: this.lastID, ...financa });
         }
       );
     });
@@ -1184,6 +1184,24 @@ const dbOperations = {
           }
         }
       );
+    });
+  },
+
+  async getFinancaById(id) {
+    return new Promise((resolve, reject) => {
+      db.get('SELECT * FROM financas WHERE id = ?', [id], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+  },
+
+  async deleteFinanca(id) {
+    return new Promise((resolve, reject) => {
+      db.run('DELETE FROM financas WHERE id = ?', [id], function(err) {
+        if (err) reject(err);
+        else resolve({ changes: this.changes });
+      });
     });
   },
 

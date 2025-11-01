@@ -621,7 +621,7 @@ export function Ranking() {
     }
     
     return crafters;
-  }, [rk.all, filters]);
+  }, [rk.table, filters]);
 
   const resetFilters = () => {
     setFilters({ search: '', min_points: '', max_points: '', active_only: true, sort: 'points' });
@@ -974,7 +974,56 @@ export function Ranking() {
 export function Projetos() {
   const { data: list, loading, error, refresh } = useProjects();
   const [form, setForm] = React.useState({ titulo:'', owner:'', descricao:'', data_inicio:'', status:'rascunho', preco:0, progresso:0, visivel:false, thumb_url:'', tags:[] });
-  const onSave = async () => { await ProjectsRepo.upsert(form); setForm({ titulo:'', owner:'', descricao:'', data_inicio:'', status:'rascunho', preco:0, progresso:0, visivel:false, thumb_url:'', tags:[] }); refresh(); };
+  
+  const onSave = async () => { 
+    try {
+      const savedProject = await ProjectsRepo.upsert(form);
+      
+      // Se o projeto tem preço, criar/atualizar registro financeiro automaticamente
+      if (form.preco > 0) {
+        const financeData = {
+          item: `Projeto: ${form.titulo}`,
+          valor: Number(form.preco),
+          status: form.status === 'finalizado' ? 'paid' : 'pending',
+          type: 'project',
+          project_id: savedProject.id || form.id,
+          progress: Number(form.progresso),
+          date: new Date().toISOString()
+        };
+        
+        try {
+          // Verificar se já existe registro financeiro para este projeto
+          const existingFinance = await fetch(`/api/financas?project_id=${savedProject.id || form.id}`);
+          const financeResponse = await existingFinance.json();
+          
+          if (financeResponse.success && financeResponse.data.length > 0) {
+            // Atualizar registro existente
+            const existingRecord = financeResponse.data[0];
+            await fetch(`/api/financas/${existingRecord.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(financeData)
+            });
+          } else {
+            // Criar novo registro
+            await fetch('/api/financas', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(financeData)
+            });
+          }
+        } catch (financeError) {
+          console.warn('Erro ao sincronizar com finanças:', financeError);
+        }
+      }
+      
+      setForm({ titulo:'', owner:'', descricao:'', data_inicio:'', status:'rascunho', preco:0, progresso:0, visivel:false, thumb_url:'', tags:[] }); 
+      refresh(); 
+    } catch (error) {
+      alert('Erro ao salvar projeto: ' + error.message);
+    }
+  };
+  
   const [query, setQuery] = React.useState('');
   const [page, setPage] = React.useState(1);
   const pageSize = 5;
@@ -986,12 +1035,12 @@ export function Projetos() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageItems = filtered.slice((page-1)*pageSize, page*pageSize);
   return (
-    <div className="admin-content"><h1 className="title">Projetos</h1>
-      <div className="formRow" style={{ gridTemplateColumns: '1fr auto auto auto auto' }}>
-        <input aria-label="Buscar" placeholder="Buscar (título/owner/status)" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} />
-        <button onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
-        <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
-        <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
+    <div className="admin-content">
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div>
+          <h1 className="title">🎯 Gestão de Projetos</h1>
+          <p className="muted">Gerencie projetos e integração automática com finanças</p>
+        </div>
         <button onClick={()=>{
           // Gera CSV dos projetos atuais
           const headers = 'id,title,status,price,visible,startDate\n';
@@ -1000,46 +1049,134 @@ export function Projetos() {
           const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a'); a.href = url; a.download = 'projetos.csv'; a.click(); URL.revokeObjectURL(url);
-        }}>Exportar CSV</button>
+        }} className="btn btn-primary">📤 Exportar CSV</button>
+      </header>
+      
+      <div className="formRow" style={{ gridTemplateColumns: '1fr auto auto auto' }}>
+        <input aria-label="Buscar" placeholder="🔍 Buscar (título/owner/status)" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} />
+        <button onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
+        <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
+        <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
       </div>
-      {loading && <p>Carregando...</p>}
-      {error && <p role="alert">{error}</p>}
-      <div className="table"><table><thead><tr><th>Título</th><th>Owner</th><th>Status</th><th>Preço</th><th>Progresso</th><th>📝</th><th>Visível</th><th>Ações</th></tr></thead><tbody>{pageItems.length===0 ? (<tr><td colSpan="8">Nenhum projeto</td></tr>) : pageItems.map(p=> (
+      
+      {loading && <p>🔄 Carregando...</p>}
+      {error && <p role="alert" style={{ color: '#FF6B6B' }}>❌ {error}</p>}
+      
+      <div className="table"><table><thead><tr><th>Título</th><th>Owner</th><th>Status</th><th>Preço</th><th>Progresso</th><th>📝</th><th>Visível</th><th>Ações</th></tr></thead><tbody>{pageItems.length===0 ? (<tr><td colSpan="8">📭 Nenhum projeto</td></tr>) : pageItems.map(p=> (
         <tr key={p.id}>
-          <td>{p.title || p.titulo}</td>
+          <td style={{ fontWeight: 'bold' }}>{p.title || p.titulo}</td>
           <td>{p.owner}</td>
-          <td>{p.status}</td>
-          <td>R$ {p.price ?? p.preco ?? 0}</td>
-          <td>{p.progress ?? p.progresso ?? 0}%</td>
+          <td>
+            <span style={{ 
+              background: p.status === 'finalizado' ? '#00E4F2' : p.status === 'ongoing' ? '#FFA500' : '#666', 
+              color: '#fff', 
+              padding: '4px 8px', 
+              borderRadius: '12px', 
+              fontSize: '0.8em',
+              fontWeight: 'bold'
+            }}>
+              {p.status}
+            </span>
+          </td>
+          <td style={{ fontWeight: 'bold', color: '#00E4F2' }}>R$ {(p.price ?? p.preco ?? 0).toLocaleString('pt-BR')}</td>
+          <td>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 60, height: 6, background: '#E0E0E0', borderRadius: 3 }}>
+                <div style={{ 
+                  width: `${p.progress ?? p.progresso ?? 0}%`, 
+                  height: '100%', 
+                  background: '#00E4F2', 
+                  borderRadius: 3 
+                }} />
+              </div>
+              <span style={{ fontSize: '0.8em' }}>{p.progress ?? p.progresso ?? 0}%</span>
+            </div>
+          </td>
           <td title={(p.description || p.descricao || '').slice(0, 200)}>{String(p.description || p.descricao || '').slice(0, 80) || '—'}</td>
-          <td>{String(p.visible ?? p.visivel)}</td>
+          <td>{String(p.visible ?? p.visivel) === 'true' ? '✅' : '❌'}</td>
           <td>
             <div className="btn-group">
-              <button className="btn btn-secondary" onClick={()=>setForm({ id:p.id, titulo:p.title||p.titulo||'', owner:p.owner||'', descricao:p.description||p.descricao||'', data_inicio:p.startDate||p.data_inicio||'', status:p.status||'rascunho', preco:p.price??0, progresso:p.progress??0, visivel:p.visible??false, thumb_url:p.thumb_url||'', tags:p.tags||[] })}>Editar</button>
-              <button className="btn btn-outline" onClick={()=>ProjectsRepo.publish(p.id, !(p.visible ?? p.visivel))}>{(p.visible ?? p.visivel) ? 'Ocultar' : 'Publicar'}</button>
-              <button className="btn btn-danger" onClick={async()=>{ if(!window.confirm('Arquivar este projeto?')) return; await fetch(`/api/projetos/${p.id}`, { method:'DELETE' }); refresh(); }}>Arquivar</button>
+              <button className="btn btn-secondary" onClick={()=>setForm({ id:p.id, titulo:p.title||p.titulo||'', owner:p.owner||'', descricao:p.description||p.descricao||'', data_inicio:p.startDate||p.data_inicio||'', status:p.status||'rascunho', preco:p.price??0, progresso:p.progress??0, visivel:p.visible??false, thumb_url:p.thumb_url||'', tags:p.tags||[] })}>✏️</button>
+              <button className="btn btn-outline" onClick={()=>ProjectsRepo.publish(p.id, !(p.visible ?? p.visivel))}>{(p.visible ?? p.visivel) ? '👁️‍🗨️' : '👁️'}</button>
+              <button className="btn btn-danger" onClick={async()=>{ if(!window.confirm('Arquivar este projeto?')) return; await fetch(`/api/projetos/${p.id}`, { method:'DELETE' }); refresh(); }}>🗑️</button>
             </div>
           </td>
         </tr>
       ))}</tbody></table></div>
-      <div className="formRow" style={{ gridTemplateColumns: 'repeat(6, minmax(0,1fr))' }}>
-        <input aria-label="Título" placeholder="Título" value={form.titulo} onChange={e=>setForm({...form,titulo:e.target.value})} />
-        <input aria-label="Owner" placeholder="Owner" value={form.owner} onChange={e=>setForm({...form,owner:e.target.value})} />
-        <input aria-label="Thumb URL" placeholder="Thumb URL" value={form.thumb_url} onChange={e=>setForm({...form,thumb_url:e.target.value})} />
-        <input aria-label="Data de início" type="date" value={form.data_inicio} onChange={e=>setForm({...form,data_inicio:e.target.value})} />
-        <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="rascunho">rascunho</option><option value="ongoing">andamento</option><option value="finalizado">finalizado</option><option value="arquivado">arquivado</option></select>
-        <input aria-label="Preço" placeholder="Preço" type="number" value={form.preco} onChange={e=>setForm({...form,preco:Number(e.target.value)})} />
-        <input aria-label="Progresso" type="range" min="0" max="100" value={form.progresso} onChange={e=>setForm({...form,progresso:Number(e.target.value)})} />
-        <textarea aria-label="Descrição do Projeto" placeholder="Descreva brevemente o objetivo e escopo do projeto..." maxLength={500} required value={form.descricao} onChange={e=>setForm({...form,descricao:e.target.value})} style={{ gridColumn: '1 / -1', minHeight: 80, resize: 'vertical' }} />
-        <label><input type="checkbox" checked={form.visivel} onChange={e=>setForm({...form,visivel:e.target.checked})} /> Visível</label>
-        <button onClick={onSave}>Salvar projeto</button>
-      </div>
-      {/* Preview de Card idêntico ao público */}
-      <div style={{ marginTop: 12 }}>
-        <div style={{ maxWidth: 600 }}>
-          <ProjectPreviewCard form={form} />
+      
+      {/* Formulário melhorado */}
+      <section className="card" style={{ background: '#F4F4F4', padding: 20, marginTop: 20 }}>
+        <h3 style={{ marginBottom: 16, color: '#000' }}>
+          {form.id ? '✏️ Editar Projeto' : '➕ Novo Projeto'}
+        </h3>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+          <input aria-label="Título" placeholder="Título do projeto" value={form.titulo} onChange={e=>setForm({...form,titulo:e.target.value})} />
+          <input aria-label="Owner" placeholder="Responsável/Owner" value={form.owner} onChange={e=>setForm({...form,owner:e.target.value})} />
+          <input aria-label="Thumb URL" placeholder="URL da imagem" value={form.thumb_url} onChange={e=>setForm({...form,thumb_url:e.target.value})} />
         </div>
-      </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+          <input aria-label="Data de início" type="date" value={form.data_inicio} onChange={e=>setForm({...form,data_inicio:e.target.value})} />
+          <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}>
+            <option value="rascunho">📝 Rascunho</option>
+            <option value="ongoing">🔄 Andamento</option>
+            <option value="finalizado">✅ Finalizado</option>
+            <option value="arquivado">📦 Arquivado</option>
+          </select>
+          <input aria-label="Preço" placeholder="Preço (R$)" type="number" value={form.preco} onChange={e=>setForm({...form,preco:Number(e.target.value)})} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <label style={{ fontSize: '0.9em', color: '#666' }}>Progresso:</label>
+            <input aria-label="Progresso" type="range" min="0" max="100" value={form.progresso} onChange={e=>setForm({...form,progresso:Number(e.target.value)})} style={{ flex: 1 }} />
+            <span style={{ fontSize: '0.9em', fontWeight: 'bold' }}>{form.progresso}%</span>
+          </div>
+        </div>
+
+        <textarea 
+          aria-label="Descrição do Projeto" 
+          placeholder="Descreva brevemente o objetivo e escopo do projeto..." 
+          maxLength={500} 
+          required 
+          value={form.descricao} 
+          onChange={e=>setForm({...form,descricao:e.target.value})} 
+          style={{ width: '100%', minHeight: 80, resize: 'vertical', marginBottom: 16 }} 
+        />
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input type="checkbox" checked={form.visivel} onChange={e=>setForm({...form,visivel:e.target.checked})} /> 
+            <span>👁️ Visível publicamente</span>
+          </label>
+          <div className="btn-group">
+            <button className="btn btn-primary" onClick={onSave}>
+              {form.id ? '💾 Atualizar' : '➕ Criar'} Projeto
+            </button>
+            {form.id && (
+              <button className="btn btn-outline" onClick={() => setForm({ titulo:'', owner:'', descricao:'', data_inicio:'', status:'rascunho', preco:0, progresso:0, visivel:false, thumb_url:'', tags:[] })}>
+                ❌ Cancelar
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {form.preco > 0 && (
+          <div style={{ marginTop: 12, padding: 12, background: '#E8F5E8', borderRadius: 8, border: '1px solid #00E4F2' }}>
+            <p style={{ margin: 0, fontSize: '0.9em', color: '#666' }}>
+              💰 <strong>Integração Financeira:</strong> Um registro financeiro será criado automaticamente com valor de R$ {form.preco.toLocaleString('pt-BR')}
+            </p>
+          </div>
+        )}
+      </section>
+      
+      {/* Preview de Card idêntico ao público */}
+      {form.titulo && (
+        <div style={{ marginTop: 20 }}>
+          <h4 style={{ marginBottom: 12, color: '#666' }}>👀 Preview do Card Público:</h4>
+          <div style={{ maxWidth: 600 }}>
+            <ProjectPreviewCard form={form} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1287,24 +1424,411 @@ function ChallengePreviewCard({ form }) {
 
 export function Financas() {
   const { data: list, loading, error, refresh } = useFinance();
-  const onUpdate = async (f, patch) => { await FinanceRepo.update(f.id, patch); refresh(); };
+  const { data: projects } = useProjects();
+  const [form, setForm] = React.useState({ item: '', valor: 0, status: 'pending', type: 'other', project_id: '', progress: 0 });
+  const [editingId, setEditingId] = React.useState(null);
+  const [busy, setBusy] = React.useState(false);
+  const [filter, setFilter] = React.useState({ status: '', type: '', project: '' });
+  const [view, setView] = React.useState('table'); // 'table' ou 'cards'
+  const [query, setQuery] = React.useState('');
+  const [page, setPage] = React.useState(1);
+  const pageSize = 10;
+
+  // Filtros e paginação
+  const filtered = list.filter(f => {
+    const matchQuery = !query || 
+      (f.item || '').toLowerCase().includes(query.toLowerCase()) ||
+      (f.status || '').toLowerCase().includes(query.toLowerCase());
+    const matchStatus = !filter.status || f.status === filter.status;
+    const matchType = !filter.type || f.type === filter.type;
+    const matchProject = !filter.project || f.project_id === filter.project;
+    return matchQuery && matchStatus && matchType && matchProject;
+  });
+  
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageItems = filtered.slice((page-1)*pageSize, page*pageSize);
+
+  // Estatísticas
+  const stats = {
+    total: list.reduce((acc, f) => acc + Number(f.valor || 0), 0),
+    paid: list.filter(f => f.status === 'paid').reduce((acc, f) => acc + Number(f.valor || 0), 0),
+    pending: list.filter(f => f.status === 'pending').reduce((acc, f) => acc + Number(f.valor || 0), 0),
+    discount: list.filter(f => f.status === 'discount').reduce((acc, f) => acc + Number(f.valor || 0), 0),
+    count: list.length
+  };
+
+  const onSave = async () => {
+    setBusy(true);
+    try {
+      const payload = { ...form };
+      payload.valor = Number(payload.valor);
+      payload.progress = Number(payload.progress);
+      payload.date = new Date().toISOString();
+      
+      if (editingId) {
+        await FinanceRepo.update(editingId, payload);
+      } else {
+        // Criar novo registro financeiro
+        const response = await fetch('/api/financas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!response.ok) throw new Error('Erro ao criar registro');
+      }
+      
+      setForm({ item: '', valor: 0, status: 'pending', type: 'other', project_id: '', progress: 0 });
+      setEditingId(null);
+      refresh();
+    } catch (error) {
+      alert('Erro ao salvar: ' + error.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onEdit = (f) => {
+    setEditingId(f.id);
+    setForm({
+      item: f.item || '',
+      valor: Number(f.valor || 0),
+      status: f.status || 'pending',
+      type: f.type || 'other',
+      project_id: f.project_id || '',
+      progress: Number(f.progress || 0)
+    });
+  };
+
+  const onDelete = async (id) => {
+    if (!window.confirm('Confirma a exclusão deste registro financeiro?')) return;
+    try {
+      await fetch(`/api/financas/${id}`, { method: 'DELETE' });
+      refresh();
+    } catch (error) {
+      alert('Erro ao excluir: ' + error.message);
+    }
+  };
+
+  const onUpdate = async (f, patch) => { 
+    await FinanceRepo.update(f.id, patch); 
+    refresh(); 
+  };
+
   const onExport = () => {
     const csv = FinanceRepo.exportCsv();
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'finance.csv'; a.click(); URL.revokeObjectURL(url);
   };
+
+  const getProjectName = (projectId) => {
+    const project = projects.find(p => p.id === projectId);
+    return project ? (project.title || project.titulo) : 'Projeto não encontrado';
+  };
+
+  const statusColors = {
+    pending: '#FFA500',
+    paid: '#00E4F2',
+    discount: '#D12BF2',
+    cancelled: '#FF6B6B'
+  };
+
+  const typeLabels = {
+    project: '🎯 Projeto',
+    discount: '💸 Desconto',
+    other: '📋 Outros'
+  };
+
   return (
-    <div className="admin-content"><h1 className="title">Finanças</h1>
-      {loading && <p>Carregando...</p>}
-      {error && <p role="alert">{error}</p>}
-      <button className="btn" onClick={onExport}>Exportar CSV</button>
-      <div className="table"><table><thead><tr><th>Item</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody>{list.length===0 ? (<tr><td colSpan="4">Sem registros</td></tr>) : list.map(f=> (
-        <tr key={f.id}><td>{f.item}</td><td>R$ {f.valor}</td><td>{f.status}</td><td>
-          <button onClick={()=>onUpdate(f,{ valor: f.valor + 50 })}>+50</button>
-          <button onClick={()=>onUpdate(f,{ status: 'paid' })}>Marcar como pago</button>
-        </td></tr>
-      ))}</tbody></table></div>
+    <div className="admin-content">
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div>
+          <h1 className="title">💰 Gestão Financeira</h1>
+          <p className="muted">Gerencie receitas, despesas e integrações com projetos</p>
+        </div>
+        <div className="btn-group">
+          <button className="btn btn-outline" onClick={() => setView(view === 'table' ? 'cards' : 'table')}>
+            {view === 'table' ? '📊 Cards' : '📋 Tabela'}
+          </button>
+          <button className="btn btn-primary" onClick={onExport}>📤 Exportar CSV</button>
+        </div>
+      </header>
+
+      {/* Estatísticas */}
+      <section className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
+        <div className="card" style={{ background: '#F4F4F4', color: '#000', textAlign: 'center' }}>
+          <h3>💰 Total</h3>
+          <p style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#00E4F2' }}>
+            R$ {stats.total.toLocaleString('pt-BR')}
+          </p>
+        </div>
+        <div className="card" style={{ background: '#F4F4F4', color: '#000', textAlign: 'center' }}>
+          <h3>✅ Pago</h3>
+          <p style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#00E4F2' }}>
+            R$ {stats.paid.toLocaleString('pt-BR')}
+          </p>
+        </div>
+        <div className="card" style={{ background: '#F4F4F4', color: '#000', textAlign: 'center' }}>
+          <h3>⏳ Pendente</h3>
+          <p style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#FFA500' }}>
+            R$ {stats.pending.toLocaleString('pt-BR')}
+          </p>
+        </div>
+        <div className="card" style={{ background: '#F4F4F4', color: '#000', textAlign: 'center' }}>
+          <h3>💸 Descontos</h3>
+          <p style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#D12BF2' }}>
+            R$ {stats.discount.toLocaleString('pt-BR')}
+          </p>
+        </div>
+        <div className="card" style={{ background: '#F4F4F4', color: '#000', textAlign: 'center' }}>
+          <h3>📊 Registros</h3>
+          <p style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#68007B' }}>
+            {stats.count}
+          </p>
+        </div>
+      </section>
+
+      {/* Filtros */}
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
+        <input 
+          placeholder="🔍 Buscar item ou status..." 
+          value={query} 
+          onChange={e => { setQuery(e.target.value); setPage(1); }}
+        />
+        <select value={filter.status} onChange={e => { setFilter({...filter, status: e.target.value}); setPage(1); }}>
+          <option value="">Todos os Status</option>
+          <option value="pending">⏳ Pendente</option>
+          <option value="paid">✅ Pago</option>
+          <option value="discount">💸 Desconto</option>
+          <option value="cancelled">❌ Cancelado</option>
+        </select>
+        <select value={filter.type} onChange={e => { setFilter({...filter, type: e.target.value}); setPage(1); }}>
+          <option value="">Todos os Tipos</option>
+          <option value="project">🎯 Projeto</option>
+          <option value="discount">💸 Desconto</option>
+          <option value="other">📋 Outros</option>
+        </select>
+        <select value={filter.project} onChange={e => { setFilter({...filter, project: e.target.value}); setPage(1); }}>
+          <option value="">Todos os Projetos</option>
+          {projects.map(p => (
+            <option key={p.id} value={p.id}>{p.title || p.titulo}</option>
+          ))}
+        </select>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button onClick={() => setPage(Math.max(1, page-1))}>◀</button>
+          <span>Página {page}/{totalPages}</span>
+          <button onClick={() => setPage(Math.min(totalPages, page+1))}>▶</button>
+        </div>
+      </section>
+
+      {loading && <p>🔄 Carregando...</p>}
+      {error && <p role="alert" style={{ color: '#FF6B6B' }}>❌ {error}</p>}
+
+      {/* Visualização em Cards */}
+      {view === 'cards' && (
+        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16, marginBottom: 20 }}>
+          {pageItems.length === 0 ? (
+            <div className="card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 40 }}>
+              <p>📭 Nenhum registro encontrado</p>
+            </div>
+          ) : pageItems.map(f => (
+            <div key={f.id} className="card" style={{ background: '#F4F4F4', border: `3px solid ${statusColors[f.status] || '#ccc'}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                <div>
+                  <h3 style={{ margin: 0, color: '#000' }}>{f.item}</h3>
+                  <p style={{ margin: '4px 0', color: '#666', fontSize: '0.9em' }}>
+                    {typeLabels[f.type] || f.type}
+                  </p>
+                </div>
+                <span style={{ 
+                  background: statusColors[f.status] || '#ccc', 
+                  color: '#fff', 
+                  padding: '4px 8px', 
+                  borderRadius: '12px', 
+                  fontSize: '0.8em',
+                  fontWeight: 'bold'
+                }}>
+                  {f.status}
+                </span>
+              </div>
+              
+              <div style={{ marginBottom: 12 }}>
+                <p style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#00E4F2', margin: 0 }}>
+                  R$ {Number(f.valor || 0).toLocaleString('pt-BR')}
+                </p>
+                {f.project_id && (
+                  <p style={{ margin: '4px 0', color: '#666', fontSize: '0.9em' }}>
+                    🎯 {getProjectName(f.project_id)}
+                  </p>
+                )}
+                {f.progress > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8em', marginBottom: 4 }}>
+                      <span>Progresso</span>
+                      <span>{f.progress}%</span>
+                    </div>
+                    <div style={{ height: 6, background: '#E0E0E0', borderRadius: 3 }}>
+                      <div style={{ 
+                        width: `${f.progress}%`, 
+                        height: '100%', 
+                        background: '#00E4F2', 
+                        borderRadius: 3,
+                        transition: 'width 0.3s ease'
+                      }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="btn-group" style={{ justifyContent: 'flex-end' }}>
+                <button className="btn btn-secondary" onClick={() => onEdit(f)}>✏️</button>
+                <button className="btn btn-primary" onClick={() => onUpdate(f, { status: f.status === 'paid' ? 'pending' : 'paid' })}>
+                  {f.status === 'paid' ? '⏳' : '✅'}
+                </button>
+                <button className="btn btn-danger" onClick={() => onDelete(f.id)}>🗑️</button>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {/* Visualização em Tabela */}
+      {view === 'table' && (
+        <div className="table" style={{ marginBottom: 20 }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Tipo</th>
+                <th>Projeto</th>
+                <th>Valor</th>
+                <th>Status</th>
+                <th>Progresso</th>
+                <th>Data</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pageItems.length === 0 ? (
+                <tr><td colSpan="8" style={{ textAlign: 'center', padding: 40 }}>📭 Nenhum registro encontrado</td></tr>
+              ) : pageItems.map(f => (
+                <tr key={f.id}>
+                  <td style={{ fontWeight: 'bold' }}>{f.item}</td>
+                  <td>{typeLabels[f.type] || f.type}</td>
+                  <td>{f.project_id ? getProjectName(f.project_id) : '—'}</td>
+                  <td style={{ fontWeight: 'bold', color: '#00E4F2' }}>
+                    R$ {Number(f.valor || 0).toLocaleString('pt-BR')}
+                  </td>
+                  <td>
+                    <span style={{ 
+                      background: statusColors[f.status] || '#ccc', 
+                      color: '#fff', 
+                      padding: '4px 8px', 
+                      borderRadius: '12px', 
+                      fontSize: '0.8em',
+                      fontWeight: 'bold'
+                    }}>
+                      {f.status}
+                    </span>
+                  </td>
+                  <td>
+                    {f.progress > 0 ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 60, height: 6, background: '#E0E0E0', borderRadius: 3 }}>
+                          <div style={{ 
+                            width: `${f.progress}%`, 
+                            height: '100%', 
+                            background: '#00E4F2', 
+                            borderRadius: 3 
+                          }} />
+                        </div>
+                        <span style={{ fontSize: '0.8em' }}>{f.progress}%</span>
+                      </div>
+                    ) : '—'}
+                  </td>
+                  <td>{f.date ? new Date(f.date).toLocaleDateString('pt-BR') : '—'}</td>
+                  <td>
+                    <div className="btn-group">
+                      <button className="btn btn-secondary" onClick={() => onEdit(f)}>✏️</button>
+                      <button className="btn btn-primary" onClick={() => onUpdate(f, { status: f.status === 'paid' ? 'pending' : 'paid' })}>
+                        {f.status === 'paid' ? '⏳' : '✅'}
+                      </button>
+                      <button className="btn btn-danger" onClick={() => onDelete(f.id)}>🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Formulário */}
+      <section className="card" style={{ background: '#F4F4F4', padding: 20 }}>
+        <h3 style={{ marginBottom: 16, color: '#000' }}>
+          {editingId ? '✏️ Editar Registro' : '➕ Novo Registro Financeiro'}
+        </h3>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+          <input 
+            placeholder="Nome do item/serviço" 
+            value={form.item} 
+            onChange={e => setForm({...form, item: e.target.value})}
+          />
+          <input 
+            type="number" 
+            placeholder="Valor (R$)" 
+            value={form.valor} 
+            onChange={e => setForm({...form, valor: Number(e.target.value)})}
+          />
+          <select value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
+            <option value="pending">⏳ Pendente</option>
+            <option value="paid">✅ Pago</option>
+            <option value="discount">💸 Desconto</option>
+            <option value="cancelled">❌ Cancelado</option>
+          </select>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+          <select value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
+            <option value="other">📋 Outros</option>
+            <option value="project">🎯 Projeto</option>
+            <option value="discount">💸 Desconto</option>
+          </select>
+          <select value={form.project_id} onChange={e => setForm({...form, project_id: e.target.value})}>
+            <option value="">Selecionar projeto (opcional)</option>
+            {projects.map(p => (
+              <option key={p.id} value={p.id}>{p.title || p.titulo}</option>
+            ))}
+          </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <label style={{ fontSize: '0.9em', color: '#666' }}>Progresso:</label>
+            <input 
+              type="range" 
+              min="0" 
+              max="100" 
+              value={form.progress} 
+              onChange={e => setForm({...form, progress: Number(e.target.value)})}
+              style={{ flex: 1 }}
+            />
+            <span style={{ fontSize: '0.9em', fontWeight: 'bold' }}>{form.progress}%</span>
+          </div>
+        </div>
+
+        <div className="btn-group">
+          <button className="btn btn-primary" onClick={onSave} disabled={busy || !form.item || !form.valor}>
+            {busy ? '⏳ Salvando...' : (editingId ? '💾 Atualizar' : '➕ Criar')}
+          </button>
+          {editingId && (
+            <button className="btn btn-outline" onClick={() => {
+              setEditingId(null);
+              setForm({ item: '', valor: 0, status: 'pending', type: 'other', project_id: '', progress: 0 });
+            }}>
+              ❌ Cancelar
+            </button>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

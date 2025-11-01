@@ -7,6 +7,7 @@ export default function AdminEquipes() {
   const [equipes, setEquipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('mentores');
+  const [message, setMessage] = useState('');
 
   // Estados para formulários
   const [novoCrafter, setNovoCrafter] = useState({ nome: '', email: '', avatar_url: '' });
@@ -17,6 +18,15 @@ export default function AdminEquipes() {
     status_inscricao: 'inscrito' 
   });
   const [mentorProjeto, setMentorProjeto] = useState({ projeto_id: '', mentor_id: '' });
+
+  // Agrupar equipes por projeto
+  const equipesAgrupadas = equipes.reduce((acc, equipe) => {
+    if (!acc[equipe.projeto_id]) {
+      acc[equipe.projeto_id] = [];
+    }
+    acc[equipe.projeto_id].push(equipe);
+    return acc;
+  }, {});
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -145,6 +155,66 @@ export default function AdminEquipes() {
     }
   };
 
+  // Função para remover crafter da equipe
+  const removerCrafterDaEquipe = async (equipeId) => {
+    if (!window.confirm('Tem certeza que deseja remover este crafter da equipe?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/sqlite/equipes/${equipeId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        setMessage('Crafter removido da equipe com sucesso!');
+        carregarDados(); // Recarregar dados
+      } else {
+        throw new Error('Erro ao remover crafter da equipe');
+      }
+    } catch (error) {
+      console.error('Erro ao remover crafter:', error);
+      setMessage('Erro ao remover crafter da equipe');
+    }
+  };
+
+  // Função para adicionar crafter na equipe
+  const adicionarCrafterNaEquipe = async (mentorId, projetoId, crafterId) => {
+    if (!crafterId) return;
+
+    try {
+      const novaEquipeData = {
+        mentor_id: mentorId,
+        crafter_id: crafterId,
+        projeto_id: projetoId,
+        status_inscricao: 'inscrito'
+      };
+
+      const response = await fetch('/api/sqlite/equipes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(novaEquipeData)
+      });
+
+      if (response.ok) {
+        setMessage('Crafter adicionado à equipe com sucesso!');
+        carregarDados(); // Recarregar dados
+      } else {
+        throw new Error('Erro ao adicionar crafter à equipe');
+      }
+    } catch (error) {
+      console.error('Erro ao adicionar crafter:', error);
+      setMessage('Erro ao adicionar crafter à equipe');
+    }
+  };
+
   const alterarStatusEquipe = async (equipeId, novoStatus) => {
     try {
       const response = await fetch(`http://localhost:8080/api/sqlite/equipes/${equipeId}/status`, {
@@ -168,6 +238,14 @@ export default function AdminEquipes() {
   return (
     <div className="admin-equipes">
       <h1 className="title">Gerenciamento de Equipes</h1>
+      
+      {/* Mensagem de feedback */}
+      {message && (
+        <div className={`message ${message.includes('Erro') ? 'error' : 'success'}`}>
+          {message}
+          <button onClick={() => setMessage('')} className="close-message">×</button>
+        </div>
+      )}
       
       {/* Navegação por abas */}
       <div className="tabs">
@@ -260,6 +338,115 @@ export default function AdminEquipes() {
               <button type="submit" className="btn btn-primary">Criar Crafter</button>
             </form>
           </div>
+
+          <div className="section">
+            <h2>📋 Equipes Existentes</h2>
+            <p className="info-text">
+              Visualize e edite as equipes já formadas. Você pode adicionar ou remover crafters das equipes.
+            </p>
+            
+            {Object.keys(equipesAgrupadas).length === 0 ? (
+              <div className="empty-state">
+                <p>Nenhuma equipe criada ainda. Use o formulário acima para criar a primeira equipe.</p>
+              </div>
+            ) : (
+              <div className="teams-list">
+                {Object.entries(equipesAgrupadas).map(([projetoId, projetos]) => (
+                  <div key={projetoId} className="project-group">
+                    <h3 className="project-title">
+                      📋 {projetos[0]?.projeto_titulo || 'Projeto sem título'}
+                    </h3>
+                    
+                    {Object.entries(projetos.reduce((acc, equipe) => {
+                      const mentorKey = `${equipe.mentor_id}-${equipe.mentor_nome}`;
+                      if (!acc[mentorKey]) acc[mentorKey] = [];
+                      acc[mentorKey].push(equipe);
+                      return acc;
+                    }, {})).map(([mentorKey, equipesDoMentor]) => {
+                      const [mentorId, mentorNome] = mentorKey.split('-');
+                      return (
+                        <div key={mentorKey} className="mentor-team-group">
+                          <div className="mentor-header">
+                            <h4>👨‍🏫 {mentorNome}</h4>
+                            <span className="team-count">
+                              {equipesDoMentor.length} crafter{equipesDoMentor.length !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          
+                          <div className="team-members">
+                            {equipesDoMentor.map(equipe => (
+                              <div key={equipe.id} className="team-member-card">
+                                <div className="member-info">
+                                  <div className="member-avatar">
+                                    {equipe.crafter_avatar_url ? (
+                                      <img src={equipe.crafter_avatar_url} alt={equipe.crafter_nome} />
+                                    ) : (
+                                      <div className="avatar-placeholder">
+                                        {equipe.crafter_nome.charAt(0).toUpperCase()}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="member-details">
+                                    <strong>{equipe.crafter_nome}</strong>
+                                    <small>{equipe.crafter_email}</small>
+                                    <span className={`status-badge status-${equipe.status_inscricao}`}>
+                                      {equipe.status_inscricao === 'inscrito' && '📝 Inscrito'}
+                                      {equipe.status_inscricao === 'confirmado' && '✅ Confirmado'}
+                                      {equipe.status_inscricao === 'finalizado' && '🏆 Finalizado'}
+                                    </span>
+                                  </div>
+                                </div>
+                                
+                                <div className="member-actions">
+                                  <select
+                                    value={equipe.status_inscricao}
+                                    onChange={(e) => alterarStatusEquipe(equipe.id, e.target.value)}
+                                    className="status-select"
+                                  >
+                                    <option value="inscrito">📝 Inscrito</option>
+                                    <option value="confirmado">✅ Confirmado</option>
+                                    <option value="finalizado">🏆 Finalizado</option>
+                                  </select>
+                                  
+                                  <button
+                                    onClick={() => removerCrafterDaEquipe(equipe.id)}
+                                    className="btn btn-danger btn-small"
+                                    title="Remover crafter da equipe"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          <div className="add-crafter-section">
+                            <h5>➕ Adicionar Crafter à Equipe</h5>
+                            <div className="add-crafter-form">
+                              <select
+                                value=""
+                                onChange={(e) => adicionarCrafterNaEquipe(mentorId, projetoId, e.target.value)}
+                                className="crafter-select"
+                              >
+                                <option value="">Selecione um crafter para adicionar...</option>
+                                {crafters
+                                  .filter(crafter => !equipesDoMentor.some(eq => eq.crafter_id === crafter.id))
+                                  .map(crafter => (
+                                    <option key={crafter.id} value={crafter.id}>
+                                      {crafter.nome} - {crafter.email}
+                                    </option>
+                                  ))}
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -267,226 +454,217 @@ export default function AdminEquipes() {
       {activeTab === 'associacoes' && (
         <div className="tab-content">
           <div className="section">
-            <h2>Associar Mentor a Projeto</h2>
-            <form onSubmit={associarMentorProjeto} className="form">
+            <h2>🎯 Criar Nova Equipe</h2>
+            <p className="info-text">
+              Associe um mentor e crafters a um projeto para formar uma equipe completa.
+            </p>
+            <form onSubmit={criarEquipe} className="form">
               <div className="form-row">
-                <select
-                  value={mentorProjeto.projeto_id}
-                  onChange={(e) => setMentorProjeto({...mentorProjeto, projeto_id: e.target.value})}
-                  required
-                >
-                  <option value="">Selecione um Projeto</option>
-                  {projetos.map(projeto => (
-                    <option key={projeto.id} value={projeto.id}>
-                      {projeto.titulo}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={mentorProjeto.mentor_id}
-                  onChange={(e) => setMentorProjeto({...mentorProjeto, mentor_id: e.target.value})}
-                  required
-                >
-                  <option value="">Selecione um Mentor</option>
-                  {mentores.map(mentor => (
-                    <option key={mentor.id} value={mentor.id}>
-                      {mentor.nome}
-                    </option>
-                  ))}
-                </select>
+                <div className="form-group">
+                  <label>📋 Projeto</label>
+                  <select
+                    value={novaEquipe.projeto_id}
+                    onChange={(e) => setNovaEquipe({...novaEquipe, projeto_id: e.target.value})}
+                    required
+                  >
+                    <option value="">Selecione um Projeto</option>
+                    {projetos.map(projeto => (
+                      <option key={projeto.id} value={projeto.id}>
+                        {projeto.titulo}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>👨‍🏫 Mentor</label>
+                  <select
+                    value={novaEquipe.mentor_id}
+                    onChange={(e) => setNovaEquipe({...novaEquipe, mentor_id: e.target.value})}
+                    required
+                  >
+                    <option value="">Selecione um Mentor</option>
+                    {mentores.map(mentor => (
+                      <option key={mentor.id} value={mentor.id}>
+                        {mentor.nome} - {mentor.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <button type="submit" className="btn btn-secondary">Associar</button>
+              
+              <div className="form-group full-width">
+                <label>👥 Crafters da Equipe</label>
+                <div className="crafters-selection-improved">
+                  {crafters.length === 0 ? (
+                    <div className="empty-state">
+                      <p>Nenhum crafter cadastrado. Crie crafters na aba "Mentores".</p>
+                    </div>
+                  ) : (
+                    <div className="crafters-grid">
+                      {crafters.map(crafter => (
+                        <label key={crafter.id} className={`crafter-card ${novaEquipe.crafter_ids.includes(crafter.id) ? 'selected' : ''}`}>
+                          <input
+                            type="checkbox"
+                            checked={novaEquipe.crafter_ids.includes(crafter.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNovaEquipe({
+                                  ...novaEquipe, 
+                                  crafter_ids: [...novaEquipe.crafter_ids, crafter.id]
+                                });
+                              } else {
+                                setNovaEquipe({
+                                  ...novaEquipe, 
+                                  crafter_ids: novaEquipe.crafter_ids.filter(id => id !== crafter.id)
+                                });
+                              }
+                            }}
+                          />
+                          <div className="crafter-info">
+                            <div className="crafter-avatar">
+                              {crafter.avatar_url ? (
+                                <img src={crafter.avatar_url} alt={crafter.nome} />
+                              ) : (
+                                <div className="avatar-placeholder">
+                                  {crafter.nome.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                            <div className="crafter-details">
+                              <strong>{crafter.nome}</strong>
+                              <small>{crafter.email}</small>
+                              <span className="points">⭐ {crafter.points || 0} pontos</span>
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  <div className="selection-summary">
+                    <span className="selected-count">
+                      ✅ {novaEquipe.crafter_ids.length} crafter(s) selecionado(s)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>📊 Status Inicial</label>
+                  <select
+                    value={novaEquipe.status_inscricao}
+                    onChange={(e) => setNovaEquipe({...novaEquipe, status_inscricao: e.target.value})}
+                  >
+                    <option value="inscrito">📝 Inscrito</option>
+                    <option value="confirmado">✅ Confirmado</option>
+                    <option value="finalizado">🏆 Finalizado</option>
+                  </select>
+                </div>
+              </div>
+              
+              <button 
+                type="submit" 
+                className="btn btn-primary btn-large"
+                disabled={novaEquipe.crafter_ids.length === 0}
+              >
+                🚀 Criar Equipe ({novaEquipe.crafter_ids.length} crafter{novaEquipe.crafter_ids.length !== 1 ? 's' : ''})
+              </button>
             </form>
           </div>
 
           <div className="section">
-            <h2>Criar Nova Equipe</h2>
-            <form onSubmit={criarEquipe} className="form">
+            <h2>🔗 Associar Mentor a Projeto</h2>
+            <p className="info-text">
+              Associe mentores diretamente a projetos (sem formar equipe completa).
+            </p>
+            <form onSubmit={associarMentorProjeto} className="form">
               <div className="form-row">
-                <select
-                  value={novaEquipe.projeto_id}
-                  onChange={(e) => setNovaEquipe({...novaEquipe, projeto_id: e.target.value})}
-                  required
-                >
-                  <option value="">Selecione um Projeto</option>
-                  {projetos.map(projeto => (
-                    <option key={projeto.id} value={projeto.id}>
-                      {projeto.titulo}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={novaEquipe.mentor_id}
-                  onChange={(e) => setNovaEquipe({...novaEquipe, mentor_id: e.target.value})}
-                  required
-                >
-                  <option value="">Selecione um Mentor</option>
-                  {mentores.map(mentor => (
-                    <option key={mentor.id} value={mentor.id}>
-                      {mentor.nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-row">
-                <div className="multi-select-container">
-                  <label>Crafters da Equipe (selecione múltiplos):</label>
-                  <div className="crafters-selection">
-                    {crafters.map(crafter => (
-                      <label key={crafter.id} className="checkbox-item">
-                        <input
-                          type="checkbox"
-                          checked={novaEquipe.crafter_ids.includes(crafter.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setNovaEquipe({
-                                ...novaEquipe, 
-                                crafter_ids: [...novaEquipe.crafter_ids, crafter.id]
-                              });
-                            } else {
-                              setNovaEquipe({
-                                ...novaEquipe, 
-                                crafter_ids: novaEquipe.crafter_ids.filter(id => id !== crafter.id)
-                              });
-                            }
-                          }}
-                        />
-                        <span className="crafter-info">
-                          <strong>{crafter.nome}</strong>
-                          <small>{crafter.email}</small>
-                        </span>
-                      </label>
+                <div className="form-group">
+                  <label>📋 Projeto</label>
+                  <select
+                    value={mentorProjeto.projeto_id}
+                    onChange={(e) => setMentorProjeto({...mentorProjeto, projeto_id: e.target.value})}
+                    required
+                  >
+                    <option value="">Selecione um Projeto</option>
+                    {projetos.map(projeto => (
+                      <option key={projeto.id} value={projeto.id}>
+                        {projeto.titulo}
+                      </option>
                     ))}
-                  </div>
-                  <small className="help-text">
-                    Selecionados: {novaEquipe.crafter_ids.length} crafter(s)
-                  </small>
+                  </select>
                 </div>
-                <select
-                  value={novaEquipe.status_inscricao}
-                  onChange={(e) => setNovaEquipe({...novaEquipe, status_inscricao: e.target.value})}
-                >
-                  <option value="inscrito">Inscrito</option>
-                  <option value="confirmado">Confirmado</option>
-                  <option value="finalizado">Finalizado</option>
-                </select>
+                <div className="form-group">
+                  <label>👨‍🏫 Mentor</label>
+                  <select
+                    value={mentorProjeto.mentor_id}
+                    onChange={(e) => setMentorProjeto({...mentorProjeto, mentor_id: e.target.value})}
+                    required
+                  >
+                    <option value="">Selecione um Mentor</option>
+                    {mentores.map(mentor => (
+                      <option key={mentor.id} value={mentor.id}>
+                        {mentor.nome} - {mentor.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <button type="submit" className="btn btn-primary">Criar Equipe</button>
+              <button type="submit" className="btn btn-secondary">🔗 Associar Mentor ao Projeto</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Aba Equipes */}
+      {/* Aba Equipes Ativas */}
       {activeTab === 'equipes' && (
         <div className="tab-content">
           <div className="section">
             <h2>Equipes Ativas</h2>
-            <div className="table-container">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Projeto</th>
-                    <th>Mentor</th>
-                    <th>Crafters</th>
-                    <th>Status</th>
-                    <th>Data Inscrição</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(() => {
-                    // Agrupar equipes por projeto e mentor
-                    const equipesAgrupadas = {};
-                    
-                    equipes.forEach(equipe => {
-                      const key = `${equipe.projeto_id}-${equipe.mentor_id}`;
-                      if (!equipesAgrupadas[key]) {
-                        equipesAgrupadas[key] = {
-                          projeto_id: equipe.projeto_id,
-                          mentor_id: equipe.mentor_id,
-                          status_inscricao: equipe.status_inscricao,
-                          data_inscricao: equipe.data_inscricao,
-                          crafters: [],
-                          equipe_ids: []
-                        };
-                      }
-                      equipesAgrupadas[key].crafters.push(equipe.crafter_id);
-                      equipesAgrupadas[key].equipe_ids.push(equipe.id);
-                    });
-
-                    return Object.values(equipesAgrupadas).map((grupoEquipe, index) => {
-                      const projeto = projetos.find(p => p.id === grupoEquipe.projeto_id);
-                      const mentor = mentores.find(m => m.id === grupoEquipe.mentor_id);
-                      const craftersEquipe = grupoEquipe.crafters.map(crafterId => 
-                        crafters.find(c => c.id === crafterId)
-                      ).filter(Boolean);
-                      
-                      return (
-                        <tr key={`grupo-${index}`}>
-                          <td>{projeto?.titulo || 'N/A'}</td>
-                          <td>{mentor?.nome || 'N/A'}</td>
-                          <td>
-                            <div className="crafters-list">
-                              {craftersEquipe.map((crafter, idx) => (
-                                <span key={crafter.id} className="crafter-tag">
-                                  {crafter.nome}
-                                  {idx < craftersEquipe.length - 1 && ', '}
-                                </span>
-                              ))}
-                              <small className="crafters-count">
-                                ({craftersEquipe.length} crafter{craftersEquipe.length !== 1 ? 's' : ''})
-                              </small>
+            {Object.keys(equipesAgrupadas).length === 0 ? (
+              <p>Nenhuma equipe encontrada.</p>
+            ) : (
+              Object.entries(equipesAgrupadas).map(([projetoId, equipes]) => (
+                <div key={projetoId} className="project-section">
+                  <h3>{equipes[0]?.projeto_titulo || 'Projeto sem título'}</h3>
+                  <div className="teams-grid">
+                    {Object.entries(
+                      equipes.reduce((acc, equipe) => {
+                        const mentorKey = equipe.mentor_nome;
+                        if (!acc[mentorKey]) acc[mentorKey] = [];
+                        acc[mentorKey].push(equipe);
+                        return acc;
+                      }, {})
+                    ).map(([mentorNome, equipesDoMentor]) => (
+                      <div key={mentorNome} className="team-card">
+                        <h4>Mentor: {mentorNome}</h4>
+                        <div className="team-members-list">
+                          {equipesDoMentor.map(equipe => (
+                            <div key={equipe.id} className="member-item">
+                              <span>{equipe.crafter_nome}</span>
+                              <select
+                                value={equipe.status_inscricao}
+                                onChange={(e) => alterarStatusEquipe(equipe.id, e.target.value)}
+                                className="status-select"
+                              >
+                                <option value="inscrito">Inscrito</option>
+                                <option value="confirmado">Confirmado</option>
+                                <option value="finalizado">Finalizado</option>
+                              </select>
                             </div>
-                          </td>
-                          <td>
-                            <span className={`status status-${grupoEquipe.status_inscricao}`}>
-                              {grupoEquipe.status_inscricao}
-                            </span>
-                          </td>
-                          <td>{grupoEquipe.data_inscricao ? new Date(grupoEquipe.data_inscricao).toLocaleDateString() : '-'}</td>
-                          <td>
-                            <div className="btn-group">
-                              {grupoEquipe.status_inscricao === 'inscrito' && (
-                                <button 
-                                  className="btn btn-sm btn-secondary"
-                                  onClick={() => {
-                                    // Alterar status de todas as equipes do grupo
-                                    grupoEquipe.equipe_ids.forEach(equipeId => 
-                                      alterarStatusEquipe(equipeId, 'confirmado')
-                                    );
-                                  }}
-                                >
-                                  Confirmar
-                                </button>
-                              )}
-                              {grupoEquipe.status_inscricao === 'confirmado' && (
-                                <button 
-                                  className="btn btn-sm btn-primary"
-                                  onClick={() => {
-                                    // Alterar status de todas as equipes do grupo
-                                    grupoEquipe.equipe_ids.forEach(equipeId => 
-                                      alterarStatusEquipe(equipeId, 'finalizado')
-                                    );
-                                  }}
-                                >
-                                  Finalizar
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    });
-                  })()}
-                </tbody>
-              </table>
-            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
-
-      <style>{`
+      
+      <style jsx>{`
         .admin-equipes { max-width: 1200px; margin: 0 auto; }
         .title { font-family: 'Montserrat', sans-serif; font-weight: 700; margin-bottom: 24px; color: #042326; }
         
@@ -653,6 +831,38 @@ export default function AdminEquipes() {
           height: 200px; 
           font-size: 18px; 
           color: #666; 
+        }
+        
+        .message {
+          padding: 12px 16px;
+          margin: 16px 0;
+          border-radius: 8px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-weight: 500;
+        }
+        .message.success {
+          background: #d4edda;
+          color: #155724;
+          border: 1px solid #c3e6cb;
+        }
+        .message.error {
+          background: #f8d7da;
+          color: #721c24;
+          border: 1px solid #f5c6cb;
+        }
+        .close-message {
+          background: none;
+          border: none;
+          font-size: 18px;
+          cursor: pointer;
+          padding: 0;
+          margin-left: 12px;
+          opacity: 0.7;
+        }
+        .close-message:hover {
+          opacity: 1;
         }
         
         @media (max-width: 768px) {

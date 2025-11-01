@@ -3,8 +3,8 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-import AdminEquipes from './admin/AdminEquipes.jsx';
 import AdminCrafters from './admin/AdminCrafters.jsx';
+import AdminEquipes from './admin/AdminEquipes.jsx';
 import AdminInscricoes from './admin/AdminInscricoes';
 import AdminLayout, { Dashboard, Usuarios, Mentores, Ranking, Projetos, Desafios, Financas, Config } from './admin/AdminLayout.jsx';
 import ProtectedRoute from './admin/ProtectedRoute.jsx';

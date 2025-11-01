@@ -761,9 +761,65 @@ app.get('/api/projetos/:id', async (req, res) => {
 app.get('/api/financas', async (req, res) => {
   try {
     const list = await dbOperations.getFinancas();
-    res.status(200).json({ success: true, data: list, total: list.length, timestamp: new Date().toISOString() });
+    
+    // Filtrar por project_id se fornecido
+    let filteredList = list;
+    if (req.query.project_id) {
+      filteredList = list.filter(item => item.project_id == req.query.project_id);
+    }
+    
+    res.status(200).json({ success: true, data: filteredList, total: filteredList.length, timestamp: new Date().toISOString() });
   } catch (error) {
     console.error('Erro ao buscar finanças:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
+});
+
+app.post('/api/financas', async (req, res) => {
+  try {
+    const data = req.body || {};
+    
+    // Validação dos dados obrigatórios
+    if (!data.item || !data.valor) {
+      return res.status(400).json({ success: false, error: 'Item e valor são obrigatórios' });
+    }
+    
+    const newRecord = {
+      item: data.item,
+      valor: Number(data.valor),
+      status: data.status || 'pending',
+      type: data.type || 'other',
+      project_id: data.project_id || null,
+      progress: Math.max(0, Math.min(100, Number(data.progress || 0))),
+      date: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    const result = await dbOperations.createFinanca(newRecord);
+    
+    // Se vinculado a um projeto, atualizar o projeto também
+    if (newRecord.project_id && newRecord.type === 'project') {
+      try {
+        const updateData = {
+          price: newRecord.valor,
+          progress: newRecord.progress,
+          updated_at: new Date().toISOString()
+        };
+        
+        if (newRecord.status === 'paid') {
+          updateData.status = 'completed';
+        }
+        
+        await dbOperations.updateProjeto(newRecord.project_id, updateData);
+      } catch (projectError) {
+        console.warn('Erro ao atualizar projeto vinculado:', projectError);
+      }
+    }
+    
+    res.status(201).json({ success: true, data: result, message: 'Registro financeiro criado com sucesso' });
+  } catch (error) {
+    console.error('Erro ao criar registro financeiro:', error);
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });
@@ -801,6 +857,29 @@ app.put('/api/financas/:id', async (req, res) => {
     res.status(200).json({ success: true, item: updatedFinanca });
   } catch (error) {
     console.error('Erro ao atualizar finança:', error);
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+  }
+});
+
+app.delete('/api/financas/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Buscar o registro antes de excluir para verificar se existe
+    const financa = await dbOperations.getFinancaById(id);
+    if (!financa) {
+      return res.status(404).json({ success: false, error: 'Registro financeiro não encontrado' });
+    }
+    
+    const result = await dbOperations.deleteFinanca(id);
+    
+    if (result.changes === 0) {
+      return res.status(404).json({ success: false, error: 'Nenhum registro foi excluído' });
+    }
+    
+    res.status(200).json({ success: true, message: 'Registro financeiro excluído com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir registro financeiro:', error);
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });
