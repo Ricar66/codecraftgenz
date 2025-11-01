@@ -152,66 +152,7 @@ export const fetchProjectById = async (projectId) => {
   }
 };
 
-/**
- * Mock de projetos para desenvolvimento
- * Simula dados reais com informações "Em breve"
- */
-export const getMockProjects = () => {
-  return [
-    {
-      id: 1,
-      title: 'OverlayCraft',
-      status: 'active',
-      startDate: '2025-05-26',
-      description: 'Um utilitário em C# Windows Forms que exibe, em tempo real, uma sobreposição flutuante (overlay) com informações do sistema — CPU, GPU, RAM, IP, sistema operacional e usuário — funcionando como uma marca d\'água transparente, sempre visível e arrastável pela tela, podendo ser minimizado para a bandeja.',
-      progress: 80,
-      technology: 'C# Windows Forms',
-      category: 'Sistema'
-    },
-    {
-      id: 2,
-      title: 'CleanCraft',
-      status: 'active',
-      startDate: '2025-10-26',
-      description: 'CleanCraft é uma aplicação desenvolvida para auxiliar o usuário na organização automática de arquivos presentes em sua área de trabalho, nas pastas pessoais (como Documentos, Imagens, Vídeos e Downloads) ou em qualquer outra pasta escolhida. O sistema identifica e agrupa os arquivos por tipo ou extensão, movendo-os para pastas correspondentes.',
-      progress: 0,
-      technology: 'C#',
-      category: 'Utilitário'
-    },
-    {
-      id: 3,
-      title: 'Em breve',
-      status: 'active',
-      startDate: null,
-      description: 'Novo projeto em desenvolvimento. Mais informações serão divulgadas em breve.',
-      progress: 0
-    },
-    {
-      id: 4,
-      title: 'Em breve',
-      status: 'active',
-      startDate: null,
-      description: 'Novo projeto em desenvolvimento. Mais informações serão divulgadas em breve.',
-      progress: 0
-    },
-    {
-      id: 5,
-      title: 'Em breve',
-      status: 'active',
-      startDate: null,
-      description: 'Novo projeto em desenvolvimento. Mais informações serão divulgadas em breve.',
-      progress: 0
-    },
-    {
-      id: 6,
-      title: 'Em breve',
-      status: 'active',
-      startDate: null,
-      description: 'Novo projeto em desenvolvimento. Mais informações serão divulgadas em breve.',
-      progress: 0
-    }
-  ];
-};
+
 
 /**
  * Busca projetos com cache e validação
@@ -227,13 +168,12 @@ export const getProjects = async (options = {}) => {
     tags = [],
     sortBy = 'createdAt',
     sortOrder = 'desc',
-    useCache = true,
-    useMockData = false
+    useCache = true
   } = options;
 
   // Gera chave de cache
   const cacheKey = projectsCache.generateKey('projects', {
-    page, limit, search, status, tags, sortBy, sortOrder, useMockData
+    page, limit, search, status, tags, sortBy, sortOrder
   });
 
   // Verifica cache primeiro
@@ -246,94 +186,69 @@ export const getProjects = async (options = {}) => {
   }
 
   try {
-    let response;
+    // Constrói URL com parâmetros
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      sortBy,
+      sortOrder
+    });
+
+    if (search) params.append('search', search);
+    if (status) params.append('status', status);
+    if (tags.length > 0) params.append('tags', tags.join(','));
+
+    const url = `${API_BASE_URL}/api/projetos`;
     
-    if (useMockData) {
-      // Simula delay da rede
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 200));
-      
-      // Dados mock melhorados
-      const mockProjects = getMockProjects();
-      
-      response = {
-        data: mockProjects,
-        pagination: {
-          page,
-          limit,
-          total: mockProjects.length,
-          totalPages: Math.ceil(mockProjects.length / limit)
-        },
-        meta: {
-          source: 'mock',
-          timestamp: new Date().toISOString(),
-          cached: false
-        }
-      };
-    } else {
-      // Constrói URL com parâmetros
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        sortBy,
-        sortOrder
-      });
-
-      if (search) params.append('search', search);
-      if (status) params.append('status', status);
-      if (tags.length > 0) params.append('tags', tags.join(','));
-
-      const url = `${API_BASE_URL}/api/projetos`;
-      
-      // Adiciona filtro de visibilidade se necessário
-      if (options.publicOnly) {
-        params.append('visivel', 'true');
-      }
-      
-      const finalUrl = `${url}?${params.toString()}`;
-      console.log('🌐 URL da requisição:', finalUrl);
-      
-      const data = await fetchWithTimeout(finalUrl, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-      
-      // Mapeia campos do SQLite para o formato esperado
-      const projects = Array.isArray(data?.data) ? data.data : (Array.isArray(data?.projects) ? data.projects : []);
-      console.log('🔍 Dados originais do SQLite:', projects);
-      
-      const mappedProjects = projects.map(project => ({
-        ...project,
-        title: project.titulo || project.title,
-        description: project.descricao || project.description,
-        createdAt: project.created_at || project.createdAt,
-        updatedAt: project.updated_at || project.updatedAt,
-        startDate: project.data_inicio || project.startDate,
-        thumbUrl: project.thumb_url || project.thumbUrl,
-        mentorId: project.mentor_id || project.mentorId,
-        mentorName: project.mentor_nome || project.mentorName,
-        mentorEmail: project.mentor_email || project.mentorEmail
-      }));
-      
-      console.log('🔄 Dados mapeados:', mappedProjects);
-      
-      response = {
-        data: mappedProjects,
-        pagination: data.pagination || {
-          page,
-          limit,
-          total: mappedProjects.length,
-          totalPages: 1
-        },
-        meta: {
-          source: 'api',
-          timestamp: new Date().toISOString(),
-          cached: false
-        }
-      };
+    // Adiciona filtro de visibilidade se necessário
+    if (options.publicOnly) {
+      params.append('visivel', 'true');
     }
+    
+    const finalUrl = `${url}?${params.toString()}`;
+    console.log('🌐 URL da requisição:', finalUrl);
+    
+    const data = await fetchWithTimeout(finalUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+    
+    // Mapeia campos do SQLite para o formato esperado
+    const projects = Array.isArray(data?.data) ? data.data : (Array.isArray(data?.projects) ? data.projects : []);
+    console.log('🔍 Dados originais do SQLite:', projects);
+    
+    const mappedProjects = projects.map(project => ({
+      ...project,
+      title: project.titulo || project.title,
+      description: project.descricao || project.description,
+      createdAt: project.created_at || project.createdAt,
+      updatedAt: project.updated_at || project.updatedAt,
+      startDate: project.data_inicio || project.startDate,
+      thumbUrl: project.thumb_url || project.thumbUrl,
+      mentorId: project.mentor_id || project.mentorId,
+      mentorName: project.mentor_nome || project.mentorName,
+      mentorEmail: project.mentor_email || project.mentorEmail
+    }));
+    
+    console.log('🔄 Dados mapeados:', mappedProjects);
+    
+    const response = {
+      data: mappedProjects,
+      pagination: data.pagination || {
+        page,
+        limit,
+        total: mappedProjects.length,
+        totalPages: 1
+      },
+      meta: {
+        source: 'api',
+        timestamp: new Date().toISOString(),
+        cached: false
+      }
+    };
 
     // Valida dados antes de armazenar
     const validation = ProjectDataValidator.validateProjects(response.data);

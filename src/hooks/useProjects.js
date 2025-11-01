@@ -20,7 +20,7 @@ import { globalPerformanceMonitor } from '../utils/performanceMonitor';
 const useProjects = (options = {}) => {
   const {
     autoFetch = true,
-    useMock = false,
+    useMock: _useMock = false,
     filters = {},
     refetchInterval = 30000,
     timeout = 10000,

@@ -46,7 +46,7 @@ export default function useFeedbacks(options = {}) {
       const err = new Error('Submissão identificada como spam');
       throw err;
     }
-    const saved = await submitFeedback(data, { useMockData: false, honeypot });
+    const saved = await submitFeedback(data, { honeypot });
     await fetchAll({ page: 1 });
     return saved;
   }, [fetchAll]);
