@@ -1280,6 +1280,201 @@ const dbOperations = {
         }
       );
     });
+  },
+
+  // === OPERAÇÕES DE USUÁRIOS ===
+  
+  // Criar usuário
+  async createUser(userData) {
+    return new Promise((resolve, reject) => {
+      const { nome, email, senha_hash, role = 'user', status = 'active' } = userData;
+      db.run(
+        'INSERT INTO usuarios (nome, email, senha_hash, role, status) VALUES (?, ?, ?, ?, ?)',
+        [nome, email, senha_hash, role, status],
+        function(err) {
+          if (err) reject(err);
+          else {
+            db.get('SELECT * FROM usuarios WHERE id = ?', [this.lastID], (getErr, row) => {
+              if (getErr) reject(getErr);
+              else resolve(row);
+            });
+          }
+        }
+      );
+    });
+  },
+
+  // Buscar usuário por email
+  async getUserByEmail(email) {
+    return new Promise((resolve, reject) => {
+      db.get('SELECT * FROM usuarios WHERE email = ? AND status = "active"', [email], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+  },
+
+  // Buscar usuário por ID
+  async getUserById(id) {
+    return new Promise((resolve, reject) => {
+      db.get('SELECT * FROM usuarios WHERE id = ? AND status = "active"', [id], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+  },
+
+  // Listar todos os usuários
+  async getUsers(filters = {}) {
+    return new Promise((resolve, reject) => {
+      let query = 'SELECT id, nome, email, role, status, ultimo_login, created_at FROM usuarios';
+      const conditions = [];
+      const values = [];
+
+      if (filters.role) {
+        conditions.push('role = ?');
+        values.push(filters.role);
+      }
+
+      if (filters.status) {
+        conditions.push('status = ?');
+        values.push(filters.status);
+      }
+
+      if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
+      }
+
+      query += ' ORDER BY created_at DESC';
+
+      db.all(query, values, (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
+      });
+    });
+  },
+
+  // Atualizar último login
+  async updateLastLogin(userId) {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE usuarios SET ultimo_login = CURRENT_TIMESTAMP, tentativas_login = 0 WHERE id = ?',
+        [userId],
+        function(err) {
+          if (err) reject(err);
+          else resolve(this.changes > 0);
+        }
+      );
+    });
+  },
+
+  // Incrementar tentativas de login
+  async incrementLoginAttempts(email) {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE usuarios SET tentativas_login = tentativas_login + 1 WHERE email = ?',
+        [email],
+        function(err) {
+          if (err) reject(err);
+          else resolve(this.changes > 0);
+        }
+      );
+    });
+  },
+
+  // Bloquear usuário temporariamente
+  async blockUser(email, minutes = 15) {
+    return new Promise((resolve, reject) => {
+      const blockUntil = new Date(Date.now() + minutes * 60 * 1000).toISOString();
+      db.run(
+        'UPDATE usuarios SET bloqueado_ate = ? WHERE email = ?',
+        [blockUntil, email],
+        function(err) {
+          if (err) reject(err);
+          else resolve(this.changes > 0);
+        }
+      );
+    });
+  },
+
+  // Verificar se usuário está bloqueado
+  async isUserBlocked(email) {
+    return new Promise((resolve, reject) => {
+      db.get(
+        'SELECT bloqueado_ate FROM usuarios WHERE email = ?',
+        [email],
+        (err, row) => {
+          if (err) reject(err);
+          else {
+            if (!row || !row.bloqueado_ate) {
+              resolve(false);
+            } else {
+              const now = new Date();
+              const blockUntil = new Date(row.bloqueado_ate);
+              resolve(now < blockUntil);
+            }
+          }
+        }
+      );
+    });
+  },
+
+  // Atualizar usuário
+  async updateUser(id, userData) {
+    return new Promise((resolve, reject) => {
+      const fields = [];
+      const values = [];
+
+      if (userData.nome) {
+        fields.push('nome = ?');
+        values.push(userData.nome);
+      }
+      if (userData.email) {
+        fields.push('email = ?');
+        values.push(userData.email);
+      }
+      if (userData.senha_hash) {
+        fields.push('senha_hash = ?');
+        values.push(userData.senha_hash);
+      }
+      if (userData.role) {
+        fields.push('role = ?');
+        values.push(userData.role);
+      }
+      if (userData.status) {
+        fields.push('status = ?');
+        values.push(userData.status);
+      }
+
+      fields.push('updated_at = CURRENT_TIMESTAMP');
+      values.push(id);
+
+      const query = `UPDATE usuarios SET ${fields.join(', ')} WHERE id = ?`;
+
+      db.run(query, values, function(err) {
+        if (err) reject(err);
+        else {
+          db.get('SELECT * FROM usuarios WHERE id = ?', [id], (getErr, row) => {
+            if (getErr) reject(getErr);
+            else resolve(row);
+          });
+        }
+      });
+    });
+  },
+
+  // Deletar usuário (soft delete)
+  async deleteUser(id) {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE usuarios SET status = "inactive", updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [id],
+        function(err) {
+          if (err) reject(err);
+          else resolve(this.changes > 0);
+        }
+      );
+    });
   }
 };
 

@@ -4,15 +4,6 @@ import { useNavigate } from 'react-router-dom';
 
 import { AuthContext } from './AuthCore';
 
-// Usuário admin padrão (sem adminStore)
-const DEFAULT_ADMIN = {
-  id: 'u1',
-  name: 'Admin',
-  email: 'admin@codecraft.dev',
-  role: 'admin',
-  status: 'active'
-};
-
 function getStoredSession() {
   try {
     const raw = localStorage.getItem('cc_session');
@@ -45,8 +36,8 @@ function useAuthProvider() {
 
   useEffect(() => {
     const s = getStoredSession();
-    if (s?.token && s?.userId === DEFAULT_ADMIN.id) {
-      setUser(DEFAULT_ADMIN);
+    if (s?.token && s?.user) {
+      setUser(s.user);
       setToken(s.token);
     } else {
       clearStoredSession();
@@ -55,7 +46,7 @@ function useAuthProvider() {
   }, []);
 
   const login = useCallback(async (email, password) => {
-    // rate limit simples: 5 tentativas/15min
+    // Rate limit simples: 5 tentativas/15min
     const attemptsRaw = localStorage.getItem('cc_login_attempts');
     let attempts = attemptsRaw ? JSON.parse(attemptsRaw) : { count: 0, windowStart: Date.now() };
     const windowMs = 15 * 60 * 1000;
@@ -66,30 +57,54 @@ function useAuthProvider() {
       return { ok: false, error: 'Muitas tentativas. Tente novamente em alguns minutos.' };
     }
 
-    // Verificação simples de credenciais (sem adminStore)
-    if (email === DEFAULT_ADMIN.email && password === 'Admin!123') {
-      // sucesso
+    try {
+      // Fazer login via API do banco
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        attempts.count += 1;
+        localStorage.setItem('cc_login_attempts', JSON.stringify(attempts));
+        return { ok: false, error: data.error || 'Erro no login' };
+      }
+
+      // Login bem-sucedido
       localStorage.setItem('cc_login_attempts', JSON.stringify({ count: 0, windowStart: Date.now() }));
-      const tokenValue = `token-${DEFAULT_ADMIN.id}-${Date.now()}`;
+      
       const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24h
-      const session = { token: tokenValue, userId: DEFAULT_ADMIN.id, role: DEFAULT_ADMIN.role, expiresAt };
+      const session = { 
+        token: data.token, 
+        user: data.user, 
+        expiresAt 
+      };
+      
       setStoredSession(session);
-      setUser(DEFAULT_ADMIN);
-      setToken(tokenValue);
-      console.log('Login realizado:', DEFAULT_ADMIN.email);
+      setUser(data.user);
+      setToken(data.token);
+      
+      console.log('Login realizado:', data.user.email);
       navigate('/admin');
       return { ok: true };
-    } else {
+
+    } catch (error) {
+      console.error('Erro na autenticação:', error);
       attempts.count += 1;
       localStorage.setItem('cc_login_attempts', JSON.stringify(attempts));
-      return { ok: false, error: 'Credenciais inválidas' };
+      return { ok: false, error: 'Erro de conexão. Tente novamente.' };
     }
   }, [navigate]);
 
   const logout = useCallback(() => {
     const s = getStoredSession();
-    if (s?.userId) {
-      console.log('Logout realizado:', DEFAULT_ADMIN.email);
+    if (s?.user) {
+      console.log('Logout realizado:', s.user.email);
     }
     clearStoredSession();
     setUser(null);

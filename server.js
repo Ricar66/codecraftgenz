@@ -39,6 +39,188 @@ if (process.env.NODE_ENV !== 'production') {
 
 // --- ROTAS DA API ---
 
+// --- Autenticação (SQLite) ---
+const crypto = require('crypto');
+
+// Função para criar hash da senha
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+// Função para verificar senha
+function verifyPassword(password, hash) {
+  return hashPassword(password) === hash;
+}
+
+// POST /api/auth/login → autenticação via banco
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Email e senha são obrigatórios' 
+      });
+    }
+
+    // Verificar se usuário está bloqueado
+    const isBlocked = await dbOperations.isUserBlocked(email);
+    if (isBlocked) {
+      return res.status(423).json({ 
+        success: false, 
+        error: 'Usuário temporariamente bloqueado. Tente novamente em alguns minutos.' 
+      });
+    }
+
+    // Buscar usuário no banco
+    const user = await dbOperations.getUserByEmail(email);
+    if (!user) {
+      await dbOperations.incrementLoginAttempts(email);
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Credenciais inválidas' 
+      });
+    }
+
+    // Verificar senha
+    if (!verifyPassword(password, user.senha_hash)) {
+      await dbOperations.incrementLoginAttempts(email);
+      
+      // Bloquear após 5 tentativas
+      if (user.tentativas_login >= 4) {
+        await dbOperations.blockUser(email, 15);
+      }
+      
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Credenciais inválidas' 
+      });
+    }
+
+    // Login bem-sucedido
+    await dbOperations.updateLastLogin(user.id);
+
+    // Retornar dados do usuário (sem senha)
+    const userData = {
+      id: user.id,
+      name: user.nome,
+      email: user.email,
+      role: user.role,
+      status: user.status
+    };
+
+    res.status(200).json({ 
+      success: true, 
+      user: userData,
+      token: `token-${user.id}-${Date.now()}` // Token simples para compatibilidade
+    });
+
+  } catch (error) {
+    console.error('Erro no login:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// GET /api/auth/users → listar usuários (apenas admin)
+app.get('/api/auth/users', async (req, res) => {
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Acesso não autorizado' 
+      });
+    }
+
+    const currentUser = await dbOperations.getUserById(userId);
+    if (!currentUser || currentUser.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Acesso negado. Apenas administradores.' 
+      });
+    }
+
+    const users = await dbOperations.getUsers();
+    res.status(200).json({ 
+      success: true, 
+      data: users 
+    });
+
+  } catch (error) {
+    console.error('Erro ao listar usuários:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// POST /api/auth/users → criar usuário (apenas admin)
+app.post('/api/auth/users', async (req, res) => {
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Acesso não autorizado' 
+      });
+    }
+
+    const currentUser = await dbOperations.getUserById(userId);
+    if (!currentUser || currentUser.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Acesso negado. Apenas administradores.' 
+      });
+    }
+
+    const { nome, email, senha, role = 'user' } = req.body;
+
+    if (!nome || !email || !senha) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Nome, email e senha são obrigatórios' 
+      });
+    }
+
+    const userData = {
+      nome,
+      email,
+      senha_hash: hashPassword(senha),
+      role,
+      status: 'active'
+    };
+
+    const newUser = await dbOperations.createUser(userData);
+    
+    // Retornar sem senha
+    const { senha_hash, ...userResponse } = newUser;
+    
+    res.status(201).json({ 
+      success: true, 
+      user: userResponse 
+    });
+
+  } catch (error) {
+    console.error('Erro ao criar usuário:', error.message);
+    if (error.message.includes('UNIQUE constraint failed')) {
+      res.status(409).json({ 
+        success: false, 
+        error: 'Email já está em uso' 
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        error: 'Erro interno do servidor' 
+      });
+    }
+  }
+});
+
 // --- Mentores (SQLite) ---
 function normalizeMentorDbInput(body) {
   const b = body || {};
