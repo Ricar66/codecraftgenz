@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+
 import { useDataSync } from '../context/DataSyncContext.jsx';
 
 export default function AdminDashboard() {
@@ -17,24 +18,18 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false);
 
   // Estados para dados adicionais
-  const [financialData, setFinancialData] = useState([]);
   const [userStats, setUserStats] = useState({});
   const [systemLogs, setSystemLogs] = useState([]);
 
   // Carregar dados adicionais
-  useEffect(() => {
-    loadAdditionalData();
-  }, [periodo]);
-
-  const loadAdditionalData = async () => {
+  const loadAdditionalData = useCallback(async () => {
     try {
       setRefreshing(true);
       
       // Carregar dados financeiros
       const financeResponse = await fetch(`/api/dashboard/financas?periodo=${periodo}`);
       if (financeResponse.ok) {
-        const financeData = await financeResponse.json();
-        setFinancialData(financeData);
+        await financeResponse.json();
       }
 
       // Carregar estatísticas de usuários
@@ -61,7 +56,11 @@ export default function AdminDashboard() {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [periodo]);
+
+  useEffect(() => {
+    loadAdditionalData();
+  }, [loadAdditionalData]);
 
   // Calcular estatísticas principais
   const mainStats = useMemo(() => {

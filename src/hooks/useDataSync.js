@@ -40,7 +40,7 @@ export const useDataSync = (options = {}) => {
   /**
    * Função auxiliar para fazer requisições com retry
    */
-  const fetchWithRetry = async (url, options = {}, maxRetries = 3) => {
+  const fetchWithRetry = useCallback(async (url, options = {}, maxRetries = 3) => {
     let lastError;
     
     for (let i = 0; i <= maxRetries; i++) {
@@ -60,7 +60,7 @@ export const useDataSync = (options = {}) => {
     }
     
     throw lastError;
-  };
+  }, []);
 
   /**
    * Função para carregar dados de uma API específica
@@ -133,14 +133,15 @@ export const useDataSync = (options = {}) => {
       const newData = { ...data };
       const errors = [];
 
-      results.forEach((result, index) => {
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
         if (result.status === 'fulfilled' && result.value) {
           const { key, data: fetchedData } = result.value;
           newData[key] = fetchedData;
         } else if (result.status === 'rejected') {
           errors.push(result.reason.message);
         }
-      });
+      }
 
       // Atualizar estado
       setData(newData);
@@ -290,7 +291,7 @@ export const useDataSync = (options = {}) => {
    */
   const removeCrafterFromTeam = useCallback(async (equipeId) => {
     try {
-      const response = await fetchWithRetry(`/api/sqlite/equipes/${equipeId}`, {
+      await fetchWithRetry(`/api/sqlite/equipes/${equipeId}`, {
         method: 'DELETE'
       });
 

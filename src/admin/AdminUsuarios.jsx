@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+
 import { useAuth } from '../context/useAuth';
 
 export default function AdminUsuarios() {
@@ -163,7 +164,7 @@ export default function AdminUsuarios() {
         throw new Error(errorData.message || 'Erro ao salvar usuário');
       }
 
-      const result = await response.json();
+      await response.json();
       
       setMessage(editingUser ? 'Usuário atualizado com sucesso!' : 'Usuário criado com sucesso!');
       setShowForm(false);

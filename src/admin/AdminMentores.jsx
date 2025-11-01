@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+
 import { useDataSync } from '../context/DataSyncContext.jsx';
 
 export default function AdminMentores() {
@@ -39,7 +40,7 @@ export default function AdminMentores() {
   // Carregar dados
   useEffect(() => {
     forceRefresh();
-  }, []);
+  }, [forceRefresh]);
 
   // Limpar mensagens após 3 segundos
   useEffect(() => {

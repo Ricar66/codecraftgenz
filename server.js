@@ -10,8 +10,8 @@ import express from 'express';
 import helmet from 'helmet';
 
 // Importar módulo SQLite para todas as operações do banco
-import { dbOperations } from './src/lib/database.js';
 import { backupManager } from './src/lib/backup.js';
+import { dbOperations } from './src/lib/database.js';
 
 // Carregar variáveis de ambiente
 dotenv.config();
