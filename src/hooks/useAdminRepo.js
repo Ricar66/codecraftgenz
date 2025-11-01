@@ -106,7 +106,6 @@ export const MentorsRepo = {
 // Projetos
 export function useProjects() {
   const result = useAsyncList(() => getProjects({ 
-    useMockData: false, 
     useCache: false,
     publicOnly: false // Admin vê todos os projetos
   }).then(response => response.data || []));
@@ -193,6 +192,52 @@ export const ProjectsRepo = {
         throw new Error(`Erro HTTP: ${response.status}`);
       }
       
+      const data = await response.json();
+      realtime.publish('projects_changed', { projects: null });
+      return { ok: true, project: data.project };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  },
+
+  async upsert(project) {
+    try {
+      const isUpdate = !!project.id;
+      const url = isUpdate ? `/api/projetos/${project.id}` : '/api/projetos';
+      const method = isUpdate ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(project),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
+      }
+
+      const data = await response.json();
+      realtime.publish('projects_changed', { projects: null });
+      return { ok: true, project: data.project };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  },
+
+  async publish(id, visible) {
+    try {
+      const response = await fetch(`/api/projetos/${id}/visibilidade`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ visivel: !!visible }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
+      }
+
       const data = await response.json();
       realtime.publish('projects_changed', { projects: null });
       return { ok: true, project: data.project };
@@ -342,6 +387,72 @@ export const DesafiosRepo = {
       const data = await response.json();
       realtime.publish('desafios_changed', { desafios: null });
       return { ok: true, desafio: data.challenge };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  },
+
+  async upsert(desafio) {
+    try {
+      const isUpdate = desafio.id;
+      const url = isUpdate ? `/api/desafios/${desafio.id}` : '/api/desafios';
+      const method = isUpdate ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(desafio),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      realtime.publish('desafios_changed', { desafios: null });
+      return { ok: true, desafio: data.challenge };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  },
+
+  async reviewSubmission(submissionId, review) {
+    try {
+      const response = await fetch(`/api/submissions/${submissionId}/review`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(review),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      realtime.publish('desafios_changed', { desafios: null });
+      return { ok: true, submission: data.submission };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  },
+
+  async setStatus(id, status) {
+    try {
+      const response = await fetch(`/api/desafios/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
+      }
+
+      realtime.publish('desafios_changed', { desafios: null });
+      return { ok: true };
     } catch (err) {
       return { ok: false, error: err.message };
     }
