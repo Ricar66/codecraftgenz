@@ -1,3 +1,4 @@
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -387,13 +388,28 @@ const dbOperations = {
   // Projetos
   async createProjeto(projeto) {
     return new Promise((resolve, reject) => {
-      const { titulo, descricao, data_inicio, status, preco, visivel, thumb_url, mentor_id } = projeto;
+      const { titulo, descricao, data_inicio, status, preco, progresso, visivel, thumb_url, mentor_id } = projeto;
+      
+      // Log externo para debug
+      const logData = {
+        timestamp: new Date().toISOString(),
+        projeto: projeto,
+        progresso: progresso,
+        tipo: typeof progresso
+      };
+      fs.appendFileSync('debug_createprojeto.log', JSON.stringify(logData) + '\n');
+      
       db.run(
-        'INSERT INTO projetos (titulo, descricao, data_inicio, status, preco, visivel, thumb_url, mentor_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [titulo, descricao, data_inicio, status, preco, visivel, thumb_url, mentor_id],
+        'INSERT INTO projetos (titulo, descricao, data_inicio, status, preco, progresso, visivel, thumb_url, mentor_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [titulo, descricao, data_inicio, status, preco, progresso || 0, visivel, thumb_url, mentor_id],
         function(err) {
-          if (err) reject(err);
-          else resolve({ id: this.lastID, ...projeto });
+          if (err) {
+            fs.appendFileSync('debug_createprojeto.log', `ERRO: ${JSON.stringify(err)}\n`);
+            reject(err);
+          } else {
+            fs.appendFileSync('debug_createprojeto.log', `SUCESSO: ID ${this.lastID}\n`);
+            resolve({ id: this.lastID, ...projeto });
+          }
         }
       );
     });

@@ -632,6 +632,7 @@ app.post('/api/projetos', async (req, res) => {
       data_inicio: input.startDate || (input.status !== 'draft' ? new Date().toISOString() : null),
       status: input.status || 'rascunho',
       preco: Number(input.price || 0),
+      progresso: Math.max(0, Math.min(100, Number(input.progress || 0))),
       visivel: Boolean(input.visible),
       thumb_url: input.thumbUrl || null,
       mentor_id: input.mentorId || null
@@ -1176,6 +1177,7 @@ function publicProjetoView(p) {
     startDate: p.data_inicio,
     status: p.status,
     price: p.preco,
+    progress: p.progresso || 0,
     visible: !!p.visivel,
     thumbUrl: p.thumb_url,
     mentorId: p.mentor_id,
@@ -1195,6 +1197,7 @@ function normalizeProjetoInput(input) {
     startDate: input.startDate || null,
     status: input.status || 'rascunho',
     price: Number(input.price || 0),
+    progress: Number(input.progress || 0),
     visible: Boolean(input.visible),
     thumbUrl: input.thumbUrl || null,
     mentorId: input.mentorId || null
