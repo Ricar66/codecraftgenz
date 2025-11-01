@@ -23,9 +23,9 @@ export function DataSyncProvider({ children }) {
 
   // Extrair dados específicos
   const crafters = data.crafters || [];
-  const mentors = data.mentors || [];
-  const projects = data.projects || [];
-  const teams = data.teams || [];
+  const mentors = data.mentores || [];
+  const projects = data.projetos || [];
+  const teams = data.equipes || [];
 
   // Função para processar crafters com informações de equipe
   const getCraftersWithTeamInfo = () => {
@@ -76,6 +76,7 @@ export function DataSyncProvider({ children }) {
   // Valor do contexto
   const contextValue = {
     // Dados básicos
+    data, // Adicionando o objeto data completo
     crafters,
     mentors,
     projects,
