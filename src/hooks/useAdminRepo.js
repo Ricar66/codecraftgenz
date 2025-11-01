@@ -106,10 +106,15 @@ export const MentorsRepo = {
 
 // Projetos
 export function useProjects() {
-  const result = useAsyncList(() => getProjects({ 
-    useCache: false,
-    publicOnly: false // Admin vê todos os projetos
-  }).then(response => response.data || []));
+  const result = useAsyncList(async () => {
+    // Para admin, usar chamada direta com all=1 para garantir que todos os projetos sejam carregados
+    const response = await fetch(`${apiConfig.baseURL}/api/projetos?all=1`);
+    if (!response.ok) {
+      throw new Error(`Erro HTTP: ${response.status}`);
+    }
+    const data = await response.json();
+    return Array.isArray(data?.data) ? data.data : [];
+  });
 
   useEffect(() => {
     const unsub = realtime.subscribe('projects_changed', () => {
