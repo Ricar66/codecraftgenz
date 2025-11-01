@@ -1,9 +1,10 @@
 // preview-server.js
 // Servidor personalizado para preview que inclui proxy da API
-import express from 'express';
-import { createProxyMiddleware } from 'http-proxy-middleware';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+import express from 'express';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,14 +18,11 @@ const apiProxy = createProxyMiddleware({
   target: `http://localhost:${API_PORT}`,
   changeOrigin: true,
   logLevel: 'debug',
-  onError: (err, req, res) => {
+  onError: (err) => {
     console.error('Proxy error:', err.message);
-    res.status(500).json({ 
-      success: false, 
-      error: 'API server not available. Make sure the backend is running on port ' + API_PORT 
-    });
+    // Note: res is handled by the proxy middleware
   },
-  onProxyReq: (proxyReq, req, res) => {
+  onProxyReq: (proxyReq, req) => {
     console.log('Proxying request:', req.method, req.url);
   }
 });
@@ -35,7 +33,7 @@ app.use('/api', apiProxy);
 app.use(express.static(path.join(__dirname, 'dist')));
 
 // Fallback para SPA - apenas para rotas que não são da API
-app.use((req, res, next) => {
+app.use((req, res) => {
   // Se a rota começa com /api, não deve chegar aqui
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ success: false, error: 'API endpoint not found' });

@@ -31,6 +31,7 @@ export default defineConfig({
 ```
 
 **Atualização no package.json:**
+
 ```json
 {
   "scripts": {
@@ -75,25 +76,28 @@ Criamos um módulo para centralizar a configuração da API e melhorar o tratame
 
 Adicionamos configuração para a URL da API em produção:
 
-```
+```bash
 VITE_API_URL=http://localhost:8080
 ```
 
 ## Como Usar
 
 ### Modo Preview (Recomendado)
+
 ```bash
 npm run build
 npm run preview
 ```
 
 ### Servidor Personalizado (Alternativo)
+
 ```bash
 npm run build
 npm run preview:custom
 ```
 
 ### Modo Desenvolvimento
+
 ```bash
 npm run dev
 ```

@@ -3,8 +3,8 @@ import ReactDOM from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import MentoriaPage from '../MentoriaPage.jsx';
 import { realtime } from '../../lib/realtime';
+import MentoriaPage from '../MentoriaPage.jsx';
 
 // Stub Navbar para evitar dependências visuais no teste
 vi.mock('../../components/Navbar/Navbar', () => ({

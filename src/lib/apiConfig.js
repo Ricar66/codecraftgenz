@@ -91,3 +91,8 @@ export function useApiHealth() {
 
   return status;
 }
+
+// Objeto de configuração da API (para compatibilidade com imports existentes)
+export const apiConfig = {
+  baseURL: API_BASE_URL
+};

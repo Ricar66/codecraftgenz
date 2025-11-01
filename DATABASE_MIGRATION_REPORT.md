@@ -9,11 +9,13 @@ A migração completa do sistema de banco de dados foi realizada, consolidando t
 ## Alterações Realizadas
 
 ### 1. Configuração do Banco Principal
+
 - **Arquivo:** `.env`
 - **Alteração:** `SQLITE_DB_PATH=./database.sqlite`
 - **Status:** ✅ Concluído
 
 ### 2. Migração de Dados
+
 Todos os dados foram migrados de `codecraft.db` para `database.sqlite`:
 
 | Tabela | Registros Migrados | Status |
@@ -25,6 +27,7 @@ Todos os dados foram migrados de `codecraft.db` para `database.sqlite`:
 | ranking_history | 1 | ✅ |
 
 ### 3. Scripts Atualizados
+
 Os seguintes scripts foram atualizados para usar `database.sqlite`:
 
 - ✅ `insert_sample_data.cjs`
@@ -37,6 +40,7 @@ Os seguintes scripts foram atualizados para usar `database.sqlite`:
 ### 4. Estrutura do Banco de Dados
 
 #### Tabelas Principais:
+
 1. **crafters** - Dados dos desenvolvedores
    - `id`, `nome`, `email`, `avatar_url`, `points`, `active`, `created_at`, `updated_at`
 
@@ -53,6 +57,7 @@ Os seguintes scripts foram atualizados para usar `database.sqlite`:
    - `id`, `at`, `actor`, `action`, `crafter_id`, `before_points`, `after_points`, `diff`, `data`, `created_at`
 
 #### Tabelas Auxiliares:
+
 - `mentores`, `equipes`, `inscricoes`, `desafios`, `feedbacks`, `inscricoes_crafters`
 
 ## Testes Realizados
@@ -97,6 +102,7 @@ Os seguintes scripts foram atualizados para usar `database.sqlite`:
 ## Conclusão
 
 A migração foi realizada com sucesso, garantindo:
+
 - ✅ Conexão única e consistente com `database.sqlite`
 - ✅ Migração completa de dados preservando integridade
 - ✅ Todas as rotas apontando para o banco correto
