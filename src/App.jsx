@@ -4,6 +4,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 import AdminEquipes from './admin/AdminEquipes.jsx';
+import AdminCrafters from './admin/AdminCrafters.jsx';
 import AdminInscricoes from './admin/AdminInscricoes';
 import AdminLayout, { Dashboard, Usuarios, Mentores, Ranking, Projetos, Desafios, Financas, Config } from './admin/AdminLayout.jsx';
 import ProtectedRoute from './admin/ProtectedRoute.jsx';
@@ -45,6 +46,7 @@ function App() {
           <Route path="usuarios" element={<Usuarios />} />
           <Route path="mentores" element={<Mentores />} />
           <Route path="equipes" element={<AdminEquipes />} />
+          <Route path="crafters" element={<AdminCrafters />} />
           <Route path="ranking" element={<Ranking />} />
           <Route path="projetos" element={<Projetos />} />
           <Route path="desafios" element={<Desafios />} />

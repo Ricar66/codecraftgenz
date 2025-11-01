@@ -1346,6 +1346,7 @@ export default function AdminLayout() {
           <NavLink to="/admin/usuarios" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Usuários</NavLink>
           <NavLink to="/admin/mentores" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Mentores</NavLink>
           <NavLink to="/admin/equipes" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Equipes</NavLink>
+          <NavLink to="/admin/crafters" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Crafters</NavLink>
           <NavLink to="/admin/ranking" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Ranking</NavLink>
           <NavLink to="/admin/projetos" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Projetos</NavLink>
           <NavLink to="/admin/desafios" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Desafios</NavLink>
