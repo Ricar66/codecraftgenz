@@ -4,8 +4,11 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 import AdminCrafters from './admin/AdminCrafters.jsx';
+import AdminDashboard from './admin/AdminDashboard.jsx';
 import AdminEquipes from './admin/AdminEquipes.jsx';
 import AdminInscricoes from './admin/AdminInscricoes';
+import AdminMentores from './admin/AdminMentores.jsx';
+import AdminUsuarios from './admin/AdminUsuarios.jsx';
 import AdminLayout, { Dashboard, Usuarios, Mentores, Ranking, Projetos, Desafios, Financas, Config } from './admin/AdminLayout.jsx';
 import ProtectedRoute from './admin/ProtectedRoute.jsx';
 import heroBackground from './assets/hero-background.svg';
@@ -42,9 +45,9 @@ function App() {
             <AdminLayout />
           </ProtectedRoute>
         }>
-          <Route index element={<Dashboard />} />
-          <Route path="usuarios" element={<Usuarios />} />
-          <Route path="mentores" element={<Mentores />} />
+          <Route index element={<AdminDashboard />} />
+          <Route path="usuarios" element={<AdminUsuarios />} />
+          <Route path="mentores" element={<AdminMentores />} />
           <Route path="equipes" element={<AdminEquipes />} />
           <Route path="crafters" element={<AdminCrafters />} />
           <Route path="ranking" element={<Ranking />} />

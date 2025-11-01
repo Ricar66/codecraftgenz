@@ -5,6 +5,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import ProjectCard from '../components/Projects/ProjectCard.jsx';
 import { useAuth } from '../context/useAuth';
+import { DataSyncProvider } from '../context/DataSyncContext.jsx';
 import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo, useDesafios, DesafiosRepo, useFinance, FinanceRepo, useRanking, RankingRepo, useLogs } from '../hooks/useAdminRepo';
 import { realtime } from '../lib/realtime';
 
@@ -1862,33 +1863,34 @@ export function Config() {
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   return (
-    <div className="admin-page">
-      <aside className="sidebar">
-        <div className="brand">CodeCraft Gen-Z</div>
-        <nav className="menu">
-          <NavLink to="/admin" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Dashboard</NavLink>
-          <NavLink to="/admin/usuarios" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Usuários</NavLink>
-          <NavLink to="/admin/mentores" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Mentores</NavLink>
-          <NavLink to="/admin/equipes" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Equipes</NavLink>
-          <NavLink to="/admin/crafters" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Crafters</NavLink>
-          <NavLink to="/admin/ranking" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Ranking</NavLink>
-          <NavLink to="/admin/projetos" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Projetos</NavLink>
-          <NavLink to="/admin/desafios" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Desafios</NavLink>
-          <NavLink to="/admin/inscricoes" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Inscrições</NavLink>
-          <NavLink to="/admin/financas" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Finanças</NavLink>
-          <NavLink to="/admin/config" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Config</NavLink>
-        </nav>
-      </aside>
-      <main className="main">
-        <header className="topbar">
-          <div className="welcome">Olá, {user?.name}</div>
-          <button className="btn btn-danger" onClick={logout}>Sair</button>
-        </header>
-        <div className="content">
-          {/* Render das rotas aninhadas controladas pelo App.jsx */}
-          <Outlet />
-        </div>
-      </main>
+    <DataSyncProvider>
+      <div className="admin-page">
+        <aside className="sidebar">
+          <div className="brand">CodeCraft Gen-Z</div>
+          <nav className="menu">
+            <NavLink to="/admin" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Dashboard</NavLink>
+            <NavLink to="/admin/usuarios" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Usuários</NavLink>
+            <NavLink to="/admin/mentores" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Mentores</NavLink>
+            <NavLink to="/admin/equipes" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Equipes</NavLink>
+            <NavLink to="/admin/crafters" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Crafters</NavLink>
+            <NavLink to="/admin/ranking" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Ranking</NavLink>
+            <NavLink to="/admin/projetos" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Projetos</NavLink>
+            <NavLink to="/admin/desafios" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Desafios</NavLink>
+            <NavLink to="/admin/inscricoes" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Inscrições</NavLink>
+            <NavLink to="/admin/financas" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Finanças</NavLink>
+            <NavLink to="/admin/config" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Config</NavLink>
+          </nav>
+        </aside>
+        <main className="main">
+          <header className="topbar">
+            <div className="welcome">Olá, {user?.name}</div>
+            <button className="btn btn-danger" onClick={logout}>Sair</button>
+          </header>
+          <div className="content">
+            {/* Render das rotas aninhadas controladas pelo App.jsx */}
+            <Outlet />
+          </div>
+        </main>
 
       <style>{`
         /* Global containment for admin area */
@@ -1980,6 +1982,7 @@ export default function AdminLayout() {
           .mentorAdminCard .actions .btn { flex: 1 1 100%; min-width: 0; }
         }
       `}</style>
-    </div>
+      </div>
+    </DataSyncProvider>
   );
 }

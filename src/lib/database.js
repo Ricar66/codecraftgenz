@@ -1512,6 +1512,261 @@ const dbOperations = {
         }
       );
     });
+  },
+
+  // Buscar todos os usuários
+  async getAllUsers() {
+    return new Promise((resolve, reject) => {
+      db.all(
+        'SELECT id, nome, email, role, status, ultimo_login, tentativas_login, created_at, updated_at FROM usuarios ORDER BY created_at DESC',
+        [],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows || []);
+        }
+      );
+    });
+  },
+
+  // Buscar usuário por ID
+  async getUserById(id) {
+    return new Promise((resolve, reject) => {
+      db.get(
+        'SELECT id, nome, email, role, status, ultimo_login, tentativas_login, created_at, updated_at FROM usuarios WHERE id = ?',
+        [id],
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        }
+      );
+    });
+  },
+
+  // Criar novo usuário
+  async createUser(userData) {
+    return new Promise((resolve, reject) => {
+      const { nome, email, senha_hash, role, status } = userData;
+      db.run(
+        'INSERT INTO usuarios (nome, email, senha_hash, role, status) VALUES (?, ?, ?, ?, ?)',
+        [nome, email, senha_hash, role || 'user', status || 'active'],
+        function(err) {
+          if (err) reject(err);
+          else resolve(this.lastID);
+        }
+      );
+    });
+  },
+
+  // Atualizar usuário
+  async updateUser(id, userData) {
+    return new Promise((resolve, reject) => {
+      const fields = [];
+      const values = [];
+      
+      Object.keys(userData).forEach(key => {
+        if (userData[key] !== undefined) {
+          fields.push(`${key} = ?`);
+          values.push(userData[key]);
+        }
+      });
+      
+      fields.push('updated_at = CURRENT_TIMESTAMP');
+      values.push(id);
+      
+      const sql = `UPDATE usuarios SET ${fields.join(', ')} WHERE id = ?`;
+      
+      db.run(sql, values, function(err) {
+        if (err) reject(err);
+        else resolve(this.changes > 0);
+      });
+    });
+  },
+
+  // Atualizar status do usuário
+  async updateUserStatus(id, status) {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE usuarios SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [status, id],
+        function(err) {
+          if (err) reject(err);
+          else resolve(this.changes > 0);
+        }
+      );
+    });
+  },
+
+  // Criar log de auditoria
+  async createAuditLog(logData) {
+    return new Promise((resolve, reject) => {
+      const { actor, action, target, details } = logData;
+      db.run(
+        'INSERT INTO logs (type, actor, data, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+        ['user_management', actor, JSON.stringify({ action, target, details })],
+        function(err) {
+          if (err) reject(err);
+          else resolve(this.lastID);
+        }
+      );
+    });
+  },
+
+  // Buscar logs de auditoria
+  async getAuditLogs() {
+    return new Promise((resolve, reject) => {
+      db.all(
+        'SELECT * FROM logs WHERE type = "user_management" ORDER BY created_at DESC LIMIT 100',
+        [],
+        (err, rows) => {
+          if (err) reject(err);
+          else {
+            const processedLogs = rows.map(row => {
+              try {
+                const data = JSON.parse(row.data || '{}');
+                return {
+                  id: row.id,
+                  actor: row.actor,
+                  action: data.action,
+                  target: data.target,
+                  details: data.details,
+                  created_at: row.created_at
+                };
+              } catch (e) {
+                return {
+                  id: row.id,
+                  actor: row.actor,
+                  action: 'Ação desconhecida',
+                  target: '',
+                  details: '',
+                  created_at: row.created_at
+                };
+              }
+            });
+            resolve(processedLogs);
+          }
+        }
+      });
+    });
+  },
+
+  // Buscar mentor por ID
+  async getMentorById(id) {
+    return new Promise((resolve, reject) => {
+      db.get(
+        'SELECT * FROM mentores WHERE id = ?',
+        [id],
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        }
+      );
+    });
+  },
+
+  // Desvincular todos os projetos de um mentor
+  async unlinkMentorProjects(mentorId) {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE projetos SET mentor_id = NULL WHERE mentor_id = ?',
+        [mentorId],
+        function(err) {
+          if (err) reject(err);
+          else resolve(this.changes);
+        }
+      );
+    });
+  },
+
+  // Vincular projeto ao mentor
+  async linkMentorProject(mentorId, projetoId) {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE projetos SET mentor_id = ? WHERE id = ?',
+        [mentorId, projetoId],
+        function(err) {
+          if (err) reject(err);
+          else resolve(this.changes > 0);
+        }
+      });
+    });
+  },
+
+  // Buscar dados financeiros por período
+  async getFinancialDataByPeriod(startDate, endDate) {
+    return new Promise((resolve, reject) => {
+      db.all(
+        'SELECT * FROM financas WHERE date BETWEEN ? AND ? ORDER BY date DESC',
+        [startDate.toISOString(), endDate.toISOString()],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows || []);
+        }
+      );
+    });
+  },
+
+  // Buscar todos os projetos
+  async getAllProjects() {
+    return new Promise((resolve, reject) => {
+      db.all(
+        'SELECT * FROM projetos ORDER BY created_at DESC',
+        [],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows || []);
+        }
+      );
+    });
+  },
+
+  // Buscar todas as equipes
+  async getAllTeams() {
+    return new Promise((resolve, reject) => {
+      db.all(
+        `SELECT e.*, 
+                c.nome as crafter_nome, 
+                m.nome as mentor_nome, 
+                p.titulo as projeto_titulo
+         FROM equipes e
+         LEFT JOIN crafters c ON e.crafter_id = c.id
+         LEFT JOIN mentores m ON e.mentor_id = m.id
+         LEFT JOIN projetos p ON e.projeto_id = p.id
+         ORDER BY e.created_at DESC`,
+        [],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows || []);
+        }
+      );
+    });
+  },
+
+  // Buscar todos os crafters
+  async getAllCrafters() {
+    return new Promise((resolve, reject) => {
+      db.all(
+        'SELECT * FROM crafters ORDER BY created_at DESC',
+        [],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows || []);
+        }
+      );
+    });
+  },
+
+  // Buscar todos os mentores
+  async getAllMentors() {
+    return new Promise((resolve, reject) => {
+      db.all(
+        'SELECT * FROM mentores ORDER BY created_at DESC',
+        [],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows || []);
+        }
+      );
+    });
   }
 };
 

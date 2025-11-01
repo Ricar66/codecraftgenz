@@ -1,13 +1,51 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useDataSync } from '../context/DataSyncContext.jsx';
 
 export default function AdminCrafters() {
-  const [crafters, setCrafters] = useState([]);
-  const [equipes, setEquipes] = useState([]);
-  const [projetos, setProjetos] = useState([]);
-  const [mentores, setMentores] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [lastUpdate, setLastUpdate] = useState(null);
+  // Estados para paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+
+  // Estados locais para UI
+  const [message, setMessage] = useState('');
+  // Função para criar novo crafter
+  const handleCreateCrafter = async () => {
+    if (!newCrafter.nome || !newCrafter.email) {
+      setMessage('Nome e email são obrigatórios');
+      return;
+    }
+
+    try {
+      await createCrafter(newCrafter);
+      setNewCrafter({ nome: '', email: '', avatar_url: '' });
+      setMessage('Crafter criado com sucesso!');
+      notifyDataChange();
+    } catch (error) {
+      console.error('Erro ao criar crafter:', error);
+      setMessage('Erro ao criar crafter: ' + error.message);
+    }
+  };
+
+  // Limpar mensagem após 3 segundos
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => setMessage(''), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
+  // Usar dados sincronizados do contexto
+  const {
+    crafters,
+    teams,
+    projects,
+    mentors,
+    loading,
+    error,
+    createCrafter,
+    notifyDataChange,
+    craftersWithTeamInfo
+  } = useDataSync();
   
   // Estados para filtros e busca
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,73 +53,14 @@ export default function AdminCrafters() {
   const [filterProjeto, setFilterProjeto] = useState('');
   const [sortField, setSortField] = useState('nome');
   const [sortDirection, setSortDirection] = useState('asc');
+  
+  // Estado para novo crafter
+  const [newCrafter, setNewCrafter] = useState({ nome: '', email: '', avatar_url: '' });
 
-  // Carregar dados iniciais
-  useEffect(() => {
-    carregarDados();
-    
-    // Configurar atualização automática a cada 30 segundos
-    const interval = setInterval(() => {
-      carregarDados();
-    }, 30000);
-
-    // Cleanup do interval quando o componente for desmontado
-    return () => clearInterval(interval);
-  }, []);
-
-  const carregarDados = async () => {
-    try {
-      setLoading(true);
-      const [craftersRes, equipesRes, projetosRes, mentoresRes] = await Promise.all([
-        fetch('http://localhost:8080/api/sqlite/crafters'),
-        fetch('http://localhost:8080/api/sqlite/equipes'),
-        fetch('http://localhost:8080/api/sqlite/projetos'),
-        fetch('http://localhost:8080/api/mentores?all=1')
-      ]);
-
-      const [craftersData, equipesData, projetosData, mentoresData] = await Promise.all([
-        craftersRes.json(),
-        equipesRes.json(),
-        projetosRes.json(),
-        mentoresRes.json()
-      ]);
-
-      if (craftersData.success) setCrafters(craftersData.data || []);
-      if (equipesData.success) setEquipes(equipesData.data || []);
-      if (projetosData.success) setProjetos(projetosData.data || []);
-      if (mentoresData.success) setMentores(mentoresData.data || []);
-
-      setLastUpdate(new Date());
-
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      setError('Erro ao carregar dados. Tente novamente.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Processar dados dos crafters com informações de equipe e projeto
+  // Processar dados dos crafters com informações de equipe e projeto (usando dados do contexto)
   const craftersProcessados = useMemo(() => {
-    return crafters.map(crafter => {
-      // Encontrar equipe do crafter
-      const equipe = equipes.find(e => e.crafter_id === crafter.id);
-      
-      // Encontrar projeto e mentor através da equipe
-      const projeto = equipe ? projetos.find(p => p.id === equipe.projeto_id) : null;
-      const mentor = equipe ? mentores.find(m => m.id === equipe.mentor_id) : null;
-
-      return {
-        ...crafter,
-        equipe_id: equipe?.id || null,
-        projeto_nome: projeto?.nome || 'Não atribuído',
-        projeto_id: projeto?.id || null,
-        mentor_nome: mentor?.nome || 'Não atribuído',
-        mentor_id: mentor?.id || null,
-        status_inscricao: equipe?.status_inscricao || 'Sem equipe'
-      };
-    });
-  }, [crafters, equipes, projetos, mentores]);
+    return craftersWithTeamInfo;
+  }, [craftersWithTeamInfo]);
 
   // Filtrar e ordenar crafters
   const craftersFiltrados = useMemo(() => {
@@ -124,6 +103,17 @@ export default function AdminCrafters() {
 
     return resultado;
   }, [craftersProcessados, searchTerm, filterProjeto, filterEquipe, sortField, sortDirection]);
+
+  // Paginação
+  const totalPages = Math.ceil(craftersFiltrados.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const craftersPaginados = craftersFiltrados.slice(startIndex, endIndex);
+
+  // Reset da página quando filtros mudam
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterProjeto, filterEquipe]);
 
   // Função para ordenação
   const handleSort = (field) => {
@@ -176,13 +166,21 @@ export default function AdminCrafters() {
     return (
       <div className="admin-crafters">
         <div className="error">{error}</div>
-        <button onClick={carregarDados} className="btn btn-primary">Tentar Novamente</button>
+        <button onClick={() => window.location.reload()} className="btn btn-primary">Tentar Novamente</button>
       </div>
     );
   }
 
   return (
     <div className="admin-crafters">
+      {/* Mensagem de feedback */}
+      {message && (
+        <div className={`message ${message.includes('Erro') ? 'error' : 'success'}`}>
+          {message}
+          <button onClick={() => setMessage('')} className="close-message">×</button>
+        </div>
+      )}
+
       <div className="header">
         <div className="header-content">
           <div>
@@ -193,19 +191,50 @@ export default function AdminCrafters() {
           </div>
           <div className="header-actions">
             <button 
-              onClick={carregarDados} 
+              onClick={() => notifyDataChange()} 
               className="btn btn-secondary"
               disabled={loading}
             >
               🔄 {loading ? 'Atualizando...' : 'Atualizar'}
             </button>
-            {lastUpdate && (
-              <div className="last-update">
-                Última atualização: {lastUpdate.toLocaleTimeString('pt-BR')}
-              </div>
-            )}
           </div>
         </div>
+      </div>
+
+      {/* Seção de criação de novo crafter */}
+      <div className="create-crafter-section">
+        <h2>Criar Novo Crafter</h2>
+        <div className="form-row">
+          <input
+            type="text"
+            placeholder="Nome completo"
+            value={newCrafter.nome}
+            onChange={(e) => setNewCrafter({...newCrafter, nome: e.target.value})}
+            className="form-control"
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            value={newCrafter.email}
+            onChange={(e) => setNewCrafter({...newCrafter, email: e.target.value})}
+            className="form-control"
+          />
+          <input
+            type="url"
+            placeholder="URL do Avatar (opcional)"
+            value={newCrafter.avatar_url}
+            onChange={(e) => setNewCrafter({...newCrafter, avatar_url: e.target.value})}
+            className="form-control"
+          />
+          <button
+            onClick={handleCreateCrafter}
+            disabled={!newCrafter.nome || !newCrafter.email}
+            className="btn btn-primary"
+          >
+            Criar Crafter
+          </button>
+        </div>
+      </div>
       </div>
 
       {/* Controles de filtro e busca */}
@@ -227,7 +256,7 @@ export default function AdminCrafters() {
             className="filter-select"
           >
             <option value="">Todos os projetos</option>
-            {projetos.map(projeto => (
+            {projects.map(projeto => (
               <option key={projeto.id} value={projeto.id}>
                 {projeto.nome}
               </option>
@@ -323,8 +352,8 @@ export default function AdminCrafters() {
             </tr>
           </thead>
           <tbody>
-            {craftersFiltrados.length > 0 ? (
-              craftersFiltrados.map(crafter => (
+            {craftersPaginados.length > 0 ? (
+              craftersPaginados.map(crafter => (
                 <tr key={crafter.id}>
                   <td>
                     <div className="crafter-info">
@@ -373,6 +402,46 @@ export default function AdminCrafters() {
           </tbody>
         </table>
       </div>
+
+      {/* Controles de paginação */}
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="btn btn-secondary"
+          >
+            ← Anterior
+          </button>
+          
+          <div className="pagination-info">
+            <span>Página {currentPage} de {totalPages}</span>
+            <span>({craftersFiltrados.length} crafters encontrados)</span>
+          </div>
+          
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className="items-per-page"
+          >
+            <option value={10}>10 por página</option>
+            <option value={20}>20 por página</option>
+            <option value={50}>50 por página</option>
+            <option value={100}>100 por página</option>
+          </select>
+          
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="btn btn-secondary"
+          >
+            Próxima →
+          </button>
+        </div>
+      )}
 
       <style jsx>{`
         .admin-crafters {
@@ -637,6 +706,102 @@ export default function AdminCrafters() {
 
         .error {
           color: #dc3545;
+        }
+
+        .create-crafter-section {
+          background: white;
+          padding: 20px;
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          margin-bottom: 30px;
+        }
+
+        .create-crafter-section h2 {
+          margin: 0 0 15px 0;
+          color: #333;
+        }
+
+        .form-row {
+          display: flex;
+          gap: 15px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .form-control {
+          padding: 10px 12px;
+          border: 2px solid #e1e5e9;
+          border-radius: 6px;
+          font-size: 14px;
+          min-width: 200px;
+          flex: 1;
+        }
+
+        .form-control:focus {
+          outline: none;
+          border-color: #007bff;
+        }
+
+        .btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .message {
+          padding: 12px 16px;
+          border-radius: 6px;
+          margin-bottom: 20px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .message.success {
+          background: #d4edda;
+          color: #155724;
+          border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+          background: #f8d7da;
+          color: #721c24;
+          border: 1px solid #f5c6cb;
+        }
+
+        .close-message {
+          background: none;
+          border: none;
+          font-size: 18px;
+          cursor: pointer;
+          padding: 0;
+          margin-left: 10px;
+        }
+
+        .pagination {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 20px;
+          padding: 20px;
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .pagination-info {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 5px;
+          font-size: 0.9rem;
+          color: #666;
+        }
+
+        .items-per-page {
+          padding: 8px 12px;
+          border: 2px solid #e1e5e9;
+          border-radius: 6px;
+          background: white;
         }
 
         @media (max-width: 768px) {

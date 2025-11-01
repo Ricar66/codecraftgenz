@@ -11,6 +11,7 @@ import helmet from 'helmet';
 
 // Importar módulo SQLite para todas as operações do banco
 import { dbOperations } from './src/lib/database.js';
+import { backupManager } from './src/lib/backup.js';
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -1908,6 +1909,471 @@ app.use(express.static(staticDir, {
     }
   }
 }));
+
+// --- APIs de Usuários Administrativos ---
+
+// GET /api/usuarios → listar todos os usuários
+app.get('/api/usuarios', async (req, res) => {
+  try {
+    const usuarios = await dbOperations.getAllUsers();
+    res.json(usuarios);
+  } catch (error) {
+    console.error('Erro ao buscar usuários:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// POST /api/usuarios → criar novo usuário
+app.post('/api/usuarios', async (req, res) => {
+  try {
+    const { nome, email, senha, role, status } = req.body;
+
+    if (!nome || !email || !senha) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Nome, email e senha são obrigatórios' 
+      });
+    }
+
+    // Verificar se email já existe
+    const existingUser = await dbOperations.getUserByEmail(email);
+    if (existingUser) {
+      return res.status(409).json({ 
+        success: false, 
+        message: 'Email já está em uso' 
+      });
+    }
+
+    // Criar usuário
+    const senhaHash = hashPassword(senha);
+    const userId = await dbOperations.createUser({
+      nome,
+      email,
+      senha_hash: senhaHash,
+      role: role || 'user',
+      status: status || 'active'
+    });
+
+    // Log de auditoria
+    await dbOperations.createAuditLog({
+      actor: req.user?.nome || 'Sistema',
+      action: 'criou usuário',
+      target: nome,
+      details: `Usuário ${nome} (${email}) criado com role ${role}`
+    });
+
+    res.status(201).json({ 
+      success: true, 
+      message: 'Usuário criado com sucesso',
+      id: userId 
+    });
+  } catch (error) {
+    console.error('Erro ao criar usuário:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// PUT /api/usuarios/:id → atualizar usuário
+app.put('/api/usuarios/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome, email, senha, role, status } = req.body;
+
+    if (!nome || !email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Nome e email são obrigatórios' 
+      });
+    }
+
+    // Verificar se usuário existe
+    const existingUser = await dbOperations.getUserById(id);
+    if (!existingUser) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Usuário não encontrado' 
+      });
+    }
+
+    // Verificar se email já está em uso por outro usuário
+    const emailUser = await dbOperations.getUserByEmail(email);
+    if (emailUser && emailUser.id !== parseInt(id)) {
+      return res.status(409).json({ 
+        success: false, 
+        message: 'Email já está em uso por outro usuário' 
+      });
+    }
+
+    // Preparar dados para atualização
+    const updateData = {
+      nome,
+      email,
+      role: role || existingUser.role,
+      status: status || existingUser.status
+    };
+
+    // Atualizar senha se fornecida
+    if (senha) {
+      updateData.senha_hash = hashPassword(senha);
+    }
+
+    await dbOperations.updateUser(id, updateData);
+
+    // Log de auditoria
+    await dbOperations.createAuditLog({
+      actor: req.user?.nome || 'Sistema',
+      action: 'atualizou usuário',
+      target: nome,
+      details: `Usuário ${nome} (${email}) atualizado`
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Usuário atualizado com sucesso' 
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar usuário:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// DELETE /api/usuarios/:id → deletar usuário
+app.delete('/api/usuarios/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verificar se usuário existe
+    const existingUser = await dbOperations.getUserById(id);
+    if (!existingUser) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Usuário não encontrado' 
+      });
+    }
+
+    await dbOperations.deleteUser(id);
+
+    // Log de auditoria
+    await dbOperations.createAuditLog({
+      actor: req.user?.nome || 'Sistema',
+      action: 'deletou usuário',
+      target: existingUser.nome,
+      details: `Usuário ${existingUser.nome} (${existingUser.email}) deletado`
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Usuário deletado com sucesso' 
+    });
+  } catch (error) {
+    console.error('Erro ao deletar usuário:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// PATCH /api/usuarios/:id/status → alterar status do usuário
+app.patch('/api/usuarios/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status || !['active', 'inactive', 'suspended'].includes(status)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Status inválido' 
+      });
+    }
+
+    // Verificar se usuário existe
+    const existingUser = await dbOperations.getUserById(id);
+    if (!existingUser) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Usuário não encontrado' 
+      });
+    }
+
+    await dbOperations.updateUserStatus(id, status);
+
+    // Log de auditoria
+    await dbOperations.createAuditLog({
+      actor: req.user?.nome || 'Sistema',
+      action: 'alterou status do usuário',
+      target: existingUser.nome,
+      details: `Status alterado de ${existingUser.status} para ${status}`
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Status do usuário atualizado com sucesso' 
+    });
+  } catch (error) {
+    console.error('Erro ao alterar status do usuário:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// GET /api/usuarios/audit-logs → buscar logs de auditoria
+app.get('/api/usuarios/audit-logs', async (req, res) => {
+  try {
+    const logs = await dbOperations.getAuditLogs();
+    res.json(logs);
+  } catch (error) {
+    console.error('Erro ao buscar logs de auditoria:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// PUT /api/mentores/:id/projetos → vincular projetos ao mentor
+app.put('/api/mentores/:id/projetos', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { projeto_ids } = req.body;
+
+    if (!Array.isArray(projeto_ids)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'projeto_ids deve ser um array' 
+      });
+    }
+
+    // Verificar se mentor existe
+    const mentor = await dbOperations.getMentorById(id);
+    if (!mentor) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Mentor não encontrado' 
+      });
+    }
+
+    // Desvincular projetos atuais do mentor
+    await dbOperations.unlinkMentorProjects(id);
+
+    // Vincular novos projetos
+    for (const projetoId of projeto_ids) {
+      await dbOperations.linkMentorProject(id, projetoId);
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Projetos vinculados com sucesso' 
+    });
+  } catch (error) {
+    console.error('Erro ao vincular projetos ao mentor:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// --- APIs do Dashboard ---
+
+// GET /api/dashboard/financas → dados financeiros para o dashboard
+app.get('/api/dashboard/financas', async (req, res) => {
+  try {
+    const { periodo = '30d' } = req.query;
+    
+    // Calcular data de início baseada no período
+    const now = new Date();
+    const days = parseInt(periodo.replace('d', ''));
+    const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    
+    const financas = await dbOperations.getFinancialDataByPeriod(startDate, now);
+    
+    res.json(financas);
+  } catch (error) {
+    console.error('Erro ao buscar dados financeiros:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// GET /api/dashboard/resumo → resumo geral do dashboard
+app.get('/api/dashboard/resumo', async (req, res) => {
+  try {
+    const { periodo = '30d' } = req.query;
+    
+    // Buscar dados de diferentes módulos
+    const projetos = await dbOperations.getAllProjects();
+    const equipes = await dbOperations.getAllTeams();
+    const crafters = await dbOperations.getAllCrafters();
+    const mentores = await dbOperations.getAllMentors();
+    
+    // Calcular estatísticas
+    const resumo = {
+      totais: {
+        projetos_total: projetos.length,
+        projetos_ativos: projetos.filter(p => p.status === 'ongoing').length,
+        projetos_finalizados: projetos.filter(p => p.status === 'finalizado').length,
+        projetos_rascunho: projetos.filter(p => p.status === 'rascunho').length,
+        
+        mentores_total: mentores.length,
+        mentores_ativos: mentores.filter(m => 
+          projetos.some(p => p.mentor_id === m.id && p.status === 'ongoing')
+        ).length,
+        
+        crafters_total: crafters.length,
+        crafters_ativos: crafters.filter(c => c.active).length,
+        crafters_em_equipes: equipes.length,
+        
+        equipes_total: equipes.length,
+        equipes_ativas: equipes.filter(e => e.status_inscricao === 'confirmado').length,
+        equipes_inscritas: equipes.filter(e => e.status_inscricao === 'inscrito').length
+      },
+      periodo
+    };
+    
+    res.json(resumo);
+  } catch (error) {
+    console.error('Erro ao gerar resumo do dashboard:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// --- APIs de Backup e Validação ---
+
+// GET /api/backup/status → status do sistema de backup
+app.get('/api/backup/status', async (req, res) => {
+  try {
+    const stats = backupManager.getBackupStats();
+    const backups = backupManager.listBackups();
+    
+    res.json({
+      success: true,
+      stats,
+      recentBackups: backups.slice(0, 5) // Últimos 5 backups
+    });
+  } catch (error) {
+    console.error('Erro ao obter status do backup:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// POST /api/backup/create → criar backup manual
+app.post('/api/backup/create', async (req, res) => {
+  try {
+    const result = await backupManager.createBackup();
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Backup criado com sucesso',
+        backup: result
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao criar backup',
+        error: result.error
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao criar backup:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// GET /api/backup/validate → validar integridade do banco
+app.get('/api/backup/validate', async (req, res) => {
+  try {
+    const validation = await backupManager.validateDatabase();
+    
+    res.json({
+      success: true,
+      validation
+    });
+  } catch (error) {
+    console.error('Erro ao validar banco:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// GET /api/backup/list → listar todos os backups
+app.get('/api/backup/list', async (req, res) => {
+  try {
+    const backups = backupManager.listBackups();
+    
+    res.json({
+      success: true,
+      backups
+    });
+  } catch (error) {
+    console.error('Erro ao listar backups:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// POST /api/backup/restore → restaurar backup específico
+app.post('/api/backup/restore', async (req, res) => {
+  try {
+    const { backupFileName } = req.body;
+    
+    if (!backupFileName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nome do arquivo de backup é obrigatório'
+      });
+    }
+    
+    const result = await backupManager.restoreBackup(backupFileName);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Backup restaurado com sucesso',
+        result
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao restaurar backup',
+        error: result.error
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao restaurar backup:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor' 
+    });
+  }
+});
 
 // --- SPA Fallback (DEVE SER A ÚLTIMA ROTA) ---
 app.get('*', (req, res) => {
