@@ -138,7 +138,8 @@ class BackupManager {
 
       if (backupData.tables.equipes) {
         backupData.tables.equipes.forEach(team => {
-          if (!team.crafter_id || !team.mentor_id || !team.projeto_id) {
+          // mentor_id pode ser null, mas crafter_id e projeto_id são obrigatórios
+          if (!team.crafter_id || !team.projeto_id) {
             throw new Error('Dados de equipe inválidos no backup');
           }
         });
