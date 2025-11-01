@@ -22,7 +22,9 @@ export default defineConfig({
         ],
         // Fallback de navegação apenas para rotas não-API
         navigateFallback: '/index.html',
-        navigateFallbackAllowlist: [/^(?!.*\/api\/).*/]
+        navigateFallbackAllowlist: [/^(?!.*\/api\/).*/],
+        // CRÍTICO: Impede que o Service Worker intercepte rotas da API
+        navigateFallbackDenylist: [/^\/api/]
       }
     })
   ],
