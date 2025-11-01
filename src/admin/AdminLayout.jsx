@@ -594,7 +594,7 @@ export function Ranking() {
 
   // Filter and sort crafters
   const filteredCrafters = React.useMemo(() => {
-    let crafters = [...(rk.all || [])];
+    let crafters = [...(rk.table || [])];
     
     if (filters.search) {
       crafters = crafters.filter(c => 

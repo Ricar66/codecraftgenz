@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { apiConfig } from '../lib/apiConfig';
 import { realtime } from '../lib/realtime';
 import * as mentorAPI from '../services/mentorAPI';
-import { getProjects } from '../services/projectsAPI';
 import * as rankingAPI from '../services/rankingAPI';
 import * as userAPI from '../services/userAPI';
 

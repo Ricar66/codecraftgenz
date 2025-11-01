@@ -938,9 +938,12 @@ const dbOperations = {
       ]).then(([actives, inactives, top3, settings]) => {
         const merged = [...actives, ...inactives];
         const table = merged.map(c => ({ 
+          id: c.id,
           crafter_id: c.id, 
           name: c.name, 
-          points: c.points, 
+          points: c.points,
+          active: c.active,
+          avatar_url: c.avatar_url,
           last_update: settings?.updated_at || new Date().toISOString() 
         }));
         
