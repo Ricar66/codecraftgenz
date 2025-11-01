@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
+import { realtime } from '../lib/realtime';
+
 
 export default function RankingPage() {
   const params = new URLSearchParams(window.location.search);
@@ -36,11 +38,9 @@ export default function RankingPage() {
 
   useEffect(() => {
     fetchRanking();
-    // Lazy import para evitar custo inicial
-    import('../lib/realtime').then(({ realtime }) => {
-      const unsub = realtime.subscribe('ranking_changed', () => { fetchRanking(); });
-      return () => unsub();
-    });
+    // Agora usando a importação estática
+    const unsub = realtime.subscribe('ranking_changed', () => { fetchRanking(); });
+    return () => unsub();
   }, []);
 
   const filtered = table.filter(r => r.name.toLowerCase().includes(query.toLowerCase()));
