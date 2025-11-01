@@ -1,6 +1,7 @@
 // src/hooks/useAdminRepo.js
 import { useEffect, useState } from 'react';
 
+import { apiConfig } from '../lib/apiConfig';
 import { realtime } from '../lib/realtime';
 import * as mentorAPI from '../services/mentorAPI';
 import { getProjects } from '../services/projectsAPI';
@@ -123,10 +124,24 @@ export function useProjects() {
 export const ProjectsRepo = {
   async create(project) {
     try {
-      const response = await fetch('/api/projetos', {
+      // Mapear campos do frontend para API
+      const apiProject = {
+        title: project.titulo || project.title,
+        owner: project.owner,
+        description: project.descricao || project.description,
+        startDate: project.data_inicio || project.startDate,
+        status: project.status,
+        price: project.preco || project.price,
+        progress: project.progresso || project.progress,
+        visible: project.visivel !== undefined ? project.visivel : project.visible,
+        thumb_url: project.thumb_url,
+        tags: project.tags || []
+      };
+
+      const response = await fetch(`${apiConfig.baseURL}/api/projetos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(project),
+        body: JSON.stringify(apiProject),
       });
       
       if (!response.ok) {
@@ -143,10 +158,24 @@ export const ProjectsRepo = {
 
   async update(id, updates) {
     try {
-      const response = await fetch(`/api/projetos/${id}`, {
+      // Mapear campos do frontend para API
+      const apiUpdates = {
+        title: updates.titulo || updates.title,
+        owner: updates.owner,
+        description: updates.descricao || updates.description,
+        startDate: updates.data_inicio || updates.startDate,
+        status: updates.status,
+        price: updates.preco || updates.price,
+        progress: updates.progresso || updates.progress,
+        visible: updates.visivel !== undefined ? updates.visivel : updates.visible,
+        thumb_url: updates.thumb_url,
+        tags: updates.tags || []
+      };
+
+      const response = await fetch(`${apiConfig.baseURL}/api/projetos/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
+        body: JSON.stringify(apiUpdates),
       });
       
       if (!response.ok) {
@@ -163,7 +192,7 @@ export const ProjectsRepo = {
 
   async delete(id) {
     try {
-      const response = await fetch(`/api/projetos/${id}`, {
+      const response = await fetch(`${apiConfig.baseURL}/api/projetos/${id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -183,7 +212,7 @@ export const ProjectsRepo = {
   async toggleVisibility(id) {
     try {
       // A API de projetos já tem endpoint específico para visibilidade
-      const response = await fetch(`/api/projetos/${id}/visibilidade`, {
+      const response = await fetch(`${apiConfig.baseURL}/api/projetos/${id}/visibilidade`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -203,13 +232,28 @@ export const ProjectsRepo = {
   async upsert(project) {
     try {
       const isUpdate = !!project.id;
-      const url = isUpdate ? `/api/projetos/${project.id}` : '/api/projetos';
+      
+      // Mapear campos do frontend para API
+      const apiProject = {
+        title: project.titulo || project.title,
+        owner: project.owner,
+        description: project.descricao || project.description,
+        startDate: project.data_inicio || project.startDate,
+        status: project.status,
+        price: project.preco || project.price,
+        progress: project.progresso || project.progress,
+        visible: project.visivel !== undefined ? project.visivel : project.visible,
+        thumb_url: project.thumb_url,
+        tags: project.tags || []
+      };
+
+      const url = isUpdate ? `${apiConfig.baseURL}/api/projetos/${project.id}` : `${apiConfig.baseURL}/api/projetos`;
       const method = isUpdate ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(project),
+        body: JSON.stringify(apiProject),
       });
 
       if (!response.ok) {
@@ -227,7 +271,7 @@ export const ProjectsRepo = {
 
   async publish(id, visible) {
     try {
-      const response = await fetch(`/api/projetos/${id}/visibilidade`, {
+      const response = await fetch(`${apiConfig.baseURL}/api/projetos/${id}/visibilidade`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ visivel: !!visible }),
