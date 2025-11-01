@@ -26,6 +26,23 @@ const db = new sqlite.Database(dbPath, (err) => {
 
 // Função para inicializar as tabelas
 function initializeTables() {
+  // Tabela usuarios (sistema de autenticação)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS usuarios (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nome TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      senha_hash TEXT NOT NULL,
+      role TEXT CHECK(role IN ('admin', 'editor', 'user')) DEFAULT 'user',
+      status TEXT CHECK(status IN ('active', 'inactive', 'suspended')) DEFAULT 'active',
+      ultimo_login DATETIME,
+      tentativas_login INTEGER DEFAULT 0,
+      bloqueado_ate DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Tabela mentores
   db.run(`
     CREATE TABLE IF NOT EXISTS mentores (

@@ -67,7 +67,7 @@ function useAuthProvider() {
     }
 
     // Verificação simples de credenciais (sem adminStore)
-    if (email === DEFAULT_ADMIN.email && password === 'admin') {
+    if (email === DEFAULT_ADMIN.email && password === 'Admin!123') {
       // sucesso
       localStorage.setItem('cc_login_attempts', JSON.stringify({ count: 0, windowStart: Date.now() }));
       const tokenValue = `token-${DEFAULT_ADMIN.id}-${Date.now()}`;
