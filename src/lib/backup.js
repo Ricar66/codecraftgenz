@@ -59,10 +59,10 @@ class BackupManager {
         version: '1.0',
         tables: {
           usuarios: await dbOperations.getAllUsers(),
-          mentores: await dbOperations.getAllMentors(),
-          projetos: await dbOperations.getAllProjects(),
-          crafters: await dbOperations.getAllCrafters(),
-          equipes: await dbOperations.getAllTeams(),
+          mentores: await dbOperations.getMentores(),
+          projetos: await dbOperations.getProjetos(),
+          crafters: await dbOperations.getCrafters(),
+          equipes: await dbOperations.getEquipes(),
           financas: await this.getFinancialData(),
           logs: await this.getSystemLogs(),
           inscricoes: await this.getInscricoes(),
@@ -287,16 +287,16 @@ class BackupManager {
               data = await dbOperations.getAllUsers();
               break;
             case 'mentores':
-              data = await dbOperations.getAllMentors();
+          data = await dbOperations.getMentores();
               break;
             case 'projetos':
-              data = await dbOperations.getAllProjects();
+              data = await dbOperations.getProjetos();
               break;
             case 'crafters':
-              data = await dbOperations.getAllCrafters();
+              data = await dbOperations.getCrafters();
               break;
             case 'equipes':
-              data = await dbOperations.getAllTeams();
+              data = await dbOperations.getEquipes();
               break;
           }
 
@@ -323,10 +323,10 @@ class BackupManager {
 
       // Validar relacionamentos
       try {
-        const equipes = await dbOperations.getAllTeams();
-        const crafters = await dbOperations.getAllCrafters();
-        const mentores = await dbOperations.getAllMentors();
-        const projetos = await dbOperations.getAllProjects();
+        const equipes = await dbOperations.getEquipes();
+        const crafters = await dbOperations.getCrafters();
+        const mentores = await dbOperations.getMentores();
+        const projetos = await dbOperations.getProjetos();
 
         // Verificar integridade referencial
         let orphanedTeams = 0;

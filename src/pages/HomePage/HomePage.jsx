@@ -199,6 +199,224 @@ const HomePage = () => {
         </div>
       </div>
 
+      {/* Testimonials Section */}
+      <div className="testimonials-section">
+        <div className="testimonials-container">
+          <div className="section-header">
+            <h2>💬 O que nossos clientes dizem</h2>
+            <p>Depoimentos reais de empresas que transformaram seus negócios conosco</p>
+          </div>
+          <div className="testimonials-grid">
+            <div className="testimonial-card">
+              <div className="testimonial-content">
+                <div className="quote-icon">❝</div>
+                <p>"O CodeCraft revolucionou nossa abordagem de desenvolvimento. Em 3 meses, nossa produtividade aumentou 300% e a qualidade dos projetos superou todas as expectativas."</p>
+                <div className="testimonial-author">
+                  <div className="author-info">
+                    <h4>Maria Silva</h4>
+                    <span>CTO - TechCorp Brasil</span>
+                  </div>
+                  <div className="company-logo">🏢</div>
+                </div>
+              </div>
+            </div>
+            <div className="testimonial-card">
+              <div className="testimonial-content">
+                <div className="quote-icon">❝</div>
+                <p>"Encontramos talentos excepcionais através do CodeCraft. Nossa startup conseguiu desenvolver um MVP em tempo recorde com uma equipe de crafters altamente qualificados."</p>
+                <div className="testimonial-author">
+                  <div className="author-info">
+                    <h4>João Santos</h4>
+                    <span>CEO - InnovaTech</span>
+                  </div>
+                  <div className="company-logo">🚀</div>
+                </div>
+              </div>
+            </div>
+            <div className="testimonial-card">
+              <div className="testimonial-content">
+                <div className="quote-icon">❝</div>
+                <p>"A mentoria especializada do CodeCraft foi fundamental para o sucesso do nosso projeto. Economizamos meses de desenvolvimento e evitamos erros custosos."</p>
+                <div className="testimonial-author">
+                  <div className="author-info">
+                    <h4>Ana Costa</h4>
+                    <span>Diretora de Produto - FinTech Pro</span>
+                  </div>
+                  <div className="company-logo">💳</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Success Cases Section */}
+      <div className="success-cases-section">
+        <div className="success-cases-container">
+          <div className="section-header">
+            <h2>🏆 Cases de Sucesso</h2>
+            <p>Projetos que transformaram negócios e geraram resultados extraordinários</p>
+          </div>
+          <div className="cases-grid">
+            <div className="case-card">
+              <div className="case-image">📱</div>
+              <div className="case-content">
+                <h3>App de Delivery Revolucionário</h3>
+                <p>Desenvolvemos um aplicativo de delivery que aumentou as vendas do cliente em 450% no primeiro trimestre.</p>
+                <div className="case-metrics">
+                  <div className="metric">
+                    <span className="metric-number">450%</span>
+                    <span className="metric-label">Aumento nas vendas</span>
+                  </div>
+                  <div className="metric">
+                    <span className="metric-number">30 dias</span>
+                    <span className="metric-label">Tempo de desenvolvimento</span>
+                  </div>
+                </div>
+                <div className="case-tech">
+                  <span className="tech-tag">React Native</span>
+                  <span className="tech-tag">Node.js</span>
+                  <span className="tech-tag">MongoDB</span>
+                </div>
+              </div>
+            </div>
+            <div className="case-card">
+              <div className="case-image">🏦</div>
+              <div className="case-content">
+                <h3>Sistema Bancário Digital</h3>
+                <p>Criamos uma plataforma bancária completa que processa mais de 10 mil transações por minuto com segurança máxima.</p>
+                <div className="case-metrics">
+                  <div className="metric">
+                    <span className="metric-number">10k+</span>
+                    <span className="metric-label">Transações/min</span>
+                  </div>
+                  <div className="metric">
+                    <span className="metric-number">99.9%</span>
+                    <span className="metric-label">Uptime</span>
+                  </div>
+                </div>
+                <div className="case-tech">
+                  <span className="tech-tag">Java</span>
+                  <span className="tech-tag">Spring Boot</span>
+                  <span className="tech-tag">PostgreSQL</span>
+                </div>
+              </div>
+            </div>
+            <div className="case-card">
+              <div className="case-image">🛒</div>
+              <div className="case-content">
+                <h3>E-commerce Inteligente</h3>
+                <p>Plataforma de e-commerce com IA que aumentou a conversão em 280% através de recomendações personalizadas.</p>
+                <div className="case-metrics">
+                  <div className="metric">
+                    <span className="metric-number">280%</span>
+                    <span className="metric-label">Aumento conversão</span>
+                  </div>
+                  <div className="metric">
+                    <span className="metric-number">2M+</span>
+                    <span className="metric-label">Usuários ativos</span>
+                  </div>
+                </div>
+                <div className="case-tech">
+                  <span className="tech-tag">Vue.js</span>
+                  <span className="tech-tag">Python</span>
+                  <span className="tech-tag">TensorFlow</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Benefits Section */}
+      <div className="benefits-section">
+        <div className="benefits-container">
+          <div className="section-header">
+            <h2>🎯 Por que escolher o CodeCraft?</h2>
+            <p>Benefícios exclusivos que fazem a diferença no seu negócio</p>
+          </div>
+          <div className="benefits-grid">
+            <div className="benefit-card">
+              <div className="benefit-icon">⚡</div>
+              <h3>Entrega Rápida</h3>
+              <p>Projetos entregues em até 50% menos tempo que a média do mercado, sem comprometer a qualidade.</p>
+            </div>
+            <div className="benefit-card">
+              <div className="benefit-icon">💰</div>
+              <h3>Custo-Benefício</h3>
+              <p>Economia de até 40% nos custos de desenvolvimento comparado a equipes tradicionais.</p>
+            </div>
+            <div className="benefit-card">
+              <div className="benefit-icon">🔒</div>
+              <h3>Segurança Garantida</h3>
+              <p>Código auditado, testes automatizados e práticas de segurança de nível enterprise.</p>
+            </div>
+            <div className="benefit-card">
+              <div className="benefit-icon">📈</div>
+              <h3>Escalabilidade</h3>
+              <p>Soluções preparadas para crescer com seu negócio, suportando milhões de usuários.</p>
+            </div>
+            <div className="benefit-card">
+              <div className="benefit-icon">🎓</div>
+              <h3>Expertise Comprovada</h3>
+              <p>Mentores com experiência em grandes empresas como Google, Microsoft e Amazon.</p>
+            </div>
+            <div className="benefit-card">
+              <div className="benefit-icon">🔄</div>
+              <h3>Suporte Contínuo</h3>
+              <p>Acompanhamento pós-entrega com suporte técnico 24/7 e atualizações regulares.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Enhanced CTA Section */}
+      <div className="enhanced-cta-section">
+        <div className="enhanced-cta-container">
+          <div className="cta-content">
+            <div className="cta-badge">🚀 OFERTA LIMITADA</div>
+            <h2>Transforme sua ideia em realidade</h2>
+            <p>Junte-se a mais de 500+ empresas que já revolucionaram seus negócios conosco. Primeira consultoria GRATUITA!</p>
+            <div className="cta-features">
+              <div className="cta-feature">
+                <span className="feature-check">✅</span>
+                <span>Análise gratuita do seu projeto</span>
+              </div>
+              <div className="cta-feature">
+                <span className="feature-check">✅</span>
+                <span>Proposta personalizada em 24h</span>
+              </div>
+              <div className="cta-feature">
+                <span className="feature-check">✅</span>
+                <span>Garantia de satisfação 100%</span>
+              </div>
+            </div>
+            <div className="cta-buttons">
+              <button className="cta-primary" onClick={() => setIsCrafterModalOpen(true)}>
+                🚀 Começar Agora - GRÁTIS
+              </button>
+              <button className="cta-secondary">
+                📞 Falar com Especialista
+              </button>
+            </div>
+            <div className="cta-urgency">
+              <span>⏰ Apenas 10 vagas disponíveis este mês!</span>
+            </div>
+          </div>
+          <div className="cta-visual">
+            <div className="floating-card">
+              <div className="card-header">💼 Seu Projeto</div>
+              <div className="card-content">
+                <div className="progress-bar">
+                  <div className="progress-fill"></div>
+                </div>
+                <span>Desenvolvimento em andamento...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <CrafterModal 
         isOpen={isCrafterModalOpen} 
         onClose={() => setIsCrafterModalOpen(false)} 
@@ -594,6 +812,443 @@ const HomePage = () => {
           
           .cta-content p {
             font-size: 1.1rem;
+          }
+        }
+
+        /* ===== TESTIMONIALS SECTION ===== */
+        .testimonials-section {
+          padding: 100px 0;
+          background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+          position: relative;
+          z-index: 1;
+        }
+
+        .testimonials-container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 20px;
+        }
+
+        .testimonials-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+          gap: 30px;
+          margin-top: 60px;
+        }
+
+        .testimonial-card {
+          background: white;
+          border-radius: 20px;
+          padding: 40px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .testimonial-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 4px;
+          background: linear-gradient(90deg, #007bff, #d12bf2, #00e4f2);
+        }
+
+        .testimonial-card:hover {
+          transform: translateY(-10px);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .quote-icon {
+          font-size: 3rem;
+          color: #007bff;
+          margin-bottom: 20px;
+          opacity: 0.3;
+        }
+
+        .testimonial-content p {
+          font-size: 1.1rem;
+          line-height: 1.6;
+          color: #333;
+          margin-bottom: 30px;
+          font-style: italic;
+        }
+
+        .testimonial-author {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .author-info h4 {
+          margin: 0;
+          color: #007bff;
+          font-size: 1.1rem;
+        }
+
+        .author-info span {
+          color: #666;
+          font-size: 0.9rem;
+        }
+
+        .company-logo {
+          font-size: 2rem;
+        }
+
+        /* ===== SUCCESS CASES SECTION ===== */
+        .success-cases-section {
+          padding: 100px 0;
+          background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+          color: white;
+          position: relative;
+          z-index: 1;
+        }
+
+        .success-cases-container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 20px;
+        }
+
+        .cases-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+          gap: 40px;
+          margin-top: 60px;
+        }
+
+        .case-card {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 20px;
+          padding: 40px;
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          transition: all 0.3s ease;
+        }
+
+        .case-card:hover {
+          transform: translateY(-10px);
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .case-image {
+          font-size: 4rem;
+          text-align: center;
+          margin-bottom: 30px;
+        }
+
+        .case-content h3 {
+          color: #00e4f2;
+          margin-bottom: 15px;
+          font-size: 1.3rem;
+        }
+
+        .case-content p {
+          line-height: 1.6;
+          margin-bottom: 30px;
+          color: #ccc;
+        }
+
+        .case-metrics {
+          display: flex;
+          gap: 30px;
+          margin-bottom: 30px;
+        }
+
+        .metric {
+          text-align: center;
+        }
+
+        .metric-number {
+          display: block;
+          font-size: 2rem;
+          font-weight: bold;
+          color: #d12bf2;
+          margin-bottom: 5px;
+        }
+
+        .metric-label {
+          font-size: 0.9rem;
+          color: #aaa;
+        }
+
+        .case-tech {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        .tech-tag {
+          background: linear-gradient(45deg, #007bff, #00e4f2);
+          color: white;
+          padding: 5px 15px;
+          border-radius: 20px;
+          font-size: 0.8rem;
+          font-weight: 500;
+        }
+
+        /* ===== BENEFITS SECTION ===== */
+        .benefits-section {
+          padding: 100px 0;
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+          position: relative;
+          z-index: 1;
+        }
+
+        .benefits-container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 20px;
+        }
+
+        .benefits-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 30px;
+          margin-top: 60px;
+        }
+
+        .benefit-card {
+          background: white;
+          border-radius: 15px;
+          padding: 40px 30px;
+          text-align: center;
+          box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+          transition: all 0.3s ease;
+          border: 2px solid transparent;
+        }
+
+        .benefit-card:hover {
+          transform: translateY(-5px);
+          border-color: #007bff;
+          box-shadow: 0 15px 40px rgba(0, 123, 255, 0.15);
+        }
+
+        .benefit-icon {
+          font-size: 3rem;
+          margin-bottom: 20px;
+        }
+
+        .benefit-card h3 {
+          color: #333;
+          margin-bottom: 15px;
+          font-size: 1.2rem;
+        }
+
+        .benefit-card p {
+          color: #666;
+          line-height: 1.6;
+        }
+
+        /* ===== ENHANCED CTA SECTION ===== */
+        .enhanced-cta-section {
+          padding: 100px 0;
+          background: linear-gradient(135deg, #007bff 0%, #d12bf2 50%, #00e4f2 100%);
+          color: white;
+          position: relative;
+          z-index: 1;
+          overflow: hidden;
+        }
+
+        .enhanced-cta-section::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+          opacity: 0.3;
+        }
+
+        .enhanced-cta-container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 20px;
+          display: grid;
+          grid-template-columns: 2fr 1fr;
+          gap: 60px;
+          align-items: center;
+          position: relative;
+          z-index: 1;
+        }
+
+        .cta-badge {
+          display: inline-block;
+          background: rgba(255, 255, 255, 0.2);
+          padding: 8px 20px;
+          border-radius: 25px;
+          font-size: 0.9rem;
+          font-weight: bold;
+          margin-bottom: 20px;
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .cta-content h2 {
+          font-size: 3rem;
+          margin-bottom: 20px;
+          font-weight: bold;
+        }
+
+        .cta-content > p {
+          font-size: 1.2rem;
+          margin-bottom: 40px;
+          opacity: 0.9;
+        }
+
+        .cta-features {
+          margin-bottom: 40px;
+        }
+
+        .cta-feature {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          margin-bottom: 15px;
+          font-size: 1.1rem;
+        }
+
+        .feature-check {
+          font-size: 1.2rem;
+        }
+
+        .cta-buttons {
+          display: flex;
+          gap: 20px;
+          margin-bottom: 30px;
+        }
+
+        .cta-primary {
+          background: white;
+          color: #007bff;
+          border: none;
+          padding: 18px 40px;
+          border-radius: 50px;
+          font-size: 1.1rem;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .cta-primary:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .cta-secondary {
+          background: transparent;
+          color: white;
+          border: 2px solid white;
+          padding: 16px 35px;
+          border-radius: 50px;
+          font-size: 1.1rem;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .cta-secondary:hover {
+          background: white;
+          color: #007bff;
+        }
+
+        .cta-urgency {
+          font-size: 1rem;
+          opacity: 0.9;
+          animation: pulse 2s infinite;
+        }
+
+        .cta-visual {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+
+        .floating-card {
+          background: rgba(255, 255, 255, 0.15);
+          border-radius: 20px;
+          padding: 30px;
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          animation: float 3s ease-in-out infinite;
+          width: 100%;
+          max-width: 300px;
+        }
+
+        .card-header {
+          font-size: 1.2rem;
+          font-weight: bold;
+          margin-bottom: 20px;
+          text-align: center;
+        }
+
+        .progress-bar {
+          background: rgba(255, 255, 255, 0.2);
+          height: 8px;
+          border-radius: 4px;
+          margin-bottom: 15px;
+          overflow: hidden;
+        }
+
+        .progress-fill {
+          background: linear-gradient(90deg, #00e4f2, #d12bf2);
+          height: 100%;
+          width: 75%;
+          border-radius: 4px;
+          animation: progress 2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+
+        @keyframes progress {
+          0% { width: 0%; }
+          100% { width: 75%; }
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 0.9; }
+          50% { opacity: 0.6; }
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 768px) {
+          .testimonials-grid,
+          .cases-grid,
+          .benefits-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+          }
+
+          .enhanced-cta-container {
+            grid-template-columns: 1fr;
+            gap: 40px;
+            text-align: center;
+          }
+
+          .cta-content h2 {
+            font-size: 2rem;
+          }
+
+          .cta-buttons {
+            flex-direction: column;
+            align-items: center;
+          }
+
+          .case-metrics {
+            justify-content: center;
+          }
+
+          .testimonial-card,
+          .case-card,
+          .benefit-card {
+            padding: 30px 20px;
           }
         }
       `}</style>

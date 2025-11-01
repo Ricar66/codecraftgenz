@@ -1,0 +1,173 @@
+{
+  "timestamp": "2025-11-01T19:20:05.339Z",
+  "version": "1.0",
+  "tables": {
+    "usuarios": [
+      {
+        "id": 1,
+        "nome": "Admin",
+        "email": "admin@codecraft.dev",
+        "role": "admin",
+        "status": "active",
+        "ultimo_login": "2025-11-01 15:46:27",
+        "tentativas_login": 0,
+        "created_at": "2025-11-01 11:07:45",
+        "updated_at": "2025-11-01 11:07:45"
+      }
+    ],
+    "mentores": [
+      {
+        "id": 1,
+        "nome": "Ana Silva",
+        "email": "ana.silva@codecraft.dev",
+        "telefone": "(11) 99999-1111",
+        "bio": "Foco em arquitetura front e web vitals.",
+        "created_at": "2025-10-30 22:49:07",
+        "updated_at": "2025-10-30 22:49:07"
+      }
+    ],
+    "projetos": [
+      {
+        "id": 1,
+        "titulo": "OverlayCraft",
+        "descricao": "Um utilitário em C# Windows Forms que exibe, em tempo real, uma sobreposição flutuante (overlay) com informações do sistema — CPU, GPU, RAM, IP, sistema operacional e usuário — funcionando como uma marca d'água transparente, sempre visível e arrastável pela tela, podendo ser minimizado para a bandeja.",
+        "data_inicio": "2025-05-26T00:00:00.000Z",
+        "status": "ongoing",
+        "preco": 2500,
+        "visivel": 1,
+        "thumb_url": null,
+        "mentor_id": null,
+        "created_at": "2025-11-01 14:57:15",
+        "updated_at": "2025-11-01 14:57:15",
+        "progresso": 90,
+        "mentor_nome": null,
+        "mentor_email": null
+      },
+      {
+        "id": 2,
+        "titulo": "CleanCraft",
+        "descricao": "CleanCraft é uma aplicação desenvolvida para auxiliar o usuário na organização automática de arquivos presentes em sua área de trabalho, nas pastas pessoais (como Documentos, Imagens, Vídeos e Downloads) ou em qualquer outra pasta escolhida. O sistema identifica e agrupa os arquivos por tipo ou extensão, movendo-os para pastas correspondentes (por exemplo: .docx e .pdf → Documentos, .jpg e .png → Imagens, .mp4 → Vídeos, .mp3 → Áudios, etc.) ou permitindo a criação de novas pastas no local desejado.",
+        "data_inicio": "2025-10-26T00:00:00.000Z",
+        "status": "ongoing",
+        "preco": 1800,
+        "visivel": 1,
+        "thumb_url": null,
+        "mentor_id": null,
+        "created_at": "2025-11-01 14:57:15",
+        "updated_at": "2025-11-01 14:58:52",
+        "progresso": 0,
+        "mentor_nome": null,
+        "mentor_email": null
+      }
+    ],
+    "crafters": [
+      {
+        "id": 2,
+        "nome": "Ana Silva",
+        "email": "ana.silva@codecraft.com",
+        "avatar_url": null,
+        "created_at": "2025-10-31 01:19:11",
+        "updated_at": "2025-10-31 01:19:11",
+        "active": 1,
+        "points": 620
+      },
+      {
+        "id": 4,
+        "nome": "Beatriz Costa",
+        "email": "beatriz.costa@codecraft.com",
+        "avatar_url": null,
+        "created_at": "2025-10-31 01:19:11",
+        "updated_at": "2025-10-31 01:19:11",
+        "active": 1,
+        "points": 920
+      },
+      {
+        "id": 3,
+        "nome": "Carlos Santos",
+        "email": "carlos.santos@codecraft.com",
+        "avatar_url": null,
+        "created_at": "2025-10-31 01:19:11",
+        "updated_at": "2025-10-31 01:19:11",
+        "active": 1,
+        "points": 400
+      },
+      {
+        "id": 1,
+        "nome": "Marcus Facine",
+        "email": "marcus.facine@codecraft.com",
+        "avatar_url": null,
+        "created_at": "2025-10-31 01:19:11",
+        "updated_at": "2025-10-31 01:19:11",
+        "active": 1,
+        "points": 850
+      },
+      {
+        "id": 5,
+        "nome": "Ricardo Moretti",
+        "email": "ricardo.moretti@codecraft.com",
+        "avatar_url": null,
+        "created_at": "2025-10-31 01:19:11",
+        "updated_at": "2025-10-31 01:19:11",
+        "active": 1,
+        "points": 20
+      },
+      {
+        "id": 7,
+        "nome": "ricardo",
+        "email": "ricardocoradini97@gmail.com",
+        "avatar_url": "",
+        "created_at": "2025-11-01 15:39:27",
+        "updated_at": "2025-11-01 15:39:27",
+        "active": 1,
+        "points": 0
+      }
+    ],
+    "equipes": [
+      {
+        "id": 2,
+        "mentor_id": 1,
+        "crafter_id": 1,
+        "projeto_id": 2,
+        "data_inscricao": "2025-10-30 23:38:14",
+        "status_inscricao": "confirmado",
+        "created_at": "2025-10-30 23:38:14",
+        "updated_at": "2025-10-30 23:38:25",
+        "crafter_nome": "Marcus Facine",
+        "crafter_email": "marcus.facine@codecraft.com",
+        "crafter_avatar": null,
+        "mentor_nome": "Ana Silva",
+        "mentor_email": "ana.silva@codecraft.dev",
+        "projeto_titulo": "CleanCraft",
+        "projeto_status": "ongoing"
+      },
+      {
+        "id": 1,
+        "mentor_id": null,
+        "crafter_id": 1,
+        "projeto_id": 1,
+        "data_inscricao": "2025-10-30 22:50:03",
+        "status_inscricao": "finalizado",
+        "created_at": "2025-10-30 22:50:03",
+        "updated_at": "2025-10-31 00:02:51",
+        "crafter_nome": "Marcus Facine",
+        "crafter_email": "marcus.facine@codecraft.com",
+        "crafter_avatar": null,
+        "mentor_nome": null,
+        "mentor_email": null,
+        "projeto_titulo": "OverlayCraft",
+        "projeto_status": "ongoing"
+      }
+    ],
+    "financas": [],
+    "logs": [],
+    "inscricoes": [],
+    "desafios": []
+  },
+  "statistics": {
+    "totalUsers": 1,
+    "totalMentors": 1,
+    "totalProjects": 2,
+    "totalCrafters": 6,
+    "totalTeams": 2
+  }
+}
