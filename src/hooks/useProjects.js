@@ -58,13 +58,11 @@ const useProjects = (options = {}) => {
 
     // Verifica se o componente ainda está montado
     if (!isMountedRef.current) {
-      console.log('⚠️ Componente desmontado, cancelando fetchProjects');
       return [];
     }
 
     // Verifica se já excedeu o número máximo de tentativas
     if (retryCount >= maxRetries) {
-      console.log('❌ Máximo de tentativas excedido:', retryCount, '>=', maxRetries);
       setError({
         message: `Falha ao carregar projetos após ${maxRetries} tentativas. Verifique sua conexão.`,
         status: 0,
@@ -77,13 +75,11 @@ const useProjects = (options = {}) => {
 
     // Previne múltiplas chamadas simultâneas
     if (loading) {
-      console.log('⚠️ Já existe uma requisição em andamento, ignorando nova chamada');
       return [];
     }
 
     // Cancela requisição anterior se existir
     if (abortControllerRef.current) {
-      console.log('🚫 Cancelando requisição anterior');
       abortControllerRef.current.abort();
     }
 
@@ -93,13 +89,11 @@ const useProjects = (options = {}) => {
     // Configura timeout
     const timeoutId = setTimeout(() => {
       if (abortControllerRef.current) {
-        console.log('⏰ Timeout atingido, cancelando requisição');
         abortControllerRef.current.abort();
       }
     }, timeout);
 
     try {
-      console.log('🚀 Iniciando requisição de projetos');
       setLoading(true);
       setError(null);
 
@@ -108,8 +102,6 @@ const useProjects = (options = {}) => {
         signal: abortControllerRef.current.signal,
         ...fetchOptions
       };
-
-      console.log('📋 Opções da requisição:', mergedOptions);
 
       const response = await getProjects({
         ...mergedOptions,
@@ -122,15 +114,8 @@ const useProjects = (options = {}) => {
 
       // Verifica se o componente ainda está montado
       if (!isMountedRef.current) {
-        console.log('⚠️ Componente desmontado durante requisição, ignorando resposta');
         return response.data || [];
       }
-
-      console.log('✅ Projetos carregados com sucesso:', {
-        count: response.data?.length || 0,
-        source: response.meta?.source,
-        cached: response.meta?.cached
-      });
 
       // Atualiza estado com dados validados
       setProjects(response.data || []);
@@ -139,16 +124,6 @@ const useProjects = (options = {}) => {
       // Encerrar loading imediatamente em caminho de sucesso (além do finally)
       setLoading(false);
       setRetryCount(0);
-
-      // Log de informações úteis
-      if (response.meta) {
-        console.log(`📊 Projetos carregados:`, {
-          source: response.meta.source,
-          count: response.data?.length || 0,
-          cached: response.meta.cached,
-          validation: response.meta.validation
-        });
-      }
 
       // Finaliza medição com sucesso
       globalPerformanceMonitor.endMeasure(measureId, {
@@ -160,13 +135,6 @@ const useProjects = (options = {}) => {
 
       return response.data || [];
     } catch (error) {
-      console.log('❌ Erro ao carregar projetos:', {
-        message: error.message,
-        name: error.name,
-        retryCount,
-        isAborted: error.name === 'AbortError'
-      });
-
       // Limpa o timeout em caso de erro
       clearTimeout(timeoutId);
 
@@ -301,23 +269,18 @@ const useProjects = (options = {}) => {
    * Busca inicial e configuração de refetch automático
    */
   useEffect(() => {
-    console.log('🔄 useEffect principal executado:', {
-      autoFetch,
-      refetchInterval,
-      isMounted: isMountedRef.current
-    });
-
     if (autoFetch && isMountedRef.current) {
-      console.log('🚀 Executando busca inicial de projetos');
-      fetchProjects();
+      fetchProjects().then(result => {
+        // Resultado já processado pela função fetchProjects
+      }).catch(error => {
+        // Erro já tratado pela função fetchProjects
+      });
     }
 
     // Configura refetch automático se especificado
     if (refetchInterval && refetchInterval > 0 && isMountedRef.current) {
-      console.log('⏰ Configurando refetch automático:', refetchInterval + 'ms');
       intervalRef.current = setInterval(() => {
         if (isMountedRef.current) {
-          console.log('🔄 Executando refetch automático');
           fetchProjects();
         }
       }, refetchInterval);
@@ -325,7 +288,6 @@ const useProjects = (options = {}) => {
 
     // Cleanup
     return () => {
-      console.log('🧹 Limpando useEffect principal');
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;

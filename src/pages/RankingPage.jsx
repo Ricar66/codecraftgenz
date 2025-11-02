@@ -27,7 +27,7 @@ export default function RankingPage() {
       const tb = Array.isArray(json?.table) ? json.table.map(r => ({ name: r.name, score: r.points })) : [];
       setTop3(t3);
       setTable(tb);
-    } catch {
+    } catch (err) {
       setError('Ranking em processamento. Volte em instantes 🚀');
       setTop3([]);
       setTable([]);
@@ -65,7 +65,7 @@ export default function RankingPage() {
           {error && (
             <div className="error" role="alert">{error}</div>
           )}
-          {!loading && top3.length === 3 ? (
+          {!loading && top3.length > 0 ? (
             <div className="podium" aria-label="Pódio dos três melhores" aria-live="polite">
               <div className="podium-item second">
                 <div className="photo" aria-hidden="true" />

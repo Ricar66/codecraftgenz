@@ -3,6 +3,7 @@ import path from 'path';
 import process from 'process';
 import { fileURLToPath } from 'url';
 
+import bcrypt from 'bcrypt';
 import compression from 'compression';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -83,13 +84,19 @@ if (process.env.NODE_ENV !== 'production') {
 // --- Autenticação (SQLite) ---
 
 // Função para criar hash da senha
-function hashPassword(password) {
-  return crypto.createHash('sha256').update(password).digest('hex');
+async function hashPassword(password) {
+  const saltRounds = 12;
+  return await bcrypt.hash(password, saltRounds);
 }
 
 // Função para verificar senha
-function verifyPassword(password, hash) {
-  return hashPassword(password) === hash;
+async function verifyPassword(password, hash) {
+  try {
+    return await bcrypt.compare(password, hash);
+  } catch (error) {
+    console.error('Erro ao verificar senha:', error);
+    return false;
+  }
 }
 
 // POST /api/auth/login → autenticação via banco
@@ -124,7 +131,8 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     // Verificar senha
-    if (!verifyPassword(password, user.senha_hash)) {
+    const isPasswordValid = await verifyPassword(password, user.senha_hash);
+    if (!isPasswordValid) {
       await dbOperations.incrementLoginAttempts(email);
       
       // Bloquear após 5 tentativas
@@ -230,7 +238,7 @@ app.post('/api/auth/users', async (req, res) => {
     const userData = {
       nome,
       email,
-      senha_hash: hashPassword(senha),
+      senha_hash: await hashPassword(senha),
       role,
       status: 'active'
     };
