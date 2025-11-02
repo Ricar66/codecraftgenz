@@ -8,9 +8,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import helmet from 'helmet';
+import jwt from 'jsonwebtoken';
 
-// Importar módulo SQLite para todas as operações do banco
-import { dbOperations } from './src/lib/database.js';
+// Importar cliente Prisma para todas as operações do banco
+import { prisma } from './src/lib/database.js';
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -98,6 +99,51 @@ async function verifyPassword(password, hash) {
   }
 }
 
+// --- Middlewares de Autenticação JWT ---
+
+// Função helper para extrair userId para auditoria
+const getUserIdForAudit = (req) => {
+  return req.user?.userId || 'local-admin';
+};
+
+// Middleware para verificar token JWT
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) {
+    return res.status(401).json({ 
+      success: false, 
+      error: 'Token de acesso requerido' 
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(403).json({ 
+      success: false, 
+      error: 'Token inválido ou expirado' 
+    });
+  }
+};
+
+// Middleware para verificar se o usuário é admin
+const isAdmin = (req, res, next) => {
+  verifyToken(req, res, () => {
+    if (req.user && req.user.role === 'admin') {
+      next();
+    } else {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Acesso negado. Privilégios de administrador requeridos.' 
+      });
+    }
+  });
+};
+
 // POST /api/auth/login → autenticação via banco
 app.post('/api/auth/login', async (req, res) => {
   try {
@@ -111,7 +157,12 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     // Verificar se usuário está bloqueado
-    const isBlocked = await dbOperations.isUserBlocked(email);
+    const userCheck = await prisma.usuario.findUnique({
+      where: { email },
+      select: { bloqueado_ate: true }
+    });
+    
+    const isBlocked = userCheck?.bloqueado_ate && new Date() < new Date(userCheck.bloqueado_ate);
     if (isBlocked) {
       return res.status(423).json({ 
         success: false, 
@@ -120,9 +171,19 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     // Buscar usuário no banco
-    const user = await dbOperations.getUserByEmail(email);
+    const user = await prisma.usuario.findUnique({
+      where: { 
+        email,
+        status: 'active'
+      }
+    });
+    
     if (!user) {
-      await dbOperations.incrementLoginAttempts(email);
+      // Incrementar tentativas de login se usuário existir
+      await prisma.usuario.updateMany({
+        where: { email },
+        data: { tentativas_login: { increment: 1 } }
+      });
       return res.status(401).json({ 
         success: false, 
         error: 'Credenciais inválidas' 
@@ -132,11 +193,18 @@ app.post('/api/auth/login', async (req, res) => {
     // Verificar senha
     const isPasswordValid = await verifyPassword(password, user.senha_hash);
     if (!isPasswordValid) {
-      await dbOperations.incrementLoginAttempts(email);
+      const updatedUser = await prisma.usuario.update({
+        where: { email },
+        data: { tentativas_login: { increment: 1 } }
+      });
       
       // Bloquear após 5 tentativas
-      if (user.tentativas_login >= 4) {
-        await dbOperations.blockUser(email, 15);
+      if (updatedUser.tentativas_login >= 5) {
+        const blockUntil = new Date(Date.now() + 15 * 60 * 1000);
+        await prisma.usuario.update({
+          where: { email },
+          data: { bloqueado_ate: blockUntil }
+        });
       }
       
       return res.status(401).json({ 
@@ -146,7 +214,26 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     // Login bem-sucedido
-    await dbOperations.updateLastLogin(user.id);
+    await prisma.usuario.update({
+      where: { id: user.id },
+      data: { 
+        ultimo_login: new Date(),
+        tentativas_login: 0
+      }
+    });
+
+    // Gerar token JWT
+    const tokenPayload = {
+      userId: user.id,
+      role: user.role,
+      email: user.email
+    };
+
+    const token = jwt.sign(
+      tokenPayload, 
+      process.env.JWT_SECRET, 
+      { expiresIn: '24h' }
+    );
 
     // Retornar dados do usuário (sem senha)
     const userData = {
@@ -160,7 +247,7 @@ app.post('/api/auth/login', async (req, res) => {
     res.status(200).json({ 
       success: true, 
       user: userData,
-      token: `token-${user.id}-${Date.now()}` // Token simples para compatibilidade
+      token: token
     });
 
   } catch (error) {
@@ -172,26 +259,63 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// GET /api/auth/users → listar usuários (apenas admin)
-app.get('/api/auth/users', async (req, res) => {
+// --- Rota de Inicialização (apenas quando não há usuários) ---
+app.post('/api/auth/init-admin', async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'];
-    if (!userId) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Acesso não autorizado' 
+    // Verificar se já existem usuários no sistema
+    const existingUsers = await prisma.usuario.findMany();
+    if (existingUsers.length > 0) {
+      return res.status(403).json({
+        success: false,
+        error: 'Sistema já foi inicializado'
       });
     }
 
-    const currentUser = await dbOperations.getUserById(userId);
-    if (!currentUser || currentUser.role !== 'admin') {
-      return res.status(403).json({ 
-        success: false, 
-        error: 'Acesso negado. Apenas administradores.' 
-      });
-    }
+    // Criar usuário admin inicial
+    const adminData = {
+      nome: 'Admin',
+      email: 'admin@codecraft.dev',
+      senha_hash: await hashPassword('admin123'),
+      role: 'admin',
+      status: 'active'
+    };
 
-    const users = await dbOperations.getUsers();
+    const newAdmin = await prisma.usuario.create({
+      data: adminData
+    });
+    
+    // Retornar sem senha
+    const { senha_hash: _, ...adminResponse } = newAdmin;
+    
+    res.status(201).json({ 
+      success: true, 
+      message: 'Usuário admin criado com sucesso',
+      user: adminResponse 
+    });
+
+  } catch (error) {
+    console.error('Erro ao inicializar admin:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Erro interno do servidor' 
+    });
+  }
+});
+
+// GET /api/auth/users → listar usuários (apenas admin)
+app.get('/api/auth/users', isAdmin, async (req, res) => {
+  try {
+    const users = await prisma.usuario.findMany({
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        role: true,
+        status: true,
+        ultimo_login: true,
+        created_at: true
+      }
+    });
     res.status(200).json({ 
       success: true, 
       data: users 
@@ -207,24 +331,8 @@ app.get('/api/auth/users', async (req, res) => {
 });
 
 // POST /api/auth/users → criar usuário (apenas admin)
-app.post('/api/auth/users', async (req, res) => {
+app.post('/api/auth/users', isAdmin, async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'];
-    if (!userId) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Acesso não autorizado' 
-      });
-    }
-
-    const currentUser = await dbOperations.getUserById(userId);
-    if (!currentUser || currentUser.role !== 'admin') {
-      return res.status(403).json({ 
-        success: false, 
-        error: 'Acesso negado. Apenas administradores.' 
-      });
-    }
-
     const { nome, email, senha, role = 'user' } = req.body;
 
     if (!nome || !email || !senha) {
@@ -242,19 +350,26 @@ app.post('/api/auth/users', async (req, res) => {
       status: 'active'
     };
 
-    const newUser = await dbOperations.createUser(userData);
-    
-    // Retornar sem senha
-    const { senha_hash: _, ...userResponse } = newUser;
+    const newUser = await prisma.usuario.create({
+      data: userData,
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        role: true,
+        status: true,
+        created_at: true
+      }
+    });
     
     res.status(201).json({ 
       success: true, 
-      user: userResponse 
+      user: newUser 
     });
 
   } catch (error) {
     console.error('Erro ao criar usuário:', error.message);
-    if (error.message.includes('UNIQUE constraint failed')) {
+    if (error.code === 'P2002') {
       res.status(409).json({ 
         success: false, 
         error: 'Email já está em uso' 
@@ -269,24 +384,8 @@ app.post('/api/auth/users', async (req, res) => {
 });
 
 // PUT /api/auth/users/:id → atualizar usuário (apenas admin)
-app.put('/api/auth/users/:id', async (req, res) => {
+app.put('/api/auth/users/:id', isAdmin, async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'];
-    if (!userId) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Acesso não autorizado' 
-      });
-    }
-
-    const currentUser = await dbOperations.getUserById(userId);
-    if (!currentUser || currentUser.role !== 'admin') {
-      return res.status(403).json({ 
-        success: false, 
-        error: 'Acesso negado. Apenas administradores.' 
-      });
-    }
-
     const { id } = req.params;
     const { nome, email, role, status } = req.body;
 
@@ -296,54 +395,50 @@ app.put('/api/auth/users/:id', async (req, res) => {
     if (role) updateData.role = role;
     if (status) updateData.status = status;
 
-    const updatedUser = await dbOperations.updateUser(id, updateData);
-    
-    if (!updatedUser) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Usuário não encontrado' 
-      });
-    }
-
-    // Retornar sem senha
-    const { senha_hash: _, ...userResponse } = updatedUser;
+    const updatedUser = await prisma.usuario.update({
+      where: { id: parseInt(id) },
+      data: updateData,
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        role: true,
+        status: true,
+        created_at: true
+      }
+    });
     
     res.status(200).json({ 
       success: true, 
-      user: userResponse 
+      user: updatedUser 
     });
 
   } catch (error) {
     console.error('Erro ao atualizar usuário:', error.message);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro interno do servidor' 
-    });
+    if (error.code === 'P2025') {
+      res.status(404).json({ 
+        success: false, 
+        error: 'Usuário não encontrado' 
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        error: 'Erro interno do servidor' 
+      });
+    }
   }
 });
 
 // PATCH /api/auth/users/:id/toggle-status → alternar status do usuário (apenas admin)
-app.patch('/api/auth/users/:id/toggle-status', async (req, res) => {
+app.patch('/api/auth/users/:id/toggle-status', isAdmin, async (req, res) => {
   try {
-    const userId = req.headers['x-user-id'];
-    if (!userId) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Acesso não autorizado' 
-      });
-    }
-
-    const currentUser = await dbOperations.getUserById(userId);
-    if (!currentUser || currentUser.role !== 'admin') {
-      return res.status(403).json({ 
-        success: false, 
-        error: 'Acesso negado. Apenas administradores.' 
-      });
-    }
-
     const { id } = req.params;
     
-    const user = await dbOperations.getUserById(id);
+    const user = await prisma.usuario.findUnique({
+      where: { id: parseInt(id) },
+      select: { id: true, status: true }
+    });
+    
     if (!user) {
       return res.status(404).json({ 
         success: false, 
@@ -352,22 +447,37 @@ app.patch('/api/auth/users/:id/toggle-status', async (req, res) => {
     }
 
     const newStatus = user.status === 'ativo' ? 'inativo' : 'ativo';
-    const updatedUser = await dbOperations.updateUser(id, { status: newStatus });
-    
-    // Retornar sem senha
-    const { senha_hash: _, ...userResponse } = updatedUser;
+    const updatedUser = await prisma.usuario.update({
+      where: { id: parseInt(id) },
+      data: { status: newStatus },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        role: true,
+        status: true,
+        created_at: true
+      }
+    });
     
     res.status(200).json({ 
       success: true, 
-      user: userResponse 
+      user: updatedUser 
     });
 
   } catch (error) {
     console.error('Erro ao alternar status do usuário:', error.message);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro interno do servidor' 
-    });
+    if (error.code === 'P2025') {
+      res.status(404).json({ 
+        success: false, 
+        error: 'Usuário não encontrado' 
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        error: 'Erro interno do servidor' 
+      });
+    }
   }
 });
 
@@ -400,7 +510,7 @@ function publicMentorFromDb(row) {
 // GET /api/mentores → agora busca no SQLite
 app.get('/api/mentores', async (req, res) => {
   try {
-    const rows = await dbOperations.getMentores();
+    const rows = await prisma.mentor.findMany();
     const payload = rows.map(publicMentorFromDb);
     res.status(200).json({ success: true, data: payload, total: payload.length, timestamp: new Date().toISOString() });
   } catch (error) {
@@ -416,7 +526,7 @@ app.post('/api/mentores', async (req, res) => {
     if (!input.nome || !input.email) {
       return res.status(400).json({ success: false, error: 'Campos obrigatórios: nome, email' });
     }
-    const created = await dbOperations.createMentor(input);
+    const created = await prisma.mentor.create({ data: input });
     res.status(201).json({ success: true, mentor: publicMentorFromDb(created) });
   } catch (error) {
     console.error('Erro ao criar mentor:', error.message);
@@ -428,13 +538,13 @@ app.post('/api/mentores', async (req, res) => {
 app.put('/api/mentores/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const existing = await dbOperations.getMentorById(id);
+    const existing = await prisma.mentor.findUnique({ where: { id: parseInt(id) } });
     if (!existing) return res.status(404).json({ success: false, error: 'Mentor não encontrado' });
     const input = normalizeMentorDbInput(req.body);
     if (!input.nome || !input.email) {
       return res.status(400).json({ success: false, error: 'Campos obrigatórios: nome, email' });
     }
-    await dbOperations.updateMentor(id, input);
+    await prisma.mentor.update({ where: { id: parseInt(id) }, data: input });
     res.status(200).json({ success: true, mentor: publicMentorFromDb({ id: Number(id), ...input }) });
   } catch (error) {
     console.error('Erro ao atualizar mentor:', error.message);
@@ -446,10 +556,10 @@ app.put('/api/mentores/:id', async (req, res) => {
 app.delete('/api/mentores/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const existing = await dbOperations.getMentorById(id);
+    const existing = await prisma.mentor.findUnique({ where: { id: parseInt(id) } });
     if (!existing) return res.status(404).json({ success: false, error: 'Mentor não encontrado' });
-    const result = await dbOperations.deleteMentor(id);
-    res.status(200).json({ success: true, removed: publicMentorFromDb(existing), meta: result });
+    await prisma.mentor.delete({ where: { id: parseInt(id) } });
+    res.status(200).json({ success: true, removed: publicMentorFromDb(existing) });
   } catch (error) {
     console.error('Erro ao remover mentor:', error.message);
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
@@ -461,7 +571,7 @@ app.delete('/api/mentores/:id', async (req, res) => {
 // Endpoints para Mentores (SQLite)
 app.get('/api/sqlite/mentores', async (req, res) => {
   try {
-    const mentores = await dbOperations.getMentores();
+    const mentores = await prisma.mentor.findMany();
     res.json({ success: true, data: mentores });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -474,7 +584,7 @@ app.post('/api/sqlite/mentores', async (req, res) => {
     if (!nome || !email) {
       return res.status(400).json({ success: false, error: 'Nome e email são obrigatórios' });
     }
-    const mentor = await dbOperations.createMentor({ nome, email, telefone, bio });
+    const mentor = await prisma.mentor.create({ data: { nome, email, telefone, bio } });
     res.status(201).json({ success: true, data: mentor });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -485,7 +595,10 @@ app.put('/api/sqlite/mentores/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { nome, email, telefone, bio } = req.body;
-    const mentor = await dbOperations.updateMentor(id, { nome, email, telefone, bio });
+    const mentor = await prisma.mentor.update({ 
+      where: { id: parseInt(id) }, 
+      data: { nome, email, telefone, bio } 
+    });
     res.json({ success: true, data: mentor });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -496,11 +609,11 @@ app.put('/api/sqlite/mentores/:id', async (req, res) => {
 app.get('/api/sqlite/projetos', async (req, res) => {
   try {
     const { visivel, status } = req.query;
-    const filters = {};
-    if (visivel !== undefined) filters.visivel = visivel === 'true';
-    if (status) filters.status = status;
+    const where = {};
+    if (visivel !== undefined) where.visivel = visivel === 'true';
+    if (status) where.status = status;
     
-    const projetos = await dbOperations.getProjetos(filters);
+    const projetos = await prisma.projeto.findMany({ where });
     res.json({ success: true, data: projetos });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -509,7 +622,7 @@ app.get('/api/sqlite/projetos', async (req, res) => {
 
 app.post('/api/sqlite/projetos', async (req, res) => {
   try {
-    const projeto = await dbOperations.createProjeto(req.body);
+    const projeto = await prisma.projeto.create({ data: req.body });
     res.status(201).json({ success: true, data: projeto });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -523,7 +636,10 @@ app.post('/api/sqlite/projetos/:id/mentor', async (req, res) => {
     if (!mentor_id) {
       return res.status(400).json({ success: false, error: 'mentor_id é obrigatório' });
     }
-    const result = await dbOperations.associateMentorToProjeto(id, mentor_id);
+    const result = await prisma.projeto.update({
+      where: { id: parseInt(id) },
+      data: { mentor_id: parseInt(mentor_id) }
+    });
     res.json({ success: true, data: result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -533,7 +649,7 @@ app.post('/api/sqlite/projetos/:id/mentor', async (req, res) => {
 // Endpoints para Crafters (SQLite)
 app.get('/api/sqlite/crafters', async (req, res) => {
   try {
-    const crafters = await dbOperations.getCrafters();
+    const crafters = await prisma.crafter.findMany();
     res.json({ success: true, data: crafters });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -546,7 +662,7 @@ app.post('/api/sqlite/crafters', async (req, res) => {
     if (!nome || !email) {
       return res.status(400).json({ success: false, error: 'Nome e email são obrigatórios' });
     }
-    const crafter = await dbOperations.createCrafter({ nome, email, avatar_url });
+    const crafter = await prisma.crafter.create({ data: { nome, email, avatar_url } });
     res.status(201).json({ success: true, data: crafter });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -556,7 +672,7 @@ app.post('/api/sqlite/crafters', async (req, res) => {
 // Endpoints para Equipes (SQLite)
 app.get('/api/sqlite/equipes', async (req, res) => {
   try {
-    const equipes = await dbOperations.getEquipes();
+    const equipes = await prisma.equipe.findMany();
     res.json({ success: true, data: equipes });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -569,7 +685,14 @@ app.post('/api/sqlite/equipes', async (req, res) => {
     if (!crafter_id || !projeto_id) {
       return res.status(400).json({ success: false, error: 'crafter_id e projeto_id são obrigatórios' });
     }
-    const equipe = await dbOperations.createEquipe({ crafter_id, mentor_id, projeto_id, status_inscricao });
+    const equipe = await prisma.equipe.create({ 
+      data: { 
+        crafter_id: parseInt(crafter_id), 
+        mentor_id: mentor_id ? parseInt(mentor_id) : null, 
+        projeto_id: parseInt(projeto_id), 
+        status_inscricao 
+      } 
+    });
     res.status(201).json({ success: true, data: equipe });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -583,7 +706,10 @@ app.put('/api/sqlite/equipes/:id/status', async (req, res) => {
     if (!status_inscricao) {
       return res.status(400).json({ success: false, error: 'status_inscricao é obrigatório' });
     }
-    const result = await dbOperations.updateEquipeStatus(id, status_inscricao);
+    const result = await prisma.equipe.update({
+      where: { id: parseInt(id) },
+      data: { status_inscricao }
+    });
     res.json({ success: true, data: result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -593,7 +719,9 @@ app.put('/api/sqlite/equipes/:id/status', async (req, res) => {
 app.get('/api/sqlite/equipes/crafter/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const equipes = await dbOperations.getEquipesByCrafter(id);
+    const equipes = await prisma.equipe.findMany({
+      where: { crafter_id: parseInt(id) }
+    });
     res.json({ success: true, data: equipes });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -603,14 +731,14 @@ app.get('/api/sqlite/equipes/crafter/:id', async (req, res) => {
 app.delete('/api/sqlite/equipes/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await dbOperations.deleteEquipe(id);
-    if (result.deleted) {
-      res.json({ success: true, message: 'Crafter removido da equipe com sucesso' });
-    } else {
-      res.status(404).json({ success: false, error: 'Equipe não encontrada' });
-    }
+    await prisma.equipe.delete({ where: { id: parseInt(id) } });
+    res.json({ success: true, message: 'Crafter removido da equipe com sucesso' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    if (error.code === 'P2025') {
+      res.status(404).json({ success: false, error: 'Equipe não encontrada' });
+    } else {
+      res.status(500).json({ success: false, error: error.message });
+    }
   }
 });
 
@@ -622,10 +750,12 @@ app.post('/api/sqlite/projetos/:id/inscricao', async (req, res) => {
     if (!crafter_id) {
       return res.status(400).json({ success: false, error: 'crafter_id é obrigatório' });
     }
-    const inscricao = await dbOperations.createInscricao({ 
-      crafter_id, 
-      projeto_id: id, 
-      status: status || 'pendente' 
+    const inscricao = await prisma.inscricao.create({ 
+      data: {
+        crafter_id: parseInt(crafter_id), 
+        projeto_id: parseInt(id), 
+        status: status || 'pendente' 
+      }
     });
     res.status(201).json({ success: true, data: inscricao });
   } catch (error) {
@@ -640,24 +770,24 @@ app.get('/api/projetos', async (req, res) => {
     
     if (all === '1') {
       // Admin: lista completa (não pública)
-      const projetos = await dbOperations.getProjetos();
+      const projetos = await prisma.projeto.findMany();
       return res.status(200).json({ success: true, data: projetos, total: projetos.length, timestamp: new Date().toISOString() });
     }
     
     // Pública: aplicar filtros padrão
-    const filters = {};
+    const where = {};
     
     if (visivel !== undefined) {
-      filters.visivel = visivel === 'true';
+      where.visivel = visivel === 'true';
     } else {
-      filters.visivel = true; // Por padrão, só visíveis
+      where.visivel = true; // Por padrão, só visíveis
     }
     
     if (status) {
-      filters.status = status;
+      where.status = status;
     }
     
-    let projetos = await dbOperations.getProjetos(filters);
+    let projetos = await prisma.projeto.findMany({ where });
     
     // Filtrar por período se especificado
     if (periodo) {
@@ -699,7 +829,7 @@ app.post('/api/projetos', async (req, res) => {
       mentor_id: input.mentorId || null
     };
     
-    const projeto = await dbOperations.createProjeto(projetoData);
+    const projeto = await prisma.projeto.create({ data: projetoData });
     
     // TODO: Criar registro financeiro se necessário (quando implementarmos finanças no SQLite)
     
@@ -716,7 +846,7 @@ app.put('/api/projetos/:id', async (req, res) => {
     const { id } = req.params;
     
     // Verificar se o projeto existe
-    const projeto = await dbOperations.getProjetoById(id);
+    const projeto = await prisma.projeto.findUnique({ where: { id: parseInt(id) } });
     if (!projeto) {
       return res.status(404).json({ success: false, error: 'Projeto não encontrado' });
     }
@@ -746,7 +876,10 @@ app.put('/api/projetos/:id', async (req, res) => {
       }
     }
     
-    const projetoAtualizado = await dbOperations.updateProjeto(id, updates);
+    const projetoAtualizado = await prisma.projeto.update({
+      where: { id: parseInt(id) },
+      data: updates
+    });
     
     // TODO: Sincronizar finanças vinculadas quando implementarmos no SQLite
     
@@ -762,7 +895,7 @@ app.put('/api/projetos/:id/visibilidade', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const projeto = await dbOperations.getProjetoById(id);
+    const projeto = await prisma.projeto.findUnique({ where: { id: parseInt(id) } });
     if (!projeto) {
       return res.status(404).json({ success: false, error: 'Projeto não encontrado' });
     }
@@ -772,7 +905,10 @@ app.put('/api/projetos/:id/visibilidade', async (req, res) => {
                        body.visible !== undefined ? !!body.visible : 
                        !projeto.visivel;
     
-    const projetoAtualizado = await dbOperations.updateProjeto(id, { visivel: nextVisible });
+    const projetoAtualizado = await prisma.projeto.update({
+      where: { id: parseInt(id) },
+      data: { visivel: nextVisible }
+    });
     
     res.status(200).json({ success: true, project: projetoAtualizado });
   } catch (error) {
@@ -786,14 +922,17 @@ app.delete('/api/projetos/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const projeto = await dbOperations.getProjetoById(id);
+    const projeto = await prisma.projeto.findUnique({ where: { id: parseInt(id) } });
     if (!projeto) {
       return res.status(404).json({ success: false, error: 'Projeto não encontrado' });
     }
     
-    const projetoAtualizado = await dbOperations.updateProjeto(id, { 
-      status: 'arquivado', 
-      visivel: false 
+    const projetoAtualizado = await prisma.projeto.update({
+      where: { id: parseInt(id) },
+      data: { 
+        status: 'arquivado', 
+        visivel: false 
+      }
     });
     
     res.status(200).json({ success: true, project: projetoAtualizado });
@@ -807,7 +946,7 @@ app.delete('/api/projetos/:id', async (req, res) => {
 app.get('/api/projetos/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const projeto = await dbOperations.getProjetoById(id);
+    const projeto = await prisma.projeto.findUnique({ where: { id: parseInt(id) } });
     
     if (!projeto) {
       return res.status(404).json({ success: false, error: 'Projeto não encontrado' });
@@ -821,15 +960,16 @@ app.get('/api/projetos/:id', async (req, res) => {
 });
 app.get('/api/financas', async (req, res) => {
   try {
-    const list = await dbOperations.getFinancas();
+    const where = {};
     
     // Filtrar por project_id se fornecido
-    let filteredList = list;
     if (req.query.project_id) {
-      filteredList = list.filter(item => item.project_id == req.query.project_id);
+      where.project_id = parseInt(req.query.project_id);
     }
     
-    res.status(200).json({ success: true, data: filteredList, total: filteredList.length, timestamp: new Date().toISOString() });
+    const list = await prisma.financa.findMany({ where });
+    
+    res.status(200).json({ success: true, data: list, total: list.length, timestamp: new Date().toISOString() });
   } catch (error) {
     console.error('Erro ao buscar finanças:', error);
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
@@ -857,7 +997,7 @@ app.post('/api/financas', async (req, res) => {
       updated_at: new Date().toISOString()
     };
     
-    const result = await dbOperations.createFinanca(newRecord);
+    const result = await prisma.financa.create({ data: newRecord });
     
     // Se vinculado a um projeto, atualizar o projeto também
     if (newRecord.project_id && newRecord.type === 'project') {
@@ -872,7 +1012,10 @@ app.post('/api/financas', async (req, res) => {
           updateData.status = 'completed';
         }
         
-        await dbOperations.updateProjeto(newRecord.project_id, updateData);
+        await prisma.projeto.update({
+          where: { id: newRecord.project_id },
+          data: updateData
+        });
       } catch (projectError) {
         console.warn('Erro ao atualizar projeto vinculado:', projectError);
       }
@@ -895,11 +1038,10 @@ app.put('/api/financas/:id', async (req, res) => {
     updates.progress = Math.max(0, Math.min(100, Number(updates.progress || 0)));
     updates.date = new Date().toISOString();
     
-    const updatedFinanca = await dbOperations.updateFinanca(id, updates);
-    
-    if (!updatedFinanca) {
-      return res.status(404).json({ success: false, error: 'Registro financeiro não encontrado' });
-    }
+    const updatedFinanca = await prisma.financa.update({
+      where: { id: parseInt(id) },
+      data: updates
+    });
     
     // Sincroniza com projeto vinculado (bidirecional)
     if (updatedFinanca.type === 'project' && updatedFinanca.project_id) {
@@ -911,13 +1053,19 @@ app.put('/api/financas/:id', async (req, res) => {
       }
       
       if (Object.keys(projectUpdates).length > 0) {
-        await dbOperations.updateProjeto(updatedFinanca.project_id, projectUpdates);
+        await prisma.projeto.update({
+          where: { id: updatedFinanca.project_id },
+          data: projectUpdates
+        });
       }
     }
     
     res.status(200).json({ success: true, item: updatedFinanca });
   } catch (error) {
     console.error('Erro ao atualizar finança:', error);
+    if (error.code === 'P2025') {
+      return res.status(404).json({ success: false, error: 'Registro financeiro não encontrado' });
+    }
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });
@@ -926,28 +1074,23 @@ app.delete('/api/financas/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Buscar o registro antes de excluir para verificar se existe
-    const financa = await dbOperations.getFinancaById(id);
-    if (!financa) {
-      return res.status(404).json({ success: false, error: 'Registro financeiro não encontrado' });
-    }
-    
-    const result = await dbOperations.deleteFinanca(id);
-    
-    if (result.changes === 0) {
-      return res.status(404).json({ success: false, error: 'Nenhum registro foi excluído' });
-    }
+    await prisma.financa.delete({
+      where: { id: parseInt(id) }
+    });
     
     res.status(200).json({ success: true, message: 'Registro financeiro excluído com sucesso' });
   } catch (error) {
     console.error('Erro ao excluir registro financeiro:', error);
+    if (error.code === 'P2025') {
+      return res.status(404).json({ success: false, error: 'Registro financeiro não encontrado' });
+    }
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });
 
 app.get('/api/financas/export', async (req, res) => {
   try {
-    const financas = await dbOperations.getFinancas();
+    const financas = await prisma.financa.findMany();
     const cols = ['id','item','valor','status'];
     const header = cols.join(',');
     const rows = financas.map(f => cols.map(c => String(f[c] || '').replaceAll(',', '.')).join(','));
@@ -971,8 +1114,8 @@ app.get('/api/dashboard/resumo', async (req, res) => {
     const from = new Date(now.getTime() - days*24*60*60*1000);
 
     // Buscar projetos e finanças
-    const projetos = await dbOperations.getProjetos();
-    const financas = await dbOperations.getFinancas();
+    const projetos = await prisma.projeto.findMany();
+    const financas = await prisma.financa.findMany();
 
     // Filtra projetos por período (usa data_inicio)
     const projetosPeriodo = projetos.filter(p => {
@@ -1061,7 +1204,22 @@ function notifyRealtime() {
 
 app.get('/api/ranking', async (req, res) => {
   try {
-    const rankingData = await dbOperations.getRankingData();
+    // Buscar dados de ranking usando Prisma
+    const crafters = await prisma.crafter.findMany({
+      orderBy: { points: 'desc' }
+    });
+    
+    const settings = await prisma.rankingSetting.findFirst();
+    const top3 = await prisma.top3.findMany({
+      orderBy: { position: 'asc' }
+    });
+    
+    const rankingData = {
+      crafters,
+      settings: settings || {},
+      top3
+    };
+    
     res.set('Cache-Control', 'public, max-age=60');
     res.status(200).json(rankingData);
   } catch (error) {
@@ -1074,14 +1232,15 @@ app.put('/api/ranking/points/:crafter_id', async (req, res) => {
   try {
     const { crafter_id } = req.params;
     const { delta, set } = req.body || {};
-    const actor = req.headers['x-user-id'] || 'local-admin';
+    const actor = getUserIdForAudit(req);
     
     let finalDelta = 0;
     if (typeof set === 'number') {
       // Se for para definir um valor absoluto, precisamos calcular o delta
-      const crafters = await dbOperations.getCrafters();
-      // Converter crafter_id para número se necessário para comparação
-      const currentCrafter = crafters.find(c => c.id == crafter_id || c.id === parseInt(crafter_id));
+      const currentCrafter = await prisma.crafter.findUnique({
+        where: { id: parseInt(crafter_id) }
+      });
+      
       if (!currentCrafter) {
         return res.status(404).json({ success: false, error: 'Crafter não encontrado' });
       }
@@ -1092,12 +1251,39 @@ app.put('/api/ranking/points/:crafter_id', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Delta ou set deve ser fornecido' });
     }
     
-    const result = await dbOperations.updateCrafterPoints(crafter_id, finalDelta, actor);
+    // Atualizar pontos do crafter
+    const result = await prisma.crafter.update({
+      where: { id: parseInt(crafter_id) },
+      data: { 
+        points: { increment: finalDelta },
+        updated_at: new Date().toISOString()
+      }
+    });
+    
+    // Criar log da alteração
+    await prisma.log.create({
+      data: {
+        action: 'update_points',
+        entity: 'crafter',
+        entity_id: parseInt(crafter_id),
+        details: JSON.stringify({ delta: finalDelta, actor }),
+        created_at: new Date().toISOString()
+      }
+    });
     
     // Atualizar configurações do ranking
-    await dbOperations.updateRankingSettings({
-      updated_at: new Date().toISOString(),
-      updated_by: actor
+    await prisma.rankingSetting.upsert({
+      where: { id: 1 },
+      update: {
+        updated_at: new Date().toISOString(),
+        updated_by: actor
+      },
+      create: {
+        id: 1,
+        updated_at: new Date().toISOString(),
+        updated_by: actor,
+        created_at: new Date().toISOString()
+      }
     });
     
     notifyRealtime('ranking_changed');
@@ -1113,7 +1299,7 @@ app.put('/api/ranking/top3', async (req, res) => {
   try {
     const body = req.body || {};
     const arr = Array.isArray(body.top3) ? body.top3 : [];
-    const actor = req.headers['x-user-id'] || 'local-admin';
+    const actor = getUserIdForAudit(req);
     
     if (arr.length !== 3) {
       return res.status(400).json({ success: false, error: 'Top 3 deve conter três entradas' });
@@ -1131,20 +1317,36 @@ app.put('/api/ranking/top3', async (req, res) => {
     }
     
     // Validar se crafters existem
-    const crafters = await dbOperations.getCrafters();
+    const crafters = await prisma.crafter.findMany();
     for (const x of arr) {
       if (!crafters.find(c => c.id === x.crafter_id)) {
         return res.status(404).json({ success: false, error: `Crafter inexistente: ${x.crafter_id}` });
       }
     }
     
+    // Limpar top3 existente e inserir novos dados
+    await prisma.top3.deleteMany();
+    
     const top3Data = arr.map(x => ({ 
       crafter_id: x.crafter_id, 
       position: x.position, 
-      reward: x.reward || '' 
+      reward: x.reward || '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     }));
     
-    await dbOperations.updateTop3(top3Data, actor);
+    await prisma.top3.createMany({ data: top3Data });
+    
+    // Criar log da alteração
+    await prisma.log.create({
+      data: {
+        action: 'update_top3',
+        entity: 'ranking',
+        entity_id: null,
+        details: JSON.stringify({ top3Data, actor }),
+        created_at: new Date().toISOString()
+      }
+    });
     
     notifyRealtime('ranking_changed');
     res.set('Cache-Control', 'no-store');
@@ -1158,7 +1360,9 @@ app.put('/api/ranking/top3', async (req, res) => {
 // Audit logs endpoint
 app.get('/api/ranking/audit', async (req, res) => {
   try {
-    const logs = await dbOperations.getRankingHistory();
+    const logs = await prisma.rankingHistory.findMany({
+      orderBy: { at: 'desc' }
+    });
     res.status(200).json({ data: logs });
   } catch (error) {
     console.error('Erro ao buscar histórico do ranking:', error);
@@ -1170,7 +1374,7 @@ app.get('/api/ranking/audit', async (req, res) => {
 app.put('/api/ranking/filters', async (req, res) => {
   try {
     const f = req.body || {};
-    const actor = req.headers['x-user-id'] || 'local-admin';
+    const actor = getUserIdForAudit(req);
     
     const filters = {
       min_points: typeof f.min_points === 'number' ? f.min_points : 0,
@@ -1181,13 +1385,21 @@ app.put('/api/ranking/filters', async (req, res) => {
       updated_by: actor
     };
     
-    await dbOperations.updateRankingSettings(filters);
+    await prisma.rankingSetting.upsert({
+      where: { id: 1 },
+      update: filters,
+      create: { id: 1, ...filters, created_at: new Date().toISOString() }
+    });
     
     // Criar histórico
-    await dbOperations.createLog({
-      type: 'filters_update',
-      actor,
-      data: { filters }
+    await prisma.log.create({
+      data: {
+        action: 'filters_update',
+        entity: 'ranking',
+        entity_id: null,
+        details: JSON.stringify({ filters, actor }),
+        created_at: new Date().toISOString()
+      }
     });
     
     res.status(200).json({ success: true, filters });
@@ -1213,18 +1425,30 @@ app.get('/api/crafters', cacheMiddleware(2 * 60 * 1000), async (req, res) => { /
     const limitNum = Math.min(100, Math.max(1, parseInt(limit))); // Máximo 100 itens por página
     const offset = (pageNum - 1) * limitNum;
     
-    const options = {
-      limit: limitNum,
-      offset,
-      search: search?.trim(),
-      active_only: active_only === 'true',
-      order_by,
-      order_direction: order_direction.toUpperCase()
-    };
+    // Construir filtros
+    const where = {};
+    if (search?.trim()) {
+      where.OR = [
+        { nome: { contains: search.trim(), mode: 'insensitive' } },
+        { email: { contains: search.trim(), mode: 'insensitive' } }
+      ];
+    }
+    if (active_only === 'true') {
+      where.active = true;
+    }
+    
+    // Construir ordenação
+    const orderBy = {};
+    orderBy[order_by] = order_direction.toLowerCase();
     
     const [crafters, total] = await Promise.all([
-      dbOperations.getCrafters(options),
-      dbOperations.getCraftersCount(options)
+      prisma.crafter.findMany({
+        where,
+        orderBy,
+        skip: offset,
+        take: limitNum
+      }),
+      prisma.crafter.count({ where })
     ]);
     
     const list = crafters.map(c => ({ 
@@ -1257,7 +1481,9 @@ app.get('/api/crafters', cacheMiddleware(2 * 60 * 1000), async (req, res) => { /
 app.get('/api/crafters/:id', cacheMiddleware(5 * 60 * 1000), async (req, res) => { // Cache por 5 minutos
   try {
     const { id } = req.params;
-    const crafter = await dbOperations.getCrafterById(id);
+    const crafter = await prisma.crafter.findUnique({
+      where: { id: parseInt(id) }
+    });
     
     if (!crafter) {
       return res.status(404).json({ success: false, error: 'Crafter não encontrado' });
@@ -1284,7 +1510,7 @@ app.get('/api/crafters/:id', cacheMiddleware(5 * 60 * 1000), async (req, res) =>
 app.post('/api/crafters', async (req, res) => {
   try {
     const body = req.body || {};
-    const actor = req.headers['x-user-id'] || 'local-admin';
+    const actor = getUserIdForAudit(req);
     
     // Validação de campos obrigatórios
     if (!body.name || !body.name.trim()) {
@@ -1296,19 +1522,25 @@ app.post('/api/crafters', async (req, res) => {
       email: body.email?.trim() || null,
       avatar_url: body.avatar_url || null,
       points: Math.max(0, Number(body.points || 0)),
-      active: body.active !== false ? 1 : 0
+      active: body.active !== false ? 1 : 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
     
-    const crafter = await dbOperations.createCrafter(crafterData);
+    const crafter = await prisma.crafter.create({ data: crafterData });
     
     // Limpar cache de crafters
     clearCraftersCache();
     
     // Criar histórico
-    await dbOperations.createLog({
-      type: 'crafter_create',
-      actor,
-      data: { crafter_id: crafter.id, name: crafter.nome }
+    await prisma.log.create({
+      data: {
+        action: 'crafter_create',
+        entity: 'crafter',
+        entity_id: crafter.id,
+        details: JSON.stringify({ actor, name: crafter.nome }),
+        created_at: new Date().toISOString()
+      }
     });
     
     notifyRealtime('ranking_changed');
@@ -1331,7 +1563,7 @@ app.put('/api/crafters/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const patch = req.body || {};
-    const actor = req.headers['x-user-id'] || 'local-admin';
+    const actor = getUserIdForAudit(req);
     
     const updates = {};
     
@@ -1351,29 +1583,47 @@ app.put('/api/crafters/:id', async (req, res) => {
       updates.active = patch.active ? 1 : 0;
     }
     
-    const updatedCrafter = await dbOperations.updateCrafter(id, updates);
+    updates.updated_at = new Date().toISOString();
+    
+    const updatedCrafter = await prisma.crafter.update({
+      where: { id: parseInt(id) },
+      data: updates
+    });
     
     // Limpar cache de crafters
     clearCraftersCache();
     
     // Criar histórico
-    await dbOperations.createLog({
-      type: 'crafter_update',
-      actor,
-      data: { 
-        crafter_id: id, 
-        updates: { 
-          name: updatedCrafter.nome, 
-          points: updatedCrafter.points, 
-          active: updatedCrafter.active 
-        } 
+    await prisma.log.create({
+      data: {
+        action: 'crafter_update',
+        entity: 'crafter',
+        entity_id: parseInt(id),
+        details: JSON.stringify({ 
+          actor,
+          updates: { 
+            name: updatedCrafter.nome, 
+            points: updatedCrafter.points, 
+            active: updatedCrafter.active 
+          } 
+        }),
+        created_at: new Date().toISOString()
       }
     });
     
     // Atualizar configurações do ranking
-    await dbOperations.updateRankingSettings({
-      updated_at: new Date().toISOString(),
-      updated_by: actor
+    await prisma.rankingSetting.upsert({
+      where: { id: 1 },
+      update: {
+        updated_at: new Date().toISOString(),
+        updated_by: actor
+      },
+      create: {
+        id: 1,
+        updated_at: new Date().toISOString(),
+        updated_by: actor,
+        created_at: new Date().toISOString()
+      }
     });
     
     notifyRealtime('ranking_changed');
@@ -1382,12 +1632,10 @@ app.put('/api/crafters/:id', async (req, res) => {
     console.error('Erro ao atualizar crafter:', error);
     
     // Retornar erro específico baseado no tipo
-    if (error.message.includes('ID inválido') ||
-        error.message.includes('Nome não pode estar vazio') ||
-        error.message.includes('Email inválido') ||
-        error.message.includes('Email já está em uso') ||
-        error.message.includes('Crafter não encontrado')) {
-      res.status(400).json({ success: false, error: error.message });
+    if (error.code === 'P2025') {
+      res.status(404).json({ success: false, error: 'Crafter não encontrado' });
+    } else if (error.code === 'P2002') {
+      res.status(400).json({ success: false, error: 'Email já está em uso' });
     } else {
       res.status(500).json({ success: false, error: 'Erro interno do servidor' });
     }
@@ -1397,28 +1645,33 @@ app.put('/api/crafters/:id', async (req, res) => {
 app.delete('/api/crafters/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const actor = req.headers['x-user-id'] || 'local-admin';
+    const actor = getUserIdForAudit(req);
     
-    const deleted = await dbOperations.deleteCrafter(id);
-    
-    if (!deleted) {
-      return res.status(404).json({ success: false, error: 'Crafter não encontrado' });
-    }
+    await prisma.crafter.delete({
+      where: { id: parseInt(id) }
+    });
     
     // Limpar cache de crafters
     clearCraftersCache();
     
     // Criar histórico
-    await dbOperations.createLog({
-      type: 'crafter_delete',
-      actor,
-      data: { crafter_id: id }
+    await prisma.log.create({
+      data: {
+        action: 'crafter_delete',
+        entity: 'crafter',
+        entity_id: parseInt(id),
+        details: JSON.stringify({ actor }),
+        created_at: new Date().toISOString()
+      }
     });
     
     notifyRealtime('ranking_changed');
     res.status(200).json({ success: true, message: 'Crafter removido com sucesso' });
   } catch (error) {
     console.error('Erro ao deletar crafter:', error);
+    if (error.code === 'P2025') {
+      return res.status(404).json({ success: false, error: 'Crafter não encontrado' });
+    }
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });
@@ -1505,26 +1758,31 @@ app.get('/api/desafios', async (req, res) => {
     
     if (all === '1') {
       // Admin: lista completa (não pública)
-      const desafios = await dbOperations.getDesafios();
+      const desafios = await prisma.desafio.findMany({
+        orderBy: { created_at: 'desc' }
+      });
       return res.status(200).json({ success: true, data: desafios, total: desafios.length });
     }
     
     // Pública: aplicar filtros padrão
-    const filters = {};
+    const where = {};
     
     if (visible !== undefined) {
-      filters.visible = visible === 'true';
+      where.visible = visible === 'true';
     } else {
-      filters.visible = true; // Por padrão, só visíveis
+      where.visible = true; // Por padrão, só visíveis
     }
     
     if (status) {
-      filters.status = status;
+      where.status = status;
     } else {
-      filters.status = 'active'; // Por padrão, só ativos
+      where.status = 'active'; // Por padrão, só ativos
     }
     
-    const desafios = await dbOperations.getDesafios(filters);
+    const desafios = await prisma.desafio.findMany({
+      where,
+      orderBy: { created_at: 'desc' }
+    });
     
     res.set('Cache-Control', 'public, max-age=60');
     res.status(200).json({ success: true, data: desafios.map(publicChallenge), total: desafios.length });
@@ -1536,7 +1794,10 @@ app.get('/api/desafios', async (req, res) => {
 
 app.get('/api/desafios/:id', async (req, res) => {
   try {
-    const desafio = await dbOperations.getDesafioById(req.params.id);
+    const desafio = await prisma.desafio.findUnique({
+      where: { id: parseInt(req.params.id) }
+    });
+    
     if (!desafio || !desafio.visible) {
       return res.status(404).json({ success: false, error: 'Desafio não encontrado' });
     }
@@ -1564,16 +1825,21 @@ app.post('/api/desafios', async (req, res) => {
       base_points: Math.max(0, Number(body.base_points || 0)),
       reward: String(body.reward || '').trim(),
       status: body.status || 'active',
-      criteria: Array.isArray(body.criteria) ? body.criteria : [],
+      criteria: JSON.stringify(Array.isArray(body.criteria) ? body.criteria : []),
       delivery_type: body.delivery_type,
       visible: Boolean(body.visible),
       difficulty: body.difficulty || 'starter',
-      tags: Array.isArray(body.tags) ? body.tags : [],
+      tags: JSON.stringify(Array.isArray(body.tags) ? body.tags : []),
       thumb_url: body.thumb_url || null,
-      created_by: req.headers['x-user-id'] || 'local-admin'
+      created_by: getUserIdForAudit(req),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
     
-    const desafio = await dbOperations.createDesafio(desafioData);
+    const desafio = await prisma.desafio.create({
+      data: desafioData
+    });
+    
     res.set('Cache-Control', 'no-store');
     res.status(201).json({ success: true, challenge: publicChallenge(desafio) });
   } catch (error) {
@@ -1584,40 +1850,69 @@ app.post('/api/desafios', async (req, res) => {
 
 app.put('/api/desafios/:id', async (req, res) => {
   try {
-    const desafio = await dbOperations.getDesafioById(req.params.id);
-    if (!desafio) return res.status(404).json({ success:false, error:'Desafio não encontrado' });
+    const desafio = await prisma.desafio.findUnique({
+      where: { id: parseInt(req.params.id) }
+    });
     
-    const patch = req.body || {};
-    if (patch.base_points !== undefined) {
-      patch.base_points = Math.max(0, Number(patch.base_points));
+    if (!desafio) {
+      return res.status(404).json({ success: false, error: 'Desafio não encontrado' });
     }
     
-    await dbOperations.updateDesafio(req.params.id, patch);
-    const updatedDesafio = await dbOperations.getDesafioById(req.params.id);
+    const patch = req.body || {};
+    const updateData = { ...patch };
+    
+    if (patch.base_points !== undefined) {
+      updateData.base_points = Math.max(0, Number(patch.base_points));
+    }
+    
+    if (patch.criteria && Array.isArray(patch.criteria)) {
+      updateData.criteria = JSON.stringify(patch.criteria);
+    }
+    
+    if (patch.tags && Array.isArray(patch.tags)) {
+      updateData.tags = JSON.stringify(patch.tags);
+    }
+    
+    updateData.updated_at = new Date().toISOString();
+    
+    const updatedDesafio = await prisma.desafio.update({
+      where: { id: parseInt(req.params.id) },
+      data: updateData
+    });
     
     res.set('Cache-Control', 'no-store');
     res.status(200).json({ success: true, challenge: publicChallenge(updatedDesafio) });
   } catch (error) {
     console.error('Erro ao atualizar desafio:', error);
+    if (error.code === 'P2025') {
+      return res.status(404).json({ success: false, error: 'Desafio não encontrado' });
+    }
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });
 
 app.put('/api/desafios/:id/status', async (req, res) => {
   try {
-    const desafio = await dbOperations.getDesafioById(req.params.id);
-    if (!desafio) return res.status(404).json({ success:false, error:'Desafio não encontrado' });
-    
     const { status } = req.body || {};
     if (!['draft','active','closed','archived'].includes(status)) {
-      return res.status(400).json({ success:false, error:'Status inválido' });
+      return res.status(400).json({ success: false, error: 'Status inválido' });
     }
     
-    await dbOperations.updateDesafio(req.params.id, { status });
+    await prisma.desafio.update({
+      where: { id: parseInt(req.params.id) },
+      data: { 
+        status,
+        updated_at: new Date().toISOString()
+      }
+    });
+    
     res.set('Cache-Control', 'no-store');
     res.status(200).json({ success: true });
   } catch (error) {
     console.error('Erro ao atualizar status do desafio:', error);
+    if (error.code === 'P2025') {
+      return res.status(404).json({ success: false, error: 'Desafio não encontrado' });
+    }
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });
@@ -1625,18 +1920,31 @@ app.put('/api/desafios/:id/status', async (req, res) => {
 // Alterna visibilidade
 app.put('/api/desafios/:id/visibility', async (req, res) => {
   try {
-    const desafio = await dbOperations.getDesafioById(req.params.id);
-    if (!desafio) return res.status(404).json({ success:false, error:'Desafio não encontrado' });
+    const desafio = await prisma.desafio.findUnique({
+      where: { id: parseInt(req.params.id) }
+    });
+    
+    if (!desafio) {
+      return res.status(404).json({ success: false, error: 'Desafio não encontrado' });
+    }
     
     const body = req.body || {};
     const nextVisible = body.visible !== undefined ? !!body.visible : !desafio.visible;
     
-    await dbOperations.updateDesafio(req.params.id, { visible: nextVisible });
-    const updatedDesafio = await dbOperations.getDesafioById(req.params.id);
+    const updatedDesafio = await prisma.desafio.update({
+      where: { id: parseInt(req.params.id) },
+      data: { 
+        visible: nextVisible,
+        updated_at: new Date().toISOString()
+      }
+    });
     
     res.status(200).json({ success: true, challenge: publicChallenge(updatedDesafio) });
   } catch (error) {
     console.error('Erro ao atualizar visibilidade do desafio:', error);
+    if (error.code === 'P2025') {
+      return res.status(404).json({ success: false, error: 'Desafio não encontrado' });
+    }
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });
@@ -1644,34 +1952,44 @@ app.put('/api/desafios/:id/visibility', async (req, res) => {
 app.post('/api/desafios/:id/inscrever', async (req, res) => {
   try {
     const { crafter_id } = req.body || {};
-    const desafio = await dbOperations.getDesafioById(req.params.id);
+    const desafio = await prisma.desafio.findUnique({
+      where: { id: parseInt(req.params.id) }
+    });
     
     if (!desafio || !desafio.visible) {
-      return res.status(404).json({ success:false, error:'Desafio não encontrado' });
+      return res.status(404).json({ success: false, error: 'Desafio não encontrado' });
     }
     if (desafio.status !== 'active') {
-      return res.status(400).json({ success:false, error:'Desafio não aceita novas inscrições' });
+      return res.status(400).json({ success: false, error: 'Desafio não aceita novas inscrições' });
     }
     if (isDeadlinePassed(desafio.deadline)) {
-      return res.status(400).json({ success:false, error:'Prazo encerrado para novas inscrições' });
+      return res.status(400).json({ success: false, error: 'Prazo encerrado para novas inscrições' });
     }
     if (!crafter_id) {
-      return res.status(400).json({ success:false, error:'Crafter obrigatório' });
+      return res.status(400).json({ success: false, error: 'Crafter obrigatório' });
     }
     
     // Verificar se já existe inscrição
-    const existingInscricao = await dbOperations.checkInscricaoDesafio(crafter_id, req.params.id);
+    const existingInscricao = await prisma.inscricaoDesafio.findFirst({
+      where: {
+        crafter_id: parseInt(crafter_id),
+        challenge_id: parseInt(req.params.id)
+      }
+    });
     if (existingInscricao) {
-      return res.status(409).json({ success:false, error:'Inscrição já existente' });
+      return res.status(409).json({ success: false, error: 'Inscrição já existente' });
     }
     
-    const inscricao = await dbOperations.createInscricaoDesafio({
-      crafter_id,
-      desafio_id: req.params.id
+    const inscricao = await prisma.inscricaoDesafio.create({
+      data: {
+        crafter_id: parseInt(crafter_id),
+        challenge_id: parseInt(req.params.id),
+        enrolled_at: new Date().toISOString()
+      }
     });
     
     res.set('Cache-Control', 'no-store');
-    res.status(201).json({ success:true, registration: inscricao });
+    res.status(201).json({ success: true, registration: inscricao });
   } catch (error) {
     console.error('Erro ao inscrever no desafio:', error);
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
@@ -1685,7 +2003,10 @@ app.post('/api/desafios/:id/entregar', async (req, res) => {
     const challengeId = req.params.id;
     
     // Verificar se o desafio existe e está visível
-    const desafio = await dbOperations.getDesafioById(challengeId);
+    const desafio = await prisma.desafio.findUnique({
+      where: { id: parseInt(challengeId) }
+    });
+    
     if (!desafio || !desafio.visible) {
       return res.status(404).json({ success: false, error: 'Desafio não encontrado' });
     }
@@ -1716,22 +2037,31 @@ app.post('/api/desafios/:id/entregar', async (req, res) => {
     
     // Criar submission
     const submissionData = {
-      challenge_id: challengeId,
-      crafter_id,
-      delivery: {
-        url: delivery.url || '',
-        notes: String(delivery.notes || '').trim()
-      }
+      challenge_id: parseInt(challengeId),
+      crafter_id: parseInt(crafter_id),
+      delivery_url: delivery.url || '',
+      delivery_notes: String(delivery.notes || '').trim(),
+      status: 'submitted',
+      submitted_at: new Date().toISOString()
     };
     
-    const submission = await dbOperations.createSubmission(submissionData);
+    const submission = await prisma.submission.create({
+      data: submissionData
+    });
     
     // Criar log da ação
-    await dbOperations.createLog({
-      type: 'submit',
-      actor: crafter_id,
-      challenge_id: challengeId,
-      submission_id: submission.id
+    await prisma.log.create({
+      data: {
+        action: 'submit',
+        entity: 'submission',
+        entity_id: submission.id,
+        details: JSON.stringify({
+          actor: crafter_id,
+          challenge_id: challengeId,
+          submission_id: submission.id
+        }),
+        created_at: new Date().toISOString()
+      }
     });
     
     res.set('Cache-Control', 'no-store');
@@ -1746,7 +2076,20 @@ app.post('/api/desafios/:id/entregar', async (req, res) => {
 app.get('/api/desafios/:id/submissions', async (req, res) => {
   try {
     const challengeId = req.params.id;
-    const submissions = await dbOperations.getSubmissionsByChallenge(challengeId);
+    const submissions = await prisma.submission.findMany({
+      where: { challenge_id: parseInt(challengeId) },
+      include: {
+        crafter: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: { submitted_at: 'desc' }
+    });
+    
     res.status(200).json({ success: true, data: submissions, total: submissions.length });
   } catch (error) {
     console.error('Erro ao buscar submissions:', error);
@@ -1757,7 +2100,9 @@ app.get('/api/desafios/:id/submissions', async (req, res) => {
 app.put('/api/submissions/:id/review', async (req, res) => {
   try {
     const submissionId = req.params.id;
-    const submission = await dbOperations.getSubmissionById(submissionId);
+    const submission = await prisma.submission.findUnique({
+      where: { id: parseInt(submissionId) }
+    });
     
     if (!submission) {
       return res.status(404).json({ success: false, error: 'Submission não encontrada' });
@@ -1770,32 +2115,42 @@ app.put('/api/submissions/:id/review', async (req, res) => {
     }
     
     const reviewData = {
-      by: req.headers['x-user-id'] || 'local-admin',
-      notes: String(body.review?.notes || '').trim(),
-      criteria_scores: body.review?.criteria_scores || {},
-    };
-    
-    const updates = {
       status: body.status,
-      score: typeof body.score === 'number' ? body.score : submission.score,
-      review: reviewData
+      reviewed_by: getUserIdForAudit(req),
+      review_notes: String(body.review?.notes || '').trim(),
+      criteria_scores: JSON.stringify(body.review?.criteria_scores || {}),
+      reviewed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
     
-    const updatedSubmission = await dbOperations.updateSubmission(submissionId, updates);
+    const updatedSubmission = await prisma.submission.update({
+      where: { id: parseInt(submissionId) },
+      data: reviewData
+    });
     
     // Criar log da ação
-    await dbOperations.createLog({
-      type: 'review',
-      actor: reviewData.by,
-      challenge_id: submission.challenge_id,
-      submission_id: submissionId,
-      data: { status: body.status }
+    await prisma.log.create({
+      data: {
+        action: 'review',
+        entity: 'submission',
+        entity_id: parseInt(submissionId),
+        details: JSON.stringify({
+          actor: reviewData.reviewed_by,
+          challenge_id: submission.challenge_id,
+          submission_id: submissionId,
+          status: body.status
+        }),
+        created_at: new Date().toISOString()
+      }
     });
     
     // Integração Ranking opcional
     try {
       if (body.status === 'approved') {
-        const desafio = await dbOperations.getDesafioById(submission.challenge_id);
+        const desafio = await prisma.desafio.findUnique({
+          where: { id: submission.challenge_id }
+        });
+        
         const delta = Math.max(0, Number(desafio?.base_points || 0));
         if (delta > 0) {
           await fetch(`http://localhost:${PORT}/api/ranking/points/${submission.crafter_id}`, {
@@ -1813,6 +2168,9 @@ app.put('/api/submissions/:id/review', async (req, res) => {
     res.status(200).json({ success: true, submission: updatedSubmission });
   } catch (error) {
     console.error('Erro ao revisar submission:', error);
+    if (error.code === 'P2025') {
+      return res.status(404).json({ success: false, error: 'Submission não encontrada' });
+    }
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });
@@ -1822,12 +2180,16 @@ app.get('/api/feedbacks', async (req, res) => {
     console.log(`[${new Date().toISOString()}] Recebido GET /api/feedbacks`);
     try {
         const { origem, limit } = req.query;
-        const filters = {};
+        const where = {};
         
-        if (origem) filters.origem = origem;
-        if (limit) filters.limit = limit;
+        if (origem) where.origem = origem;
 
-        const feedbacks = await dbOperations.getFeedbacks(filters);
+        const feedbacks = await prisma.feedback.findMany({
+            where,
+            orderBy: { data_criacao: 'desc' },
+            take: limit ? parseInt(limit) : undefined
+        });
+        
         console.log(`[${new Date().toISOString()}] GET /api/feedbacks: ${feedbacks.length} feedbacks encontrados.`);
         res.status(200).json(feedbacks);
 
@@ -1841,7 +2203,7 @@ app.get('/api/feedbacks', async (req, res) => {
                 email: null,
                 mensagem: "Dados temporariamente indisponíveis",
                 origem: "pagina_inicial",
-                data_criacao: new Date().toISOString()
+                created_at: new Date().toISOString()
             }
         ];
         res.status(200).json(mockFeedbacks);
@@ -1860,11 +2222,14 @@ app.post('/api/feedbacks', async (req, res) => {
     }
 
     try {
-        const feedback = await dbOperations.createFeedback({
-            nome,
-            email,
-            mensagem,
-            origem: origem || 'pagina_inicial'
+        const feedback = await prisma.feedback.create({
+            data: {
+                nome,
+                email,
+                mensagem,
+                origem: origem || 'pagina_inicial',
+                created_at: new Date().toISOString()
+            }
         });
 
         console.log(`[${new Date().toISOString()}] POST /api/feedbacks: Feedback ID ${feedback.id} criado.`);
@@ -1888,14 +2253,18 @@ app.post('/api/inscricoes', async (req, res) => {
     }
 
     try {
-        const inscricao = await dbOperations.createInscricaoCrafter({
-            nome,
-            email,
-            telefone,
-            cidade,
-            estado,
-            area_interesse,
-            mensagem
+        const inscricao = await prisma.inscricaoCrafter.create({
+            data: {
+                nome,
+                email,
+                telefone,
+                cidade,
+                estado,
+                area_interesse,
+                mensagem,
+                status: 'pendente',
+                created_at: new Date().toISOString()
+            }
         });
 
         console.log(`[${new Date().toISOString()}] POST /api/inscricoes: Inscrição ID ${inscricao.id} criada.`);
@@ -1912,11 +2281,15 @@ app.get('/api/inscricoes', async (req, res) => {
     console.log(`[${new Date().toISOString()}] Recebido GET /api/inscricoes`);
     try {
         const { status } = req.query;
-        const filters = {};
+        const where = {};
         
-        if (status) filters.status = status;
+        if (status) where.status = status;
 
-        const inscricoes = await dbOperations.getInscricoesCrafters(filters);
+        const inscricoes = await prisma.inscricaoCrafter.findMany({
+            where,
+            orderBy: { data_inscricao: 'desc' }
+        });
+        
         console.log(`[${new Date().toISOString()}] GET /api/inscricoes: ${inscricoes.length} inscrições encontradas.`);
         res.status(200).json(inscricoes);
 
@@ -1939,7 +2312,13 @@ app.put('/api/inscricoes/:id/status', async (req, res) => {
     }
 
     try {
-        const inscricao = await dbOperations.updateInscricaoCrafterStatus(parseInt(id), status);
+        const inscricao = await prisma.inscricaoCrafter.update({
+            where: { id: parseInt(id) },
+            data: { 
+                status,
+                updated_at: new Date().toISOString()
+            }
+        });
         
         if (!inscricao) {
             return res.status(404).json({ error: 'Inscrição não encontrada' });
@@ -1958,9 +2337,11 @@ app.put('/api/inscricoes/:id/status', async (req, res) => {
 app.get('/api/projects', async (req, res) => {
     console.log(`[${new Date().toISOString()}] Recebido GET /api/projects`);
     try {
-        const projetos = await dbOperations.getProjetos();
+        const projetos = await prisma.projeto.findMany({
+            orderBy: { created_at: 'desc' }
+        });
         
-        // Mapear dados do SQLite para o formato esperado pelo frontend
+        // Mapear dados do Prisma para o formato esperado pelo frontend
         const projects = projetos.map(projeto => ({
             id: projeto.id,
             title: projeto.titulo,
@@ -2022,22 +2403,22 @@ app.get('/api/projects', async (req, res) => {
 app.get('/api/test-db', async (req, res) => {
     console.log(`[${new Date().toISOString()}] Recebido GET /api/test-db`);
     try {
-        // Testa operação simples no SQLite
-        const mentores = await dbOperations.getMentores();
+        // Testa operação simples no Prisma
+        const mentores = await prisma.mentor.findMany();
         
-        console.log(`[${new Date().toISOString()}] GET /api/test-db: SQLite funcionando OK`);
+        console.log(`[${new Date().toISOString()}] GET /api/test-db: Prisma funcionando OK`);
         res.json({
             success: true,
-            message: 'Conexão com SQLite funcionando corretamente',
-            database: 'SQLite',
+            message: 'Conexão com banco de dados funcionando corretamente',
+            database: 'Prisma',
             mentoresCount: mentores.length,
             timestamp: new Date().toISOString()
         });
     } catch (error) {
-        console.error(`[${new Date().toISOString()}] Erro ao testar SQLite:`, error.message);
+        console.error(`[${new Date().toISOString()}] Erro ao testar Prisma:`, error.message);
         res.status(500).json({
             success: false,
-            message: 'Erro ao conectar com SQLite',
+            message: 'Erro ao conectar com banco de dados',
             error: error.message,
             timestamp: new Date().toISOString()
         });
