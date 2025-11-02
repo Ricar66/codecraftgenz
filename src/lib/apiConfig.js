@@ -15,7 +15,13 @@ const getApiBaseUrl = () => {
     return 'http://localhost:8080';
   }
   
-  // Fallback: assume que a API está na mesma origem
+  // Em produção, assume API na mesma origem (mesmo domínio)
+  // Isso funciona para deploy no mesmo servidor do frontend e backend
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  
+  // Fallback para SSR ou ambientes sem window
   return '';
 };
 

@@ -23,6 +23,19 @@ jobs:
         with:
           node-version: '22.x'
 
+      - name: Setup production environment variables
+        run: |
+          # Cria arquivo .env.production com variáveis do GitHub Secrets
+          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" > .env.production
+          echo "VITE_WP_API_URL=${{ secrets.VITE_WP_API_URL || 'https://cms.codecraftgenz.com.br/wp-json' }}" >> .env.production
+          echo "VITE_APP_ENV=production" >> .env.production
+          echo "VITE_DEBUG=false" >> .env.production
+          
+          # Exibe conteúdo (apenas para debug no log)
+          echo "=== CONTEÚDO DO .env.production ==="
+          cat .env.production | grep -v '^#' || true
+          echo "=================================="
+      
       - name: npm install, build, and test
         run: |
           npm ci --production=false

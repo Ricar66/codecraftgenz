@@ -26,7 +26,7 @@ function App() {
     <div 
       className="app-background"
       style={{
-        backgroundImage: `url(${heroBackground})`
+        backgroundImage: `url('/src/assets/hero-background.svg')`
       }}
     >
       <Routes>
