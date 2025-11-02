@@ -123,6 +123,7 @@ const verifyToken = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
+    console.error('Erro na verificação do token:', error.message);
     return res.status(403).json({ 
       success: false, 
       error: 'Token inválido ou expirado' 

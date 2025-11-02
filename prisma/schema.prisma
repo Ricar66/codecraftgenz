@@ -41,6 +41,7 @@ model Mentor {
   updated_at  DateTime @updatedAt
 
   // Relacionamentos
+  projetos    Projeto[]
   equipes     Equipe[]
 
   @@map("mentores")
@@ -50,14 +51,18 @@ model Projeto {
   id          Int      @id @default(autoincrement())
   titulo      String
   descricao   String?
-  tecnologias String?
-  dificuldade String   @default("iniciante")
-  duracao     String?
-  status      String   @default("ativo")
+  data_inicio String?
+  status      String   @default("rascunho")
+  preco       Float?
+  visivel     Boolean  @default(false)
+  thumb_url   String?
+  mentor_id   Int?
+  progresso   Int      @default(0)
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
   // Relacionamentos
+  mentor      Mentor?  @relation(fields: [mentor_id], references: [id])
   equipes     Equipe[]
   inscricoes  Inscricao[]
   financas    Financa[]
