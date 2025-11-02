@@ -270,9 +270,9 @@ const useProjects = (options = {}) => {
    */
   useEffect(() => {
     if (autoFetch && isMountedRef.current) {
-      fetchProjects().then(result => {
+      fetchProjects().then(() => {
         // Resultado já processado pela função fetchProjects
-      }).catch(error => {
+      }).catch(() => {
         // Erro já tratado pela função fetchProjects
       });
     }

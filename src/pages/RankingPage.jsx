@@ -27,7 +27,7 @@ export default function RankingPage() {
       const tb = Array.isArray(json?.table) ? json.table.map(r => ({ name: r.name, score: r.points })) : [];
       setTop3(t3);
       setTable(tb);
-    } catch (err) {
+    } catch {
       setError('Ranking em processamento. Volte em instantes 🚀');
       setTop3([]);
       setTable([]);
