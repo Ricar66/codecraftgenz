@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './AdminEquipes.css';
 
 export default function AdminEquipes() {
   const [mentores, setMentores] = useState([]);
@@ -8,6 +9,11 @@ export default function AdminEquipes() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('mentores');
   const [message, setMessage] = useState('');
+  
+  // Estados para filtros
+  const [filtroMentor, setFiltroMentor] = useState('');
+  const [filtroCrafter, setFiltroCrafter] = useState('');
+  const [filtroStatusCrafter, setFiltroStatusCrafter] = useState('todos');
 
   // Estados para formulários
   const [novoCrafter, setNovoCrafter] = useState({ nome: '', email: '', avatar_url: '' });
@@ -70,6 +76,25 @@ export default function AdminEquipes() {
       setLoading(false);
     }
   };
+
+  // Funções de filtro
+  const mentoresFiltrados = mentores.filter(mentor => 
+    mentor.nome.toLowerCase().includes(filtroMentor.toLowerCase()) ||
+    mentor.email.toLowerCase().includes(filtroMentor.toLowerCase())
+  );
+
+  const craftersFiltrados = crafters.filter(crafter => {
+    const matchesName = crafter.nome.toLowerCase().includes(filtroCrafter.toLowerCase()) ||
+                       crafter.email.toLowerCase().includes(filtroCrafter.toLowerCase());
+    
+    if (filtroStatusCrafter === 'todos') return matchesName;
+    
+    const crafterTeams = equipes.filter(t => t.crafter_id === crafter.id);
+    if (filtroStatusCrafter === 'disponivel') return matchesName && crafterTeams.length === 0;
+    if (filtroStatusCrafter === 'ocupado') return matchesName && crafterTeams.length > 0;
+    
+    return matchesName;
+  });
 
 
 
@@ -453,6 +478,178 @@ export default function AdminEquipes() {
       {/* Aba Associações */}
       {activeTab === 'associacoes' && (
         <div className="tab-content">
+          {/* Seção de Mentores Disponíveis */}
+          <div className="section">
+            <h2>👨‍🏫 Mentores Disponíveis</h2>
+            <p className="info-text">
+              Visualize todos os mentores cadastrados e seus projetos associados.
+            </p>
+            
+            {/* Filtros para Mentores */}
+            <div className="filters-section">
+              <div className="filter-group">
+                <label>🔍 Filtrar Mentores:</label>
+                <input
+                  type="text"
+                  placeholder="Buscar por nome ou email..."
+                  value={filtroMentor}
+                  onChange={(e) => setFiltroMentor(e.target.value)}
+                  className="filter-input"
+                />
+              </div>
+            </div>
+            
+            {mentores.length === 0 ? (
+              <div className="empty-state">
+                <p>Nenhum mentor cadastrado. Crie mentores na aba "Mentores".</p>
+              </div>
+            ) : mentoresFiltrados.length === 0 ? (
+              <div className="empty-state">
+                <p>Nenhum mentor encontrado com os filtros aplicados.</p>
+              </div>
+            ) : (
+              <div className="mentores-grid">
+                {mentoresFiltrados.map(mentor => (
+                  <div key={mentor.id} className="mentor-card">
+                    <div className="mentor-header">
+                      <div className="mentor-avatar">
+                        {mentor.avatar_url ? (
+                          <img src={mentor.avatar_url} alt={mentor.nome} />
+                        ) : (
+                          <div className="avatar-placeholder">
+                            {mentor.nome.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="mentor-info">
+                        <h4>{mentor.nome}</h4>
+                        <p>{mentor.email}</p>
+                        {mentor.telefone && <small>📞 {mentor.telefone}</small>}
+                      </div>
+                    </div>
+                    
+                    {mentor.bio && (
+                      <div className="mentor-bio">
+                        <p>{mentor.bio}</p>
+                      </div>
+                    )}
+                    
+                    <div className="mentor-projects">
+                      <h5>Projetos Associados:</h5>
+                      {projetos.filter(p => 
+                        equipes.some(t => t.mentor_id === mentor.id && t.projeto_id === p.id)
+                      ).length === 0 ? (
+                        <span className="no-projects">Nenhum projeto associado</span>
+                      ) : (
+                        <div className="projects-list">
+                          {projetos.filter(p => 
+                            equipes.some(t => t.mentor_id === mentor.id && t.projeto_id === p.id)
+                          ).map(projeto => (
+                            <span key={projeto.id} className="project-tag">
+                              📋 {projeto.titulo}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Seção de Crafters Disponíveis */}
+          <div className="section">
+            <h2>👥 Crafters Cadastrados</h2>
+            <p className="info-text">
+              Visualize todos os crafters cadastrados e seu status atual nas equipes.
+            </p>
+            
+            {/* Filtros para Crafters */}
+            <div className="filters-section">
+              <div className="filter-group">
+                <label>🔍 Filtrar Crafters:</label>
+                <input
+                  type="text"
+                  placeholder="Buscar por nome ou email..."
+                  value={filtroCrafter}
+                  onChange={(e) => setFiltroCrafter(e.target.value)}
+                  className="filter-input"
+                />
+              </div>
+              <div className="filter-group">
+                <label>📊 Status:</label>
+                <select
+                  value={filtroStatusCrafter}
+                  onChange={(e) => setFiltroStatusCrafter(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="todos">Todos</option>
+                  <option value="disponivel">🟢 Disponíveis</option>
+                  <option value="ocupado">🔵 Em Equipes</option>
+                </select>
+              </div>
+            </div>
+            
+            {crafters.length === 0 ? (
+              <div className="empty-state">
+                <p>Nenhum crafter cadastrado. Crie crafters na aba "Mentores".</p>
+              </div>
+            ) : craftersFiltrados.length === 0 ? (
+              <div className="empty-state">
+                <p>Nenhum crafter encontrado com os filtros aplicados.</p>
+              </div>
+            ) : (
+              <div className="crafters-overview-grid">
+                {craftersFiltrados.map(crafter => {
+                  const crafterTeams = equipes.filter(t => t.crafter_id === crafter.id);
+                  return (
+                    <div key={crafter.id} className="crafter-overview-card">
+                      <div className="crafter-header">
+                        <div className="crafter-avatar">
+                          {crafter.avatar_url ? (
+                            <img src={crafter.avatar_url} alt={crafter.nome} />
+                          ) : (
+                            <div className="avatar-placeholder">
+                              {crafter.nome.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="crafter-info">
+                          <h4>{crafter.nome}</h4>
+                          <p>{crafter.email}</p>
+                          <span className="points">⭐ {crafter.points || 0} pontos</span>
+                        </div>
+                      </div>
+                      
+                      <div className="crafter-status">
+                        {crafterTeams.length === 0 ? (
+                          <span className="status-available">🟢 Disponível</span>
+                        ) : (
+                          <div className="current-teams">
+                            <span className="status-busy">🔵 Em {crafterTeams.length} equipe(s)</span>
+                            {crafterTeams.map(team => {
+                              const projeto = projetos.find(p => p.id === team.projeto_id);
+                              const mentor = mentores.find(m => m.id === team.mentor_id);
+                              return (
+                                <div key={team.id} className="team-info">
+                                  <small>
+                                    📋 {projeto?.titulo || 'Projeto'} - 
+                                    👨‍🏫 {mentor?.nome || 'Mentor'}
+                                  </small>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           <div className="section">
             <h2>🎯 Criar Nova Equipe</h2>
             <p className="info-text">

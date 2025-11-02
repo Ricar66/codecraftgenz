@@ -705,6 +705,15 @@ const dbOperations = {
     });
   },
 
+  async deleteEquipe(id) {
+    return new Promise((resolve, reject) => {
+      db.run('DELETE FROM equipes WHERE id = ?', [id], function(err) {
+        if (err) reject(err);
+        else resolve({ id, deleted: this.changes > 0 });
+      });
+    });
+  },
+
   // Inscrições
   async createInscricao(inscricao) {
     return new Promise((resolve, reject) => {

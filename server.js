@@ -593,6 +593,20 @@ app.get('/api/sqlite/equipes/crafter/:id', async (req, res) => {
   }
 });
 
+app.delete('/api/sqlite/equipes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await dbOperations.deleteEquipe(id);
+    if (result.deleted) {
+      res.json({ success: true, message: 'Crafter removido da equipe com sucesso' });
+    } else {
+      res.status(404).json({ success: false, error: 'Equipe não encontrada' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Endpoints para Inscrições (SQLite)
 app.post('/api/sqlite/projetos/:id/inscricao', async (req, res) => {
   try {
