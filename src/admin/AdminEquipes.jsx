@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './AdminEquipes.css';
 
 export default function AdminEquipes() {
@@ -25,14 +25,16 @@ export default function AdminEquipes() {
   });
   const [mentorProjeto, setMentorProjeto] = useState({ projeto_id: '', mentor_id: '' });
 
-  // Agrupar equipes por projeto
-  const equipesAgrupadas = equipes.reduce((acc, equipe) => {
-    if (!acc[equipe.projeto_id]) {
-      acc[equipe.projeto_id] = [];
-    }
-    acc[equipe.projeto_id].push(equipe);
-    return acc;
-  }, {});
+  // Agrupar equipes por projeto - otimizado com useMemo
+  const equipesAgrupadas = useMemo(() => 
+    equipes.reduce((acc, equipe) => {
+      if (!acc[equipe.projeto_id]) {
+        acc[equipe.projeto_id] = [];
+      }
+      acc[equipe.projeto_id].push(equipe);
+      return acc;
+    }, {}), [equipes]
+  );
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -43,7 +45,7 @@ export default function AdminEquipes() {
     try {
       setLoading(true);
       const [mentoresRes, projetosRes, craftersRes, equipesRes] = await Promise.all([
-        fetch('/api/mentores?all=1'), // Usar a API de mentores existente
+        fetch('http://localhost:8080/api/sqlite/mentores'),
         fetch('http://localhost:8080/api/sqlite/projetos'),
         fetch('http://localhost:8080/api/sqlite/crafters'),
         fetch('http://localhost:8080/api/sqlite/equipes')
@@ -56,12 +58,12 @@ export default function AdminEquipes() {
         equipesRes.json()
       ]);
 
-      // Normalizar dados dos mentores da API existente
-      const mentoresNormalizados = (mentoresData || []).map(mentor => ({
+      // Normalizar dados dos mentores da API SQLite
+      const mentoresNormalizados = (mentoresData.data || []).map(mentor => ({
         id: mentor.id,
-        nome: mentor.name || mentor.nome,
+        nome: mentor.nome,
         email: mentor.email,
-        telefone: mentor.phone || mentor.telefone,
+        telefone: mentor.telefone,
         bio: mentor.bio,
         visible: mentor.visible
       }));
@@ -77,24 +79,40 @@ export default function AdminEquipes() {
     }
   };
 
-  // Funções de filtro
-  const mentoresFiltrados = mentores.filter(mentor => 
-    mentor.nome.toLowerCase().includes(filtroMentor.toLowerCase()) ||
-    mentor.email.toLowerCase().includes(filtroMentor.toLowerCase())
+  // Mapeamento otimizado de crafters para equipes
+  const crafterTeamsMap = useMemo(() => {
+    const map = {};
+    equipes.forEach(equipe => {
+      if (!map[equipe.crafter_id]) {
+        map[equipe.crafter_id] = [];
+      }
+      map[equipe.crafter_id].push(equipe);
+    });
+    return map;
+  }, [equipes]);
+
+  // Funções de filtro otimizadas com useMemo
+  const mentoresFiltrados = useMemo(() => 
+    mentores.filter(mentor => 
+      mentor.nome.toLowerCase().includes(filtroMentor.toLowerCase()) ||
+      mentor.email.toLowerCase().includes(filtroMentor.toLowerCase())
+    ), [mentores, filtroMentor]
   );
 
-  const craftersFiltrados = crafters.filter(crafter => {
-    const matchesName = crafter.nome.toLowerCase().includes(filtroCrafter.toLowerCase()) ||
-                       crafter.email.toLowerCase().includes(filtroCrafter.toLowerCase());
-    
-    if (filtroStatusCrafter === 'todos') return matchesName;
-    
-    const crafterTeams = equipes.filter(t => t.crafter_id === crafter.id);
-    if (filtroStatusCrafter === 'disponivel') return matchesName && crafterTeams.length === 0;
-    if (filtroStatusCrafter === 'ocupado') return matchesName && crafterTeams.length > 0;
-    
-    return matchesName;
-  });
+  const craftersFiltrados = useMemo(() => 
+    crafters.filter(crafter => {
+      const matchesName = crafter.nome.toLowerCase().includes(filtroCrafter.toLowerCase()) ||
+                         crafter.email.toLowerCase().includes(filtroCrafter.toLowerCase());
+      
+      if (filtroStatusCrafter === 'todos') return matchesName;
+      
+      const crafterTeams = crafterTeamsMap[crafter.id] || [];
+      if (filtroStatusCrafter === 'disponivel') return matchesName && crafterTeams.length === 0;
+      if (filtroStatusCrafter === 'ocupado') return matchesName && crafterTeams.length > 0;
+      
+      return matchesName;
+    }), [crafters, filtroCrafter, filtroStatusCrafter, crafterTeamsMap]
+  );
 
 
 
@@ -257,7 +275,15 @@ export default function AdminEquipes() {
   };
 
   if (loading) {
-    return <div className="loading">Carregando...</div>;
+    return (
+      <div className="admin-equipes">
+        <h1 className="title">Gerenciamento de Equipes</h1>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Carregando dados de mentores, crafters e projetos...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -602,7 +628,7 @@ export default function AdminEquipes() {
             ) : (
               <div className="crafters-overview-grid">
                 {craftersFiltrados.map(crafter => {
-                  const crafterTeams = equipes.filter(t => t.crafter_id === crafter.id);
+                  const crafterTeams = crafterTeamsMap[crafter.id] || [];
                   return (
                     <div key={crafter.id} className="crafter-overview-card">
                       <div className="crafter-header">
