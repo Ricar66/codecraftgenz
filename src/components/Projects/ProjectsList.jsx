@@ -207,6 +207,20 @@ const ProjectsList = ({ useAdminStore = false }) => {
   };
   const orderedProjects = sortProjects(displayedProjects);
 
+  // DEBUG: Adicionar logs para diagnosticar o problema
+  console.log('🔍 ProjectsList Debug:', {
+    useAdminStore,
+    loading,
+    error,
+    isEmpty,
+    hasError,
+    hasProjects,
+    projectsLength: projects.length,
+    displayedProjectsLength: displayedProjects.length,
+    orderedProjectsLength: orderedProjects.length,
+    projects: projects.slice(0, 2) // Mostra apenas os primeiros 2 para não poluir o log
+  });
+
   // Debounce simples para evitar refetch em cascata ao receber eventos em burst
   const refetchCooldownRef = React.useRef(0);
   React.useEffect(() => {
