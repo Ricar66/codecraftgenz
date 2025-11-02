@@ -10,6 +10,8 @@ vi.mock('../../context/useAuth', () => ({
   useAuth: () => ({ user: { name: 'Tester', role: 'admin' }, logout: () => {} })
 }));
 
+//Teaste
+
 function render(component) {
   const container = document.createElement('div');
   document.body.appendChild(container);
