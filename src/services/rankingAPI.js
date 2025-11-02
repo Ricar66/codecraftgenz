@@ -114,22 +114,71 @@ export async function updateRankingFilters(filters) {
 
 /**
  * Busca lista de crafters
- * @returns {Promise<Array>} Lista de crafters
+ * @param {Object} options - Opções de busca
+ * @param {number} options.page - Página atual
+ * @param {number} options.limit - Limite por página
+ * @param {string} options.search - Termo de busca
+ * @param {boolean} options.active_only - Apenas crafters ativos
+ * @param {string} options.order_by - Campo para ordenação
+ * @param {string} options.order_direction - Direção da ordenação
+ * @returns {Promise<Object>} Dados paginados dos crafters
  */
-export async function getCrafters() {
-  const response = await fetch(`${API_BASE_URL}/api/crafters`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Erro ao buscar crafters: ${response.status}`);
+export async function getCrafters(options = {}) {
+  try {
+    const params = new URLSearchParams();
+    
+    if (options.page) params.append('page', options.page);
+    if (options.limit) params.append('limit', options.limit);
+    if (options.search) params.append('search', options.search);
+    if (options.active_only !== undefined) params.append('active_only', options.active_only);
+    if (options.order_by) params.append('order_by', options.order_by);
+    if (options.order_direction) params.append('order_direction', options.order_direction);
+    
+    const url = `${API_BASE_URL}/api/crafters${params.toString() ? '?' + params.toString() : ''}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Erro ao buscar crafters: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Erro ao buscar crafters:', error);
+    throw error;
   }
+}
 
-  const data = await response.json();
-  return data.data || [];
+/**
+ * Busca um crafter por ID
+ * @param {string|number} id - ID do crafter
+ * @returns {Promise<Object>} Dados do crafter
+ */
+export async function getCrafterById(id) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/crafters/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('Crafter não encontrado');
+      }
+      throw new Error(`Erro ao buscar crafter: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Erro ao buscar crafter:', error);
+    throw error;
+  }
 }
 
 /**
@@ -177,4 +226,25 @@ export async function updateCrafter(id, updates) {
 
   const data = await response.json();
   return data.crafter;
+}
+
+/**
+ * Remove um crafter (soft delete)
+ * @param {string|number} id - ID do crafter
+ * @returns {Promise<boolean>} Sucesso da operação
+ */
+export async function deleteCrafter(id) {
+  const response = await fetch(`${API_BASE_URL}/api/crafters/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'X-User-Id': 'admin', // TODO: usar ID do usuário logado
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Erro ao deletar crafter: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.success;
 }

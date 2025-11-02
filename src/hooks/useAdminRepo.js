@@ -1,5 +1,5 @@
 // src/hooks/useAdminRepo.js
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 import { apiConfig } from '../lib/apiConfig';
 import { realtime } from '../lib/realtime';
@@ -342,8 +342,70 @@ export const RankingRepo = {
 };
 
 // Crafters
-export function useCrafters() {
-  return useAsyncList(() => rankingAPI.getCrafters());
+export function useCrafters(options = {}) {
+  const [crafters, setCrafters] = useState([]);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  
+  const loadCrafters = useCallback(async (searchOptions = {}) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const finalOptions = { ...options, ...searchOptions };
+      const response = await rankingAPI.getCrafters(finalOptions);
+      
+      if (response.success) {
+        setCrafters(response.data || []);
+        setPagination(response.pagination || {
+          total: 0,
+          page: 1,
+          totalPages: 0,
+          hasNext: false,
+          hasPrev: false
+        });
+      } else {
+        throw new Error(response.error || 'Erro ao carregar crafters');
+      }
+    } catch (err) {
+      console.error('Erro ao carregar crafters:', err);
+      setError(err.message);
+      setCrafters([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [options]);
+
+  useEffect(() => {
+    loadCrafters();
+  }, [loadCrafters]);
+
+  useEffect(() => {
+    const handleRankingChange = () => {
+      loadCrafters();
+    };
+
+    realtime.subscribe('ranking_changed', handleRankingChange);
+    return () => realtime.unsubscribe('ranking_changed', handleRankingChange);
+  }, [loadCrafters]);
+
+  return { 
+    crafters, 
+    pagination, 
+    loading, 
+    error, 
+    reload: loadCrafters,
+    loadPage: (page) => loadCrafters({ page }),
+    search: (searchTerm) => loadCrafters({ search: searchTerm, page: 1 })
+  };
 }
 
 export const CraftersRepo = {
@@ -362,6 +424,16 @@ export const CraftersRepo = {
       const updated = await rankingAPI.updateCrafter(id, updates);
       realtime.publish('ranking_changed', { ranking: null });
       return { ok: true, crafter: updated };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  },
+
+  async delete(id) {
+    try {
+      const deleted = await rankingAPI.deleteCrafter(id);
+      realtime.publish('ranking_changed', { ranking: null });
+      return { ok: true, deleted };
     } catch (err) {
       return { ok: false, error: err.message };
     }

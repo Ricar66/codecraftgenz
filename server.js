@@ -30,6 +30,46 @@ app.use(cors());
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 
+// Cache simples em memória para consultas frequentes
+const cache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
+// Middleware de cache para rotas GET
+const cacheMiddleware = (duration = CACHE_TTL) => {
+  return (req, res, next) => {
+    if (req.method !== 'GET') {
+      return next();
+    }
+    
+    const key = req.originalUrl;
+    const cached = cache.get(key);
+    
+    if (cached && Date.now() - cached.timestamp < duration) {
+      return res.json(cached.data);
+    }
+    
+    const originalSend = res.json;
+    res.json = function(data) {
+      cache.set(key, {
+        data,
+        timestamp: Date.now()
+      });
+      originalSend.call(this, data);
+    };
+    
+    next();
+  };
+};
+
+// Função para limpar cache relacionado a crafters
+const clearCraftersCache = () => {
+  for (const key of cache.keys()) {
+    if (key.includes('/api/crafters')) {
+      cache.delete(key);
+    }
+  }
+};
+
 // Middleware para logs de requisições (apenas em desenvolvimento)
 if (process.env.NODE_ENV !== 'production') {
   app.use((req, res, next) => {
@@ -1137,19 +1177,86 @@ app.put('/api/ranking/filters', async (req, res) => {
 });
 
 // Crafters CRUD
-app.get('/api/crafters', async (req, res) => {
+app.get('/api/crafters', cacheMiddleware(2 * 60 * 1000), async (req, res) => { // Cache por 2 minutos
   try {
-    const crafters = await dbOperations.getCrafters();
+    const { 
+      page = 1, 
+      limit = 10, 
+      search, 
+      active_only = 'false',
+      order_by = 'nome',
+      order_direction = 'ASC'
+    } = req.query;
+    
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit))); // Máximo 100 itens por página
+    const offset = (pageNum - 1) * limitNum;
+    
+    const options = {
+      limit: limitNum,
+      offset,
+      search: search?.trim(),
+      active_only: active_only === 'true',
+      order_by,
+      order_direction: order_direction.toUpperCase()
+    };
+    
+    const [crafters, total] = await Promise.all([
+      dbOperations.getCrafters(options),
+      dbOperations.getCraftersCount(options)
+    ]);
+    
     const list = crafters.map(c => ({ 
       id: c.id, 
       name: c.nome, 
+      email: c.email,
       avatar_url: c.avatar_url || null, 
-      active: c.active !== 0 
+      points: c.points || 0,
+      active: c.active !== 0,
+      created_at: c.created_at,
+      updated_at: c.updated_at
     }));
-    res.status(200).json({ success: true, data: list });
+    
+    res.status(200).json({ 
+      success: true, 
+      data: list,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum)
+      }
+    });
   } catch (error) {
     console.error('Erro ao buscar crafters:', error);
-    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+    res.status(500).json({ success: false, error: error.message || 'Erro interno do servidor' });
+  }
+});
+
+app.get('/api/crafters/:id', cacheMiddleware(5 * 60 * 1000), async (req, res) => { // Cache por 5 minutos
+  try {
+    const { id } = req.params;
+    const crafter = await dbOperations.getCrafterById(id);
+    
+    if (!crafter) {
+      return res.status(404).json({ success: false, error: 'Crafter não encontrado' });
+    }
+    
+    const crafterData = {
+      id: crafter.id,
+      name: crafter.nome,
+      email: crafter.email,
+      avatar_url: crafter.avatar_url || null,
+      points: crafter.points || 0,
+      active: crafter.active !== 0,
+      created_at: crafter.created_at,
+      updated_at: crafter.updated_at
+    };
+    
+    res.status(200).json({ success: true, data: crafterData });
+  } catch (error) {
+    console.error('Erro ao buscar crafter:', error);
+    res.status(400).json({ success: false, error: error.message || 'Erro interno do servidor' });
   }
 });
 
@@ -1158,13 +1265,14 @@ app.post('/api/crafters', async (req, res) => {
     const body = req.body || {};
     const actor = req.headers['x-user-id'] || 'local-admin';
     
-    if (!body.name) {
+    // Validação de campos obrigatórios
+    if (!body.name || !body.name.trim()) {
       return res.status(400).json({ success: false, error: 'Campo obrigatório: name' });
     }
     
     const crafterData = {
       nome: String(body.name).trim(),
-      email: body.email || '',
+      email: body.email?.trim() || null,
       avatar_url: body.avatar_url || null,
       points: Math.max(0, Number(body.points || 0)),
       active: body.active !== false ? 1 : 0
@@ -1172,18 +1280,29 @@ app.post('/api/crafters', async (req, res) => {
     
     const crafter = await dbOperations.createCrafter(crafterData);
     
+    // Limpar cache de crafters
+    clearCraftersCache();
+    
     // Criar histórico
     await dbOperations.createLog({
       type: 'crafter_create',
       actor,
-      data: { crafter_id: crafter.id }
+      data: { crafter_id: crafter.id, name: crafter.nome }
     });
     
     notifyRealtime('ranking_changed');
     res.status(201).json({ success: true, crafter });
   } catch (error) {
     console.error('Erro ao criar crafter:', error);
-    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+    
+    // Retornar erro específico baseado no tipo
+    if (error.message.includes('Nome é obrigatório') || 
+        error.message.includes('Email inválido') ||
+        error.message.includes('Email já está em uso')) {
+      res.status(400).json({ success: false, error: error.message });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+    }
   }
 });
 
@@ -1198,6 +1317,9 @@ app.put('/api/crafters/:id', async (req, res) => {
     if (patch.name !== undefined) {
       updates.nome = String(patch.name).trim();
     }
+    if (patch.email !== undefined) {
+      updates.email = patch.email?.trim() || null;
+    }
     if (patch.avatar_url !== undefined) {
       updates.avatar_url = patch.avatar_url;
     }
@@ -1210,9 +1332,8 @@ app.put('/api/crafters/:id', async (req, res) => {
     
     const updatedCrafter = await dbOperations.updateCrafter(id, updates);
     
-    if (!updatedCrafter) {
-      return res.status(404).json({ success: false, error: 'Crafter não encontrado' });
-    }
+    // Limpar cache de crafters
+    clearCraftersCache();
     
     // Criar histórico
     await dbOperations.createLog({
@@ -1238,6 +1359,45 @@ app.put('/api/crafters/:id', async (req, res) => {
     res.status(200).json({ success: true, crafter: updatedCrafter });
   } catch (error) {
     console.error('Erro ao atualizar crafter:', error);
+    
+    // Retornar erro específico baseado no tipo
+    if (error.message.includes('ID inválido') ||
+        error.message.includes('Nome não pode estar vazio') ||
+        error.message.includes('Email inválido') ||
+        error.message.includes('Email já está em uso') ||
+        error.message.includes('Crafter não encontrado')) {
+      res.status(400).json({ success: false, error: error.message });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+    }
+  }
+});
+
+app.delete('/api/crafters/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const actor = req.headers['x-user-id'] || 'local-admin';
+    
+    const deleted = await dbOperations.deleteCrafter(id);
+    
+    if (!deleted) {
+      return res.status(404).json({ success: false, error: 'Crafter não encontrado' });
+    }
+    
+    // Limpar cache de crafters
+    clearCraftersCache();
+    
+    // Criar histórico
+    await dbOperations.createLog({
+      type: 'crafter_delete',
+      actor,
+      data: { crafter_id: id }
+    });
+    
+    notifyRealtime('ranking_changed');
+    res.status(200).json({ success: true, message: 'Crafter removido com sucesso' });
+  } catch (error) {
+    console.error('Erro ao deletar crafter:', error);
     res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });

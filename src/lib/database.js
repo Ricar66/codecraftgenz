@@ -299,6 +299,8 @@ function initializeTables() {
     CREATE INDEX IF NOT EXISTS idx_crafters_email ON crafters(email);
     CREATE INDEX IF NOT EXISTS idx_crafters_points ON crafters(points DESC);
     CREATE INDEX IF NOT EXISTS idx_crafters_active ON crafters(active);
+    CREATE INDEX IF NOT EXISTS idx_crafters_search ON crafters(nome, email);
+    CREATE INDEX IF NOT EXISTS idx_crafters_active_points ON crafters(active, points DESC);
     CREATE INDEX IF NOT EXISTS idx_equipes_crafter_id ON equipes(crafter_id);
     CREATE INDEX IF NOT EXISTS idx_equipes_mentor_id ON equipes(mentor_id);
     CREATE INDEX IF NOT EXISTS idx_equipes_projeto_id ON equipes(projeto_id);
@@ -514,23 +516,124 @@ const dbOperations = {
   // Crafters
   async createCrafter(crafter) {
     return new Promise((resolve, reject) => {
-      const { nome, email, avatar_url } = crafter;
+      const { nome, email, avatar_url, points = 0, active = 1 } = crafter;
+      
+      // Validação básica
+      if (!nome || nome.trim().length === 0) {
+        return reject(new Error('Nome é obrigatório'));
+      }
+      
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return reject(new Error('Email inválido'));
+      }
+      
       db.run(
-        'INSERT INTO crafters (nome, email, avatar_url) VALUES (?, ?, ?)',
-        [nome, email, avatar_url],
+        'INSERT INTO crafters (nome, email, avatar_url, points, active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
+        [nome.trim(), email || null, avatar_url || null, Math.max(0, Number(points)), active ? 1 : 0],
         function(err) {
-          if (err) reject(err);
-          else resolve({ id: this.lastID, ...crafter });
+          if (err) {
+            if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+              reject(new Error('Email já está em uso'));
+            } else {
+              reject(new Error(`Erro ao criar crafter: ${err.message}`));
+            }
+          } else {
+            resolve({ 
+              id: this.lastID, 
+              nome: nome.trim(), 
+              email: email || null, 
+              avatar_url: avatar_url || null,
+              points: Math.max(0, Number(points)),
+              active: active ? 1 : 0,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+          }
         }
       );
     });
   },
 
-  async getCrafters() {
+  async getCrafters(options = {}) {
     return new Promise((resolve, reject) => {
-      db.all('SELECT * FROM crafters ORDER BY nome', (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
+      const { 
+        limit, 
+        offset, 
+        search, 
+        active_only = false, 
+        order_by = 'nome', 
+        order_direction = 'ASC' 
+      } = options;
+      
+      let query = 'SELECT * FROM crafters WHERE 1=1';
+      const params = [];
+      
+      // Filtro por status ativo
+      if (active_only) {
+        query += ' AND active = 1';
+      }
+      
+      // Filtro de busca
+      if (search && search.trim()) {
+        query += ' AND (nome LIKE ? OR email LIKE ?)';
+        const searchTerm = `%${search.trim()}%`;
+        params.push(searchTerm, searchTerm);
+      }
+      
+      // Ordenação
+      const validOrderFields = ['nome', 'email', 'points', 'created_at', 'updated_at'];
+      const validDirections = ['ASC', 'DESC'];
+      
+      if (validOrderFields.includes(order_by) && validDirections.includes(order_direction.toUpperCase())) {
+        query += ` ORDER BY ${order_by} ${order_direction.toUpperCase()}`;
+      } else {
+        query += ' ORDER BY nome ASC';
+      }
+      
+      // Paginação
+      if (limit && Number(limit) > 0) {
+        query += ' LIMIT ?';
+        params.push(Number(limit));
+        
+        if (offset && Number(offset) >= 0) {
+          query += ' OFFSET ?';
+          params.push(Number(offset));
+        }
+      }
+      
+      db.all(query, params, (err, rows) => {
+        if (err) {
+          reject(new Error(`Erro ao buscar crafters: ${err.message}`));
+        } else {
+          resolve(rows || []);
+        }
+      });
+    });
+  },
+
+  async getCraftersCount(options = {}) {
+    return new Promise((resolve, reject) => {
+      const { search, active_only = false } = options;
+      
+      let query = 'SELECT COUNT(*) as total FROM crafters WHERE 1=1';
+      const params = [];
+      
+      if (active_only) {
+        query += ' AND active = 1';
+      }
+      
+      if (search && search.trim()) {
+        query += ' AND (nome LIKE ? OR email LIKE ?)';
+        const searchTerm = `%${search.trim()}%`;
+        params.push(searchTerm, searchTerm);
+      }
+      
+      db.get(query, params, (err, row) => {
+        if (err) {
+          reject(new Error(`Erro ao contar crafters: ${err.message}`));
+        } else {
+          resolve(row?.total || 0);
+        }
       });
     });
   },
@@ -1097,13 +1200,44 @@ const dbOperations = {
 
   async updateCrafter(id, updates) {
     return new Promise((resolve, reject) => {
+      // Validação do ID
+      if (!id || isNaN(Number(id))) {
+        return reject(new Error('ID inválido'));
+      }
+      
       const fields = [];
       const values = [];
       
+      // Validação e sanitização dos campos
       Object.keys(updates).forEach(key => {
         if (updates[key] !== undefined) {
-          fields.push(`${key} = ?`);
-          values.push(updates[key]);
+          switch (key) {
+            case 'nome':
+              if (!updates[key] || updates[key].trim().length === 0) {
+                return reject(new Error('Nome não pode estar vazio'));
+              }
+              fields.push(`${key} = ?`);
+              values.push(updates[key].trim());
+              break;
+            case 'email':
+              if (updates[key] && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updates[key])) {
+                return reject(new Error('Email inválido'));
+              }
+              fields.push(`${key} = ?`);
+              values.push(updates[key] || null);
+              break;
+            case 'points':
+              fields.push(`${key} = ?`);
+              values.push(Math.max(0, Number(updates[key] || 0)));
+              break;
+            case 'active':
+              fields.push(`${key} = ?`);
+              values.push(updates[key] ? 1 : 0);
+              break;
+            default:
+              fields.push(`${key} = ?`);
+              values.push(updates[key]);
+          }
         }
       });
       
@@ -1111,21 +1245,74 @@ const dbOperations = {
         return resolve({ id, ...updates });
       }
       
+      // Adicionar timestamp de atualização
+      fields.push('updated_at = CURRENT_TIMESTAMP');
       values.push(id);
+      
       db.run(
         `UPDATE crafters SET ${fields.join(', ')} WHERE id = ?`,
         values,
         function(err) {
-          if (err) reject(err);
-          else {
+          if (err) {
+            if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+              reject(new Error('Email já está em uso'));
+            } else {
+              reject(new Error(`Erro ao atualizar crafter: ${err.message}`));
+            }
+          } else if (this.changes === 0) {
+            reject(new Error('Crafter não encontrado'));
+          } else {
             // Buscar crafter atualizado
             db.get('SELECT * FROM crafters WHERE id = ?', [id], (getErr, row) => {
-              if (getErr) reject(getErr);
-              else resolve(row);
+              if (getErr) {
+                reject(new Error(`Erro ao buscar crafter atualizado: ${getErr.message}`));
+              } else {
+                resolve(row);
+              }
             });
           }
         }
       );
+    });
+  },
+
+  async deleteCrafter(id) {
+    return new Promise((resolve, reject) => {
+      // Validação do ID
+      if (!id || isNaN(Number(id))) {
+        return reject(new Error('ID inválido'));
+      }
+      
+      // Soft delete - marca como inativo ao invés de deletar
+      db.run(
+        'UPDATE crafters SET active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND active = 1',
+        [id],
+        function(err) {
+          if (err) {
+            reject(new Error(`Erro ao deletar crafter: ${err.message}`));
+          } else if (this.changes === 0) {
+            reject(new Error('Crafter não encontrado ou já inativo'));
+          } else {
+            resolve(true);
+          }
+        }
+      );
+    });
+  },
+
+  async getCrafterById(id) {
+    return new Promise((resolve, reject) => {
+      if (!id || isNaN(Number(id))) {
+        return reject(new Error('ID inválido'));
+      }
+      
+      db.get('SELECT * FROM crafters WHERE id = ?', [id], (err, row) => {
+        if (err) {
+          reject(new Error(`Erro ao buscar crafter: ${err.message}`));
+        } else {
+          resolve(row || null);
+        }
+      });
     });
   },
 

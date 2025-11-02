@@ -1,173 +1,85 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
+import { useCrafters, CraftersRepo } from '../hooks/useAdminRepo';
+import './AdminCrafters.css';
+
 export default function AdminCrafters() {
-  const [crafters, setCrafters] = useState([]);
-  const [equipes, setEquipes] = useState([]);
-  const [projetos, setProjetos] = useState([]);
-  const [mentores, setMentores] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [lastUpdate, setLastUpdate] = useState(null);
-  
-  // Estados para filtros e busca
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterEquipe, setFilterEquipe] = useState('');
-  const [filterProjeto, setFilterProjeto] = useState('');
-  const [sortField, setSortField] = useState('nome');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [sortBy, setSortBy] = useState('nome');
   const [sortDirection, setSortDirection] = useState('asc');
-
-  // Carregar dados iniciais
+  const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'active', 'inactive'
+  
+  // Hook otimizado com opções de busca
+  const searchOptions = useMemo(() => ({
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchTerm,
+    active_only: activeFilter === 'active' ? true : activeFilter === 'inactive' ? false : undefined,
+    order_by: sortBy,
+    order_direction: sortDirection
+  }), [currentPage, itemsPerPage, searchTerm, activeFilter, sortBy, sortDirection]);
+  
+  const { crafters, pagination, loading, error, reload, loadPage } = useCrafters(searchOptions);
+  // Resetar página quando filtros mudarem
   useEffect(() => {
-    carregarDados();
-    
-    // Configurar atualização automática a cada 30 segundos
-    const interval = setInterval(() => {
-      carregarDados();
-    }, 30000);
-
-    // Cleanup do interval quando o componente for desmontado
-    return () => clearInterval(interval);
-  }, []);
-
-  const carregarDados = async () => {
-    try {
-      setLoading(true);
-      const [craftersRes, equipesRes, projetosRes, mentoresRes] = await Promise.all([
-        fetch('http://localhost:8080/api/sqlite/crafters'),
-        fetch('http://localhost:8080/api/sqlite/equipes'),
-        fetch('http://localhost:8080/api/sqlite/projetos'),
-        fetch('http://localhost:8080/api/mentores?all=1')
-      ]);
-
-      const [craftersData, equipesData, projetosData, mentoresData] = await Promise.all([
-        craftersRes.json(),
-        equipesRes.json(),
-        projetosRes.json(),
-        mentoresRes.json()
-      ]);
-
-      if (craftersData.success) setCrafters(craftersData.data || []);
-      if (equipesData.success) setEquipes(equipesData.data || []);
-      if (projetosData.success) setProjetos(projetosData.data || []);
-      if (mentoresData.success) setMentores(mentoresData.data || []);
-
-      setLastUpdate(new Date());
-
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      setError('Erro ao carregar dados. Tente novamente.');
-    } finally {
-      setLoading(false);
+    if (currentPage !== 1) {
+      setCurrentPage(1);
     }
+  }, [currentPage, searchTerm, activeFilter, sortBy, sortDirection]);
+
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
   };
 
-  // Processar dados dos crafters com informações de equipe e projeto
-  const craftersProcessados = useMemo(() => {
-    return crafters.map(crafter => {
-      // Encontrar equipe do crafter
-      const equipe = equipes.find(e => e.crafter_id === crafter.id);
-      
-      // Encontrar projeto e mentor através da equipe
-      const projeto = equipe ? projetos.find(p => p.id === equipe.projeto_id) : null;
-      const mentor = equipe ? mentores.find(m => m.id === equipe.mentor_id) : null;
-
-      return {
-        ...crafter,
-        equipe_id: equipe?.id || null,
-        projeto_nome: projeto?.nome || 'Não atribuído',
-        projeto_id: projeto?.id || null,
-        mentor_nome: mentor?.nome || 'Não atribuído',
-        mentor_id: mentor?.id || null,
-        status_inscricao: equipe?.status_inscricao || 'Sem equipe'
-      };
-    });
-  }, [crafters, equipes, projetos, mentores]);
-
-  // Filtrar e ordenar crafters
-  const craftersFiltrados = useMemo(() => {
-    let resultado = craftersProcessados;
-
-    // Aplicar busca por nome ou email
-    if (searchTerm) {
-      resultado = resultado.filter(crafter =>
-        crafter.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        crafter.email.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filtrar por equipe/projeto
-    if (filterProjeto) {
-      resultado = resultado.filter(crafter => crafter.projeto_id === parseInt(filterProjeto));
-    }
-
-    // Filtrar por status de equipe
-    if (filterEquipe) {
-      resultado = resultado.filter(crafter => crafter.status_inscricao === filterEquipe);
-    }
-
-    // Ordenar
-    resultado.sort((a, b) => {
-      let aValue = a[sortField] || '';
-      let bValue = b[sortField] || '';
-      
-      if (typeof aValue === 'string') {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-
-      if (sortDirection === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-    return resultado;
-  }, [craftersProcessados, searchTerm, filterProjeto, filterEquipe, sortField, sortDirection]);
-
-  // Função para ordenação
   const handleSort = (field) => {
-    if (sortField === field) {
+    if (sortBy === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      setSortField(field);
+      setSortBy(field);
       setSortDirection('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    loadPage(page);
+  };
+
+  const handleItemsPerPageChange = (newLimit) => {
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
+
+  const handleDeleteCrafter = async (crafterId) => {
+    if (!window.confirm('Tem certeza que deseja excluir este crafter?')) {
+      return;
+    }
+
+    try {
+      await CraftersRepo.delete(crafterId);
+      reload(); // Recarregar a lista
+    } catch (error) {
+      console.error('Erro ao excluir crafter:', error);
+      alert('Erro ao excluir crafter: ' + error.message);
     }
   };
 
-  // Função para exportar CSV
-  const exportarCSV = () => {
-    const headers = ['Nome Completo', 'Email', 'Telefone', 'Projeto', 'Mentor', 'Status da Equipe'];
-    const csvContent = [
-      headers.join(','),
-      ...craftersFiltrados.map(crafter => [
-        `"${crafter.nome}"`,
-        `"${crafter.email}"`,
-        `"${crafter.telefone || 'Não informado'}"`,
-        `"${crafter.projeto_nome}"`,
-        `"${crafter.mentor_nome}"`,
-        `"${crafter.status_inscricao}"`
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `crafters_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const getSortIcon = (field) => {
+    if (sortBy !== field) return '↕️';
+    return sortDirection === 'asc' ? '↑' : '↓';
   };
 
-  // Obter lista única de status para filtro
-  const statusUnicos = [...new Set(craftersProcessados.map(c => c.status_inscricao))];
-
-  if (loading) {
+  if (loading && crafters.length === 0) {
     return (
       <div className="admin-crafters">
-        <div className="loading">Carregando dados dos crafters...</div>
+        <div className="loading-state">
+          <div className="spinner"></div>
+          <p>Carregando crafters...</p>
+        </div>
       </div>
     );
   }
@@ -175,503 +87,216 @@ export default function AdminCrafters() {
   if (error) {
     return (
       <div className="admin-crafters">
-        <div className="error">{error}</div>
-        <button onClick={carregarDados} className="btn btn-primary">Tentar Novamente</button>
+        <div className="error-state">
+          <h3>Erro ao carregar crafters</h3>
+          <p>{error}</p>
+          <button onClick={reload} className="retry-button">
+            Tentar novamente
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="admin-crafters">
-      <div className="header">
-        <div className="header-content">
-          <div>
-            <h1 className="title">Gerenciamento de Crafters</h1>
-            <p className="subtitle">
-              Visualize e gerencie todos os crafters cadastrados no sistema
-            </p>
-          </div>
-          <div className="header-actions">
-            <button 
-              onClick={carregarDados} 
-              className="btn btn-secondary"
-              disabled={loading}
-            >
-              🔄 {loading ? 'Atualizando...' : 'Atualizar'}
-            </button>
-            {lastUpdate && (
-              <div className="last-update">
-                Última atualização: {lastUpdate.toLocaleTimeString('pt-BR')}
-              </div>
-            )}
-          </div>
+      <div className="admin-crafters-header">
+        <h2>Gerenciar Crafters</h2>
+        <div className="header-stats">
+          <span className="stat-item">
+            Total: <strong>{pagination.total}</strong>
+          </span>
+          <span className="stat-item">
+            Página: <strong>{pagination.page} de {pagination.totalPages}</strong>
+          </span>
         </div>
       </div>
 
-      {/* Controles de filtro e busca */}
-      <div className="controls">
+      <div className="admin-crafters-controls">
         <div className="search-section">
           <input
             type="text"
             placeholder="Buscar por nome ou email..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             className="search-input"
           />
         </div>
 
         <div className="filters-section">
           <select
-            value={filterProjeto}
-            onChange={(e) => setFilterProjeto(e.target.value)}
+            value={activeFilter}
+            onChange={(e) => setActiveFilter(e.target.value)}
             className="filter-select"
           >
-            <option value="">Todos os projetos</option>
-            {projetos.map(projeto => (
-              <option key={projeto.id} value={projeto.id}>
-                {projeto.nome}
-              </option>
-            ))}
+            <option value="all">Todos os crafters</option>
+            <option value="active">Apenas ativos</option>
+            <option value="inactive">Apenas inativos</option>
           </select>
 
           <select
-            value={filterEquipe}
-            onChange={(e) => setFilterEquipe(e.target.value)}
-            className="filter-select"
+            value={itemsPerPage}
+            onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+            className="items-per-page-select"
           >
-            <option value="">Todos os status</option>
-            {statusUnicos.map(status => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
+            <option value={5}>5 por página</option>
+            <option value={10}>10 por página</option>
+            <option value={25}>25 por página</option>
+            <option value={50}>50 por página</option>
           </select>
-
-          <button onClick={exportarCSV} className="btn btn-secondary">
-            📊 Exportar CSV
-          </button>
         </div>
       </div>
 
-      {/* Estatísticas */}
-      <div className="stats">
-        <div className="stat-card">
-          <h3>{crafters.length}</h3>
-          <p>Total de Crafters</p>
-        </div>
-        <div className="stat-card">
-          <h3>{craftersFiltrados.length}</h3>
-          <p>Crafters Filtrados</p>
-        </div>
-        <div className="stat-card">
-          <h3>{craftersProcessados.filter(c => c.equipe_id).length}</h3>
-          <p>Com Equipe</p>
-        </div>
-        <div className="stat-card">
-          <h3>{craftersProcessados.filter(c => !c.equipe_id).length}</h3>
-          <p>Sem Equipe</p>
-        </div>
-      </div>
-
-      {/* Tabela de crafters */}
-      <div className="table-container">
+      <div className="crafters-table-container">
         <table className="crafters-table">
           <thead>
             <tr>
-              <th onClick={() => handleSort('nome')} className="sortable">
-                Nome Completo
-                {sortField === 'nome' && (
-                  <span className="sort-indicator">
-                    {sortDirection === 'asc' ? ' ↑' : ' ↓'}
-                  </span>
-                )}
+              <th 
+                onClick={() => handleSort('nome')}
+                className={`sortable ${sortBy === 'nome' ? 'active' : ''}`}
+              >
+                Nome {getSortIcon('nome')}
               </th>
-              <th onClick={() => handleSort('email')} className="sortable">
-                Email
-                {sortField === 'email' && (
-                  <span className="sort-indicator">
-                    {sortDirection === 'asc' ? ' ↑' : ' ↓'}
-                  </span>
-                )}
+              <th 
+                onClick={() => handleSort('email')}
+                className={`sortable ${sortBy === 'email' ? 'active' : ''}`}
+              >
+                Email {getSortIcon('email')}
               </th>
-              <th>Telefone</th>
-              <th onClick={() => handleSort('projeto_nome')} className="sortable">
-                Projeto Associado
-                {sortField === 'projeto_nome' && (
-                  <span className="sort-indicator">
-                    {sortDirection === 'asc' ? ' ↑' : ' ↓'}
-                  </span>
-                )}
+              <th 
+                onClick={() => handleSort('points')}
+                className={`sortable ${sortBy === 'points' ? 'active' : ''}`}
+              >
+                Pontos {getSortIcon('points')}
               </th>
-              <th onClick={() => handleSort('mentor_nome')} className="sortable">
-                Mentor
-                {sortField === 'mentor_nome' && (
-                  <span className="sort-indicator">
-                    {sortDirection === 'asc' ? ' ↑' : ' ↓'}
-                  </span>
-                )}
+              <th 
+                onClick={() => handleSort('active')}
+                className={`sortable ${sortBy === 'active' ? 'active' : ''}`}
+              >
+                Status {getSortIcon('active')}
               </th>
-              <th onClick={() => handleSort('status_inscricao')} className="sortable">
-                Status da Equipe
-                {sortField === 'status_inscricao' && (
-                  <span className="sort-indicator">
-                    {sortDirection === 'asc' ? ' ↑' : ' ↓'}
-                  </span>
-                )}
-              </th>
-              <th>Pontos</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody>
-            {craftersFiltrados.length > 0 ? (
-              craftersFiltrados.map(crafter => (
+            {crafters.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="no-data">
+                  {searchTerm || activeFilter !== 'all' 
+                    ? 'Nenhum crafter encontrado com os filtros aplicados.' 
+                    : 'Nenhum crafter cadastrado.'}
+                </td>
+              </tr>
+            ) : (
+              crafters.map((crafter) => (
                 <tr key={crafter.id}>
                   <td>
-                    <div className="crafter-info">
+                    <div className="crafter-name">
                       {crafter.avatar_url && (
                         <img 
                           src={crafter.avatar_url} 
                           alt={crafter.nome}
-                          className="avatar"
+                          className="crafter-avatar"
                         />
                       )}
-                      <span className="nome">{crafter.nome}</span>
+                      <span>{crafter.nome}</span>
                     </div>
                   </td>
-                  <td>{crafter.email}</td>
-                  <td>{crafter.telefone || 'Não informado'}</td>
+                  <td>{crafter.email || '-'}</td>
                   <td>
-                    <span className={`projeto-tag ${crafter.projeto_id ? 'assigned' : 'unassigned'}`}>
-                      {crafter.projeto_nome}
+                    <span className="points-badge">
+                      {crafter.points || 0}
                     </span>
                   </td>
                   <td>
-                    <span className={`mentor-tag ${crafter.mentor_id ? 'assigned' : 'unassigned'}`}>
-                      {crafter.mentor_nome}
+                    <span className={`status-badge ${crafter.active ? 'active' : 'inactive'}`}>
+                      {crafter.active ? 'Ativo' : 'Inativo'}
                     </span>
                   </td>
                   <td>
-                    <span className={`status-badge status-${crafter.status_inscricao.toLowerCase().replace(' ', '-')}`}>
-                      {crafter.status_inscricao}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="points">{crafter.points || 0}</span>
+                    <div className="action-buttons">
+                      <button 
+                        className="edit-button"
+                        onClick={() => {/* TODO: Implementar edição */}}
+                        title="Editar crafter"
+                      >
+                        ✏️
+                      </button>
+                      <button 
+                        className="delete-button"
+                        onClick={() => handleDeleteCrafter(crafter.id)}
+                        title="Excluir crafter"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
-            ) : (
-              <tr>
-                <td colSpan="7" className="no-data">
-                  {searchTerm || filterProjeto || filterEquipe
-                    ? 'Nenhum crafter encontrado com os filtros aplicados.'
-                    : 'Nenhum crafter cadastrado no sistema.'
-                  }
-                </td>
-              </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      <style jsx>{`
-        .admin-crafters {
-          max-width: 1400px;
-          margin: 0 auto;
-          padding: 20px;
-        }
+      {pagination.totalPages > 1 && (
+        <div className="pagination-container">
+          <div className="pagination-info">
+            Mostrando {((pagination.page - 1) * itemsPerPage) + 1} a {Math.min(pagination.page * itemsPerPage, pagination.total)} de {pagination.total} crafters
+          </div>
+          
+          <div className="pagination-controls">
+            <button
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={!pagination.hasPrev || loading}
+              className="pagination-button"
+            >
+              ← Anterior
+            </button>
+            
+            <div className="pagination-numbers">
+              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                let pageNum;
+                if (pagination.totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (pagination.page <= 3) {
+                  pageNum = i + 1;
+                } else if (pagination.page >= pagination.totalPages - 2) {
+                  pageNum = pagination.totalPages - 4 + i;
+                } else {
+                  pageNum = pagination.page - 2 + i;
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    disabled={loading}
+                    className={`pagination-number ${pageNum === pagination.page ? 'active' : ''}`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            
+            <button
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={!pagination.hasNext || loading}
+              className="pagination-button"
+            >
+              Próxima →
+            </button>
+          </div>
+        </div>
+      )}
 
-        .header {
-          margin-bottom: 30px;
-        }
+      {loading && crafters.length > 0 && (
+        <div className="loading-overlay">
+          <div className="spinner-small"></div>
+        </div>
+      )}
 
-        .header-content {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 20px;
-        }
 
-        .header-actions {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          gap: 10px;
-        }
-
-        .last-update {
-          font-size: 0.9rem;
-          color: #666;
-          font-style: italic;
-        }
-
-        .title {
-          font-size: 2.5rem;
-          color: #333;
-          margin-bottom: 10px;
-        }
-
-        .subtitle {
-          color: #666;
-          font-size: 1.1rem;
-        }
-
-        .controls {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 30px;
-          gap: 20px;
-          flex-wrap: wrap;
-        }
-
-        .search-section {
-          flex: 1;
-          min-width: 300px;
-        }
-
-        .search-input {
-          width: 100%;
-          padding: 12px 16px;
-          border: 2px solid #e1e5e9;
-          border-radius: 8px;
-          font-size: 16px;
-          transition: border-color 0.3s;
-        }
-
-        .search-input:focus {
-          outline: none;
-          border-color: #007bff;
-        }
-
-        .filters-section {
-          display: flex;
-          gap: 15px;
-          align-items: center;
-        }
-
-        .filter-select {
-          padding: 10px 12px;
-          border: 2px solid #e1e5e9;
-          border-radius: 6px;
-          background: white;
-          min-width: 150px;
-        }
-
-        .btn {
-          padding: 10px 20px;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          font-weight: 500;
-          transition: all 0.3s;
-        }
-
-        .btn-primary {
-          background: #007bff;
-          color: white;
-        }
-
-        .btn-primary:hover {
-          background: #0056b3;
-        }
-
-        .btn-secondary {
-          background: #6c757d;
-          color: white;
-        }
-
-        .btn-secondary:hover {
-          background: #545b62;
-        }
-
-        .stats {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 20px;
-          margin-bottom: 30px;
-        }
-
-        .stat-card {
-          background: white;
-          padding: 20px;
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          text-align: center;
-        }
-
-        .stat-card h3 {
-          font-size: 2rem;
-          color: #007bff;
-          margin: 0 0 5px 0;
-        }
-
-        .stat-card p {
-          color: #666;
-          margin: 0;
-        }
-
-        .table-container {
-          background: white;
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          overflow: hidden;
-        }
-
-        .crafters-table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-
-        .crafters-table th,
-        .crafters-table td {
-          padding: 12px 16px;
-          text-align: left;
-          border-bottom: 1px solid #e1e5e9;
-        }
-
-        .crafters-table th {
-          background: #f8f9fa;
-          font-weight: 600;
-          color: #333;
-        }
-
-        .sortable {
-          cursor: pointer;
-          user-select: none;
-          transition: background-color 0.2s;
-        }
-
-        .sortable:hover {
-          background: #e9ecef;
-        }
-
-        .sort-indicator {
-          color: #007bff;
-          font-weight: bold;
-        }
-
-        .crafter-info {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .avatar {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          object-fit: cover;
-        }
-
-        .nome {
-          font-weight: 500;
-        }
-
-        .projeto-tag,
-        .mentor-tag {
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 0.85rem;
-          font-weight: 500;
-        }
-
-        .projeto-tag.assigned,
-        .mentor-tag.assigned {
-          background: #d4edda;
-          color: #155724;
-        }
-
-        .projeto-tag.unassigned,
-        .mentor-tag.unassigned {
-          background: #f8d7da;
-          color: #721c24;
-        }
-
-        .status-badge {
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 0.85rem;
-          font-weight: 500;
-          text-transform: capitalize;
-        }
-
-        .status-inscrito {
-          background: #fff3cd;
-          color: #856404;
-        }
-
-        .status-confirmado {
-          background: #d4edda;
-          color: #155724;
-        }
-
-        .status-finalizado {
-          background: #d1ecf1;
-          color: #0c5460;
-        }
-
-        .status-sem-equipe {
-          background: #f8d7da;
-          color: #721c24;
-        }
-
-        .points {
-          font-weight: 600;
-          color: #007bff;
-        }
-
-        .no-data {
-          text-align: center;
-          color: #666;
-          font-style: italic;
-          padding: 40px;
-        }
-
-        .loading,
-        .error {
-          text-align: center;
-          padding: 40px;
-          font-size: 1.1rem;
-        }
-
-        .error {
-          color: #dc3545;
-        }
-
-        @media (max-width: 768px) {
-          .controls {
-            flex-direction: column;
-            align-items: stretch;
-          }
-
-          .filters-section {
-            flex-direction: column;
-            gap: 10px;
-          }
-
-          .stats {
-            grid-template-columns: repeat(2, 1fr);
-          }
-
-          .table-container {
-            overflow-x: auto;
-          }
-
-          .crafters-table {
-            min-width: 800px;
-          }
-
-          .header-content {
-            flex-direction: column;
-            align-items: stretch;
-          }
-
-          .header-actions {
-            align-items: stretch;
-          }
-        }
-      `}</style>
     </div>
   );
 }
