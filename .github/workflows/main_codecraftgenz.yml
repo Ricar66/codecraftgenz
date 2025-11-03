@@ -26,10 +26,11 @@ jobs:
       - name: Setup production environment variables
         run: |
           # Cria arquivo .env.production com variáveis do GitHub Secrets
-          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" > .env.production
-          echo "VITE_WP_API_URL=${{ secrets.VITE_WP_API_URL || 'https://cms.codecraftgenz.com.br/wp-json' }}" >> .env.production
-          echo "VITE_APP_ENV=production" >> .env.production
-          echo "VITE_DEBUG=false" >> .env.production
+          cat << EOF > .env.production
+          VITE_APP_ENV=production
+          VITE_DEBUG=false
+          VITE_WP_API_URL=https://cms.codecraftgenz.com.br/wp-json
+          EOF
           
           # Exibe conteúdo (apenas para debug no log)
           echo "=== CONTEÚDO DO .env.production ==="
@@ -87,13 +88,17 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_FA7BE0902E0648D99C0280CFFDBCF320 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_CC5211DF19594EAB9484FC77F3CF078C }}
 
+      - name: 'Set Azure App Settings'
+        uses: azure/cli@v1
+        with:
+          inlineScript: |
+            az webapp config appsettings set --name codecraftgenz --resource-group <SEU_RESOURCE_GROUP> --settings WEBSITE_NODE_DEFAULT_VERSION=18-lts SCM_DO_BUILD_DURING_DEPLOYMENT=true
+
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'codecraftgenz'
           slot-name: 'Production'
-          app-settings: 'WEBSITE_NODE_DEFAULT_VERSION=18-lts SCM_DO_BUILD_DURING_DEPLOYMENT=true'
           package: '.'
           startup-command: 'npm start'
-          
