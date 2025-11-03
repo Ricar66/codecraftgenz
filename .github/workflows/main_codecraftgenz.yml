@@ -41,6 +41,16 @@ jobs:
           npm ci --production=false
           npm run build
           npm run test --if-present
+
+      # ADICIONE ESTE PASSO
+      - name: Remover node_modules de build
+        run: rm -rf node_modules
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-app
+          path: .
           
       - name: Verify build output
         run: |
@@ -82,7 +92,7 @@ jobs:
         with:
           app-name: 'codecraftgenz'
           slot-name: 'Production'
-          app-settings: 'WEBSITE_NODE_DEFAULT_VERSION=18-lts SCM_DO_BUILD_DURING_DEPLOYMENT=false'
+          app-settings: 'WEBSITE_NODE_DEFAULT_VERSION=18-lts SCM_DO_BUILD_DURING_DEPLOYMENT=true'
           package: '.'
-          startup-command: 'npm start'
+          startup-command: 'npx prisma generate && npm start'
           

@@ -34,12 +34,20 @@ export function Dashboard() {
     } finally { setLoading(false); }
   }, [periodo, tipo]);
 
-  React.useEffect(() => { fetchAll(); }, [fetchAll]);
+  // Efeito inicial - executa apenas uma vez ou quando periodo/tipo mudam
+  React.useEffect(() => { 
+    fetchAll(); 
+  }, [periodo, tipo]); // Removido fetchAll das dependências para evitar loop
+
+  // Efeito para realtime - usa referência estável
   React.useEffect(() => {
-    const unsub1 = realtime.subscribe('projects_changed', () => fetchAll());
-    const unsub2 = realtime.subscribe('finance_changed', () => fetchAll());
+    const handleProjectsChange = () => fetchAll();
+    const handleFinanceChange = () => fetchAll();
+    
+    const unsub1 = realtime.subscribe('projects_changed', handleProjectsChange);
+    const unsub2 = realtime.subscribe('finance_changed', handleFinanceChange);
     return () => { unsub1(); unsub2(); };
-  }, [fetchAll]);
+  }, [periodo, tipo]); // Dependências diretas ao invés de fetchAll
 
   const toLower = (s) => String(s || '').toLowerCase();
   const statusMap = (s) => {

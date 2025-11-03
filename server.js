@@ -2482,6 +2482,44 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(staticDir, 'index.html'));
 });
 
+// --- Tratamento de Erros Globais ---
+// Middleware de tratamento de erros
+app.use((err, req, res, next) => {
+    console.error(`[${new Date().toISOString()}] Erro não tratado:`, err);
+    
+    // Se já foi enviada uma resposta, delega para o handler padrão do Express
+    if (res.headersSent) {
+        return next(err);
+    }
+    
+    // Resposta de erro genérica
+    res.status(500).json({
+        error: 'Erro interno do servidor',
+        message: process.env.NODE_ENV === 'development' ? err.message : 'Algo deu errado'
+    });
+});
+
+// Tratamento de exceções não capturadas
+process.on('uncaughtException', (err) => {
+    console.error(`[${new Date().toISOString()}] Exceção não capturada:`, err);
+    // Em produção, não mata o processo imediatamente
+    if (process.env.NODE_ENV === 'production') {
+        console.error('Continuando execução em produção...');
+    } else {
+        process.exit(1);
+    }
+});
+
+// Tratamento de promises rejeitadas
+process.on('unhandledRejection', (reason, promise) => {
+    console.error(`[${new Date().toISOString()}] Promise rejeitada não tratada:`, reason);
+    console.error('Promise:', promise);
+    // Em produção, não mata o processo
+    if (process.env.NODE_ENV !== 'production') {
+        process.exit(1);
+    }
+});
+
 // --- Iniciar o Servidor ---
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);

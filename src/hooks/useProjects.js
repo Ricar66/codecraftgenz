@@ -293,7 +293,7 @@ const useProjects = (options = {}) => {
         intervalRef.current = null;
       }
     };
-  }, [autoFetch, refetchInterval]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [autoFetch, refetchInterval, fetchProjects]); // Adicionado fetchProjects como dependência
 
   /**
    * Cleanup ao desmontar componente

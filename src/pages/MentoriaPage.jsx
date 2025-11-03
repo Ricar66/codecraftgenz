@@ -31,11 +31,15 @@ export default function MentoriaPage() {
   };
 
   useEffect(() => {
+    let isMounted = true; // Flag para verificar se o componente ainda está montado
+    
     fetchMentors();
 
     const unsub = realtime.subscribe('mentors_changed', () => {
       // Quando o admin publicar mudanças, refaz fetch do endpoint
-      fetchMentors();
+      if (isMounted) {
+        fetchMentors();
+      }
     });
 
     // Em ambiente de teste, evitamos polling para reduzir warnings de act
@@ -44,21 +48,34 @@ export default function MentoriaPage() {
     let iv = null;
     if (pollMs > 0) {
       iv = setInterval(() => {
+        if (!isMounted) return; // Evita fetch se componente foi desmontado
+        
         fetch('/api/mentores')
           .then(r => r.ok ? r.json() : Promise.reject())
           .then(json => {
+            if (!isMounted) return; // Evita setState se componente foi desmontado
+            
             const list = Array.isArray(json?.data) ? json.data : [];
             const normalized = list.map(m => ({ ...m, photo: m.foto_url || m.photo || null }));
             setMentors(normalized.filter(m => m.visible));
           })
           .catch(() => {
+            if (!isMounted) return; // Evita setState se componente foi desmontado
             // If API fails, set empty array
             setMentors([]);
           });
       }, pollMs);
     }
-    return () => { unsub(); if (iv) clearInterval(iv); };
-  }, []);
+    
+    return () => { 
+      isMounted = false; // Marca como desmontado
+      unsub(); 
+      if (iv) {
+        clearInterval(iv);
+        iv = null;
+      }
+    };
+  }, []); // Sem dependências para evitar re-execução desnecessária
 
   return (
     <div className="mentoria-page">
