@@ -13,7 +13,7 @@
     "preview:vite": "vite preview",
     "start": "node server.js",
     "start:dev": "npx prisma db push && node server.js",
-    "start:azure": "npx prisma generate && node server.js",
+    "start:azure": "node server.js",
     "postinstall": "npx prisma generate",
     "test": "vitest",
     "test:ui": "vitest --ui",
