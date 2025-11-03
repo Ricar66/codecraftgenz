@@ -6,7 +6,7 @@
 
 Configure as seguintes variáveis no Azure Portal > App Service > Configuration:
 
-```
+```bash
 DATABASE_URL=postgresql://username:password@server.postgres.database.azure.com:5432/database?sslmode=require
 NODE_ENV=production
 WEBSITE_NODE_DEFAULT_VERSION=22.17.0
@@ -39,14 +39,17 @@ VITE_APP_ENV=production
 ### 5. Troubleshooting
 
 #### Erro "prisma: Permission denied"
+
 - ✅ **Resolvido**: Removido `npx prisma db push` do script `start`
 - ✅ **Solução**: Prisma Client é gerado durante o build, não na inicialização
 
 #### Erro de módulos não encontrados
+
 - Verificar se todas as dependências estão no `package.json`
 - Verificar se o `postinstall` está executando `npx prisma generate`
 
 #### Erro de conexão com banco
+
 - Verificar se `DATABASE_URL` está configurada corretamente
 - Verificar se o banco PostgreSQL do Azure está acessível
 - Verificar se as credenciais estão corretas

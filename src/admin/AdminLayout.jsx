@@ -6,8 +6,8 @@ import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import ProjectCard from '../components/Projects/ProjectCard.jsx';
 import { useAuth } from '../context/useAuth';
 import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo, useDesafios, DesafiosRepo, useFinance, FinanceRepo, useRanking, RankingRepo, useLogs } from '../hooks/useAdminRepo';
+import { apiRequest } from '../lib/apiConfig.js';
 import { realtime } from '../lib/realtime';
-import { apiConfig } from '../lib/apiConfig';
 
 export function Dashboard() {
   const [periodo, setPeriodo] = React.useState('30d');
@@ -22,13 +22,10 @@ export function Dashboard() {
     try {
       setLoading(true);
       setErro('');
-      const rResumo = await fetch(`/api/dashboard/resumo?periodo=${encodeURIComponent(periodo)}&type=${encodeURIComponent(tipo)}`);
-      if (!rResumo.ok) throw new Error(`HTTP ${rResumo.status}`);
-      const jsonResumo = await rResumo.json();
+      const jsonResumo = await apiRequest(`/api/dashboard/resumo?periodo=${encodeURIComponent(periodo)}&type=${encodeURIComponent(tipo)}`, { method: 'GET' });
       setResumo(jsonResumo);
 
-      const rProj = await fetch(`/api/projetos?all=1`);
-      const jsonProj = await rProj.json().catch(()=>({ data: [] }));
+      const jsonProj = await apiRequest(`/api/projetos?all=1`, { method: 'GET' }).catch(()=>({ data: [] }));
       setProjects(Array.isArray(jsonProj?.data) ? jsonProj.data : (Array.isArray(jsonProj?.projects) ? jsonProj.projects : []));
     } catch {
       setErro('Erro ao sincronizar com o dashboard');
@@ -38,7 +35,7 @@ export function Dashboard() {
   // Efeito inicial - executa apenas uma vez ou quando periodo/tipo mudam
   React.useEffect(() => { 
     fetchAll(); 
-  }, [periodo, tipo]); // Removido fetchAll das dependências para evitar loop
+  }, [fetchAll]);
 
   // Efeito para realtime - usa referência estável
   React.useEffect(() => {
@@ -48,7 +45,7 @@ export function Dashboard() {
     const unsub1 = realtime.subscribe('projects_changed', handleProjectsChange);
     const unsub2 = realtime.subscribe('finance_changed', handleFinanceChange);
     return () => { unsub1(); unsub2(); };
-  }, [periodo, tipo]); // Dependências diretas ao invés de fetchAll
+  }, [fetchAll]);
 
   const toLower = (s) => String(s || '').toLowerCase();
   const statusMap = (s) => {
@@ -577,12 +574,7 @@ export function Ranking() {
   const createCrafter = async () => {
     setBusy(true);
     try {
-      const response = await fetch(`${apiConfig.baseURL}/api/crafters`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(crafterForm)
-      });
-      if (!response.ok) throw new Error('Falha ao criar crafter');
+      await apiRequest('/api/crafters', { method: 'POST', body: JSON.stringify(crafterForm) });
       setCrafterForm({ name: '', avatar_url: '', points: 0, active: true });
       refresh();
     } finally { setBusy(false); }
@@ -591,12 +583,7 @@ export function Ranking() {
   const updateCrafter = async (id, updates) => {
     setBusy(true);
     try {
-      const response = await fetch(`/api/crafters/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
-      if (!response.ok) throw new Error('Falha ao atualizar crafter');
+      await apiRequest(`/api/crafters/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
       refresh();
     } finally { setBusy(false); }
   };
@@ -1002,24 +989,15 @@ export function Projetos() {
         
         try {
           // Verificar se já existe registro financeiro para este projeto
-          const existingFinance = await fetch(`/api/financas?project_id=${savedProject.id || form.id}`);
-          const financeResponse = await existingFinance.json();
+          const financeResponse = await apiRequest(`/api/financas?project_id=${savedProject.id || form.id}`, { method: 'GET' });
           
           if (financeResponse.success && financeResponse.data.length > 0) {
             // Atualizar registro existente
             const existingRecord = financeResponse.data[0];
-            await fetch(`/api/financas/${existingRecord.id}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(financeData)
-            });
+            await apiRequest(`/api/financas/${existingRecord.id}`, { method: 'PUT', body: JSON.stringify(financeData) });
           } else {
             // Criar novo registro
-            await fetch(`${apiConfig.baseURL}/api/financas`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(financeData)
-            });
+            await apiRequest('/api/financas', { method: 'POST', body: JSON.stringify(financeData) });
           }
         } catch (financeError) {
           console.warn('Erro ao sincronizar com finanças:', financeError);
@@ -1107,7 +1085,7 @@ export function Projetos() {
             <div className="btn-group">
               <button className="btn btn-secondary" onClick={()=>setForm({ id:p.id, titulo:p.title||p.titulo||'', owner:p.owner||'', descricao:p.description||p.descricao||'', data_inicio:p.startDate||p.data_inicio||'', status:p.status||'rascunho', preco:p.price??0, progresso:p.progress??0, visivel:p.visible??false, thumb_url:p.thumb_url||'', tags:p.tags||[] })}>✏️</button>
               <button className="btn btn-outline" onClick={()=>ProjectsRepo.publish(p.id, !(p.visible ?? p.visivel))}>{(p.visible ?? p.visivel) ? '👁️‍🗨️' : '👁️'}</button>
-              <button className="btn btn-danger" onClick={async()=>{ if(!window.confirm('Arquivar este projeto?')) return; await fetch(`/api/projetos/${p.id}`, { method:'DELETE' }); refresh(); }}>🗑️</button>
+              <button className="btn btn-danger" onClick={async()=>{ if(!window.confirm('Arquivar este projeto?')) return; await apiRequest(`/api/projetos/${p.id}`, { method:'DELETE' }); refresh(); }}>🗑️</button>
             </div>
           </td>
         </tr>
@@ -1237,7 +1215,7 @@ export function Desafios() {
   const toggleVisible = async (d) => {
     setBusy(true);
     try {
-      await fetch(`/api/desafios/${d.id}/visibility`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ visible: !d.visible }) });
+      await apiRequest(`/api/desafios/${d.id}/visibility`, { method:'PUT', body: JSON.stringify({ visible: !d.visible }) });
       refresh();
     } finally { setBusy(false); }
   };
@@ -1255,9 +1233,7 @@ export function Desafios() {
     setDetailsLoading(true);
     setDetailsError('');
     try {
-      const r = await fetch(`/api/desafios/${id}`);
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const json = await r.json();
+      const json = await apiRequest(`/api/desafios/${id}`, { method: 'GET' });
       setDetails(json?.challenge || json);
     } catch {
       setDetailsError('Falha ao carregar detalhes');
@@ -1478,12 +1454,7 @@ export function Financas() {
         await FinanceRepo.update(editingId, payload);
       } else {
         // Criar novo registro financeiro
-        const response = await fetch(`${apiConfig.baseURL}/api/financas`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!response.ok) throw new Error('Erro ao criar registro');
+        await apiRequest('/api/financas', { method: 'POST', body: JSON.stringify(payload) });
       }
       
       setForm({ item: '', valor: 0, status: 'pending', type: 'other', project_id: '', progress: 0 });
@@ -1511,7 +1482,7 @@ export function Financas() {
   const onDelete = async (id) => {
     if (!window.confirm('Confirma a exclusão deste registro financeiro?')) return;
     try {
-      await fetch(`/api/financas/${id}`, { method: 'DELETE' });
+      await apiRequest(`/api/financas/${id}`, { method: 'DELETE' });
       refresh();
     } catch (error) {
       alert('Erro ao excluir: ' + error.message);
