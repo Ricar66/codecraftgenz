@@ -42,10 +42,18 @@ jobs:
           npm run build
           npm run test --if-present
 
-      # ADICIONE ESTE PASSO
+      - name: Verify build output
+        run: |
+          echo "=== VERIFICANDO ARQUIVOS DE BUILD ==="
+          ls -la dist/ || echo "Pasta dist não encontrada"
+          echo "=== CONTEÚDO DO DIST ==="
+          find dist -type f -name "*.html" -o -name "*.js" -o -name "*.css" | head -10 || echo "Nenhum arquivo encontrado"
+          echo "=================================="
+
       - name: Remover node_modules de build
         run: rm -rf node_modules
 
+      # ESTE É O ÚNICO PASSO DE UPLOAD NECESSÁRIO
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
