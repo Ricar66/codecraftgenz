@@ -81,7 +81,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 // --- ROTAS DA API ---
 
-// --- Autenticação (SQLite) ---
+// --- Autenticação ---
 
 // Função para criar hash da senha
 async function hashPassword(password) {
@@ -482,7 +482,7 @@ app.patch('/api/auth/users/:id/toggle-status', isAdmin, async (req, res) => {
   }
 });
 
-// --- Mentores (SQLite) ---
+// --- Mentores ---
 function normalizeMentorDbInput(body) {
   const b = body || {};
   return {
@@ -508,7 +508,7 @@ function publicMentorFromDb(row) {
   };
 }
 
-// GET /api/mentores → agora busca no SQLite
+// GET /api/mentores
 app.get('/api/mentores', async (req, res) => {
   try {
     const rows = await prisma.mentor.findMany();
@@ -520,7 +520,7 @@ app.get('/api/mentores', async (req, res) => {
   }
 });
 
-// POST /api/mentores → cria mentor no SQLite
+// POST /api/mentores
 app.post('/api/mentores', async (req, res) => {
   try {
     const input = normalizeMentorDbInput(req.body);
@@ -535,7 +535,7 @@ app.post('/api/mentores', async (req, res) => {
   }
 });
 
-// PUT /api/mentores/:id → atualiza mentor no SQLite
+// PUT /api/mentores/:id
 app.put('/api/mentores/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -553,7 +553,7 @@ app.put('/api/mentores/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/mentores/:id → remove mentor no SQLite
+// DELETE /api/mentores/:id
 app.delete('/api/mentores/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -817,7 +817,7 @@ app.post('/api/projetos', async (req, res) => {
     const input = normalizeProjetoInput(req.body || {});
     if (!input.title) return res.status(400).json({ success: false, error: 'Campo obrigatório: title' });
     
-    // Mapear campos para SQLite
+    // Mapear campos para banco de dados
     const projetoData = {
       titulo: input.title,
       descricao: input.description || '',
@@ -832,7 +832,7 @@ app.post('/api/projetos', async (req, res) => {
     
     const projeto = await prisma.projeto.create({ data: projetoData });
     
-    // TODO: Criar registro financeiro se necessário (quando implementarmos finanças no SQLite)
+    // TODO: Criar registro financeiro se necessário (quando implementarmos finanças)
     
     res.status(201).json({ success: true, project: projeto });
   } catch (error) {
@@ -857,7 +857,7 @@ app.put('/api/projetos/:id', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Campo obrigatório: title' });
     }
     
-    // Mapear campos para SQLite
+    // Mapear campos para banco de dados
     const updates = {
       titulo: input.title,
       descricao: input.description || projeto.descricao,
@@ -882,7 +882,7 @@ app.put('/api/projetos/:id', async (req, res) => {
       data: updates
     });
     
-    // TODO: Sincronizar finanças vinculadas quando implementarmos no SQLite
+    // TODO: Sincronizar finanças vinculadas quando implementarmos
     
     res.status(200).json({ success: true, project: projetoAtualizado });
   } catch (error) {
@@ -1742,7 +1742,7 @@ function publicChallenge(c) {
   };
 }
 
-// --- Desafios (SQLite) ---
+// --- Desafios ---
 function _addDays(days) {
   const d = new Date();
   d.setDate(d.getDate() + days);
@@ -2176,7 +2176,7 @@ app.put('/api/submissions/:id/review', async (req, res) => {
   }
 });
 
-// GET /api/feedbacks - Busca feedbacks do SQLite com filtros
+// GET /api/feedbacks - Busca feedbacks com filtros
 app.get('/api/feedbacks', async (req, res) => {
     console.log(`[${new Date().toISOString()}] Recebido GET /api/feedbacks`);
     try {
@@ -2211,7 +2211,7 @@ app.get('/api/feedbacks', async (req, res) => {
     }
 });
 
-// POST /api/feedbacks - Cria um novo feedback no SQLite
+// POST /api/feedbacks - Cria um novo feedback
 app.post('/api/feedbacks', async (req, res) => {
     console.log(`[${new Date().toISOString()}] Recebido POST /api/feedbacks com dados:`, req.body);
     const { nome, email, mensagem, origem } = req.body;
@@ -2334,7 +2334,7 @@ app.put('/api/inscricoes/:id/status', async (req, res) => {
     }
 });
 
-// GET /api/projects - Busca todos os projetos do SQLite
+// GET /api/projects - Busca todos os projetos
 app.get('/api/projects', async (req, res) => {
     console.log(`[${new Date().toISOString()}] Recebido GET /api/projects`);
     try {
