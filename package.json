@@ -14,7 +14,7 @@
     "start": "node server.js",
     "start:dev": "npx prisma db push && node server.js",
     "start:azure": "node server.js",
-    "postinstall": "npx prisma generate",
+    "postinstall": "npx prisma generate --schema=./prisma/schema.prisma",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
