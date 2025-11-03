@@ -1,6 +1,5 @@
 // src/components/CrafterModal/CrafterModal.jsx
 import React, { useState } from 'react';
-import { apiConfig } from '../../lib/apiConfig';
 
 const CrafterModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
@@ -78,7 +77,7 @@ const CrafterModal = ({ isOpen, onClose }) => {
     setError(null);
 
     try {
-      const response = await fetch(`${apiConfig.baseURL}/api/inscricoes`, {
+      const response = await fetch('/api/inscricoes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

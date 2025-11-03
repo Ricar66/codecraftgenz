@@ -1,9 +1,7 @@
 // src/services/userAPI.js
 // Serviço centralizado para operações com usuários administrativos
 
-import { apiConfig } from '../lib/apiConfig.js';
-
-const API_BASE_URL = apiConfig.baseURL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 /**
  * Busca todos os usuários administrativos

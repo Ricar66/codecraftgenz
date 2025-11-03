@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { AuthContext } from './AuthCore';
-import { apiConfig } from '../lib/apiConfig';
 
 function getStoredSession() {
   try {
@@ -60,7 +59,7 @@ function useAuthProvider() {
 
     try {
       // Fazer login via API do banco
-      const response = await fetch(`${apiConfig.baseURL}/api/auth/login`, {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

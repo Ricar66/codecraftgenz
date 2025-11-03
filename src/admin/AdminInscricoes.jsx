@@ -1,6 +1,8 @@
 // src/admin/AdminInscricoes.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 
+import { apiRequest } from '../lib/apiConfig.js';
+
 import styles from './AdminInscricoes.module.css';
 
 const AdminInscricoes = () => {
@@ -36,12 +38,7 @@ const AdminInscricoes = () => {
         params.append('status', filtroStatus);
       }
       
-      const response = await fetch(`/api/inscricoes?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error('Erro ao carregar inscrições');
-      }
-      
-      const data = await response.json();
+      const data = await apiRequest(`/api/inscricoes?${params.toString()}`, { method: 'GET' });
       setInscricoes(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message);
@@ -52,17 +49,7 @@ const AdminInscricoes = () => {
 
   const updateStatus = async (id, novoStatus) => {
     try {
-      const response = await fetch(`/api/inscricoes/${id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: novoStatus }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao atualizar status');
-      }
+      await apiRequest(`/api/inscricoes/${id}/status`, { method: 'PUT', body: JSON.stringify({ status: novoStatus }) });
 
       // Atualizar a lista local
       setInscricoes(prev => 

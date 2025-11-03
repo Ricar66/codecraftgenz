@@ -1,28 +1,13 @@
 // src/services/rankingAPI.js
 // Serviço centralizado para operações com ranking
-
-import { apiConfig } from '../lib/apiConfig.js';
-
-const API_BASE_URL = apiConfig.baseURL;
+import { apiRequest } from '../lib/apiConfig.js';
 
 /**
  * Busca dados do ranking
  * @returns {Promise<Object>} Dados do ranking (actives, inactives, top3, settings)
  */
 export async function getRanking() {
-  const response = await fetch(`${API_BASE_URL}/api/ranking`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Erro ao buscar ranking: ${response.status}`);
-  }
-
-  return await response.json();
+  return await apiRequest('/api/ranking', { method: 'GET', headers: { 'Cache-Control': 'no-cache' } });
 }
 
 /**
@@ -34,20 +19,10 @@ export async function getRanking() {
  * @returns {Promise<Object>} Resultado da atualização
  */
 export async function updateCrafterPoints(crafterId, options = {}) {
-  const response = await fetch(`${API_BASE_URL}/api/ranking/points/${crafterId}`, {
+  return await apiRequest(`/api/ranking/points/${crafterId}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-User-Id': 'admin', // TODO: usar ID do usuário logado
-    },
     body: JSON.stringify(options),
   });
-
-  if (!response.ok) {
-    throw new Error(`Erro ao atualizar pontos: ${response.status}`);
-  }
-
-  return await response.json();
 }
 
 /**
@@ -56,20 +31,10 @@ export async function updateCrafterPoints(crafterId, options = {}) {
  * @returns {Promise<Object>} Resultado da atualização
  */
 export async function updateTop3(top3) {
-  const response = await fetch(`${API_BASE_URL}/api/ranking/top3`, {
+  return await apiRequest('/api/ranking/top3', {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-User-Id': 'admin', // TODO: usar ID do usuário logado
-    },
     body: JSON.stringify({ top3 }),
   });
-
-  if (!response.ok) {
-    throw new Error(`Erro ao atualizar top3: ${response.status}`);
-  }
-
-  return await response.json();
 }
 
 /**
@@ -77,18 +42,7 @@ export async function updateTop3(top3) {
  * @returns {Promise<Array>} Lista de logs de auditoria
  */
 export async function getRankingAudit() {
-  const response = await fetch(`${API_BASE_URL}/api/ranking/audit`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Erro ao buscar auditoria: ${response.status}`);
-  }
-
-  const data = await response.json();
+  const data = await apiRequest('/api/ranking/audit', { method: 'GET' });
   return data.data || [];
 }
 
@@ -98,20 +52,10 @@ export async function getRankingAudit() {
  * @returns {Promise<Object>} Resultado da atualização
  */
 export async function updateRankingFilters(filters) {
-  const response = await fetch(`${API_BASE_URL}/api/ranking/filters`, {
+  return await apiRequest('/api/ranking/filters', {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-User-Id': 'admin', // TODO: usar ID do usuário logado
-    },
     body: JSON.stringify(filters),
   });
-
-  if (!response.ok) {
-    throw new Error(`Erro ao atualizar filtros: ${response.status}`);
-  }
-
-  return await response.json();
 }
 
 /**
@@ -128,27 +72,15 @@ export async function updateRankingFilters(filters) {
 export async function getCrafters(options = {}) {
   try {
     const params = new URLSearchParams();
-    
     if (options.page) params.append('page', options.page);
     if (options.limit) params.append('limit', options.limit);
     if (options.search) params.append('search', options.search);
     if (options.active_only !== undefined) params.append('active_only', options.active_only);
     if (options.order_by) params.append('order_by', options.order_by);
     if (options.order_direction) params.append('order_direction', options.order_direction);
-    
-    const url = `${API_BASE_URL}/api/crafters${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar crafters: ${response.status}`);
-    }
-    
-    return await response.json();
+
+    const url = `/api/crafters${params.toString() ? '?' + params.toString() : ''}`;
+    return await apiRequest(url, { method: 'GET' });
   } catch (error) {
     console.error('Erro ao buscar crafters:', error);
     throw error;
@@ -162,21 +94,7 @@ export async function getCrafters(options = {}) {
  */
 export async function getCrafterById(id) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/crafters/${id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error('Crafter não encontrado');
-      }
-      throw new Error(`Erro ao buscar crafter: ${response.status}`);
-    }
-    
-    return await response.json();
+    return await apiRequest(`/api/crafters/${id}`, { method: 'GET' });
   } catch (error) {
     console.error('Erro ao buscar crafter:', error);
     throw error;
@@ -189,20 +107,10 @@ export async function getCrafterById(id) {
  * @returns {Promise<Object>} Crafter criado
  */
 export async function createCrafter(crafter) {
-  const response = await fetch(`${API_BASE_URL}/api/crafters`, {
+  const data = await apiRequest('/api/crafters', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-User-Id': 'admin', // TODO: usar ID do usuário logado
-    },
     body: JSON.stringify(crafter),
   });
-
-  if (!response.ok) {
-    throw new Error(`Erro ao criar crafter: ${response.status}`);
-  }
-
-  const data = await response.json();
   return data.crafter;
 }
 
@@ -213,20 +121,10 @@ export async function createCrafter(crafter) {
  * @returns {Promise<Object>} Crafter atualizado
  */
 export async function updateCrafter(id, updates) {
-  const response = await fetch(`${API_BASE_URL}/api/crafters/${id}`, {
+  const data = await apiRequest(`/api/crafters/${id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-User-Id': 'admin', // TODO: usar ID do usuário logado
-    },
     body: JSON.stringify(updates),
   });
-
-  if (!response.ok) {
-    throw new Error(`Erro ao atualizar crafter: ${response.status}`);
-  }
-
-  const data = await response.json();
   return data.crafter;
 }
 
@@ -236,17 +134,6 @@ export async function updateCrafter(id, updates) {
  * @returns {Promise<boolean>} Sucesso da operação
  */
 export async function deleteCrafter(id) {
-  const response = await fetch(`${API_BASE_URL}/api/crafters/${id}`, {
-    method: 'DELETE',
-    headers: {
-      'X-User-Id': 'admin', // TODO: usar ID do usuário logado
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Erro ao deletar crafter: ${response.status}`);
-  }
-
-  const data = await response.json();
+  const data = await apiRequest(`/api/crafters/${id}`, { method: 'DELETE' });
   return data.success;
 }

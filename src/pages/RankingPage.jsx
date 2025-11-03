@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
 import { realtime } from '../lib/realtime';
-import { apiConfig } from '../lib/apiConfig';
+import { getRanking } from '../services/rankingAPI.js';
 
 
 export default function RankingPage() {
@@ -21,11 +21,21 @@ export default function RankingPage() {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch(`${apiConfig.baseURL}/api/ranking`, { headers: { 'Cache-Control': 'no-cache' } });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      const t3 = Array.isArray(json?.top3) ? json.top3.map(t => ({ place: t.position, name: t.name, score: t.points, reward: t.reward || '' })) : [];
-      const tb = Array.isArray(json?.table) ? json.table.map(r => ({ name: r.name, score: r.points })) : [];
+      const json = await getRanking();
+      // Montar top3 unindo com crafters para obter nome e pontos
+      const crafters = Array.isArray(json?.crafters) ? json.crafters : [];
+      const t3 = Array.isArray(json?.top3) ? json.top3.map(t => {
+        const c = crafters.find(c => c.id === t.crafter_id) || {};
+        return {
+          place: t.position,
+          name: c.nome || c.name || '—',
+          score: c.points ?? 0,
+          reward: t.reward || '',
+          avatar: c.avatar_url || null,
+        };
+      }) : [];
+      // Tabela a partir da lista de crafters
+      const tb = crafters.map(c => ({ name: c.nome || c.name || '—', score: c.points ?? 0 }));
       setTop3(t3);
       setTable(tb);
     } catch {
@@ -69,28 +79,49 @@ export default function RankingPage() {
           {!loading && top3.length > 0 ? (
             <div className="podium" aria-label="Pódio dos três melhores" aria-live="polite">
               <div className="podium-item second">
-                <div className="photo" aria-hidden="true" />
+                <div className="photo" aria-hidden="true" style={{
+                  backgroundImage: (top3.find(p=>p.place===2)?.avatar ? `url(${top3.find(p=>p.place===2)?.avatar})` : undefined),
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }} />
                 <div className="label">
                   <span className="place">2º</span>
                   <span className="name">{top3.find(p=>p.place===2)?.name || '—'}</span>
                   <span className="score">{top3.find(p=>p.place===2)?.score ?? 0} pts</span>
+                  {top3.find(p=>p.place===2)?.reward ? (
+                    <span className="reward" title="Recompensa">🎁 {top3.find(p=>p.place===2)?.reward}</span>
+                  ) : null}
                 </div>
               </div>
               <div className="podium-item first">
-                <div className="photo" aria-hidden="true" />
+                <div className="photo" aria-hidden="true" style={{
+                  backgroundImage: (top3.find(p=>p.place===1)?.avatar ? `url(${top3.find(p=>p.place===1)?.avatar})` : undefined),
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }} />
                 <div className="crown" title="Campeão" />
                 <div className="label">
                   <span className="place">1º</span>
                   <span className="name">{top3.find(p=>p.place===1)?.name || '—'}</span>
                   <span className="score">{top3.find(p=>p.place===1)?.score ?? 0} pts</span>
+                  {top3.find(p=>p.place===1)?.reward ? (
+                    <span className="reward" title="Recompensa">🎁 {top3.find(p=>p.place===1)?.reward}</span>
+                  ) : null}
                 </div>
               </div>
               <div className="podium-item third">
-                <div className="photo" aria-hidden="true" />
+                <div className="photo" aria-hidden="true" style={{
+                  backgroundImage: (top3.find(p=>p.place===3)?.avatar ? `url(${top3.find(p=>p.place===3)?.avatar})` : undefined),
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }} />
                 <div className="label">
                   <span className="place">3º</span>
                   <span className="name">{top3.find(p=>p.place===3)?.name || '—'}</span>
                   <span className="score">{top3.find(p=>p.place===3)?.score ?? 0} pts</span>
+                  {top3.find(p=>p.place===3)?.reward ? (
+                    <span className="reward" title="Recompensa">🎁 {top3.find(p=>p.place===3)?.reward}</span>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -169,6 +200,7 @@ export default function RankingPage() {
         .podium-item .place { font-weight: 800; color: var(--texto-branco); }
         .podium-item .name { color: var(--texto-gelo); }
         .podium-item .score { color: var(--texto-branco); font-weight: 700; }
+        .podium-item .reward { color: #FFD966; font-weight: 600; }
 
         .first { transform: translateY(-12px); box-shadow: 0 8px 24px rgba(0,0,0,0.25); border-color: #D12BF2; }
         .first .crown { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 28px; height: 28px; background: #D12BF2; border-radius: 6px; box-shadow: 0 0 12px rgba(209,43,242,0.6); }

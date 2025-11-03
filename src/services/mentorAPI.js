@@ -1,9 +1,6 @@
 // src/services/mentorAPI.js
 // Serviço centralizado para operações com mentores
-
-import { apiConfig } from '../lib/apiConfig.js';
-
-const API_BASE_URL = apiConfig.baseURL;
+import { apiRequest } from '../lib/apiConfig.js';
 
 /**
  * Busca todos os mentores
@@ -13,20 +10,8 @@ const API_BASE_URL = apiConfig.baseURL;
  */
 export async function getMentors(options = {}) {
   const { all = false } = options;
-  const url = `${API_BASE_URL}/api/mentores${all ? '?all=1' : ''}`;
-  
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Erro ao buscar mentores: ${response.status}`);
-  }
-
-  const data = await response.json();
+  const url = `/api/mentores${all ? '?all=1' : ''}`;
+  const data = await apiRequest(url, { method: 'GET' });
   return data.data || [];
 }
 
@@ -36,18 +21,7 @@ export async function getMentors(options = {}) {
  * @returns {Promise<Object>} Dados do mentor
  */
 export async function getMentorById(id) {
-  const response = await fetch(`${API_BASE_URL}/api/mentores/${id}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Erro ao buscar mentor: ${response.status}`);
-  }
-
-  const data = await response.json();
+  const data = await apiRequest(`/api/mentores/${id}`, { method: 'GET' });
   return data.mentor;
 }
 
@@ -57,19 +31,10 @@ export async function getMentorById(id) {
  * @returns {Promise<Object>} Mentor criado
  */
 export async function createMentor(mentor) {
-  const response = await fetch(`${API_BASE_URL}/api/mentores`, {
+  const data = await apiRequest(`/api/mentores`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(mentor),
   });
-
-  if (!response.ok) {
-    throw new Error(`Erro ao criar mentor: ${response.status}`);
-  }
-
-  const data = await response.json();
   return data.mentor;
 }
 
@@ -80,19 +45,10 @@ export async function createMentor(mentor) {
  * @returns {Promise<Object>} Mentor atualizado
  */
 export async function updateMentor(id, updates) {
-  const response = await fetch(`${API_BASE_URL}/api/mentores/${id}`, {
+  const data = await apiRequest(`/api/mentores/${id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(updates),
   });
-
-  if (!response.ok) {
-    throw new Error(`Erro ao atualizar mentor: ${response.status}`);
-  }
-
-  const data = await response.json();
   return data.mentor;
 }
 
@@ -102,17 +58,6 @@ export async function updateMentor(id, updates) {
  * @returns {Promise<Object>} Mentor removido
  */
 export async function deleteMentor(id) {
-  const response = await fetch(`${API_BASE_URL}/api/mentores/${id}`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Erro ao remover mentor: ${response.status}`);
-  }
-
-  const data = await response.json();
+  const data = await apiRequest(`/api/mentores/${id}`, { method: 'DELETE' });
   return data.removed;
 }

@@ -443,7 +443,7 @@ export const CraftersRepo = {
 // Desafios
 export function useDesafios() {
   return useAsyncList(async () => {
-    const response = await fetch(`${apiConfig.baseURL}/api/desafios?all=1`);
+    const response = await fetch('/api/desafios?all=1');
     if (!response.ok) {
       throw new Error(`Erro ao buscar desafios: ${response.status}`);
     }
@@ -455,7 +455,7 @@ export function useDesafios() {
 export const DesafiosRepo = {
   async create(desafio) {
     try {
-      const response = await fetch(`${apiConfig.baseURL}/api/desafios`, {
+      const response = await fetch('/api/desafios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(desafio),
@@ -582,7 +582,7 @@ export const DesafiosRepo = {
 // Finanças
 export function useFinance() {
   return useAsyncList(async () => {
-    const response = await fetch(`${apiConfig.baseURL}/api/financas`);
+    const response = await fetch('/api/financas');
     if (!response.ok) {
       throw new Error(`Erro ao buscar finanças: ${response.status}`);
     }

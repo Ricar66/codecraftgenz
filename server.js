@@ -1229,7 +1229,7 @@ app.get('/api/ranking', async (req, res) => {
   }
 });
 
-app.put('/api/ranking/points/:crafter_id', async (req, res) => {
+app.put('/api/ranking/points/:crafter_id', isAdmin, async (req, res) => {
   try {
     const { crafter_id } = req.params;
     const { delta, set } = req.body || {};
@@ -1296,7 +1296,7 @@ app.put('/api/ranking/points/:crafter_id', async (req, res) => {
   }
 });
 
-app.put('/api/ranking/top3', async (req, res) => {
+app.put('/api/ranking/top3', isAdmin, async (req, res) => {
   try {
     const body = req.body || {};
     const arr = Array.isArray(body.top3) ? body.top3 : [];
@@ -1372,7 +1372,7 @@ app.get('/api/ranking/audit', async (req, res) => {
 });
 
 // Ranking filters (admin state persistence)
-app.put('/api/ranking/filters', async (req, res) => {
+app.put('/api/ranking/filters', isAdmin, async (req, res) => {
   try {
     const f = req.body || {};
     const actor = getUserIdForAudit(req);

@@ -1,9 +1,8 @@
 // src/services/feedbackAPI.js
 
-import { apiConfig } from '../lib/apiConfig.js';
-
-// A URL base da API é obtida da configuração centralizada
-const API_BASE_URL = apiConfig.baseURL;
+// A URL base da API é a raiz do nosso próprio servidor,
+// já que o server.js está servindo tanto o frontend quanto a API.
+const API_BASE_URL = '/api'; // Aponta para o nosso próprio backend
 
 const MODERATION_ENABLED = (import.meta.env.VITE_FEEDBACK_MODERATION === 'true');
 
@@ -93,7 +92,7 @@ export async function submitFeedback(feedback, { honeypot = '' } = {}) {
   console.log('Enviando feedback para API:', sanitizedData);
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/feedbacks`, {
+    const response = await fetch(`${API_BASE_URL}/feedbacks`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -141,7 +140,7 @@ export async function getFeedbacks({ page = 1, limit = 10, origem = 'pagina_inic
     params.append('origem', origem);
   }
 
-  const url = `${API_BASE_URL}/api/feedbacks?${params.toString()}`;
+  const url = `${API_BASE_URL}/feedbacks?${params.toString()}`;
   console.log('Buscando feedbacks da API:', url);
 
   try {

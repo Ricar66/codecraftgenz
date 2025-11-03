@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
+
+import { apiRequest } from '../lib/apiConfig.js';
+
 import './AdminEquipes.css';
-import { apiConfig } from '../lib/apiConfig';
 
 export default function AdminEquipes() {
   const [mentores, setMentores] = useState([]);
@@ -45,18 +47,11 @@ export default function AdminEquipes() {
   const carregarDados = async () => {
     try {
       setLoading(true);
-      const [mentoresRes, projetosRes, craftersRes, equipesRes] = await Promise.all([
-        fetch('http://localhost:8080/api/mentores'),
-        fetch('http://localhost:8080/api/projetos'),
-        fetch('http://localhost:8080/api/crafters'),
-        fetch('http://localhost:8080/api/equipes')
-      ]);
-
       const [mentoresData, projetosData, craftersData, equipesData] = await Promise.all([
-        mentoresRes.json(),
-        projetosRes.json(),
-        craftersRes.json(),
-        equipesRes.json()
+        apiRequest('/api/mentores', { method: 'GET' }),
+        apiRequest('/api/projetos', { method: 'GET' }),
+        apiRequest('/api/crafters', { method: 'GET' }),
+        apiRequest('/api/equipes', { method: 'GET' })
       ]);
 
       // Normalizar dados dos mentores da API
@@ -120,13 +115,12 @@ export default function AdminEquipes() {
   const criarCrafter = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8080/api/crafters', {
+      const response = await apiRequest('/api/crafters', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(novoCrafter)
       });
       
-      if (response.ok) {
+      if (response) {
         setNovoCrafter({ nome: '', email: '', avatar_url: '' });
         carregarDados();
       }
@@ -138,13 +132,12 @@ export default function AdminEquipes() {
   const associarMentorProjeto = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`http://localhost:8080/api/projetos/${mentorProjeto.projeto_id}/mentor`, {
+      const response = await apiRequest(`/api/projetos/${mentorProjeto.projeto_id}/mentor`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mentor_id: mentorProjeto.mentor_id })
       });
       
-      if (response.ok) {
+      if (response) {
         setMentorProjeto({ projeto_id: '', mentor_id: '' });
         carregarDados();
       }
@@ -163,24 +156,22 @@ export default function AdminEquipes() {
       }
 
       // Criar uma equipe para cada crafter selecionado
-      const promises = novaEquipe.crafter_ids.map(crafter_id => 
-        fetch('http://localhost:8080/api/equipes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            mentor_id: novaEquipe.mentor_id,
-            crafter_id: crafter_id,
-            projeto_id: novaEquipe.projeto_id,
-            status_inscricao: novaEquipe.status_inscricao
+      const responses = await Promise.all(
+        novaEquipe.crafter_ids.map(crafter_id => 
+          apiRequest('/api/equipes', {
+            method: 'POST',
+            body: JSON.stringify({
+              mentor_id: novaEquipe.mentor_id,
+              crafter_id: crafter_id,
+              projeto_id: novaEquipe.projeto_id,
+              status_inscricao: novaEquipe.status_inscricao
+            })
           })
-        })
+        )
       );
 
-      const responses = await Promise.all(promises);
-      
-      // Verificar se todas as requisições foram bem-sucedidas
-      const allSuccessful = responses.every(response => response.ok);
-      
+      const allSuccessful = responses.every(Boolean);
+
       if (allSuccessful) {
         setNovaEquipe({ 
           mentor_id: '', 
@@ -206,15 +197,9 @@ export default function AdminEquipes() {
     }
 
     try {
-      const response = await fetch(`/api/equipes/${equipeId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await apiRequest(`/api/equipes/${equipeId}`, { method: 'DELETE' });
 
-      if (response.ok) {
+      if (response) {
         setMessage('Crafter removido da equipe com sucesso!');
         carregarDados(); // Recarregar dados
       } else {
@@ -238,16 +223,12 @@ export default function AdminEquipes() {
         status_inscricao: 'inscrito'
       };
 
-      const response = await fetch(`${apiConfig.baseURL}/api/equipes`, {
+      const response = await apiRequest('/api/equipes', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
         body: JSON.stringify(novaEquipeData)
       });
 
-      if (response.ok) {
+      if (response) {
         setMessage('Crafter adicionado à equipe com sucesso!');
         carregarDados(); // Recarregar dados
       } else {
@@ -261,13 +242,11 @@ export default function AdminEquipes() {
 
   const alterarStatusEquipe = async (equipeId, novoStatus) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/equipes/${equipe.id}/status`, {
+      const response = await apiRequest(`/api/equipes/${equipeId}/status`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status_inscricao: novoStatus })
       });
-      
-      if (response.ok) {
+      if (response) {
         carregarDados();
       }
     } catch (error) {

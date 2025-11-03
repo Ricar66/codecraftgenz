@@ -33,11 +33,26 @@ const fetchWithTimeout = async (url, options = {}) => {
   const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
 
   try {
+    // Injetar Authorization automaticamente se houver sessão
+    let authHeader = {};
+    try {
+      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('cc_session') : null;
+      if (raw) {
+        const session = JSON.parse(raw);
+        if (session?.token) {
+          authHeader = { Authorization: `Bearer ${session.token}` };
+        }
+      }
+    } catch {
+      // ignora erros de parse/localStorage
+    }
+
     const response = await fetch(url, {
       ...options,
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
+        ...authHeader,
         ...options.headers,
       },
     });

@@ -30,11 +30,25 @@ export const API_BASE_URL = getApiBaseUrl();
 // Função para fazer requisições com tratamento de erro melhorado
 export async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
+  // Recupera token da sessão se existir
+  let authHeader = {};
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('cc_session') : null;
+    if (raw) {
+      const session = JSON.parse(raw);
+      if (session?.token) {
+        authHeader = { Authorization: `Bearer ${session.token}` };
+      }
+    }
+  } catch {
+    // Ignora erros de parse/localStorage indisponível
+  }
   
   try {
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
+        ...authHeader,
         ...options.headers,
       },
       ...options,

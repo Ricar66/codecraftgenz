@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
-import { realtime } from '../lib/realtime';
 import { API_BASE_URL } from '../lib/apiConfig';
+import { realtime } from '../lib/realtime';
 
 export default function MentoriaPage() {
   const [mentors, setMentors] = useState([]);

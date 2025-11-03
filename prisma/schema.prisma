@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql" // <--- Esta é a correção
   url      = env("DATABASE_URL")
 }
 
@@ -258,7 +258,6 @@ model RankingHistory {
   before_points Int?
   after_points  Int?
   diff          Int?
-
   @@map("ranking_history")
 }
 
