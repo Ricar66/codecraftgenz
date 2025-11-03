@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
 import { realtime } from '../lib/realtime';
+import { apiConfig } from '../lib/apiConfig';
 
 
 export default function RankingPage() {
@@ -20,7 +21,7 @@ export default function RankingPage() {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch('/api/ranking', { headers: { 'Cache-Control': 'no-cache' } });
+      const res = await fetch(`${apiConfig.baseURL}/api/ranking`, { headers: { 'Cache-Control': 'no-cache' } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       const t3 = Array.isArray(json?.top3) ? json.top3.map(t => ({ place: t.position, name: t.name, score: t.points, reward: t.reward || '' })) : [];

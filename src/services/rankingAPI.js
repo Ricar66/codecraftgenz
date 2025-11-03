@@ -1,7 +1,9 @@
 // src/services/rankingAPI.js
 // Serviço centralizado para operações com ranking
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+import { apiConfig } from '../lib/apiConfig.js';
+
+const API_BASE_URL = apiConfig.baseURL;
 
 /**
  * Busca dados do ranking

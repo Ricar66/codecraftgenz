@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { realtime } from '../lib/realtime';
+import { apiConfig } from '../lib/apiConfig';
 
 export default function DesafiosPage() {
   const [desafios, setDesafios] = useState([]);
@@ -15,7 +16,7 @@ export default function DesafiosPage() {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch('/api/desafios');
+      const res = await fetch(`${apiConfig.baseURL}/api/desafios`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       const list = Array.isArray(json?.data) ? json.data : [];
@@ -39,7 +40,7 @@ export default function DesafiosPage() {
     // Mock: usa crafter seed 'c1'. Em produção, obter do Auth.
     const payload = { crafter_id: 'c1' };
     try {
-      const r = await fetch(`/api/desafios/${id}/inscrever`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const r = await fetch(`${apiConfig.baseURL}/api/desafios/${id}/inscrever`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const ok = r.ok;
       const json = await r.json().catch(()=>({}));
       if (!ok) throw new Error(json?.error || 'Falha ao inscrever');
@@ -58,7 +59,7 @@ export default function DesafiosPage() {
     }
     const payload = { crafter_id: 'c1', delivery: { url, notes: '' } };
     try {
-      const r = await fetch(`/api/desafios/${d.id}/entregar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const r = await fetch(`${apiConfig.baseURL}/api/desafios/${d.id}/entregar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const ok = r.ok;
       const json = await r.json().catch(()=>({}));
       if (!ok) throw new Error(json?.error || 'Falha ao enviar');

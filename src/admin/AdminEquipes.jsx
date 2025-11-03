@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './AdminEquipes.css';
+import { apiConfig } from '../lib/apiConfig';
 
 export default function AdminEquipes() {
   const [mentores, setMentores] = useState([]);
@@ -237,7 +238,7 @@ export default function AdminEquipes() {
         status_inscricao: 'inscrito'
       };
 
-      const response = await fetch('/api/equipes', {
+      const response = await fetch(`${apiConfig.baseURL}/api/equipes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

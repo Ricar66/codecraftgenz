@@ -7,6 +7,7 @@ import ProjectCard from '../components/Projects/ProjectCard.jsx';
 import { useAuth } from '../context/useAuth';
 import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo, useDesafios, DesafiosRepo, useFinance, FinanceRepo, useRanking, RankingRepo, useLogs } from '../hooks/useAdminRepo';
 import { realtime } from '../lib/realtime';
+import { apiConfig } from '../lib/apiConfig';
 
 export function Dashboard() {
   const [periodo, setPeriodo] = React.useState('30d');
@@ -576,7 +577,7 @@ export function Ranking() {
   const createCrafter = async () => {
     setBusy(true);
     try {
-      const response = await fetch('/api/crafters', {
+      const response = await fetch(`${apiConfig.baseURL}/api/crafters`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(crafterForm)
@@ -1014,7 +1015,7 @@ export function Projetos() {
             });
           } else {
             // Criar novo registro
-            await fetch('/api/financas', {
+            await fetch(`${apiConfig.baseURL}/api/financas`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(financeData)
@@ -1477,7 +1478,7 @@ export function Financas() {
         await FinanceRepo.update(editingId, payload);
       } else {
         // Criar novo registro financeiro
-        const response = await fetch('/api/financas', {
+        const response = await fetch(`${apiConfig.baseURL}/api/financas`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
