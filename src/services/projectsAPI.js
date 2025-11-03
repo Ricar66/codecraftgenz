@@ -217,9 +217,9 @@ export const getProjects = async (options = {}) => {
       }
     });
     
-    // Mapeia campos do SQLite para o formato esperado
+    // Mapeia campos do banco de dados para o formato esperado
     const projects = Array.isArray(data?.data) ? data.data : (Array.isArray(data?.projects) ? data.projects : []);
-    console.log('🔍 Dados originais do SQLite:', projects);
+    console.log('🔍 Dados originais do banco:', projects);
     
     const mappedProjects = projects.map(project => ({
       ...project,

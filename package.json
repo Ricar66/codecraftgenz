@@ -11,7 +11,7 @@
     "preview": "vite preview --config vite.preview.config.js",
     "preview:custom": "node preview-server.js",
     "preview:vite": "vite preview",
-    "start": "node server.js",
+    "start": "npx prisma db push && node server.js",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",

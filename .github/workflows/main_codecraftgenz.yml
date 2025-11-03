@@ -95,5 +95,5 @@ jobs:
           slot-name: 'Production'
           app-settings: 'WEBSITE_NODE_DEFAULT_VERSION=18-lts SCM_DO_BUILD_DURING_DEPLOYMENT=true'
           package: '.'
-          startup-command: 'npx prisma generate && npm start'
+          startup-command: 'npm start'
           

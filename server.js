@@ -567,10 +567,10 @@ app.delete('/api/mentores/:id', async (req, res) => {
   }
 });
 
-// --- SISTEMA DE EQUIPES (SQLite) ---
+// --- SISTEMA DE EQUIPES (API) ---
 
-// Endpoints para Mentores (SQLite)
-app.get('/api/sqlite/mentores', async (req, res) => {
+// Endpoints para Mentores
+app.get('/api/mentores', async (req, res) => {
   try {
     const mentores = await prisma.mentor.findMany();
     res.json({ success: true, data: mentores });
@@ -579,7 +579,7 @@ app.get('/api/sqlite/mentores', async (req, res) => {
   }
 });
 
-app.post('/api/sqlite/mentores', async (req, res) => {
+app.post('/api/mentores', async (req, res) => {
   try {
     const { nome, email, telefone, bio } = req.body;
     if (!nome || !email) {
@@ -592,7 +592,7 @@ app.post('/api/sqlite/mentores', async (req, res) => {
   }
 });
 
-app.put('/api/sqlite/mentores/:id', async (req, res) => {
+app.put('/api/mentores/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { nome, email, telefone, bio } = req.body;
@@ -606,8 +606,8 @@ app.put('/api/sqlite/mentores/:id', async (req, res) => {
   }
 });
 
-// Endpoints para Projetos (SQLite)
-app.get('/api/sqlite/projetos', async (req, res) => {
+// Endpoints para Projetos
+app.get('/api/projetos', async (req, res) => {
   try {
     const { visivel, status } = req.query;
     const where = {};
@@ -621,7 +621,7 @@ app.get('/api/sqlite/projetos', async (req, res) => {
   }
 });
 
-app.post('/api/sqlite/projetos', async (req, res) => {
+app.post('/api/projetos', async (req, res) => {
   try {
     const projeto = await prisma.projeto.create({ data: req.body });
     res.status(201).json({ success: true, data: projeto });
@@ -630,7 +630,7 @@ app.post('/api/sqlite/projetos', async (req, res) => {
   }
 });
 
-app.post('/api/sqlite/projetos/:id/mentor', async (req, res) => {
+app.post('/api/projetos/:id/mentor', async (req, res) => {
   try {
     const { id } = req.params;
     const { mentor_id } = req.body;
@@ -647,8 +647,8 @@ app.post('/api/sqlite/projetos/:id/mentor', async (req, res) => {
   }
 });
 
-// Endpoints para Crafters (SQLite)
-app.get('/api/sqlite/crafters', async (req, res) => {
+// Endpoints para Crafters
+app.get('/api/crafters', async (req, res) => {
   try {
     const crafters = await prisma.crafter.findMany();
     res.json({ success: true, data: crafters });
@@ -657,7 +657,7 @@ app.get('/api/sqlite/crafters', async (req, res) => {
   }
 });
 
-app.post('/api/sqlite/crafters', async (req, res) => {
+app.post('/api/crafters', async (req, res) => {
   try {
     const { nome, email, avatar_url } = req.body;
     if (!nome || !email) {
@@ -670,8 +670,8 @@ app.post('/api/sqlite/crafters', async (req, res) => {
   }
 });
 
-// Endpoints para Equipes (SQLite)
-app.get('/api/sqlite/equipes', async (req, res) => {
+// Endpoints para Equipes
+app.get('/api/equipes', async (req, res) => {
   try {
     const equipes = await prisma.equipe.findMany();
     res.json({ success: true, data: equipes });
@@ -680,7 +680,7 @@ app.get('/api/sqlite/equipes', async (req, res) => {
   }
 });
 
-app.post('/api/sqlite/equipes', async (req, res) => {
+app.post('/api/equipes', async (req, res) => {
   try {
     const { crafter_id, mentor_id, projeto_id, status_inscricao } = req.body;
     if (!crafter_id || !projeto_id) {
@@ -700,7 +700,7 @@ app.post('/api/sqlite/equipes', async (req, res) => {
   }
 });
 
-app.put('/api/sqlite/equipes/:id/status', async (req, res) => {
+app.put('/api/equipes/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status_inscricao } = req.body;
@@ -717,7 +717,7 @@ app.put('/api/sqlite/equipes/:id/status', async (req, res) => {
   }
 });
 
-app.get('/api/sqlite/equipes/crafter/:id', async (req, res) => {
+app.get('/api/equipes/crafter/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const equipes = await prisma.equipe.findMany({
@@ -729,7 +729,7 @@ app.get('/api/sqlite/equipes/crafter/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/sqlite/equipes/:id', async (req, res) => {
+app.delete('/api/equipes/:id', async (req, res) => {
   try {
     const { id } = req.params;
     await prisma.equipe.delete({ where: { id: parseInt(id) } });
@@ -743,8 +743,8 @@ app.delete('/api/sqlite/equipes/:id', async (req, res) => {
   }
 });
 
-// Endpoints para Inscrições (SQLite)
-app.post('/api/sqlite/projetos/:id/inscricao', async (req, res) => {
+// Endpoints para Inscrições
+app.post('/api/projetos/:id/inscricao', async (req, res) => {
   try {
     const { id } = req.params;
     const { crafter_id, status } = req.body;

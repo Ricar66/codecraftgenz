@@ -45,10 +45,10 @@ export default function AdminEquipes() {
     try {
       setLoading(true);
       const [mentoresRes, projetosRes, craftersRes, equipesRes] = await Promise.all([
-        fetch('http://localhost:8080/api/sqlite/mentores'),
-        fetch('http://localhost:8080/api/sqlite/projetos'),
-        fetch('http://localhost:8080/api/sqlite/crafters'),
-        fetch('http://localhost:8080/api/sqlite/equipes')
+        fetch('http://localhost:8080/api/mentores'),
+        fetch('http://localhost:8080/api/projetos'),
+        fetch('http://localhost:8080/api/crafters'),
+        fetch('http://localhost:8080/api/equipes')
       ]);
 
       const [mentoresData, projetosData, craftersData, equipesData] = await Promise.all([
@@ -58,7 +58,7 @@ export default function AdminEquipes() {
         equipesRes.json()
       ]);
 
-      // Normalizar dados dos mentores da API SQLite
+      // Normalizar dados dos mentores da API
       const mentoresNormalizados = (mentoresData.data || []).map(mentor => ({
         id: mentor.id,
         nome: mentor.nome,
@@ -119,7 +119,7 @@ export default function AdminEquipes() {
   const criarCrafter = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8080/api/sqlite/crafters', {
+      const response = await fetch('http://localhost:8080/api/crafters', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(novoCrafter)
@@ -137,7 +137,7 @@ export default function AdminEquipes() {
   const associarMentorProjeto = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`http://localhost:8080/api/sqlite/projetos/${mentorProjeto.projeto_id}/mentor`, {
+      const response = await fetch(`http://localhost:8080/api/projetos/${mentorProjeto.projeto_id}/mentor`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mentor_id: mentorProjeto.mentor_id })
@@ -163,7 +163,7 @@ export default function AdminEquipes() {
 
       // Criar uma equipe para cada crafter selecionado
       const promises = novaEquipe.crafter_ids.map(crafter_id => 
-        fetch('http://localhost:8080/api/sqlite/equipes', {
+        fetch('http://localhost:8080/api/equipes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -205,7 +205,7 @@ export default function AdminEquipes() {
     }
 
     try {
-      const response = await fetch(`/api/sqlite/equipes/${equipeId}`, {
+      const response = await fetch(`/api/equipes/${equipeId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -237,7 +237,7 @@ export default function AdminEquipes() {
         status_inscricao: 'inscrito'
       };
 
-      const response = await fetch('/api/sqlite/equipes', {
+      const response = await fetch('/api/equipes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -260,7 +260,7 @@ export default function AdminEquipes() {
 
   const alterarStatusEquipe = async (equipeId, novoStatus) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/sqlite/equipes/${equipeId}/status`, {
+      const response = await fetch(`http://localhost:8080/api/equipes/${equipe.id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status_inscricao: novoStatus })
