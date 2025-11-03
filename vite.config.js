@@ -1,14 +1,41 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import legacy from '@vitejs/plugin-legacy'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    legacy({
+      targets: ['> 1%', 'last 2 versions', 'not dead', 'not IE 11'],
+      additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
+      renderLegacyChunks: true,
+      polyfills: [
+        'es.symbol',
+        'es.array.filter',
+        'es.promise',
+        'es.promise.finally',
+        'es/map',
+        'es/set',
+        'es.array.for-each',
+        'es.object.define-properties',
+        'es.object.define-property',
+        'es.object.get-own-property-descriptor',
+        'es.object.get-own-property-descriptors',
+        'es.object.keys',
+        'es.object.to-string',
+        'web.dom-collections.for-each',
+        'esnext.global-this',
+        'esnext.string.match-all'
+      ]
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
+      devOptions: {
+        enabled: false // Desabilita PWA em desenvolvimento
+      },
       workbox: {
         runtimeCaching: [
           {
@@ -24,11 +51,22 @@ export default defineConfig({
         navigateFallback: '/index.html',
         navigateFallbackAllowlist: [/^(?!.*\/api\/).*/],
         // CRÍTICO: Impede que o Service Worker intercepte rotas da API
-        navigateFallbackDenylist: [/^\/api/]
+        navigateFallbackDenylist: [/^\/api/],
+        // Configurações de cache mais agressivas para assets
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true
       }
     })
   ],
   server: {
+    hmr: {
+      overlay: true
+    },
+    watch: {
+      usePolling: true,
+      interval: 1000
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
@@ -44,13 +82,23 @@ export default defineConfig({
       output: {
         assetFileNames: 'assets/[name]-[hash][extname]',
         chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js'
+        entryFileNames: 'assets/[name]-[hash].js',
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom']
+        }
       }
     },
     // Otimizações para produção
     minify: 'terser',
     sourcemap: false,
-    target: 'es2015'
+    // Melhor compatibilidade entre navegadores
+    target: ['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14'],
+    // Polyfills automáticos
+    modulePreload: {
+      polyfill: true
+    },
+    chunkSizeWarningLimit: 600
   },
   // Configurações específicas para produção
   define: {

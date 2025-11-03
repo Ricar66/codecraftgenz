@@ -1,3 +1,6 @@
+// Importar polyfills primeiro para compatibilidade entre navegadores
+import './polyfills.js'
+
 // teste
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
