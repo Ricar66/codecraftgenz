@@ -53,13 +53,6 @@ jobs:
       - name: Remover node_modules de build
         run: rm -rf node_modules
 
-      # ESTE É O ÚNICO PASSO DE UPLOAD NECESSÁRIO
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v4
-        with:
-          name: node-app
-          path: .
-          
       - name: Verify build output
         run: |
           echo "=== VERIFICANDO ARQUIVOS DE BUILD ==="
