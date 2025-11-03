@@ -45,17 +45,29 @@ export default defineConfig({
             options: {
               cacheName: 'api-network-only'
             }
+          },
+          {
+            // Cache mais conservador para páginas HTML
+            urlPattern: ({ request }) => request.destination === 'document',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'pages-cache',
+              networkTimeoutSeconds: 3, // Timeout rápido para detectar offline
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 // 24 horas apenas
+              }
+            }
           }
         ],
-        // Fallback de navegação apenas para rotas não-API
+        // Fallback mais restritivo - só funciona se houver cache válido
         navigateFallback: '/index.html',
         navigateFallbackAllowlist: [/^(?!.*\/api\/).*/],
-        // CRÍTICO: Impede que o Service Worker intercepte rotas da API
         navigateFallbackDenylist: [/^\/api/],
-        // Configurações de cache mais agressivas para assets
+        // Configurações menos agressivas
         cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true
+        skipWaiting: false, // Não assume controle imediatamente
+        clientsClaim: false // Não reivindica clientes existentes
       }
     })
   ],
