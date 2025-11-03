@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
 import { realtime } from '../lib/realtime';
+import { API_BASE_URL } from '../lib/apiConfig';
 
 export default function MentoriaPage() {
   const [mentors, setMentors] = useState([]);
@@ -10,7 +11,7 @@ export default function MentoriaPage() {
   
   const fetchMentors = async () => {
     try {
-      const response = await fetch('/api/mentores');
+      const response = await fetch(`${API_BASE_URL}/api/mentores`);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
@@ -50,7 +51,7 @@ export default function MentoriaPage() {
       iv = setInterval(() => {
         if (!isMounted) return; // Evita fetch se componente foi desmontado
         
-        fetch('/api/mentores')
+        fetch(`${API_BASE_URL}/api/mentores`)
           .then(r => r.ok ? r.json() : Promise.reject())
           .then(json => {
             if (!isMounted) return; // Evita setState se componente foi desmontado
