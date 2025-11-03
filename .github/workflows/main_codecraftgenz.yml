@@ -101,4 +101,4 @@ jobs:
           app-name: 'codecraftgenz'
           slot-name: 'Production'
           package: '.'
-          startup-command: 'npm start'
+          startup-command: 'npm run start:azure'
