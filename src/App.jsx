@@ -1,7 +1,7 @@
 // src/App.jsx
 // teste
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import AdminCrafters from './admin/AdminCrafters.jsx';
 import AdminEquipes from './admin/AdminEquipes.jsx';
@@ -22,11 +22,17 @@ import RankingPage from './pages/RankingPage.jsx';
  * Gerencia o roteamento entre as diferentes páginas
  */
 function App() {
+  const location = useLocation();
+  
+  // Páginas que não devem ter o fundo hero
+  const pagesWithoutHeroBackground = ['/ranking'];
+  const shouldShowHeroBackground = !pagesWithoutHeroBackground.includes(location.pathname);
+
   return (
     <div 
       className="app-background"
       style={{
-        backgroundImage: `url(${heroBackground})`
+        backgroundImage: shouldShowHeroBackground ? `url(${heroBackground})` : 'none'
       }}
     >
       <Routes>
