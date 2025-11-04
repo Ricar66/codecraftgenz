@@ -1,6 +1,7 @@
 // src/pages/AppPurchasePage.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+
 import Navbar from '../components/Navbar/Navbar';
 import { getAppById, createPaymentPreference, getPurchaseStatus, registerDownload, submitFeedback } from '../services/appsAPI.js';
 
@@ -47,7 +48,7 @@ const AppPurchasePage = () => {
 
   const startCheckout = async () => {
     try {
-      const { init_point, preference_id } = await createPaymentPreference(id);
+      const { init_point } = await createPaymentPreference(id);
       // Abre o checkout do Mercado Livre/Mercado Pago em nova aba
       if (init_point) window.open(init_point, '_blank', 'noopener');
       else alert('Não foi possível iniciar o checkout');
