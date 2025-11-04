@@ -15,11 +15,13 @@
 /* Sidebar lateral fixa (não off-canvas) */
 .sidebar {
   position: relative;
-  background: #68007B;
+  background: rgba(104, 0, 123, 0.55);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   color: #F4F4F4;
   padding: 16px;
-  border-right: 2px solid rgba(0,228,242,0.3);
-  transition: padding 240ms ease;
+  border-right: 2px solid rgba(0,228,242,0.28);
+  transition: padding 240ms ease, background 240ms ease;
 }
 
 /* Quando colapsado, reduz padding para compactar */
@@ -49,7 +51,7 @@
 }
 
 .menuLink:hover {
-  background: rgba(0,228,242,0.12);
+  background: rgba(255,255,255,0.12);
 }
 
 .active {

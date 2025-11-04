@@ -9,6 +9,9 @@ import AdminInscricoes from './admin/AdminInscricoes';
 import AdminLayout, { Dashboard, Usuarios, Mentores, Ranking, Projetos, Desafios, Financas, Config, Apps } from './admin/AdminLayout.jsx';
 import ProtectedRoute from './admin/ProtectedRoute.jsx';
 import heroBackground from './assets/hero-background.svg';
+import AppHubPage from './pages/AppHubPage.jsx';
+import AppPurchasePage from './pages/AppPurchasePage.jsx';
+import AppsPage from './pages/AppsPage.jsx';
 import DesafiosPage from './pages/DesafiosPage.jsx';
 import FeedbacksPage from './pages/FeedbacksPage.jsx';
 import HomePage from './pages/HomePage/HomePage.jsx';
@@ -16,9 +19,6 @@ import LoginPage from './pages/LoginPage.jsx';
 import MentoriaPage from './pages/MentoriaPage.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
 import RankingPage from './pages/RankingPage.jsx';
-import AppsPage from './pages/AppsPage.jsx';
-import AppPurchasePage from './pages/AppPurchasePage.jsx';
-import AppHubPage from './pages/AppHubPage.jsx';
 
 /**
  * Componente principal da aplicação

@@ -15,7 +15,7 @@
 }
 
 .admin-crafters-header h2 {
-  color: #1a73e8;
+  color: #68007B;
   margin: 0;
   font-size: 2rem;
   font-weight: 600;
@@ -33,7 +33,7 @@
 }
 
 .stat-item strong {
-  color: #1a73e8;
+  color: #68007B;
   font-weight: 600;
 }
 
@@ -44,9 +44,12 @@
   margin-bottom: 25px;
   gap: 20px;
   padding: 20px;
-  background: white;
+  background: rgba(255,255,255,0.85);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  border: 1px solid rgba(104,0,123,0.12);
 }
 
 .search-section {
@@ -66,9 +69,9 @@
 
 .search-input:focus {
   outline: none;
-  border-color: #1a73e8;
+  border-color: #00E4F2;
   background: white;
-  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+  box-shadow: 0 0 0 3px rgba(0, 228, 242, 0.18);
 }
 
 .filters-section {
@@ -92,16 +95,18 @@
 .filter-select:focus,
 .items-per-page-select:focus {
   outline: none;
-  border-color: #1a73e8;
-  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+  border-color: #00E4F2;
+  box-shadow: 0 0 0 3px rgba(0, 228, 242, 0.18);
 }
 
 .crafters-table-container {
-  background: white;
+  background: rgba(255,255,255,0.88);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
   overflow: hidden;
-  border: 1px solid #e8eaed;
+  border: 1px solid rgba(104,0,123,0.12);
 }
 
 .crafters-table {
@@ -134,13 +139,13 @@
 }
 
 .crafters-table th.sortable:hover {
-  background: #e8f0fe;
-  color: #1a73e8;
+  background: rgba(0,228,242,0.10);
+  color: #00E4F2;
 }
 
 .crafters-table th.sortable.active {
-  background: #e8f0fe;
-  color: #1a73e8;
+  background: rgba(0,228,242,0.14);
+  color: #00E4F2;
 }
 
 .crafters-table tbody tr {
@@ -148,7 +153,7 @@
 }
 
 .crafters-table tbody tr:hover {
-  background: #f8f9fa;
+  background: rgba(104,0,123,0.06);
 }
 
 .crafter-name {
@@ -166,8 +171,8 @@
 }
 
 .points-badge {
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-  color: #1565c0;
+  background: linear-gradient(135deg, #e0fbff 0%, #b3f4fb 100%);
+  color: #005c63;
   padding: 6px 12px;
   border-radius: 16px;
   font-size: 0.85rem;
@@ -187,8 +192,8 @@
 }
 
 .status-badge.active {
-  background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
-  color: #2e7d32;
+  background: linear-gradient(135deg, #e6fffb 0%, #c3fff7 100%);
+  color: #046c74;
 }
 
 .status-badge.inactive {
@@ -217,8 +222,8 @@
 }
 
 .edit-button {
-  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-  color: #ef6c00;
+  background: linear-gradient(135deg, #f7ecff 0%, #e5d4ff 100%);
+  color: #6a2de8;
 }
 
 .edit-button:hover {
@@ -228,8 +233,8 @@
 }
 
 .delete-button {
-  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
-  color: #c62828;
+  background: linear-gradient(135deg, #ffebf7 0%, #ffcbe9 100%);
+  color: #c2185b;
 }
 
 .delete-button:hover {

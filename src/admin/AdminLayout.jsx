@@ -1,7 +1,7 @@
 // src/admin/AdminLayout.jsx
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import styles from './AdminLayout.module.css';
+
 
 import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import ProjectCard from '../components/Projects/ProjectCard.jsx';
@@ -12,6 +12,7 @@ import { realtime } from '../lib/realtime';
 import { getAllApps, updateApp } from '../services/appsAPI.js';
 
 import AdminIdeias from './AdminIdeias.jsx';
+import styles from './AdminLayout.module.css';
 
 export function Dashboard() {
   const [periodo, setPeriodo] = React.useState('30d');
@@ -26,8 +27,10 @@ export function Dashboard() {
     try {
       setLoading(true);
       setErro('');
-      const jsonResumo = await apiRequest(`/api/dashboard/resumo?periodo=${encodeURIComponent(periodo)}&type=${encodeURIComponent(tipo)}`, { method: 'GET' });
-      setResumo(jsonResumo);
+      if (import.meta.env.VITE_API_BASE) {
+        const jsonResumo = await apiRequest(`/api/dashboard/resumo?periodo=${encodeURIComponent(periodo)}&type=${encodeURIComponent(tipo)}`, { method: 'GET' });
+        setResumo(jsonResumo);
+      }
 
       const jsonProj = await apiRequest(`/api/projetos?all=1`, { method: 'GET' }).catch(()=>({ data: [] }));
       setProjects(Array.isArray(jsonProj?.data) ? jsonProj.data : (Array.isArray(jsonProj?.projects) ? jsonProj.projects : []));
@@ -1906,31 +1909,70 @@ export default function AdminLayout() {
   }, []);
   return (
     <div className={`${styles.adminContainer} ${sidebarOpen ? '' : styles.collapsed}`}>
-      <aside className="sidebar" aria-expanded={sidebarOpen}>
-        <div className="brand">CodeCraft Gen-Z</div>
-        <nav className="menu">
-          <NavLink to="/admin" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Dashboard</NavLink>
-          <NavLink to="/admin/usuarios" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Usuários</NavLink>
-          <NavLink to="/admin/mentores" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Mentores</NavLink>
-          <NavLink to="/admin/equipes" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Equipes</NavLink>
-          <NavLink to="/admin/crafters" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Crafters</NavLink>
-          <NavLink to="/admin/ranking" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Ranking</NavLink>
-          <NavLink to="/admin/projetos" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Projetos</NavLink>
-          <NavLink to="/admin/apps" className={({isActive})=>`menuLink ${isActive?'active':''}`}>🧱 Aplicativos</NavLink>
-          <NavLink to="/admin/desafios" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Desafios</NavLink>
-          <NavLink to="/admin/inscricoes" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Inscrições</NavLink>
-          <NavLink to="/admin/financas" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Finanças</NavLink>
-          <NavLink to="/admin/ideias" className={({isActive})=>`menuLink ${isActive?'active':''}`}>💡 Ideias</NavLink>
-          <NavLink to="/admin/config" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Config</NavLink>
+      <aside className={styles.sidebar} aria-expanded={sidebarOpen}>
+        <div className={styles.brand}>CodeCraft Gen-Z</div>
+        <nav className={styles.menu}>
+          <NavLink to="/admin" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>🏠</span>
+            <span className={styles.menuText}>Dashboard</span>
+          </NavLink>
+          <NavLink to="/admin/usuarios" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>👤</span>
+            <span className={styles.menuText}>Usuários</span>
+          </NavLink>
+          <NavLink to="/admin/mentores" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>🧑‍🏫</span>
+            <span className={styles.menuText}>Mentores</span>
+          </NavLink>
+          <NavLink to="/admin/equipes" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>👥</span>
+            <span className={styles.menuText}>Equipes</span>
+          </NavLink>
+          <NavLink to="/admin/crafters" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>🛠️</span>
+            <span className={styles.menuText}>Crafters</span>
+          </NavLink>
+          <NavLink to="/admin/ranking" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>🏆</span>
+            <span className={styles.menuText}>Ranking</span>
+          </NavLink>
+          <NavLink to="/admin/projetos" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>📁</span>
+            <span className={styles.menuText}>Projetos</span>
+          </NavLink>
+          <NavLink to="/admin/apps" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>🧱</span>
+            <span className={styles.menuText}>Aplicativos</span>
+          </NavLink>
+          <NavLink to="/admin/desafios" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>🎯</span>
+            <span className={styles.menuText}>Desafios</span>
+          </NavLink>
+          <NavLink to="/admin/inscricoes" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>📝</span>
+            <span className={styles.menuText}>Inscrições</span>
+          </NavLink>
+          <NavLink to="/admin/financas" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>💳</span>
+            <span className={styles.menuText}>Finanças</span>
+          </NavLink>
+          <NavLink to="/admin/ideias" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>💡</span>
+            <span className={styles.menuText}>Ideias</span>
+          </NavLink>
+          <NavLink to="/admin/config" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>⚙️</span>
+            <span className={styles.menuText}>Config</span>
+          </NavLink>
         </nav>
-        <button className="sidebarToggle" onClick={toggleSidebar} aria-label={sidebarOpen ? 'Recolher menu' : 'Expandir menu'}>
+        <button className={styles.sidebarToggle} onClick={toggleSidebar} aria-label={sidebarOpen ? 'Recolher menu' : 'Expandir menu'}>
           {sidebarOpen ? '⟨' : '⟩'}
         </button>
       </aside>
-      <main className="main">
-        <header className="topbar">
-          <div className="welcome">Olá, {user?.name}</div>
-          <button className="btn btn-danger" onClick={logout}>Sair</button>
+      <main className={styles.main}>
+        <header className={styles.topbar}>
+          <div className={styles.welcome}>Olá, {user?.name}</div>
+          <button className={`${styles.btn} ${styles.btnDanger}`} onClick={logout}>Sair</button>
         </header>
         <div className={styles.content}>
           {globalErr && (
@@ -1946,102 +1988,7 @@ export default function AdminLayout() {
         </div>
       </main>
 
-      <style>{`
-        /* Global containment for admin area */
-        .admin-content, .admin-content * { box-sizing: border-box; }
-        .admin-page { min-height: calc(100vh - 80px); display: grid; grid-template-columns: 260px 1fr; transition: grid-template-columns 240ms ease; }
-        .admin-page.sidebar-collapsed { grid-template-columns: 64px 1fr; }
-        .sidebar { position: relative; background: #68007B; color: #F4F4F4; padding: 16px; border-right: 2px solid rgba(0,228,242,0.3); transition: padding 240ms ease; }
-        .admin-page.sidebar-collapsed .sidebar { padding: 12px 8px; }
-        .brand { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 700; margin-bottom: 12px; }
-        .menu { display: grid; gap: 8px; }
-        .menuLink { color: #F4F4F4; text-decoration: none; padding: 10px 12px; border-radius: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; }
-        .admin-page.sidebar-collapsed .menuLink { padding: 10px; text-indent: -9999px; }
-        .admin-page.sidebar-collapsed .menuLink.active { text-indent: -9999px; }
-        .menuLink:hover { background: rgba(0,228,242,0.12); }
-        .menuLink.active { background: rgba(0,228,242,0.22); color: #042326; }
-        .sidebarToggle { position: absolute; right: -14px; top: 12px; width: 28px; height: 28px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.3); background: #7A3EF5; color: #fff; cursor: pointer; display: grid; place-items: center; transition: transform 200ms ease, background 200ms ease; }
-        .sidebarToggle:hover { transform: scale(1.06); background: #6a2de8; }
-        .main { background: transparent; min-width: 0; }
-        .topbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; }
-        /* Botões modernos */
-        .btn { border: none; border-radius: 10px; padding: 8px 12px; cursor: pointer; font-weight: 600; transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease; font-size: 14px; min-height: 36px; max-width: 100%; }
-        .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0,0,0,0.18); }
-        .btn:active { transform: translateY(0); box-shadow: none; }
-        .btn-primary { background: #00E4F2; color: #062B31; }
-        .btn-secondary { background: #7A3EF5; color: #fff; }
-        .btn-outline { background: transparent; color: #F4F4F4; border: 1px solid rgba(255,255,255,0.28); }
-        .btn-danger { background: #D12BF2; color: #fff; }
-        .btn-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-        .btn-group .btn { flex: 0 0 auto; }
-        .btn-icon { padding: 8px; width: 36px; height: 36px; display: grid; place-items: center; }
-        .content { padding: 16px; min-width: 0; }
-        .title { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 700; }
-        .cards { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
-        .card { background: #F4F4F4; border: 1px solid rgba(0,228,242,0.2); border-radius: 12px; padding: 12px; overflow: hidden; min-width: 0; }
-        .timeline { margin-top: 18px; }
-        .logType { color: #00E4F2; margin-right: 8px; }
-        .logMsg { color: #333; }
-        .logAt { color: #A6A6A6; margin-left: 8px; }
-        .items { list-style: none; padding: 0; display: grid; gap: 8px; max-height: 60vh; overflow-y: auto; min-width: 0; }
-        .item { background: #F4F4F4; border: 1px solid rgba(0,228,242,0.2); border-radius: 12px; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .muted { color: #666; margin-left: 8px; }
-        .table { overflow-x: auto; max-width: 100%; }
-        .table table { width: 100%; border-collapse: collapse; }
-        .table th, .table td { border-bottom: 1px solid #eee; padding: 8px; text-align: left; }
-        .formRow { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; margin-top: 12px; align-items: center; }
-        .formRow > * { min-width: 0; }
-        .formRow input, .formRow select { padding: 8px; border: 1px solid #ccc; border-radius: 8px; height: 36px; }
-        .formRow button { background: #00E4F2; color: #062B31; border: none; border-radius: 10px; padding: 8px 10px; cursor: pointer; font-weight: 600; transition: transform 120ms ease, box-shadow 120ms ease; }
-        .formRow button:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0,0,0,0.18); }
-        .formRow .btn { padding: 8px 10px; }
-        .formRow input[aria-invalid="true"] { border-color: #D12BF2; outline: none; box-shadow: 0 0 0 2px rgba(209,43,242,0.15); }
-        .errorRow { margin-top: 8px; }
-        .errorList { display: flex; flex-wrap: wrap; gap: 6px; }
-        .errorItem { font-size: 12px; color: #D12BF2; background: rgba(209,43,242,0.12); border: 1px solid rgba(209,43,242,0.2); border-radius: 999px; padding: 4px 8px; }
-        .saveToast { margin-top: 8px; background: rgba(0,228,242,0.15); border: 1px solid rgba(0,228,242,0.3); color: #00E4F2; padding: 6px 10px; border-radius: 8px; animation: fadeInOut 1.8s ease both; }
-        @keyframes fadeInOut { 0% { opacity: 0; transform: translateY(-4px); } 12% { opacity: 1; transform: translateY(0); } 88% { opacity: 1; } 100% { opacity: 0; transform: translateY(-4px); } }
-        /* Mentores - grid responsiva e cards informativos */
-        .mentorAdminGrid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-top: 10px; }
-        .mentorAdminCard { display: grid; grid-template-columns: 120px 1fr minmax(220px, 28%); gap: 12px; background: rgba(255,255,255,0.08); border: 1px solid rgba(0,228,242,0.25); border-radius: 12px; padding: 12px; color: #F4F4F4; transition: transform 160ms ease, box-shadow 160ms ease; min-width: 0; }
-        .mentorAdminCard:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(0,0,0,0.26); }
-        .mentorAdminCard .left { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; min-width: 0; }
-        .mentorAdminCard .avatar { width: 90px; height: 90px; border-radius: 12px; background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06)); border: 1px solid rgba(255,255,255,0.18); overflow: hidden; }
-        .mentorAdminCard .avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .mentorAdminCard .center { min-width: 0; }
-        .mentorAdminCard .center .header { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
-        .mentorAdminCard .name { font-weight: 700; }
-        .mentorAdminCard .spec { color: #A6A6A6; }
-        .mentorAdminCard .bio { margin-top: 6px; color: #D6D6D6; overflow: hidden; text-overflow: ellipsis; }
-        .mentorAdminCard .contact { display: flex; gap: 12px; margin-top: 6px; color: #BEBEBE; flex-wrap: wrap; min-width: 0; }
-        .mentorAdminCard .right { display: grid; gap: 8px; justify-items: end; min-width: 0; }
-        .mentorAdminCard .badges { display: flex; gap: 6px; }
-        .badge { font-size: 12px; padding: 4px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.2); }
-        .badgeOk { background: rgba(0,228,242,0.2); color: #00E4F2; }
-        .badgeWarn { background: rgba(209,43,242,0.15); color: #D12BF2; }
-        .badgeNeutral { background: rgba(255,255,255,0.08); color: #F4F4F4; }
-        .mentorAdminCard .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
-        .mentorAdminCard .actions .btn { min-width: 110px; }
-        @media (max-width: 992px) { 
-          .cards { grid-template-columns: repeat(2, 1fr); }
-          .admin-page { grid-template-columns: 220px 1fr; }
-          .mentorAdminGrid { grid-template-columns: 1fr; }
-          .mentorAdminCard { grid-template-columns: 100px 1fr; }
-          .mentorAdminCard .right { justify-items: start; }
-        }
-        @media (max-width: 768px) { 
-          .admin-page { grid-template-columns: 1fr; }
-          .sidebar { position: sticky; top: 80px; display: flex; overflow-x: auto; gap: 8px; }
-          .menu { grid-auto-flow: column; grid-auto-columns: max-content; }
-          .cards { grid-template-columns: 1fr; }
-          .formRow { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 576px) {
-          .mentorAdminCard { grid-template-columns: 1fr; }
-          .mentorAdminCard .actions { justify-content: stretch; }
-          .mentorAdminCard .actions .btn { flex: 1 1 100%; min-width: 0; }
-        }
-      `}</style>
+      {/* Estilos inline removidos: todos os estilos vivem nos CSS Modules e folhas dedicadas */}
     </div>
   );
 }
