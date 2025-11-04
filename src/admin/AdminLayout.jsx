@@ -8,6 +8,7 @@ import { useAuth } from '../context/useAuth';
 import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo, useDesafios, DesafiosRepo, useFinance, FinanceRepo, useRanking, RankingRepo, useLogs } from '../hooks/useAdminRepo';
 import { apiRequest } from '../lib/apiConfig.js';
 import { realtime } from '../lib/realtime';
+import { getAllApps, updateApp } from '../services/appsAPI';
 
 export function Dashboard() {
   const [periodo, setPeriodo] = React.useState('30d');
@@ -1022,6 +1023,25 @@ export function Projetos() {
         }
       }
       
+      // Cria/atualiza card de aplicativo automaticamente quando projeto finalizado
+      try {
+        if ((form.status || '').toLowerCase() === 'finalizado') {
+          const inferredOwnerId = String(form.owner || '').toLowerCase().includes('admin') ? 1 : 2;
+          const appPayload = {
+            name: form.titulo,
+            mainFeature: (form.descricao || '').split('.').shift(),
+            price: Number(form.preco || 0),
+            thumbnail: form.thumb_url || '',
+            project_id: savedProject.id || form.id,
+            ownerId: inferredOwnerId
+          };
+          // endpoint backend para criar app a partir do projeto
+          await apiRequest(`/api/apps/from-project/${savedProject.id || form.id}`, { method: 'POST', body: JSON.stringify(appPayload) });
+        }
+      } catch (appErr) {
+        console.warn('Erro ao criar app a partir do projeto:', appErr);
+      }
+
       setForm({ titulo:'', owner:'', descricao:'', data_inicio:'', status:'rascunho', preco:0, progresso:0, visivel:false, thumb_url:'', tags:[] }); 
       refresh(); 
     } catch (error) {
@@ -1860,6 +1880,16 @@ export function Config() {
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const [globalErr, setGlobalErr] = React.useState(null);
+  const [sidebarOpen, setSidebarOpen] = React.useState(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = window.localStorage.getItem('admin_sidebar_open');
+    return saved === null ? true : saved === 'true';
+  });
+  const toggleSidebar = () => {
+    const next = !sidebarOpen;
+    setSidebarOpen(next);
+    try { window.localStorage.setItem('admin_sidebar_open', String(next)); } catch {}
+  };
   React.useEffect(() => {
     const tick = () => {
       try {
@@ -1872,8 +1902,8 @@ export default function AdminLayout() {
     return () => clearInterval(id);
   }, []);
   return (
-    <div className="admin-page">
-      <aside className="sidebar">
+    <div className={`admin-page ${sidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
+      <aside className="sidebar" aria-expanded={sidebarOpen}>
         <div className="brand">CodeCraft Gen-Z</div>
         <nav className="menu">
           <NavLink to="/admin" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Dashboard</NavLink>
@@ -1888,6 +1918,9 @@ export default function AdminLayout() {
           <NavLink to="/admin/financas" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Finanças</NavLink>
           <NavLink to="/admin/config" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Config</NavLink>
         </nav>
+        <button className="sidebarToggle" onClick={toggleSidebar} aria-label={sidebarOpen ? 'Recolher menu' : 'Expandir menu'}>
+          {sidebarOpen ? '⟨' : '⟩'}
+        </button>
       </aside>
       <main className="main">
         <header className="topbar">
@@ -1918,13 +1951,19 @@ export default function AdminLayout() {
       <style>{`
         /* Global containment for admin area */
         .admin-content, .admin-content * { box-sizing: border-box; }
-        .admin-page { min-height: calc(100vh - 80px); display: grid; grid-template-columns: 260px 1fr; }
-        .sidebar { background: #68007B; color: #F4F4F4; padding: 16px; border-right: 2px solid rgba(0,228,242,0.3); }
+        .admin-page { min-height: calc(100vh - 80px); display: grid; grid-template-columns: 260px 1fr; transition: grid-template-columns 240ms ease; }
+        .admin-page.sidebar-collapsed { grid-template-columns: 64px 1fr; }
+        .sidebar { position: relative; background: #68007B; color: #F4F4F4; padding: 16px; border-right: 2px solid rgba(0,228,242,0.3); transition: padding 240ms ease; }
+        .admin-page.sidebar-collapsed .sidebar { padding: 12px 8px; }
         .brand { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 700; margin-bottom: 12px; }
         .menu { display: grid; gap: 8px; }
-        .menuLink { color: #F4F4F4; text-decoration: none; padding: 10px 12px; border-radius: 10px; font-weight: 600; }
+        .menuLink { color: #F4F4F4; text-decoration: none; padding: 10px 12px; border-radius: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; }
+        .admin-page.sidebar-collapsed .menuLink { padding: 10px; text-indent: -9999px; }
+        .admin-page.sidebar-collapsed .menuLink.active { text-indent: -9999px; }
         .menuLink:hover { background: rgba(0,228,242,0.12); }
         .menuLink.active { background: rgba(0,228,242,0.22); color: #042326; }
+        .sidebarToggle { position: absolute; right: -14px; top: 12px; width: 28px; height: 28px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.3); background: #7A3EF5; color: #fff; cursor: pointer; display: grid; place-items: center; transition: transform 200ms ease, background 200ms ease; }
+        .sidebarToggle:hover { transform: scale(1.06); background: #6a2de8; }
         .main { background: transparent; min-width: 0; }
         .topbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; }
         /* Botões modernos */
@@ -2044,4 +2083,94 @@ class AdminErrorBoundary extends React.Component {
     }
     return this.props.children;
   }
+}
+
+export function Apps() {
+  const [apps, setApps] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState('');
+  const [form, setForm] = React.useState({ id:null, name:'', mainFeature:'', price:0, thumbnail:'', exec_url:'' });
+
+  const refresh = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const json = await getAllApps({ page: 1, pageSize: 100 });
+      const list = Array.isArray(json?.data) ? json.data : (Array.isArray(json) ? json : []);
+      setApps(list);
+    } catch (e) {
+      setError(e.message || 'Erro ao carregar apps');
+    } finally { setLoading(false); }
+  }, []);
+
+  React.useEffect(() => { refresh(); }, [refresh]);
+
+  const onSave = async () => {
+    try {
+      const payload = { name: form.name, mainFeature: form.mainFeature, price: Number(form.price||0), thumbnail: form.thumbnail, exec_url: form.exec_url };
+      await updateApp(form.id, payload);
+      setForm({ id:null, name:'', mainFeature:'', price:0, thumbnail:'', exec_url:'' });
+      refresh();
+    } catch (e) {
+      alert('Erro ao atualizar app: ' + e.message);
+    }
+  };
+
+  return (
+    <div className="admin-content">
+      <header style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 16 }}>
+        <div>
+          <h1 className="title">🧱 Aplicativos</h1>
+          <p className="muted">Edite cards de aplicativos vinculados a projetos finalizados.</p>
+        </div>
+        <button className="btn btn-outline" onClick={refresh}>🔄 Atualizar</button>
+      </header>
+
+      {loading && <p>🔄 Carregando…</p>}
+      {error && <p role="alert" style={{ color:'#FF6B6B' }}>❌ {error}</p>}
+
+      <div className="table">
+        <table>
+          <thead>
+            <tr><th>Nome</th><th>Feature</th><th>Preço</th><th>Thumb</th><th>Exec URL</th><th>Ações</th></tr>
+          </thead>
+          <tbody>
+          {apps.length === 0 ? (
+            <tr><td colSpan="6">📭 Nenhum aplicativo</td></tr>
+          ) : apps.map(a => (
+            <tr key={a.id}>
+              <td>{a.name}</td>
+              <td title={a.mainFeature}>{String(a.mainFeature || '').slice(0, 60)}</td>
+              <td>R$ {Number(a.price||0).toLocaleString('pt-BR')}</td>
+              <td><a href={a.thumbnail} target="_blank" rel="noopener noreferrer">thumbnail</a></td>
+              <td><a href={a.exec_url} target="_blank" rel="noopener noreferrer">exec</a></td>
+              <td>
+                <div className="btn-group">
+                  <button className="btn btn-secondary" onClick={()=>setForm({ id:a.id, name:a.name||'', mainFeature:a.mainFeature||'', price:a.price||0, thumbnail:a.thumbnail||'', exec_url:a.exec_url||'' })}>✏️</button>
+                </div>
+              </td>
+            </tr>
+          ))}
+          </tbody>
+        </table>
+      </div>
+
+      <section className="card" style={{ background:'#F4F4F4', padding:16, marginTop:16 }}>
+        <h3 style={{ color:'#000' }}>{form.id ? '✏️ Editar App' : 'Selecionar app para editar'}</h3>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:12 }}>
+          <input placeholder="Nome" value={form.name} onChange={e=>setForm({ ...form, name:e.target.value })} />
+          <input placeholder="Feature principal" value={form.mainFeature} onChange={e=>setForm({ ...form, mainFeature:e.target.value })} />
+          <input type="number" placeholder="Preço (R$)" value={form.price} onChange={e=>setForm({ ...form, price:Number(e.target.value) })} />
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginTop:12 }}>
+          <input placeholder="Thumbnail URL" value={form.thumbnail} onChange={e=>setForm({ ...form, thumbnail:e.target.value })} />
+          <input placeholder="Exec URL (download)" value={form.exec_url} onChange={e=>setForm({ ...form, exec_url:e.target.value })} />
+        </div>
+        <div className="btn-group" style={{ marginTop:12, display:'flex', gap:8 }}>
+          <button className="btn btn-primary" onClick={onSave} disabled={!form.id}>💾 Salvar</button>
+          <button className="btn btn-outline" onClick={()=>setForm({ id:null, name:'', mainFeature:'', price:0, thumbnail:'', exec_url:'' })}>❌ Limpar</button>
+        </div>
+      </section>
+    </div>
+  );
 }
