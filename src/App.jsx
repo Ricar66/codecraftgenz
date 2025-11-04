@@ -18,6 +18,7 @@ import ProjectsPage from './pages/ProjectsPage.jsx';
 import RankingPage from './pages/RankingPage.jsx';
 import AppsPage from './pages/AppsPage.jsx';
 import AppPurchasePage from './pages/AppPurchasePage.jsx';
+import AppHubPage from './pages/AppHubPage.jsx';
 
 /**
  * Componente principal da aplicação
@@ -45,6 +46,7 @@ function App() {
         <Route path="/ranking" element={<RankingPage />} />
         <Route path="/desafios" element={<DesafiosPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/aplicativos" element={<AppHubPage />} />
         <Route path="/apps" element={
           <ProtectedRoute allowed={["admin","user","editor","viewer"]}>
             <AppsPage />

@@ -103,11 +103,11 @@ const Navbar = () => {
           </li>
           <li className={styles.navItem}>
             <Link 
-              to="/apps" 
-              className={`${styles.navLink} ${isActiveLink('/apps') ? styles.navLinkActive : ''}`}
+              to="/aplicativos" 
+              className={`${styles.navLink} ${isActiveLink('/aplicativos') ? styles.navLinkActive : ''}`}
               onClick={closeMobileMenu}
             >
-              Meus Aplicativos
+              Aplicativos
             </Link>
           </li>
           {/* CTA Button */}

@@ -1,6 +1,7 @@
 // src/admin/AdminLayout.jsx
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import styles from './AdminLayout.module.css';
 
 import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import ProjectCard from '../components/Projects/ProjectCard.jsx';
@@ -1904,7 +1905,7 @@ export default function AdminLayout() {
     return () => clearInterval(id);
   }, []);
   return (
-    <div className={`admin-page ${sidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
+    <div className={`${styles.adminContainer} ${sidebarOpen ? '' : styles.collapsed}`}>
       <aside className="sidebar" aria-expanded={sidebarOpen}>
         <div className="brand">CodeCraft Gen-Z</div>
         <nav className="menu">
@@ -1931,18 +1932,11 @@ export default function AdminLayout() {
           <div className="welcome">Olá, {user?.name}</div>
           <button className="btn btn-danger" onClick={logout}>Sair</button>
         </header>
-        <div className="content">
+        <div className={styles.content}>
           {globalErr && (
-            <div role="alert" style={{
-              padding: '10px',
-              border: '1px solid #fbbf24',
-              background: 'rgba(251,191,36,0.1)',
-              borderRadius: '8px',
-              color: '#fbbf24',
-              marginBottom: '12px'
-            }}>
-              <div style={{ fontWeight: 700 }}>Aviso: erro global capturado</div>
-              <div style={{ fontSize: 12 }}>{globalErr.message}</div>
+            <div className={styles.error} role="alert">
+              <div className={styles.fontBold}>Aviso: erro global capturado</div>
+              <div className={styles.textSm}>{globalErr.message}</div>
             </div>
           )}
           {/* Render das rotas aninhadas controladas pelo App.jsx */}
