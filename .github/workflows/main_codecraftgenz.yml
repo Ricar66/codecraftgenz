@@ -21,7 +21,7 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
+          node-version: '22.x'
 
       - name: Setup production environment variables
         run: |
@@ -40,7 +40,7 @@ jobs:
       - name: npm install, build, and test
         run: |
           npm cache clean --force
-          npm ci --omit=dev
+          npm ci
           echo "=== CONTEÚDO DE src/services ==="
           ls -la src/services/ || echo "Pasta src/services não encontrada"
           echo "=================================="
@@ -83,6 +83,7 @@ jobs:
           name: node-app
 
       - name: Install production dependencies in artifact
+        working-directory: node-app
         run: |
           echo "=== Instalando dependências de produção no artefato ==="
           npm ci --omit=dev
@@ -104,7 +105,7 @@ jobs:
         with:
           app-name: 'codecraftgenz'
           slot-name: 'Production'
-          package: '.'
+          package: 'node-app'
           # Comando de inicialização correto para executar o prisma generate
           startup-command: 'npm run start:azure'
           # Configurações que estavam no passo anterior, agora estão aqui
