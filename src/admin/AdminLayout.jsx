@@ -529,18 +529,36 @@ export function Ranking() {
   const [filters, setFilters] = React.useState({ search: '', min_points: '', max_points: '', active_only: true, sort: 'points' });
   const [crafterForm, setCrafterForm] = React.useState({ name: '', avatar_url: '', points: 0, active: true });
 
+  // Ensure rk is an object with expected properties
+  const rankingData = React.useMemo(() => {
+    if (!rk || Array.isArray(rk)) {
+      return { top3: [], table: [], all: [] };
+    }
+    return {
+      top3: rk.top3 || [],
+      table: rk.table || [],
+      all: rk.all || rk.crafters || []
+    };
+  }, [rk]);
+
+  // Utilizar listas seguras e instrumentar logs para depuração
+  const allList = Array.isArray(rankingData.all) ? rankingData.all : [];
+  if (typeof window !== 'undefined' && !Array.isArray(rankingData.all)) {
+    console.warn('[Ranking] rankingData.all não é array:', rankingData.all);
+  }
+
   // Podium management
-  const [top3, setTop3] = React.useState(rk.top3 || []);
+  const [top3, setTop3] = React.useState(rankingData.top3 || []);
   const [podiumRewards, setPodiumRewards] = React.useState({});
 
   React.useEffect(() => {
-    if (rk.top3) {
-      setTop3(rk.top3);
+    if (rankingData.top3) {
+      setTop3(rankingData.top3);
       const rewards = {};
-      rk.top3.forEach(t => rewards[t.position] = t.reward || '');
+      rankingData.top3.forEach(t => rewards[t.position] = t.reward || '');
       setPodiumRewards(rewards);
     }
-  }, [rk.top3]);
+  }, [rankingData.top3]);
 
   const change = async (id, delta, reason = '') => {
     setBusy(true);
@@ -561,7 +579,7 @@ export function Ranking() {
   const onSaveTop3 = async () => {
     setBusy(true);
     try {
-      const payload = top3.map((t, i) => ({
+      const payload = (top3 || []).map((t, i) => ({
         crafter_id: t.id,
         position: i + 1,
         reward: podiumRewards[i + 1] || ''
@@ -590,7 +608,7 @@ export function Ranking() {
 
   // Filter and sort crafters
   const filteredCrafters = React.useMemo(() => {
-    let crafters = [...(rk.table || [])];
+    let crafters = [...(rankingData.table || [])];
     
     if (filters.search) {
       crafters = crafters.filter(c => 
@@ -617,7 +635,7 @@ export function Ranking() {
     }
     
     return crafters;
-  }, [rk.table, filters]);
+  }, [rankingData.table, filters]);
 
   const resetFilters = () => {
     setFilters({ search: '', min_points: '', max_points: '', active_only: true, sort: 'points' });
@@ -635,9 +653,9 @@ export function Ranking() {
         <h3>Editor de Pódio</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1rem' }}>
           {[1, 2, 3].map(position => {
-            const crafter = top3.find(t => t.position === position) || top3[position - 1];
+            const crafter = (top3 || []).find(t => t.position === position) || (top3 || [])[position - 1];
             const isSelected = crafter?.id;
-            const isDuplicate = isSelected && top3.filter(t => t.id === crafter.id).length > 1;
+            const isDuplicate = isSelected && (top3 || []).filter(t => t.id === crafter.id).length > 1;
             
             return (
               <div key={position} style={{ 
@@ -665,7 +683,7 @@ export function Ranking() {
                 <select 
                   value={crafter?.id || ''} 
                   onChange={e => {
-                    const selected = rk.all.find(c => c.id === e.target.value);
+                    const selected = allList.find(c => c.id === e.target.value);
                     if (selected) {
                       const newTop3 = [...top3];
                       newTop3[position - 1] = { ...selected, position };
@@ -682,7 +700,7 @@ export function Ranking() {
                   }}
                 >
                   <option value="">Selecionar crafter</option>
-                  {rk.all.map(c => (
+                  {allList.map(c => (
                     <option key={c.id} value={c.id}>{c.name} ({c.points} pts)</option>
                   ))}
                 </select>
@@ -711,10 +729,10 @@ export function Ranking() {
         {/* Validação e Status */}
         <div style={{ marginBottom: '1rem' }}>
           {(() => {
-            const selectedIds = top3.filter(t => t?.id).map(t => t.id);
+            const selectedIds = (top3 || []).filter(t => t?.id).map(t => t.id);
             const hasDuplicates = selectedIds.length !== new Set(selectedIds).size;
-            const isComplete = top3.length === 3 && top3.every(t => t?.id);
-            const isEmpty = top3.length === 0;
+            const isComplete = (top3 || []).length === 3 && (top3 || []).every(t => t?.id);
+            const isEmpty = (top3 || []).length === 0;
             
             if (hasDuplicates) {
               return (
@@ -772,9 +790,9 @@ export function Ranking() {
         </div>
         <div className="formRow">
           {(() => {
-            const selectedIds = top3.filter(t => t?.id).map(t => t.id);
+            const selectedIds = (top3 || []).filter(t => t?.id).map(t => t.id);
             const hasDuplicates = selectedIds.length !== new Set(selectedIds).size;
-            const isComplete = top3.length === 3 && top3.every(t => t?.id);
+            const isComplete = (top3 || []).length === 3 && (top3 || []).every(t => t?.id);
             const hasSelection = selectedIds.length > 0;
             
             return (
@@ -902,7 +920,7 @@ export function Ranking() {
               </tr>
             </thead>
             <tbody>
-              {filteredCrafters.map((c, index) => (
+              {(Array.isArray(filteredCrafters) ? filteredCrafters : []).map((c, index) => (
                 <tr key={c.id}>
                   <td>{index + 1}</td>
                   <td>
@@ -1841,6 +1859,18 @@ export function Config() {
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
+  const [globalErr, setGlobalErr] = React.useState(null);
+  React.useEffect(() => {
+    const tick = () => {
+      try {
+        if (typeof window !== 'undefined' && window.__global_last_error__) {
+          setGlobalErr(window.__global_last_error__);
+        }
+      } catch (_) {}
+    };
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
   return (
     <div className="admin-page">
       <aside className="sidebar">
@@ -1865,8 +1895,23 @@ export default function AdminLayout() {
           <button className="btn btn-danger" onClick={logout}>Sair</button>
         </header>
         <div className="content">
+          {globalErr && (
+            <div role="alert" style={{
+              padding: '10px',
+              border: '1px solid #fbbf24',
+              background: 'rgba(251,191,36,0.1)',
+              borderRadius: '8px',
+              color: '#fbbf24',
+              marginBottom: '12px'
+            }}>
+              <div style={{ fontWeight: 700 }}>Aviso: erro global capturado</div>
+              <div style={{ fontSize: 12 }}>{globalErr.message}</div>
+            </div>
+          )}
           {/* Render das rotas aninhadas controladas pelo App.jsx */}
-          <Outlet />
+          <AdminErrorBoundary>
+            <Outlet />
+          </AdminErrorBoundary>
         </div>
       </main>
 
@@ -1962,4 +2007,41 @@ export default function AdminLayout() {
       `}</style>
     </div>
   );
+}
+
+// Error boundary para capturar erros em qualquer rota/admin view
+class AdminErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    this.setState({ errorInfo });
+    window.__admin_last_error__ = { message: String(error?.message || error), stack: errorInfo?.componentStack };
+    console.error('AdminErrorBoundary caught:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div role="alert" style={{
+          padding: '12px',
+          border: '1px solid #ff4444',
+          background: 'rgba(255,68,68,0.1)',
+          borderRadius: '8px',
+          color: '#ff4444'
+        }}>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>Erro ao renderizar a página admin</div>
+          <div style={{ marginBottom: 6 }}>{String(this.state.error?.message || this.state.error)}</div>
+          {this.state.errorInfo?.componentStack && (
+            <pre style={{ whiteSpace: 'pre-wrap', fontSize: 12, color: '#aa0000' }}>{this.state.errorInfo.componentStack}</pre>
+          )}
+          <div style={{ marginTop: 8, fontSize: 12 }}>Consulte o console para mais detalhes.</div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
