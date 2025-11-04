@@ -198,7 +198,7 @@ const useProjects = (options = {}) => {
         setLoading(false);
       }
     }
-  }, [timeout, maxRetries, options, retryCount, filters, loading]);
+  }, [timeout, maxRetries]); // Simplificado para evitar recriações constantes
 
   /**
    * Função para retry com backoff exponencial
@@ -210,7 +210,7 @@ const useProjects = (options = {}) => {
         resolve(result);
       }, delay);
     });
-  }, [fetchProjects]);
+  }, []); // Removido fetchProjects da dependência
 
   /**
    * Função para refetch manual (limpa erro e tenta novamente)
@@ -293,7 +293,7 @@ const useProjects = (options = {}) => {
         intervalRef.current = null;
       }
     };
-  }, [autoFetch, refetchInterval, fetchProjects]); // Adicionado fetchProjects como dependência
+  }, [autoFetch, refetchInterval]); // Removido fetchProjects da dependência para evitar loop infinito
 
   /**
    * Cleanup ao desmontar componente

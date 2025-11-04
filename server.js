@@ -94,6 +94,40 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Rota de autenticação (hardcoded para admin)
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  
+  // Credenciais hardcoded para admin
+  const adminCredentials = {
+    email: 'admin@codecraft.dev',
+    password: 'admin123'
+  };
+  
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email e senha são obrigatórios' });
+  }
+  
+  if (email === adminCredentials.email && password === adminCredentials.password) {
+    // Login bem-sucedido
+    const token = 'admin-token-' + Date.now(); // Token simples para demonstração
+    const user = {
+      id: 1,
+      email: adminCredentials.email,
+      name: 'Administrador',
+      role: 'admin'
+    };
+    
+    res.json({
+      success: true,
+      token,
+      user
+    });
+  } else {
+    res.status(401).json({ error: 'Credenciais inválidas' });
+  }
+});
+
 // Rotas de Projetos
 app.get('/api/projetos', (req, res) => {
   res.json(mockData.projetos);
