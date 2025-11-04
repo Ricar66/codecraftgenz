@@ -21,7 +21,7 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '22.x'
+          node-version: '18.x'
 
       - name: Setup production environment variables
         run: |
@@ -40,7 +40,7 @@ jobs:
       - name: npm install, build, and test
         run: |
           npm cache clean --force
-          npm ci --production=false
+          npm ci --omit=dev
           echo "=== CONTEÚDO DE src/services ==="
           ls -la src/services/ || echo "Pasta src/services não encontrada"
           echo "=================================="
@@ -54,9 +54,6 @@ jobs:
           echo "=== CONTEÚDO DO DIST ==="
           find dist -type f -name "*.html" -o -name "*.js" -o -name "*.css" | head -10 || echo "Nenhum arquivo encontrado"
           echo "=================================="
-
-      - name: Remover node_modules de build
-        run: rm -rf node_modules
 
       - name: Verify build output
         run: |
