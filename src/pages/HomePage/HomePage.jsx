@@ -6,7 +6,7 @@ import CrafterModal from '../../components/CrafterModal/CrafterModal';
 import FeaturesSection from '../../components/FeaturesSection/FeaturesSection';
 import Hero from '../../components/Hero/Hero';
 import Navbar from '../../components/Navbar/Navbar';
-import OSSPSection from '../../components/OSSPSection/OSSPSection';
+import OSSPSection from '../../components/OSSPSection/OSSPSection.jsx';
 import CompanySection from '../../components/CompanySection/CompanySection';
 import MetricsSection from '../../components/MetricsSection/MetricsSection';
 import CasesSection from '../../components/CasesSection/CasesSection';

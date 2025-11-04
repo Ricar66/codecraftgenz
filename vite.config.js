@@ -104,8 +104,7 @@ export default defineConfig({
     // Otimizações para produção
     minify: 'terser',
     sourcemap: false,
-    // Melhor compatibilidade entre navegadores
-    target: ['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14'],
+    // Removido 'build.target' para evitar override pelo plugin-legacy; targets definidos no plugin
     // Polyfills automáticos
     modulePreload: {
       polyfill: true
