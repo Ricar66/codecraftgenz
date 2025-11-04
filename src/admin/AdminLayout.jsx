@@ -8,7 +8,7 @@ import { useAuth } from '../context/useAuth';
 import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo, useDesafios, DesafiosRepo, useFinance, FinanceRepo, useRanking, RankingRepo, useLogs } from '../hooks/useAdminRepo';
 import { apiRequest } from '../lib/apiConfig.js';
 import { realtime } from '../lib/realtime';
-import { getAllApps, updateApp } from '../services/appsAPI';
+import { getAllApps, updateApp } from '../services/appsAPI.js';
 
 export function Dashboard() {
   const [periodo, setPeriodo] = React.useState('30d');
