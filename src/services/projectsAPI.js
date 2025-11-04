@@ -214,7 +214,7 @@ export const getProjects = async (options = {}) => {
     if (status) params.append('status', status);
     if (tags.length > 0) params.append('tags', tags.join(','));
 
-    const url = `${API_BASE_URL}/api/projects`;
+    const url = `${API_BASE_URL}/api/projetos`;
     
     // Adiciona filtro de visibilidade se necessário
     if (options.publicOnly) {
