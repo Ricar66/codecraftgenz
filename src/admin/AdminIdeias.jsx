@@ -34,12 +34,12 @@ const IdeiasRepo = {
     return { ...ideia, id: Date.now(), data_criacao: new Date().toISOString(), votos: 0, comentarios: [] };
   },
 
-  async vote(ideiaId) {
+  async vote(ideiaId) { // eslint-disable-line no-unused-vars
     // Simular voto
     return { success: true };
   },
 
-  async addComment(ideiaId, comentario) {
+  async addComment(ideiaId, comentario) { // eslint-disable-line no-unused-vars
     // Simular comentário
     return { success: true };
   }

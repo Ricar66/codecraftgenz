@@ -109,5 +109,3 @@ jobs:
           package: 'node-app'
           # Comando de inicialização correto para executar o prisma generate
           startup-command: 'npm run start:azure'
-          # Configurações que estavam no passo anterior, agora estão aqui
-          app-settings: 'WEBSITE_NODE_DEFAULT_VERSION=22-lts SCM_DO_BUILD_DURING_DEPLOYMENT=true'
