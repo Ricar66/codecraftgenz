@@ -259,6 +259,28 @@ export function Usuarios() {
     setBusy(false);
     if (res.ok) refresh(); else alert(res.error);
   };
+  const [validationErrors, setValidationErrors] = React.useState({});
+
+  const validate = () => {
+    const errors = {};
+    if (!form.name) errors.name = 'Nome é obrigatório';
+    if (!form.email) errors.email = 'Email é obrigatório';
+    if (form.email && !/\S+@\S+\.\S+/.test(form.email)) errors.email = 'Email inválido';
+    if (!form.password) errors.password = 'Senha é obrigatória';
+    if (form.password && form.password.length < 6) errors.password = 'Senha deve ter no mínimo 6 caracteres';
+    return errors;
+  };
+
+  const handleCreateUser = async () => {
+    const errors = validate();
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    setValidationErrors({});
+    await onCreate();
+  };
+
   return (
     <div className="admin-content">
       <h1 className="title">Usuários</h1>
@@ -303,7 +325,12 @@ export function Usuarios() {
           <option value="editor">editor</option>
           <option value="viewer">viewer</option>
         </select>
-        <button onClick={onCreate} disabled={busy}>{busy?'Criando...':'Criar usuário'}</button>
+        <button onClick={handleCreateUser} disabled={busy || Object.keys(validate()).length > 0}>{busy?'Criando...':'Criar usuário'}</button>
+      </div>
+      <div className="formRow">
+        {validationErrors.name && <span style={{ color: 'red' }}>{validationErrors.name}</span>}
+        {validationErrors.email && <span style={{ color: 'red' }}>{validationErrors.email}</span>}
+        {validationErrors.password && <span style={{ color: 'red' }}>{validationErrors.password}</span>}
       </div>
     </div>
   );
@@ -489,17 +516,35 @@ export function Mentores() {
         ))}
       </div>
 
-      <div className="formRow" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
-        <input aria-label="Nome" placeholder="Nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} aria-invalid={!!errors.name} />
-        <input aria-label="Especialidade" placeholder="Especialidade" value={form.specialty} onChange={e=>setForm({...form,specialty:e.target.value})} aria-invalid={!!errors.specialty} />
-        <input aria-label="Bio" placeholder="Descrição" value={form.bio} onChange={e=>setForm({...form,bio:e.target.value})} aria-invalid={!!errors.bio} />
-        <input aria-label="E-mail" placeholder="E-mail" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} aria-invalid={!!errors.email} />
-        <input aria-label="Telefone" placeholder="Telefone" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} aria-invalid={!!errors.phone} />
-        <input aria-label="Foto (URL)" placeholder="Foto (URL)" value={form.photo} onChange={e=>setForm({...form,photo:e.target.value})} />
-        <input aria-label="Enviar foto" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>onPhotoFile(e.target.files?.[0])} />
-        <label style={{ alignSelf:'center' }}><input type="checkbox" checked={form.visible} onChange={e=>setForm({...form,visible:e.target.checked})} /> Visível</label>
+      <div className="formRow" style={{ gridTemplateColumns: '2fr 1fr' }}>
+        <div>
+          <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
+            <input aria-label="Nome" placeholder="Nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} aria-invalid={!!errors.name} />
+            <input aria-label="Especialidade" placeholder="Especialidade" value={form.specialty} onChange={e=>setForm({...form,specialty:e.target.value})} aria-invalid={!!errors.specialty} />
+          </div>
+          <div className="formRow">
+            <input aria-label="Bio" placeholder="Descrição" value={form.bio} onChange={e=>setForm({...form,bio:e.target.value})} aria-invalid={!!errors.bio} />
+          </div>
+          <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
+            <input aria-label="E-mail" placeholder="E-mail" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} aria-invalid={!!errors.email} />
+            <input aria-label="Telefone" placeholder="Telefone" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} aria-invalid={!!errors.phone} />
+          </div>
+          <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
+            <input aria-label="Foto (URL)" placeholder="Foto (URL)" value={form.photo} onChange={e=>setForm({...form,photo:e.target.value})} />
+            <input aria-label="Enviar foto" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>onPhotoFile(e.target.files?.[0])} />
+          </div>
+          <div className="formRow">
+            <label style={{ alignSelf:'center' }}><input type="checkbox" checked={form.visible} onChange={e=>setForm({...form,visible:e.target.checked})} /> Visível</label>
+          </div>
+        </div>
+        <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
+          {form.photo && <img src={form.photo} alt="Preview" style={{maxWidth: '100px', maxHeight: '100px'}}/>}
+        </div>
+      </div>
+      <div className="formRow">
+        <button className="btn btn-primary" onClick={onSave} disabled={busy || Object.keys(errors).length > 0}>{busy?'Salvando...':(editingId?'Atualizar':'Salvar')}</button>
+        {editingId && (<button className="btn btn-outline" onClick={()=>{ setEditingId(null); setForm({ name: '', specialty: '', bio: '', email: '', phone: '', photo: '', status: 'published', visible: true }); }}>Cancelar</button>)}
         <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="draft">Rascunho</option><option value="published">Publicado</option></select>
-        <button className="btn btn-primary" onClick={onSave} disabled={busy || Object.keys(errors).length>0} aria-busy={busy}>{editingId ? 'Atualizar' : 'Adicionar'} mentor</button>
       </div>
       <div className="errorRow" aria-live="polite">
         {Object.values(errors).length>0 && (
@@ -535,6 +580,8 @@ export function Ranking() {
   const [busy, setBusy] = React.useState(false);
   const [filters, setFilters] = React.useState({ search: '', min_points: '', max_points: '', active_only: true, sort: 'points' });
   const [crafterForm, setCrafterForm] = React.useState({ name: '', avatar_url: '', points: 0, active: true });
+  const [crafterErrors, setCrafterErrors] = React.useState({});
+  const [isCrafterModalOpen, setCrafterModalOpen] = React.useState(false);
 
   // Ensure rk is an object with expected properties
   const rankingData = React.useMemo(() => {
@@ -596,11 +643,27 @@ export function Ranking() {
     } finally { setBusy(false); }
   };
 
+  const validateCrafter = (form) => {
+    const errs = {};
+    if (!String(form.name || '').trim()) errs.name = 'Nome é obrigatório';
+    if (form.points === '' || isNaN(Number(form.points))) errs.points = 'Pontos inválidos';
+    if (Number(form.points) < 0) errs.points = 'Pontos não podem ser negativos';
+    if (String(form.avatar_url || '').trim()) {
+      const ok = /^https?:\/\/\S+/.test(String(form.avatar_url));
+      if (!ok) errs.avatar_url = 'URL do avatar inválida';
+    }
+    return errs;
+  };
+
   const createCrafter = async () => {
+    const errs = validateCrafter(crafterForm);
+    setCrafterErrors(errs);
+    if (Object.keys(errs).length > 0) return;
     setBusy(true);
     try {
       await apiRequest('/api/crafters', { method: 'POST', body: JSON.stringify(crafterForm) });
       setCrafterForm({ name: '', avatar_url: '', points: 0, active: true });
+      setCrafterModalOpen(false);
       refresh();
     } finally { setBusy(false); }
   };
@@ -837,36 +900,43 @@ export function Ranking() {
 
       {/* Crafter Management */}
       <section style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
-        <h3>Gerenciar Crafters</h3>
-        <div className="formRow">
-          <input 
-            placeholder="Nome do crafter"
-            value={crafterForm.name}
-            onChange={e => setCrafterForm(prev => ({ ...prev, name: e.target.value }))}
-          />
-          <input 
-            placeholder="Avatar URL (opcional)"
-            value={crafterForm.avatar_url}
-            onChange={e => setCrafterForm(prev => ({ ...prev, avatar_url: e.target.value }))}
-          />
-          <input 
-            type="number"
-            placeholder="Pontos iniciais"
-            value={crafterForm.points}
-            onChange={e => setCrafterForm(prev => ({ ...prev, points: Number(e.target.value) }))}
-          />
-          <label>
-            <input 
-              type="checkbox"
-              checked={crafterForm.active}
-              onChange={e => setCrafterForm(prev => ({ ...prev, active: e.target.checked }))}
-            />
-            Ativo
-          </label>
-          <button className="btn btn-primary" onClick={createCrafter} disabled={busy || !crafterForm.name}>
-            Adicionar Crafter
-          </button>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <h3>Gerenciar Crafters</h3>
+          <button className="btn btn-primary" onClick={() => setCrafterModalOpen(true)}>Novo Crafter</button>
         </div>
+
+        {isCrafterModalOpen && (
+          <div role="dialog" aria-modal="true" aria-label="Novo crafter" style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }}>
+            <div style={{ width:'min(560px, 92vw)', background:'rgba(20,20,20,0.95)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:12, padding:16 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+                <h4 style={{ margin:0 }}>Novo Crafter</h4>
+                <button className="btn btn-outline" onClick={() => { setCrafterModalOpen(false); setCrafterErrors({}); }}>Fechar</button>
+              </div>
+              <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <input aria-label="Nome" placeholder="Nome do crafter" value={crafterForm.name} onChange={e => setCrafterForm(prev => ({ ...prev, name: e.target.value }))} aria-invalid={!!crafterErrors.name} />
+                <input aria-label="Avatar URL" placeholder="Avatar URL (opcional)" value={crafterForm.avatar_url} onChange={e => setCrafterForm(prev => ({ ...prev, avatar_url: e.target.value }))} aria-invalid={!!crafterErrors.avatar_url} />
+              </div>
+              <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <input aria-label="Pontos iniciais" type="number" placeholder="Pontos iniciais" value={crafterForm.points} onChange={e => setCrafterForm(prev => ({ ...prev, points: Number(e.target.value) }))} aria-invalid={!!crafterErrors.points} />
+                <label style={{ alignSelf:'center' }}><input type="checkbox" checked={crafterForm.active} onChange={e => setCrafterForm(prev => ({ ...prev, active: e.target.checked }))} /> Ativo</label>
+              </div>
+              {crafterForm.avatar_url && (
+                <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}>
+                  <img src={crafterForm.avatar_url} alt="Prévia do avatar" style={{ width:80, height:80, borderRadius:'50%', objectFit:'cover', border:'1px solid rgba(255,255,255,0.2)' }} />
+                </div>
+              )}
+              <div className="errorRow" aria-live="polite">
+                {Object.values(crafterErrors).length>0 && (
+                  <div className="errorList">{Object.values(crafterErrors).map((msg, i)=> (<span key={i} className="errorItem">{msg}</span>))}</div>
+                )}
+              </div>
+              <div className="formRow">
+                <button className="btn btn-primary" onClick={createCrafter} disabled={busy || Object.keys(crafterErrors).length>0 || !crafterForm.name}>{busy?'Salvando...':'Salvar crafter'}</button>
+                <button className="btn btn-outline" onClick={() => { setCrafterModalOpen(false); setCrafterErrors({}); }}>Cancelar</button>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Filters */}
@@ -1951,6 +2021,10 @@ export default function AdminLayout() {
           <NavLink to="/admin/inscricoes" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
             <span className={styles.menuIcon}>📝</span>
             <span className={styles.menuText}>Inscrições</span>
+          </NavLink>
+          <NavLink to="/admin/financas" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>💳</span>
+            <span className={styles.menuText}>Finanças</span>
           </NavLink>
           <NavLink to="/admin/financas" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
             <span className={styles.menuIcon}>💳</span>

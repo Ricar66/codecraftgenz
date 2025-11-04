@@ -33,8 +33,15 @@ const AdminInscricoes = () => {
   ];
 
   const fetchInscricoes = useCallback(async () => {
+    setLoading(true);
+    if (!import.meta.env.VITE_API_URL && import.meta.env.DEV) {
+      setError("O backend não está configurado. Defina VITE_API_URL no seu arquivo .env.development para carregar os dados.");
+      setInscricoes([]);
+      setLoading(false);
+      return;
+    }
+
     try {
-      setLoading(true);
       const params = new URLSearchParams();
       if (filtroStatus) {
         params.append('status', filtroStatus);
@@ -42,8 +49,10 @@ const AdminInscricoes = () => {
       
       const data = await apiRequest(`/api/inscricoes?${params.toString()}`, { method: 'GET' });
       setInscricoes(Array.isArray(data) ? data : []);
+      setError(null);
     } catch (err) {
       setError(err.message);
+      setInscricoes([]);
     } finally {
       setLoading(false);
     }

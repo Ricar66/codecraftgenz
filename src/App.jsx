@@ -6,6 +6,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AdminCrafters from './admin/AdminCrafters.jsx';
 import AdminEquipes from './admin/AdminEquipes.jsx';
 import AdminInscricoes from './admin/AdminInscricoes';
+import AdminIdeias from './admin/AdminIdeias.jsx';
 import AdminLayout, { Dashboard, Usuarios, Mentores, Ranking, Projetos, Desafios, Financas, Config, Apps } from './admin/AdminLayout.jsx';
 import ProtectedRoute from './admin/ProtectedRoute.jsx';
 import heroBackground from './assets/hero-background.svg';
@@ -72,6 +73,7 @@ function App() {
           <Route path="apps" element={<Apps />} />
           <Route path="desafios" element={<Desafios />} />
           <Route path="inscricoes" element={<AdminInscricoes />} />
+          <Route path="ideias" element={<AdminIdeias />} />
           <Route path="financas" element={<Financas />} />
           <Route path="config" element={<Config />} />
         </Route>
