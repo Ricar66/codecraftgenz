@@ -1,2 +1,2 @@
 [config]
-command = npm ci --production=false && npx prisma generate --schema=./prisma/schema.prisma && npm run build
+command = npm ci --production=false && npm run build
