@@ -2,14 +2,16 @@
 import React, { useState } from 'react';
  
 import heroBackground from '../../assets/hero-background.svg';
+
+import AppCard from '../../components/AppCard/AppCard.jsx';
+import CasesSection from '../../components/CasesSection/CasesSection';
+import CompanySection from '../../components/CompanySection/CompanySection';
 import CrafterModal from '../../components/CrafterModal/CrafterModal';
 import FeaturesSection from '../../components/FeaturesSection/FeaturesSection';
 import Hero from '../../components/Hero/Hero';
+import MetricsSection from '../../components/MetricsSection/MetricsSection';
 import Navbar from '../../components/Navbar/Navbar';
 import OSSPSection from '../../components/OSSPSection/OSSPSection.jsx';
-import CompanySection from '../../components/CompanySection/CompanySection';
-import MetricsSection from '../../components/MetricsSection/MetricsSection';
-import CasesSection from '../../components/CasesSection/CasesSection';
 
 /**
  * Página Inicial

@@ -1,5 +1,6 @@
 // src/components/CompanySection/CompanySection.jsx
 import React from 'react';
+
 import logoCodeCraft from '../../assets/logo-codecraft.svg';
 
 const CompanySection = () => {
