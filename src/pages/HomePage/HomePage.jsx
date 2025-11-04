@@ -1,8 +1,7 @@
 // src/pages/HomePage/HomePage.jsx
 import React, { useState } from 'react';
- 
-import heroBackground from '../../assets/hero-background.svg';
 
+import heroBackground from '../../assets/hero-background.svg';
 import AppCard from '../../components/AppCard/AppCard.jsx';
 import CasesSection from '../../components/CasesSection/CasesSection';
 import CompanySection from '../../components/CompanySection/CompanySection';
