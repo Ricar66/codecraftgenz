@@ -6,7 +6,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AdminCrafters from './admin/AdminCrafters.jsx';
 import AdminEquipes from './admin/AdminEquipes.jsx';
 import AdminInscricoes from './admin/AdminInscricoes';
-import AdminLayout, { Dashboard, Usuarios, Mentores, Ranking, Projetos, Desafios, Financas, Config } from './admin/AdminLayout.jsx';
+import AdminLayout, { Dashboard, Usuarios, Mentores, Ranking, Projetos, Desafios, Financas, Config, Apps } from './admin/AdminLayout.jsx';
 import ProtectedRoute from './admin/ProtectedRoute.jsx';
 import heroBackground from './assets/hero-background.svg';
 import DesafiosPage from './pages/DesafiosPage.jsx';
@@ -16,6 +16,8 @@ import LoginPage from './pages/LoginPage.jsx';
 import MentoriaPage from './pages/MentoriaPage.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
 import RankingPage from './pages/RankingPage.jsx';
+import AppsPage from './pages/AppsPage.jsx';
+import AppPurchasePage from './pages/AppPurchasePage.jsx';
 
 /**
  * Componente principal da aplicação
@@ -43,6 +45,16 @@ function App() {
         <Route path="/ranking" element={<RankingPage />} />
         <Route path="/desafios" element={<DesafiosPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/apps" element={
+          <ProtectedRoute allowed={["admin","user","editor","viewer"]}>
+            <AppsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/apps/:id/compra" element={
+          <ProtectedRoute allowed={["admin","user","editor","viewer"]}>
+            <AppPurchasePage />
+          </ProtectedRoute>
+        } />
         <Route path="/admin" element={
           <ProtectedRoute allowed={["admin","editor"]}>
             <AdminLayout />
@@ -55,6 +67,7 @@ function App() {
           <Route path="crafters" element={<AdminCrafters />} />
           <Route path="ranking" element={<Ranking />} />
           <Route path="projetos" element={<Projetos />} />
+          <Route path="apps" element={<Apps />} />
           <Route path="desafios" element={<Desafios />} />
           <Route path="inscricoes" element={<AdminInscricoes />} />
           <Route path="financas" element={<Financas />} />

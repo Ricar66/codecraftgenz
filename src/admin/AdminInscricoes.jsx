@@ -13,6 +13,8 @@ const AdminInscricoes = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroArea, setFiltroArea] = useState('');
   const [filtroData, setFiltroData] = useState('');
+  const [toast, setToast] = useState(null); // { type: 'success'|'error', message: string }
+  const [updatingId, setUpdatingId] = useState(null);
 
   const areasInteresse = [
     'Front-end',
@@ -48,7 +50,14 @@ const AdminInscricoes = () => {
   }, [filtroStatus]);
 
   const updateStatus = async (id, novoStatus) => {
+    const allowed = statusOptions.map(o => o.value);
+    if (!allowed.includes(novoStatus)) {
+      setToast({ type: 'error', message: 'Status inválido selecionado.' });
+      return;
+    }
+
     try {
+      setUpdatingId(id);
       await apiRequest(`/api/inscricoes/${id}/status`, { method: 'PUT', body: JSON.stringify({ status: novoStatus }) });
 
       // Atualizar a lista local
@@ -59,10 +68,20 @@ const AdminInscricoes = () => {
             : inscricao
         )
       );
+      setToast({ type: 'success', message: 'Status atualizado com sucesso.' });
     } catch (err) {
-      alert('Erro ao atualizar status: ' + err.message);
+      setToast({ type: 'error', message: `Erro ao atualizar status: ${err.message}` });
+    } finally {
+      setUpdatingId(null);
     }
   };
+
+  // Auto-dismiss do toast após alguns segundos
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3500);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   useEffect(() => {
     fetchInscricoes();
@@ -138,6 +157,23 @@ const AdminInscricoes = () => {
 
   return (
     <div className={styles.adminContent}>
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            marginBottom: '12px',
+            padding: '10px 14px',
+            borderRadius: '8px',
+            border: '1px solid',
+            borderColor: toast.type === 'success' ? '#27ae60' : '#e74c3c',
+            background: toast.type === 'success' ? '#ecf9f1' : '#fee',
+            color: toast.type === 'success' ? '#2c3e50' : '#8e2f2f'
+          }}
+        >
+          {toast.message}
+        </div>
+      )}
       <div className={styles.pageHeader}>
         <h1>Inscrições de Crafters</h1>
         <p>Gerencie as inscrições recebidas através do formulário "Quero ser um Crafter"</p>
@@ -280,6 +316,7 @@ const AdminInscricoes = () => {
                     value={inscricao.status}
                     onChange={(e) => updateStatus(inscricao.id, e.target.value)}
                     className={styles.statusSelectInline}
+                    disabled={updatingId === inscricao.id}
                   >
                     {statusOptions.map(option => (
                       <option key={option.value} value={option.value}>

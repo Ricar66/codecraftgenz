@@ -1,5 +1,6 @@
 // src/components/CrafterModal/CrafterModal.jsx
 import React, { useState } from 'react';
+import { apiRequest } from '../../lib/apiConfig.js';
 
 const CrafterModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
@@ -14,6 +15,7 @@ const CrafterModal = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const areasInteresse = [
     'Front-end',
@@ -34,21 +36,26 @@ const CrafterModal = ({ isOpen, onClose }) => {
 
   const validateForm = () => {
     const errors = [];
+    const fErrors = {};
 
     // Validação do nome
     if (!formData.nome.trim()) {
       errors.push('Nome é obrigatório');
+      fErrors.nome = 'Informe seu nome completo';
     } else if (formData.nome.trim().length < 2) {
       errors.push('Nome deve ter pelo menos 2 caracteres');
+      fErrors.nome = 'Pelo menos 2 caracteres';
     }
 
     // Validação do email
     if (!formData.email.trim()) {
       errors.push('E-mail é obrigatório');
+      fErrors.email = 'Informe um e-mail válido';
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email.trim())) {
         errors.push('E-mail deve ter um formato válido');
+        fErrors.email = 'Formato de e-mail inválido';
       }
     }
 
@@ -57,9 +64,17 @@ const CrafterModal = ({ isOpen, onClose }) => {
       const phoneRegex = /^[\d\s()-+]{10,}$/;
       if (!phoneRegex.test(formData.telefone.trim())) {
         errors.push('Telefone deve ter um formato válido');
+        fErrors.telefone = 'Telefone inválido';
       }
     }
 
+    // Estado (UF) se preenchido deve ter 2 letras
+    if (formData.estado.trim() && formData.estado.trim().length !== 2) {
+      errors.push('Estado deve conter 2 letras (UF)');
+      fErrors.estado = 'Use 2 letras, ex: SP';
+    }
+
+    setFieldErrors(fErrors);
     return errors;
   };
 
@@ -77,18 +92,7 @@ const CrafterModal = ({ isOpen, onClose }) => {
     setError(null);
 
     try {
-      const response = await fetch('/api/inscricoes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Erro ao enviar inscrição');
-      }
+      await apiRequest('/api/inscricoes', { method: 'POST', body: JSON.stringify(formData) });
 
       setSuccess(true);
       setFormData({
@@ -145,41 +149,50 @@ const CrafterModal = ({ isOpen, onClose }) => {
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="nome">Nome completo *</label>
-                <input
-                  type="text"
-                  id="nome"
-                  name="nome"
-                  value={formData.nome}
-                  onChange={handleInputChange}
-                  placeholder="Seu nome completo"
-                  required
-                />
+              <input
+                type="text"
+                id="nome"
+                name="nome"
+                value={formData.nome}
+                onChange={handleInputChange}
+                placeholder="Seu nome completo"
+                required
+              />
+              {fieldErrors.nome && (
+                <div className="field-error">{fieldErrors.nome}</div>
+              )}
               </div>
             </div>
 
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="email">E-mail *</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="seu@email.com"
-                  required
-                />
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder="seu@email.com"
+                required
+              />
+              {fieldErrors.email && (
+                <div className="field-error">{fieldErrors.email}</div>
+              )}
               </div>
               <div className="form-group">
                 <label htmlFor="telefone">Telefone</label>
-                <input
-                  type="tel"
-                  id="telefone"
-                  name="telefone"
-                  value={formData.telefone}
-                  onChange={handleInputChange}
-                  placeholder="(11) 99999-9999"
-                />
+              <input
+                type="tel"
+                id="telefone"
+                name="telefone"
+                value={formData.telefone}
+                onChange={handleInputChange}
+                placeholder="(11) 99999-9999"
+              />
+              {fieldErrors.telefone && (
+                <div className="field-error">{fieldErrors.telefone}</div>
+              )}
               </div>
             </div>
 
@@ -197,15 +210,18 @@ const CrafterModal = ({ isOpen, onClose }) => {
               </div>
               <div className="form-group">
                 <label htmlFor="estado">Estado</label>
-                <input
-                  type="text"
-                  id="estado"
-                  name="estado"
-                  value={formData.estado}
-                  onChange={handleInputChange}
-                  placeholder="SP"
-                  maxLength={2}
-                />
+              <input
+                type="text"
+                id="estado"
+                name="estado"
+                value={formData.estado}
+                onChange={handleInputChange}
+                placeholder="SP"
+                maxLength={2}
+              />
+              {fieldErrors.estado && (
+                <div className="field-error">{fieldErrors.estado}</div>
+              )}
               </div>
             </div>
 
@@ -374,6 +390,11 @@ const CrafterModal = ({ isOpen, onClose }) => {
             border-radius: 6px;
             margin-bottom: 1rem;
             border: 1px solid #f5c6cb;
+          }
+          .field-error {
+            margin-top: 6px;
+            color: #c0392b;
+            font-size: 0.9rem;
           }
 
           .form-actions {

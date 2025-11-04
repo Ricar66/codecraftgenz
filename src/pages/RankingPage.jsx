@@ -16,6 +16,10 @@ export default function RankingPage() {
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 50;
+  const [areaFilter, setAreaFilter] = useState('');
+  const [sortBy, setSortBy] = useState('score');
+  const [sortDir, setSortDir] = useState('desc');
+  const [minScore, setMinScore] = useState(0);
 
   const fetchRanking = async () => {
     try {
@@ -35,7 +39,13 @@ export default function RankingPage() {
         };
       }) : [];
       // Tabela a partir da lista de crafters
-      const tb = crafters.map(c => ({ name: c.nome || c.name || '—', score: c.points ?? 0 }));
+      const tb = crafters.map(c => ({
+        id: c.id,
+        name: c.nome || c.name || '—',
+        score: Number.isFinite(c.points) ? c.points : 0,
+        area: c.area_interesse || c.area || c.stack || '',
+        avatar: c.avatar_url || null,
+      }));
       setTop3(t3);
       setTable(tb);
     } catch {
@@ -54,7 +64,17 @@ export default function RankingPage() {
     return () => unsub();
   }, []);
 
-  const filtered = table.filter(r => r.name.toLowerCase().includes(query.toLowerCase()));
+  const areas = Array.from(new Set((table || []).map(r => r.area).filter(Boolean))).sort();
+  const filtered = (table || [])
+    .filter(r => r.name.toLowerCase().includes(query.toLowerCase()))
+    .filter(r => !areaFilter || r.area === areaFilter)
+    .filter(r => (r.score ?? 0) >= (Number(minScore) || 0))
+    .sort((a, b) => {
+      const dir = sortDir === 'asc' ? 1 : -1;
+      if (sortBy === 'name') return a.name.localeCompare(b.name) * dir;
+      if (sortBy === 'area') return (a.area || '').localeCompare(b.area || '') * dir;
+      const sa = a.score ?? 0; const sb = b.score ?? 0; return (sa - sb) * dir;
+    });
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageItems = filtered.slice((page-1)*pageSize, page*pageSize);
 
@@ -76,51 +96,51 @@ export default function RankingPage() {
           {error && (
             <div className="error" role="alert">{error}</div>
           )}
-          {!loading && top3.length > 0 ? (
+          {!loading && (top3 || []).length > 0 ? (
             <div className="podium" aria-label="Pódio dos três melhores" aria-live="polite">
               <div className="podium-item second">
                 <div className="photo" aria-hidden="true" style={{
-                  backgroundImage: (top3.find(p=>p.place===2)?.avatar ? `url(${top3.find(p=>p.place===2)?.avatar})` : undefined),
+                  backgroundImage: ((top3 || []).find(p=>p.place===2)?.avatar ? `url(${(top3 || []).find(p=>p.place===2)?.avatar})` : undefined),
                   backgroundSize: 'cover',
                   backgroundPosition: 'center'
                 }} />
                 <div className="label">
                   <span className="place">2º</span>
-                  <span className="name">{top3.find(p=>p.place===2)?.name || '—'}</span>
-                  <span className="score">{top3.find(p=>p.place===2)?.score ?? 0} pts</span>
-                  {top3.find(p=>p.place===2)?.reward ? (
-                    <span className="reward" title="Recompensa">🎁 {top3.find(p=>p.place===2)?.reward}</span>
+                  <span className="name">{(top3 || []).find(p=>p.place===2)?.name || '—'}</span>
+                  <span className="score">{(top3 || []).find(p=>p.place===2)?.score ?? 0} pts</span>
+                  {(top3 || []).find(p=>p.place===2)?.reward ? (
+                    <span className="reward" title="Recompensa">🎁 {(top3 || []).find(p=>p.place===2)?.reward}</span>
                   ) : null}
                 </div>
               </div>
               <div className="podium-item first">
                 <div className="photo" aria-hidden="true" style={{
-                  backgroundImage: (top3.find(p=>p.place===1)?.avatar ? `url(${top3.find(p=>p.place===1)?.avatar})` : undefined),
+                  backgroundImage: ((top3 || []).find(p=>p.place===1)?.avatar ? `url(${(top3 || []).find(p=>p.place===1)?.avatar})` : undefined),
                   backgroundSize: 'cover',
                   backgroundPosition: 'center'
                 }} />
                 <div className="crown" title="Campeão" />
                 <div className="label">
                   <span className="place">1º</span>
-                  <span className="name">{top3.find(p=>p.place===1)?.name || '—'}</span>
-                  <span className="score">{top3.find(p=>p.place===1)?.score ?? 0} pts</span>
-                  {top3.find(p=>p.place===1)?.reward ? (
-                    <span className="reward" title="Recompensa">🎁 {top3.find(p=>p.place===1)?.reward}</span>
+                  <span className="name">{(top3 || []).find(p=>p.place===1)?.name || '—'}</span>
+                  <span className="score">{(top3 || []).find(p=>p.place===1)?.score ?? 0} pts</span>
+                  {(top3 || []).find(p=>p.place===1)?.reward ? (
+                    <span className="reward" title="Recompensa">🎁 {(top3 || []).find(p=>p.place===1)?.reward}</span>
                   ) : null}
                 </div>
               </div>
               <div className="podium-item third">
                 <div className="photo" aria-hidden="true" style={{
-                  backgroundImage: (top3.find(p=>p.place===3)?.avatar ? `url(${top3.find(p=>p.place===3)?.avatar})` : undefined),
+                  backgroundImage: ((top3 || []).find(p=>p.place===3)?.avatar ? `url(${(top3 || []).find(p=>p.place===3)?.avatar})` : undefined),
                   backgroundSize: 'cover',
                   backgroundPosition: 'center'
                 }} />
                 <div className="label">
                   <span className="place">3º</span>
-                  <span className="name">{top3.find(p=>p.place===3)?.name || '—'}</span>
-                  <span className="score">{top3.find(p=>p.place===3)?.score ?? 0} pts</span>
-                  {top3.find(p=>p.place===3)?.reward ? (
-                    <span className="reward" title="Recompensa">🎁 {top3.find(p=>p.place===3)?.reward}</span>
+                  <span className="name">{(top3 || []).find(p=>p.place===3)?.name || '—'}</span>
+                  <span className="score">{(top3 || []).find(p=>p.place===3)?.score ?? 0} pts</span>
+                  {(top3 || []).find(p=>p.place===3)?.reward ? (
+                    <span className="reward" title="Recompensa">🎁 {(top3 || []).find(p=>p.place===3)?.reward}</span>
                   ) : null}
                 </div>
               </div>
@@ -133,6 +153,25 @@ export default function RankingPage() {
             <div className="list-header" style={{ display:'flex', gap:12, alignItems:'center' }}>
               <h3 className="list-title" style={{ margin: 0 }}>Demais participantes</h3>
               <input aria-label="Buscar por nome" placeholder="Buscar por nome" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} className="rank-search" />
+              <select aria-label="Filtrar por área" value={areaFilter} onChange={e=>{setAreaFilter(e.target.value); setPage(1);}} className="rank-filter">
+                <option value="">Todas as áreas</option>
+                {areas.map(a => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
+              <div className="rank-min-score">
+                <label htmlFor="minScore" style={{ color:'var(--texto-gelo)', marginRight:6 }}>Mín. pontos</label>
+                <input id="minScore" type="number" min="0" value={minScore} onChange={e=>{setMinScore(e.target.value); setPage(1);}} className="rank-input" />
+              </div>
+              <select aria-label="Ordenar por" value={sortBy} onChange={e=>{setSortBy(e.target.value);}} className="rank-filter">
+                <option value="score">Pontuação</option>
+                <option value="name">Nome</option>
+                <option value="area">Área</option>
+              </select>
+              <select aria-label="Direção" value={sortDir} onChange={e=>{setSortDir(e.target.value);}} className="rank-filter">
+                <option value="desc">Desc</option>
+                <option value="asc">Asc</option>
+              </select>
               {filtered.length > pageSize ? (
                 <div className="pager" style={{ marginLeft:'auto', display:'flex', gap:8 }}>
                   <button onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
@@ -145,8 +184,11 @@ export default function RankingPage() {
               {pageItems.length === 0 ? (
                 <li className="rank-row"><span className="rank-name">Nenhum participante</span></li>
               ) : pageItems.map((o, idx) => (
-                <li key={`${o.name}-${idx}`} className="rank-row">
-                  <span className="rank-name">{o.name}</span>
+                <li key={`${o.id || o.name}-${idx}`} className="rank-row">
+                  <div className="rank-left">
+                    <span className="rank-name">{o.name}</span>
+                    {o.area ? <span className="rank-area">{o.area}</span> : null}
+                  </div>
                   <span className="rank-score">{o.score} pts</span>
                 </li>
               ))}
@@ -211,6 +253,9 @@ export default function RankingPage() {
         .rank-row { display: flex; justify-content: space-between; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
         .rank-name { color: var(--texto-gelo); }
         .rank-search { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 10px; color: var(--texto-branco); }
+        .rank-filter, .rank-input { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 10px; color: var(--texto-branco); }
+        .rank-left { display:flex; gap:8px; align-items:center; }
+        .rank-area { color: var(--texto-gelo); font-size: 0.9rem; background: rgba(209,43,242,0.15); border: 1px solid rgba(209,43,242,0.4); border-radius: 6px; padding: 2px 6px; }
         .rank-score { color: var(--texto-branco); font-weight: 700; }
         .ranking-list ul { max-height: 50vh; overflow-y: auto; }
 

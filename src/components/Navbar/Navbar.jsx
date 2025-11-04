@@ -101,6 +101,15 @@ const Navbar = () => {
               Feedbacks
             </Link>
           </li>
+          <li className={styles.navItem}>
+            <Link 
+              to="/apps" 
+              className={`${styles.navLink} ${isActiveLink('/apps') ? styles.navLinkActive : ''}`}
+              onClick={closeMobileMenu}
+            >
+              Meus Aplicativos
+            </Link>
+          </li>
           {/* CTA Button */}
           <li className={styles.navItem}>
             <Link 
