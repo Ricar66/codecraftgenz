@@ -41,6 +41,29 @@ const useProjects = (options = {}) => {
   const abortControllerRef = useRef(null);
   const intervalRef = useRef(null);
   const isMountedRef = useRef(true);
+  
+  // Refs para valores atuais (evita warnings de dependências)
+  const filtersRef = useRef(filters);
+  const loadingRef = useRef(loading);
+  const retryCountRef = useRef(retryCount);
+  const optionsRef = useRef(options);
+
+  // Atualiza refs quando valores mudam
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
+
+  useEffect(() => {
+    retryCountRef.current = retryCount;
+  }, [retryCount]);
+
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
 
   /**
    * Função principal para buscar projetos
@@ -52,8 +75,8 @@ const useProjects = (options = {}) => {
     // Inicia medição de performance
     const measureId = `fetch-projects-${Date.now()}`;
     globalPerformanceMonitor.startMeasure(measureId, {
-      options: { ...options, ...fetchOptions },
-      retryCount
+      options: { ...optionsRef.current, ...fetchOptions },
+      retryCount: retryCountRef.current
     });
 
     // Verifica se o componente ainda está montado
@@ -62,7 +85,7 @@ const useProjects = (options = {}) => {
     }
 
     // Verifica se já excedeu o número máximo de tentativas
-    if (retryCount >= maxRetries) {
+    if (retryCountRef.current >= maxRetries) {
       setError({
         message: `Falha ao carregar projetos após ${maxRetries} tentativas. Verifique sua conexão.`,
         status: 0,
@@ -74,7 +97,7 @@ const useProjects = (options = {}) => {
     }
 
     // Previne múltiplas chamadas simultâneas
-    if (loading) {
+    if (loadingRef.current) {
       return [];
     }
 
@@ -98,7 +121,7 @@ const useProjects = (options = {}) => {
       setError(null);
 
       const mergedOptions = {
-        filters: { ...filters, ...fetchOptions.filters },
+        filters: { ...filtersRef.current, ...fetchOptions.filters },
         signal: abortControllerRef.current.signal,
         ...fetchOptions
       };
@@ -106,7 +129,7 @@ const useProjects = (options = {}) => {
       const response = await getProjects({
         ...mergedOptions,
         useCache: true,
-        publicOnly: !options.useAdminStore
+        publicOnly: !optionsRef.current.useAdminStore
       });
 
       // Limpa o timeout se a requisição foi bem-sucedida
@@ -144,7 +167,7 @@ const useProjects = (options = {}) => {
       // Trata diferentes tipos de erro com fallbacks robustos
       if (error.name === 'AbortError') {
         // Timeout - erro de conectividade
-        if (retryCount === 0) {
+        if (retryCountRef.current === 0) {
           console.warn('Timeout na API, tentando novamente...');
         }
         
@@ -153,8 +176,8 @@ const useProjects = (options = {}) => {
           message: 'Timeout: A requisição demorou muito para responder',
           status: 408,
           type: 'timeout',
-          canRetry: retryCount < maxRetries - 1,
-          retryIn: Math.min(2000 * Math.pow(2, retryCount), 10000) // Backoff exponencial
+          canRetry: retryCountRef.current < maxRetries - 1,
+          retryIn: Math.min(2000 * Math.pow(2, retryCountRef.current), 10000) // Backoff exponencial
         });
       } else if (error.status >= 500) {
         // Erro de servidor
@@ -165,8 +188,8 @@ const useProjects = (options = {}) => {
           message: 'Erro interno do servidor. Tente novamente em alguns instantes.',
           status: error.status,
           type: 'server_error',
-          canRetry: retryCount < maxRetries - 1,
-          retryIn: Math.min(3000 * Math.pow(2, retryCount), 15000)
+          canRetry: retryCountRef.current < maxRetries - 1,
+          retryIn: Math.min(3000 * Math.pow(2, retryCountRef.current), 15000)
         });
       } else {
         // Outros erros
@@ -175,8 +198,8 @@ const useProjects = (options = {}) => {
           message: error.message || 'Erro desconhecido ao carregar projetos',
           status: error.status || 0,
           type: 'unknown',
-          canRetry: retryCount < maxRetries - 1,
-          retryIn: Math.min(1000 * Math.pow(2, retryCount), 5000)
+          canRetry: retryCountRef.current < maxRetries - 1,
+          retryIn: Math.min(1000 * Math.pow(2, retryCountRef.current), 5000)
         });
       }
 
@@ -184,7 +207,7 @@ const useProjects = (options = {}) => {
       globalPerformanceMonitor.endMeasure(measureId, {
         success: false,
         error: error.message,
-        retryCount
+        retryCount: retryCountRef.current
       });
 
       setLoading(false);
@@ -210,7 +233,7 @@ const useProjects = (options = {}) => {
         resolve(result);
       }, delay);
     });
-  }, []); // Removido fetchProjects da dependência
+  }, [fetchProjects]); // Adicionado fetchProjects de volta como dependência
 
   /**
    * Função para refetch manual (limpa erro e tenta novamente)
