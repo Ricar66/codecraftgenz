@@ -16,7 +16,7 @@ const dbConfig = {
 }
 
 // Alternativa: usar DATABASE_URL completa
-// const connectionString = process.env.DATABASE_URL
+const connectionString = process.env.DATABASE_URL
 
 let pool = null
 let poolPromise = null
@@ -36,33 +36,66 @@ export function getConnectionPool() {
 
   poolPromise = (async () => {
     try {
-      // Se estiver usando a DATABASE_URL:
-      // pool = new sql.ConnectionPool(connectionString)
+      // Se estiver usando a DATABASE_URL, prioriza ela
+      if (connectionString) {
+        // Tenta parsear como URL para construir um config robusto
+        try {
+          const url = new URL(connectionString)
+          const server = url.hostname
+          const port = url.port ? parseInt(url.port, 10) : 1433
+          const database = url.pathname ? url.pathname.replace(/^\//, '') : undefined
+          const user = decodeURIComponent(url.username || '')
+          const password = decodeURIComponent(url.password || '')
+          const encryptParam = url.searchParams.get('encrypt')
+          const trustParam = url.searchParams.get('trustServerCertificate')
 
-      // Se estiver usando o dbConfig:
-      if (!dbConfig.password || !dbConfig.database) {
-        console.error('Variáveis de ambiente do banco (DB_PASSWORD, DB_DATABASE) não estão definidas.')
-        // Fallback simples para tentar extrair da DATABASE_URL
-        const url = process.env.DATABASE_URL || ''
-        if (url) {
-          try {
-            // Extrai senha e database de uma connection string MSSQL típica
-            // Ex.: mssql://user:password@host:1433/database?encrypt=true
-            const afterProto = url.split('://')[1] || ''
-            const creds = afterProto.split('@')[0] || ''
-            const pwd = creds.split(':')[1]
-            const path = afterProto.split('/')[1] || ''
-            if (!dbConfig.password && pwd) dbConfig.password = pwd
-            if (!dbConfig.database && path) dbConfig.database = path.split('?')[0]
-          } catch (e) {
-            console.warn('Não foi possível inferir dados da DATABASE_URL:', e)
+          const cfg = {
+            server,
+            user,
+            password,
+            database,
+            port,
+            options: {
+              encrypt: encryptParam ? encryptParam === 'true' : true,
+              trustServerCertificate: trustParam ? trustParam === 'true' : false
+            }
+          }
+
+          pool = new sql.ConnectionPool(cfg)
+          await pool.connect()
+          console.log('✅ Conectado ao Azure SQL Database via DATABASE_URL (config)')
+        } catch (parseErr) {
+          console.warn('DATABASE_URL não pôde ser parseada como URL; tentando conectar com string direta:', parseErr?.message)
+          // Usa o parser nativo do mssql/tedious para connection strings
+          pool = await sql.connect(connectionString)
+          console.log('✅ Conectado ao Azure SQL Database via DATABASE_URL (string)')
+        }
+      } else {
+        // Se estiver usando o dbConfig:
+        if (!dbConfig.password || !dbConfig.database) {
+          console.error('Variáveis de ambiente do banco (DB_PASSWORD, DB_DATABASE) não estão definidas.')
+          // Fallback simples para tentar extrair da DATABASE_URL
+          const url = process.env.DATABASE_URL || ''
+          if (url) {
+            try {
+              // Extrai senha e database de uma connection string MSSQL típica
+              // Ex.: mssql://user:password@host:1433/database?encrypt=true
+              const afterProto = url.split('://')[1] || ''
+              const creds = afterProto.split('@')[0] || ''
+              const pwd = creds.split(':')[1]
+              const path = afterProto.split('/')[1] || ''
+              if (!dbConfig.password && pwd) dbConfig.password = pwd
+              if (!dbConfig.database && path) dbConfig.database = path.split('?')[0]
+            } catch (e) {
+              console.warn('Não foi possível inferir dados da DATABASE_URL:', e)
+            }
           }
         }
-      }
 
-      pool = new sql.ConnectionPool(dbConfig)
-      await pool.connect()
-      console.log('✅ Conectado ao Azure SQL Database')
+        pool = new sql.ConnectionPool(dbConfig)
+        await pool.connect()
+        console.log('✅ Conectado ao Azure SQL Database')
+      }
 
       pool.on('error', err => {
         console.error('Erro no pool do SQL Server', err)

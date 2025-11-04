@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import helmet from 'helmet';
 import MercadoPagoConfig, { Preference, Payment } from 'mercadopago';
+import { getConnectionPool, dbSql } from './src/lib/db.js';
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -212,20 +213,36 @@ app.post('/api/auth/login', (req, res) => {
   }
 });
 
-// Rotas de Projetos
-app.get('/api/projetos', (req, res) => {
-  res.json(mockData.projetos);
+// Rotas de Projetos (integradas com banco)
+app.get('/api/projetos', async (req, res, next) => {
+  try {
+    const pool = await getConnectionPool();
+    const result = await pool.request().query('SELECT * FROM projetos');
+    res.json({ success: true, data: result.recordset });
+  } catch (err) {
+    console.error('Erro ao buscar projetos no banco:', err);
+    next(err);
+  }
 });
 
-app.get('/api/projetos/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  const projeto = mockData.projetos.find(p => p.id === id);
-  
-  if (!projeto) {
-    return res.status(404).json({ error: 'Projeto não encontrado' });
+app.get('/api/projetos/:id', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'ID do projeto inválido' });
+    }
+    const pool = await getConnectionPool();
+    const result = await pool.request()
+      .input('id', dbSql.Int, id)
+      .query('SELECT * FROM projetos WHERE id = @id');
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ error: 'Projeto não encontrado' });
+    }
+    res.json({ success: true, data: result.recordset[0] });
+  } catch (err) {
+    console.error('Erro ao buscar projeto por ID:', err);
+    next(err);
   }
-  
-  res.json(projeto);
 });
 
 app.post('/api/projetos', (req, res) => {
@@ -601,12 +618,16 @@ app.use((err, req, res, _next) => {
   });
 });
 
-// --- Inicialização do Servidor ---
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
-  console.log(`📱 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 URL: http://localhost:${PORT}`);
-  console.log(`⚡ Servidor simplificado sem banco de dados`);
+// --- Inicialização do Servidor (aguarda conexão ao banco) ---
+getConnectionPool().then(() => {
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`📱 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 URL: http://localhost:${PORT}`);
+  });
+}).catch(err => {
+  console.error('Falha fatal ao conectar ao banco de dados. Servidor não iniciado.', err);
+  process.exit(1);
 });
 
 // Graceful shutdown
