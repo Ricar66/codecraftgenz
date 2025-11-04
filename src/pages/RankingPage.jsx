@@ -1,6 +1,7 @@
 // src/pages/RankingPage.jsx
 import React, { useEffect, useState } from 'react';
 
+import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
 import { realtime } from '../lib/realtime';
 import { getRanking } from '../services/rankingAPI.js';
@@ -79,7 +80,14 @@ export default function RankingPage() {
   const pageItems = filtered.slice((page-1)*pageSize, page*pageSize);
 
   return (
-    <div className="ranking-page">
+    <div className="ranking-page" style={{
+      backgroundImage: `url(${heroBackground})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundAttachment: 'fixed',
+      minHeight: '100vh'
+    }}>
       <Navbar />
 
       <section className="section-block">
