@@ -182,18 +182,52 @@ app.get('/api/mentores/:id', (req, res) => {
 
 // Rotas de Crafters
 app.get('/api/crafters', (req, res) => {
-  res.json(mockData.crafters);
+  // Estrutura esperada pelo componente AdminCrafters
+  const craftersWithStatus = mockData.crafters.map(crafter => ({
+    ...crafter,
+    points: crafter.pontos, // Mapear pontos para points
+    active: true, // Adicionar status ativo
+    avatar_url: null // Adicionar campo de avatar
+  }));
+
+  // Estrutura de resposta paginada esperada pelo hook useCrafters
+  const response = {
+    success: true,
+    data: craftersWithStatus,
+    pagination: {
+      total: craftersWithStatus.length,
+      page: 1,
+      totalPages: 1,
+      hasNext: false,
+      hasPrev: false
+    }
+  };
+  
+  res.json(response);
 });
 
 app.get('/api/ranking', (req, res) => {
-  const ranking = [...mockData.crafters]
-    .sort((a, b) => b.pontos - a.pontos)
-    .map((crafter, index) => ({
-      ...crafter,
-      posicao: index + 1
-    }));
+  // Estrutura esperada pelo componente RankingPage
+  const crafters = mockData.crafters.map(crafter => ({
+    ...crafter,
+    points: crafter.pontos, // Mapear pontos para points
+    name: crafter.nome // Mapear nome para name
+  }));
   
-  res.json(ranking);
+  // Criar top3 baseado nos pontos
+  const sortedCrafters = [...crafters].sort((a, b) => b.points - a.points);
+  const top3 = sortedCrafters.slice(0, 3).map((crafter, index) => ({
+    crafter_id: crafter.id,
+    position: index + 1,
+    reward: index === 0 ? 'Badge Ouro' : index === 1 ? 'Badge Prata' : 'Badge Bronze'
+  }));
+  
+  const response = {
+    crafters: crafters,
+    top3: top3
+  };
+  
+  res.json(response);
 });
 
 // Rota de feedbacks (mock)
@@ -262,7 +296,7 @@ app.get('*', (req, res) => {
 });
 
 // --- Middleware de Tratamento de Erros ---
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   console.error('Erro no servidor:', err);
   res.status(500).json({
     error: 'Erro interno do servidor',
