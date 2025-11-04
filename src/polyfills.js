@@ -85,3 +85,28 @@ if (typeof globalThis === 'undefined') {
 }
 
 console.log('Polyfills carregados para compatibilidade entre navegadores');
+
+// Captura global de erros para ajudar na depuração em ambiente admin
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', (e) => {
+    const payload = {
+      type: 'error',
+      message: e?.error?.message || e?.message || 'Erro desconhecido',
+      filename: e?.filename,
+      lineno: e?.lineno,
+      colno: e?.colno,
+      stack: e?.error?.stack || null,
+    };
+    window.__global_last_error__ = payload;
+    console.error('[GlobalError]', payload);
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    const payload = {
+      type: 'unhandledrejection',
+      message: e?.reason?.message || String(e?.reason || 'Promise rejeitada'),
+      stack: e?.reason?.stack || null,
+    };
+    window.__global_last_error__ = payload;
+    console.error('[UnhandledRejection]', payload);
+  });
+}
