@@ -1,7 +1,7 @@
 // src/admin/AdminLayout.jsx
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
- 
+
 import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import ProjectCard from '../components/Projects/ProjectCard.jsx';
 import { useAuth } from '../context/useAuth';
@@ -9,6 +9,7 @@ import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo
 import { apiRequest } from '../lib/apiConfig.js';
 import { realtime } from '../lib/realtime';
 import { getAllApps, updateApp } from '../services/appsAPI.js';
+import AdminIdeias from './AdminIdeias.jsx';
 
 export function Dashboard() {
   const [periodo, setPeriodo] = React.useState('30d');
@@ -1913,9 +1914,11 @@ export default function AdminLayout() {
           <NavLink to="/admin/crafters" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Crafters</NavLink>
           <NavLink to="/admin/ranking" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Ranking</NavLink>
           <NavLink to="/admin/projetos" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Projetos</NavLink>
+          <NavLink to="/admin/apps" className={({isActive})=>`menuLink ${isActive?'active':''}`}>🧱 Aplicativos</NavLink>
           <NavLink to="/admin/desafios" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Desafios</NavLink>
           <NavLink to="/admin/inscricoes" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Inscrições</NavLink>
           <NavLink to="/admin/financas" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Finanças</NavLink>
+          <NavLink to="/admin/ideias" className={({isActive})=>`menuLink ${isActive?'active':''}`}>💡 Ideias</NavLink>
           <NavLink to="/admin/config" className={({isActive})=>`menuLink ${isActive?'active':''}`}>Config</NavLink>
         </nav>
         <button className="sidebarToggle" onClick={toggleSidebar} aria-label={sidebarOpen ? 'Recolher menu' : 'Expandir menu'}>
