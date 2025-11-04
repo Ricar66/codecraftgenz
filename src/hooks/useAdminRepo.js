@@ -13,9 +13,17 @@ function useAsyncList(asyncFn, deps = []) {
   const [error, setError] = useState('');
 
   const fetchData = async () => {
+    setLoading(true);
+    setError('');
+
+    if (!import.meta.env.VITE_API_URL && import.meta.env.DEV) {
+      setError("O backend não está configurado. Defina VITE_API_URL no seu arquivo .env.development para carregar os dados.");
+      setData([]);
+      setLoading(false);
+      return;
+    }
+
     try {
-      setLoading(true);
-      setError('');
       const result = await asyncFn();
       setData(result || []);
     } catch (err) {
@@ -356,10 +364,17 @@ export function useCrafters(options = {}) {
 
   
   const loadCrafters = useCallback(async (searchOptions = {}) => {
+    setLoading(true);
+    setError(null);
+
+    if (!import.meta.env.VITE_API_URL && import.meta.env.DEV) {
+      setError("O backend não está configurado. Defina VITE_API_URL no seu arquivo .env.development para carregar os dados.");
+      setCrafters([]);
+      setLoading(false);
+      return;
+    }
+
     try {
-      setLoading(true);
-      setError(null);
-      
       const finalOptions = { ...options, ...searchOptions };
       const response = await rankingAPI.getCrafters(finalOptions);
       
