@@ -1888,7 +1888,7 @@ export default function AdminLayout() {
   const toggleSidebar = () => {
     const next = !sidebarOpen;
     setSidebarOpen(next);
-    try { window.localStorage.setItem('admin_sidebar_open', String(next)); } catch {}
+    try { window.localStorage.setItem('admin_sidebar_open', String(next)); } catch { void 0; }
   };
   React.useEffect(() => {
     const tick = () => {
@@ -1896,7 +1896,7 @@ export default function AdminLayout() {
         if (typeof window !== 'undefined' && window.__global_last_error__) {
           setGlobalErr(window.__global_last_error__);
         }
-      } catch (_) {}
+      } catch { void 0; }
     };
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);

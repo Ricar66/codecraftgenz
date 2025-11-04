@@ -1,7 +1,8 @@
 // src/pages/AppsPage.jsx
 import React, { useEffect, useState } from 'react';
-import Navbar from '../components/Navbar/Navbar';
+
 import AppCard from '../components/AppCard/AppCard';
+import Navbar from '../components/Navbar/Navbar';
 import { getMyApps, getHistory } from '../services/appsAPI.js';
 
 const AppsPage = () => {
