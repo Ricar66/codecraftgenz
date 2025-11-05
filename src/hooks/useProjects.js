@@ -10,7 +10,6 @@ import { globalPerformanceMonitor } from '../utils/performanceMonitor';
  * 
  * @param {Object} options - Opções de configuração
  * @param {boolean} options.autoFetch - Se deve buscar dados automaticamente (padrão: true)
- * @param {boolean} options.useMock - Se deve usar dados mock (padrão: false)
  * @param {Object} options.filters - Filtros para aplicar na busca
  * @param {number} options.refetchInterval - Intervalo para refetch automático em ms
  * @param {number} options.timeout - Timeout máximo para requisições em ms (padrão: 10000)
@@ -20,7 +19,6 @@ import { globalPerformanceMonitor } from '../utils/performanceMonitor';
 const useProjects = (options = {}) => {
   const {
     autoFetch = true,
-    useMock: _useMock = false,
     filters = {},
     refetchInterval = 30000,
     timeout = 10000,

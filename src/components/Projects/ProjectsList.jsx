@@ -181,7 +181,6 @@ const ProjectsList = ({ useAdminStore = false }) => {
     stats
   } = useProjects({
     autoFetch: true,
-    useMock: false,
     filters: {},
     refetchInterval: 30000,
     timeout: 10000,
