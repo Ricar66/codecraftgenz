@@ -29,61 +29,7 @@ app.use(cors());
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 
-// --- Dados Mock para Demonstração ---
-const mockData = {
-  projetos: [
-    {
-      id: 1,
-      nome: "CodeCraft Platform",
-      descricao: "Plataforma de desenvolvimento colaborativo",
-      status: "ativo",
-      tecnologias: ["React", "Node.js", "Express"],
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 2,
-      nome: "API Gateway",
-      descricao: "Gateway para microserviços",
-      status: "desenvolvimento",
-      tecnologias: ["Node.js", "Docker", "Kubernetes"],
-      created_at: new Date().toISOString()
-    }
-  ],
-  mentores: [
-    {
-      id: 1,
-      nome: "João Silva",
-      email: "joao@codecraft.dev",
-      especialidade: "Full Stack Development",
-      bio: "Desenvolvedor com 10+ anos de experiência",
-      ativo: true
-    },
-    {
-      id: 2,
-      nome: "Maria Santos",
-      email: "maria@codecraft.dev",
-      especialidade: "DevOps",
-      bio: "Especialista em infraestrutura e CI/CD",
-      ativo: true
-    }
-  ],
-  crafters: [
-    {
-      id: 1,
-      nome: "Ana Costa",
-      email: "ana@example.com",
-      pontos: 1250,
-      nivel: "Avançado"
-    },
-    {
-      id: 2,
-      nome: "Pedro Lima",
-      email: "pedro@example.com",
-      pontos: 890,
-      nivel: "Intermediário"
-    }
-  ]
-};
+// (Removido) Dados mock de demonstração – não utilizados
 
 // Removido: mocks de apps e histórico; rotas agora usam SQL (dbo.apps, dbo.app_history, dbo.app_payments)
 
@@ -126,7 +72,7 @@ function authenticate(req, res, next) {
       token,
     };
     next();
-  } catch (e) {
+  } catch {
     return res.status(401).json({ error: 'Sessão inválida' });
   }
 }
@@ -585,7 +531,7 @@ app.post('/api/apps/from-project/:projectId', authenticate, authorizeAdmin, asyn
               status=@status, price=@price, thumbnail=@thumbnail, executable_url=@executable_url
               WHERE id=@id`);
     if ((update.rowsAffected?.[0] || 0) === 0) {
-      const insert = await pool.request()
+      await pool.request()
         .input('id', dbSql.Int, projectId)
         .input('owner_id', dbSql.Int, ownerId ?? req.user?.id ?? null)
         .input('name', dbSql.NVarChar(120), name ?? `App do Projeto ${projectId}`)
@@ -869,7 +815,8 @@ app.get('*', (req, res) => {
 });
 
 // --- Middleware de Tratamento de Erros ---
-app.use((err, req, res, _next) => {
+app.use((err, req, res, next) => {
+  void next; // manter assinatura de 4 args sem usar
   console.error('Erro no servidor:', err);
   res.status(500).json({
     error: 'Erro interno do servidor',
