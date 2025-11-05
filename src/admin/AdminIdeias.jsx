@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './AdminIdeias.css';
+import './AdminCommon.css';
 
 // Simulação de API - será substituída por chamadas reais
 const IdeiasRepo = {
@@ -151,7 +152,7 @@ export default function AdminIdeias() {
 
   if (loading) {
     return (
-      <div className="admin-ideias">
+      <div className="admin-content">
         <div className="loading-state">
           <div className="spinner"></div>
           <p>Carregando ideias...</p>
@@ -162,7 +163,7 @@ export default function AdminIdeias() {
 
   if (error) {
     return (
-      <div className="admin-ideias">
+      <div className="admin-content">
         <div className="error-state">
           <h3>Erro ao carregar ideias</h3>
           <p>{error}</p>
@@ -175,13 +176,13 @@ export default function AdminIdeias() {
   }
 
   return (
-    <div className="admin-ideias">
+    <div className="admin-content">
       <div className="admin-ideias-header">
-        <h2>💡 Ideias de Projeto</h2>
-        <p>Compartilhe e colabore em ideias para novos projetos</p>
+        <h1 className="title">💡 Ideias de Projeto</h1>
+        <p className="muted">Compartilhe e colabore em ideias para novos projetos</p>
       </div>
 
-      <div className="admin-ideias-controls">
+      <div className="filters-section">
         <button 
           className="btn btn-primary"
           onClick={() => setFormAberto(!formAberto)}
@@ -191,7 +192,7 @@ export default function AdminIdeias() {
       </div>
 
       {formAberto && (
-        <div className="nova-ideia-form">
+        <div className="nova-ideia-form card">
           <h3>Adicionar Nova Ideia</h3>
           <form onSubmit={handleCriarIdeia}>
             <div className="form-group">
@@ -242,7 +243,7 @@ export default function AdminIdeias() {
           </div>
         ) : (
           ideias.map((ideia) => (
-            <div key={ideia.id} className="ideia-card">
+            <div key={ideia.id} className="ideia-card card">
               <div className="ideia-header">
                 <h3>{ideia.titulo}</h3>
                 <div className="ideia-meta">

@@ -13,6 +13,7 @@ import { getAllApps, updateApp } from '../services/appsAPI.js';
 
 import AdminIdeias from './AdminIdeias.jsx';
 import styles from './AdminLayout.module.css';
+import './AdminCommon.css';
 
 export function Dashboard() {
   const [periodo, setPeriodo] = React.useState('30d');
@@ -284,20 +285,22 @@ export function Usuarios() {
   return (
     <div className="admin-content">
       <h1 className="title">Usuários</h1>
-      <div className="formRow" style={{ gridTemplateColumns: '1fr auto auto auto auto' }}>
-        <input aria-label="Buscar" placeholder="Buscar (nome/e-mail/role)" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} />
-        <button onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
-        <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
-        <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
-        <button onClick={()=>{
-          // Gera CSV dos usuários atuais
-          const headers = 'id,name,email,role,status\n';
-          const rows = filtered.map(u => `${u.id},${u.name},${u.email},${u.role},${u.status}`).join('\n');
-          const csv = headers + rows;
-          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a'); a.href = url; a.download = 'usuarios.csv'; a.click(); URL.revokeObjectURL(url);
-        }}>Exportar CSV</button>
+      <div className="filters-section">
+        <div className="formRow" style={{ gridTemplateColumns: '1fr auto auto auto auto' }}>
+          <input aria-label="Buscar" placeholder="Buscar (nome/e-mail/role)" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} />
+          <button onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
+          <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
+          <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
+          <button onClick={()=>{
+            // Gera CSV dos usuários atuais
+            const headers = 'id,name,email,role,status\n';
+            const rows = filtered.map(u => `${u.id},${u.name},${u.email},${u.role},${u.status}`).join('\n');
+            const csv = headers + rows;
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'usuarios.csv'; a.click(); URL.revokeObjectURL(url);
+          }}>Exportar CSV</button>
+        </div>
       </div>
       {loading && <p>Carregando...</p>}
       {error && <p role="alert">{error}</p>}
@@ -316,17 +319,20 @@ export function Usuarios() {
           </tbody>
         </table>
       </div>
-      <div className="formRow">
-        <input aria-label="Nome" placeholder="Nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} />
-        <input aria-label="E-mail" placeholder="E-mail" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} />
-        <input aria-label="Senha" placeholder="Senha" type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} />
-        <select value={form.role} onChange={e=>setForm({...form,role:e.target.value})}>
-          <option value="admin">admin</option>
-          <option value="editor">editor</option>
-          <option value="viewer">viewer</option>
-        </select>
-        <button onClick={handleCreateUser} disabled={busy || Object.keys(validate()).length > 0}>{busy?'Criando...':'Criar usuário'}</button>
-      </div>
+      <section className="card" style={{ marginTop: 16 }}>
+        <h3 style={{ marginBottom: 12 }}>Novo Usuário</h3>
+        <div className="formRow">
+          <input aria-label="Nome" placeholder="Nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} />
+          <input aria-label="E-mail" placeholder="E-mail" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} />
+          <input aria-label="Senha" placeholder="Senha" type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} />
+          <select value={form.role} onChange={e=>setForm({...form,role:e.target.value})}>
+            <option value="admin">admin</option>
+            <option value="editor">editor</option>
+            <option value="viewer">viewer</option>
+          </select>
+          <button className="btn btn-primary" onClick={handleCreateUser} disabled={busy || Object.keys(validate()).length > 0}>{busy?'Criando...':'Criar usuário'}</button>
+        </div>
+      </section>
       <div className="formRow">
         {validationErrors.name && <span style={{ color: 'red' }}>{validationErrors.name}</span>}
         {validationErrors.email && <span style={{ color: 'red' }}>{validationErrors.email}</span>}
@@ -454,26 +460,30 @@ export function Mentores() {
     <div className="admin-content">
       <h1 className="title">Mentores</h1>
       {toast && (<div role="status" aria-live="polite" className="saveToast">{toast}</div>)}
-      <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr 1fr auto auto auto' }}>
-        <input aria-label="Buscar" placeholder="Buscar por nome" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} />
-        <input aria-label="Filtrar especialidade" placeholder="Especialidade" value={filterSpec} onChange={e=>{setFilterSpec(e.target.value); setPage(1);}} />
-        <select aria-label="Status" value={filterStatus} onChange={e=>{setFilterStatus(e.target.value); setPage(1);}}>
-          <option value="">Todos</option>
-          <option value="draft">Rascunho</option>
-          <option value="published">Publicado</option>
-        </select>
-        <button className="btn btn-outline btn-icon" onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
-        <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
-        <button className="btn btn-outline btn-icon" onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
+      <div className="filters-section">
+        <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr 1fr auto auto auto' }}>
+          <input className="search-input" aria-label="Buscar" placeholder="Buscar por nome" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} />
+          <input className="filter-input" aria-label="Filtrar especialidade" placeholder="Especialidade" value={filterSpec} onChange={e=>{setFilterSpec(e.target.value); setPage(1);}} />
+          <select className="filter-select" aria-label="Status" value={filterStatus} onChange={e=>{setFilterStatus(e.target.value); setPage(1);}}>
+            <option value="">Todos</option>
+            <option value="draft">Rascunho</option>
+            <option value="published">Publicado</option>
+          </select>
+          <button className="btn btn-outline btn-icon" onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
+          <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
+          <button className="btn btn-outline btn-icon" onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
+        </div>
       </div>
       {loading && <p>Carregando...</p>}
       {error && <p role="alert">{error}</p>}
-      <div className="formRow" style={{ gridTemplateColumns: 'auto auto auto auto auto' }}>
-        <label style={{ alignSelf:'center' }}><input type="checkbox" onChange={e=>onSelectAllPage(e.target.checked)} /> Selecionar página</label>
-        <button className="btn btn-primary" onClick={()=>applyBulkStatus('published')}>Status: Publicado</button>
-        <button className="btn btn-outline" onClick={()=>applyBulkStatus('draft')}>Status: Rascunho</button>
-        <button className="btn btn-secondary" onClick={()=>applyBulkVisibility(true)}>Exibir selecionados</button>
-        <button className="btn btn-outline" onClick={()=>applyBulkVisibility(false)}>Ocultar selecionados</button>
+      <div className="filters-section">
+        <div className="formRow" style={{ gridTemplateColumns: 'auto auto auto auto auto' }}>
+          <label style={{ alignSelf:'center' }}><input type="checkbox" onChange={e=>onSelectAllPage(e.target.checked)} /> Selecionar página</label>
+          <button className="btn btn-primary" onClick={()=>applyBulkStatus('published')}>Status: Publicado</button>
+          <button className="btn btn-outline" onClick={()=>applyBulkStatus('draft')}>Status: Rascunho</button>
+          <button className="btn btn-secondary" onClick={()=>applyBulkVisibility(true)}>Exibir selecionados</button>
+          <button className="btn btn-outline" onClick={()=>applyBulkVisibility(false)}>Ocultar selecionados</button>
+        </div>
       </div>
 
       <div className="mentorAdminGrid" aria-live="polite">
@@ -516,36 +526,39 @@ export function Mentores() {
         ))}
       </div>
 
-      <div className="formRow" style={{ gridTemplateColumns: '2fr 1fr' }}>
-        <div>
-          <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <input aria-label="Nome" placeholder="Nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} aria-invalid={!!errors.name} />
-            <input aria-label="Especialidade" placeholder="Especialidade" value={form.specialty} onChange={e=>setForm({...form,specialty:e.target.value})} aria-invalid={!!errors.specialty} />
+      <section className="card" style={{ marginTop: 16 }}>
+        <h3 style={{ marginBottom: 12 }}>{editingId ? '✏️ Editar Mentor' : '➕ Novo Mentor'}</h3>
+        <div className="formRow" style={{ gridTemplateColumns: '2fr 1fr' }}>
+          <div>
+            <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
+              <input aria-label="Nome" placeholder="Nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} aria-invalid={!!errors.name} />
+              <input aria-label="Especialidade" placeholder="Especialidade" value={form.specialty} onChange={e=>setForm({...form,specialty:e.target.value})} aria-invalid={!!errors.specialty} />
+            </div>
+            <div className="formRow">
+              <input aria-label="Bio" placeholder="Descrição" value={form.bio} onChange={e=>setForm({...form,bio:e.target.value})} aria-invalid={!!errors.bio} />
+            </div>
+            <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
+              <input aria-label="E-mail" placeholder="E-mail" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} aria-invalid={!!errors.email} />
+              <input aria-label="Telefone" placeholder="Telefone" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} aria-invalid={!!errors.phone} />
+            </div>
+            <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
+              <input aria-label="Foto (URL)" placeholder="Foto (URL)" value={form.photo} onChange={e=>setForm({...form,photo:e.target.value})} />
+              <input aria-label="Enviar foto" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>onPhotoFile(e.target.files?.[0])} />
+            </div>
+            <div className="formRow">
+              <label style={{ alignSelf:'center' }}><input type="checkbox" checked={form.visible} onChange={e=>setForm({...form,visible:e.target.checked})} /> Visível</label>
+            </div>
           </div>
-          <div className="formRow">
-            <input aria-label="Bio" placeholder="Descrição" value={form.bio} onChange={e=>setForm({...form,bio:e.target.value})} aria-invalid={!!errors.bio} />
-          </div>
-          <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <input aria-label="E-mail" placeholder="E-mail" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} aria-invalid={!!errors.email} />
-            <input aria-label="Telefone" placeholder="Telefone" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} aria-invalid={!!errors.phone} />
-          </div>
-          <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <input aria-label="Foto (URL)" placeholder="Foto (URL)" value={form.photo} onChange={e=>setForm({...form,photo:e.target.value})} />
-            <input aria-label="Enviar foto" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>onPhotoFile(e.target.files?.[0])} />
-          </div>
-          <div className="formRow">
-            <label style={{ alignSelf:'center' }}><input type="checkbox" checked={form.visible} onChange={e=>setForm({...form,visible:e.target.checked})} /> Visível</label>
+          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
+            {form.photo && <img src={form.photo} alt="Preview" style={{maxWidth: '100px', maxHeight: '100px'}}/>}
           </div>
         </div>
-        <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
-          {form.photo && <img src={form.photo} alt="Preview" style={{maxWidth: '100px', maxHeight: '100px'}}/>}
+        <div className="formRow">
+          <button className="btn btn-primary" onClick={onSave} disabled={busy || Object.keys(errors).length > 0}>{busy?'Salvando...':(editingId?'Atualizar':'Salvar')}</button>
+          {editingId && (<button className="btn btn-outline" onClick={()=>{ setEditingId(null); setForm({ name: '', specialty: '', bio: '', email: '', phone: '', photo: '', status: 'published', visible: true }); }}>Cancelar</button>)}
+          <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="draft">Rascunho</option><option value="published">Publicado</option></select>
         </div>
-      </div>
-      <div className="formRow">
-        <button className="btn btn-primary" onClick={onSave} disabled={busy || Object.keys(errors).length > 0}>{busy?'Salvando...':(editingId?'Atualizar':'Salvar')}</button>
-        {editingId && (<button className="btn btn-outline" onClick={()=>{ setEditingId(null); setForm({ name: '', specialty: '', bio: '', email: '', phone: '', photo: '', status: 'published', visible: true }); }}>Cancelar</button>)}
-        <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="draft">Rascunho</option><option value="published">Publicado</option></select>
-      </div>
+      </section>
       <div className="errorRow" aria-live="polite">
         {Object.values(errors).length>0 && (
           <div className="errorList">{Object.values(errors).map((msg, i)=> (<span key={i} className="errorItem">{msg}</span>))}</div>
@@ -719,7 +732,7 @@ export function Ranking() {
       <h1 className="title">Ranking</h1>
       
       {/* Podium Editor */}
-      <section style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+      <section className="card" style={{ marginBottom: '2rem' }}>
         <h3>Editor de Pódio</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1rem' }}>
           {[1, 2, 3].map(position => {
@@ -899,7 +912,7 @@ export function Ranking() {
       </section>
 
       {/* Crafter Management */}
-      <section style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+      <section className="card" style={{ marginBottom: '2rem' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
           <h3>Gerenciar Crafters</h3>
           <button className="btn btn-primary" onClick={() => setCrafterModalOpen(true)}>Novo Crafter</button>
@@ -940,7 +953,7 @@ export function Ranking() {
       </section>
 
       {/* Filters */}
-      <section style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+      <section className="filters-section" style={{ marginBottom: '2rem' }}>
         <h3>Filtros</h3>
         <div className="formRow">
           <input 
@@ -982,7 +995,7 @@ export function Ranking() {
       </section>
 
       {/* Crafters Table */}
-      <section style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+      <section className="card" style={{ marginBottom: '2rem' }}>
         <h3>Tabela Geral</h3>
         <div className="table">
           <table>
@@ -1153,11 +1166,13 @@ export function Projetos() {
         }} className="btn btn-primary">📤 Exportar CSV</button>
       </header>
       
-      <div className="formRow" style={{ gridTemplateColumns: '1fr auto auto auto' }}>
-        <input aria-label="Buscar" placeholder="🔍 Buscar (título/owner/status)" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} />
-        <button onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
-        <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
-        <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
+      <div className="filters-section">
+        <div className="formRow" style={{ gridTemplateColumns: '1fr auto auto auto' }}>
+          <input aria-label="Buscar" placeholder="🔍 Buscar (título/owner/status)" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} />
+          <button onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
+          <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
+          <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
+        </div>
       </div>
       
       {loading && <p>🔄 Carregando...</p>}
@@ -1381,20 +1396,22 @@ export function Desafios() {
   const pageItems = filtered.slice((page-1)*pageSize, page*pageSize);
   return (
     <div className="admin-content"><h1 className="title">Desafios</h1>
-      <div className="formRow" style={{ gridTemplateColumns: '1fr auto auto auto auto' }}>
-        <input aria-label="Buscar" placeholder="Buscar (nome/objetivo/status)" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} />
-        <button onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
-        <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
-        <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
-        <button onClick={()=>{
-          // Gera CSV dos desafios atuais
-          const headers = 'id,name,objective,status,visible,deadline,base_points\n';
-          const rows = filtered.map(d => `${d.id},"${d.name}","${d.objective}",${d.status},${d.visible},${d.deadline || ''},${d.base_points || 0}`).join('\n');
-          const csv = headers + rows;
-          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a'); a.href = url; a.download = 'desafios.csv'; a.click(); URL.revokeObjectURL(url);
-        }}>Exportar CSV</button>
+      <div className="filters-section">
+        <div className="formRow" style={{ gridTemplateColumns: '1fr auto auto auto auto' }}>
+          <input aria-label="Buscar" placeholder="Buscar (nome/objetivo/status)" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} />
+          <button onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
+          <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
+          <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
+          <button onClick={()=>{
+            // Gera CSV dos desafios atuais
+            const headers = 'id,name,objective,status,visible,deadline,base_points\n';
+            const rows = filtered.map(d => `${d.id},"${d.name}","${d.objective}",${d.status},${d.visible},${d.deadline || ''},${d.base_points || 0}`).join('\n');
+            const csv = headers + rows;
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'desafios.csv'; a.click(); URL.revokeObjectURL(url);
+          }}>Exportar CSV</button>
+        </div>
       </div>
       {loading && <p>Carregando...</p>}
       {error && <p role="alert">{error}</p>}
@@ -1474,22 +1491,27 @@ export function Desafios() {
           )}
         </React.Fragment>
       ))}</tbody></table></div>
-      <div className="formRow" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
-        <input aria-label="Nome" placeholder="Nome" value={form?.name||''} onChange={e=>setForm({...form,name:e.target.value})} />
-        <input aria-label="Objetivo" placeholder="Objetivo" value={form?.objective||''} onChange={e=>setForm({...form,objective:e.target.value})} />
-        <input aria-label="Descrição" placeholder="Descrição" value={form?.description||''} onChange={e=>setForm({...form,description:e.target.value})} />
-        <input aria-label="Deadline" type="datetime-local" value={form?.deadline||''} onChange={e=>setForm({...form,deadline:e.target.value})} />
-        <select value={form?.difficulty||'starter'} onChange={e=>setForm({...form,difficulty:e.target.value})}><option value="starter">Starter</option><option value="intermediate">Intermediário</option><option value="pro">Pro</option></select>
-        <input aria-label="Tags (vírgula)" placeholder="Tags" value={Array.isArray(form.tags)?form.tags.join(','):''} onChange={e=>setForm({...form,tags:e.target.value.split(',').map(s=>s.trim()).filter(Boolean)})} />
-        <input aria-label="Recompensa" placeholder="Recompensa" value={form?.reward||''} onChange={e=>setForm({...form,reward:e.target.value})} />
-        <input aria-label="Base points" type="number" min="0" value={Number(form?.base_points||0)} onChange={e=>setForm({...form,base_points:Number(e.target.value)})} />
-        <select value={form?.delivery_type||'link'} onChange={e=>setForm({...form,delivery_type:e.target.value})}><option value="link">Link</option><option value="github">GitHub</option><option value="file">File</option></select>
-        <input aria-label="Thumb URL" placeholder="Thumb URL" value={form?.thumb_url||''} onChange={e=>setForm({...form,thumb_url:e.target.value})} />
-        <select value={form?.status||'draft'} onChange={e=>setForm({...form,status:e.target.value})}><option value="draft">Rascunho</option><option value="active">Ativo</option><option value="closed">Encerrado</option><option value="archived">Arquivado</option></select>
-        <label><input type="checkbox" checked={!!form?.visible} onChange={e=>setForm({...form,visible:e.target.checked})} /> Visível</label>
-        <button className="btn btn-primary" onClick={async()=>{ setBusy(true); try { const payload = editingId?{ ...form, id: editingId }: form; await DesafiosRepo.upsert(payload); setEditingId(null); setForm({ name:'', objective:'', description:'', deadline:'', difficulty:'starter', tags:[], reward:'', base_points:0, delivery_type:'link', thumb_url:'', status:'draft', visible:true }); refresh(); } finally { setBusy(false); } }} disabled={busy} aria-busy={busy}>{editingId ? 'Atualizar' : 'Salvar'} desafio</button>
-        {editingId && (<button className="btn btn-outline" onClick={()=>{ setEditingId(null); setForm({ name:'', objective:'', description:'', deadline:'', difficulty:'starter', tags:[], reward:'', base_points:0, delivery_type:'link', thumb_url:'', status:'draft', visible:true }); }}>Cancelar edição</button>)}
-      </div>
+      <section className="card" style={{ marginTop: 16 }}>
+        <h3 style={{ marginBottom: 12 }}>{editingId ? '✏️ Editar Desafio' : '➕ Novo Desafio'}</h3>
+        <div className="formRow" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
+          <input aria-label="Nome" placeholder="Nome" value={form?.name||''} onChange={e=>setForm({...form,name:e.target.value})} />
+          <input aria-label="Objetivo" placeholder="Objetivo" value={form?.objective||''} onChange={e=>setForm({...form,objective:e.target.value})} />
+          <input aria-label="Descrição" placeholder="Descrição" value={form?.description||''} onChange={e=>setForm({...form,description:e.target.value})} />
+          <input aria-label="Deadline" type="datetime-local" value={form?.deadline||''} onChange={e=>setForm({...form,deadline:e.target.value})} />
+          <select value={form?.difficulty||'starter'} onChange={e=>setForm({...form,difficulty:e.target.value})}><option value="starter">Starter</option><option value="intermediate">Intermediário</option><option value="pro">Pro</option></select>
+          <input aria-label="Tags (vírgula)" placeholder="Tags" value={Array.isArray(form.tags)?form.tags.join(','):''} onChange={e=>setForm({...form,tags:e.target.value.split(',').map(s=>s.trim()).filter(Boolean)})} />
+          <input aria-label="Recompensa" placeholder="Recompensa" value={form?.reward||''} onChange={e=>setForm({...form,reward:e.target.value})} />
+          <input aria-label="Base points" type="number" min="0" value={Number(form?.base_points||0)} onChange={e=>setForm({...form,base_points:Number(e.target.value)})} />
+          <select value={form?.delivery_type||'link'} onChange={e=>setForm({...form,delivery_type:e.target.value})}><option value="link">Link</option><option value="github">GitHub</option><option value="file">File</option></select>
+          <input aria-label="Thumb URL" placeholder="Thumb URL" value={form?.thumb_url||''} onChange={e=>setForm({...form,thumb_url:e.target.value})} />
+          <select value={form?.status||'draft'} onChange={e=>setForm({...form,status:e.target.value})}><option value="draft">Rascunho</option><option value="active">Ativo</option><option value="closed">Encerrado</option><option value="archived">Arquivado</option></select>
+          <label><input type="checkbox" checked={!!form?.visible} onChange={e=>setForm({...form,visible:e.target.checked})} /> Visível</label>
+        </div>
+        <div className="btn-group" style={{ marginTop: 12 }}>
+          <button className="btn btn-primary" onClick={async()=>{ setBusy(true); try { const payload = editingId?{ ...form, id: editingId }: form; await DesafiosRepo.upsert(payload); setEditingId(null); setForm({ name:'', objective:'', description:'', deadline:'', difficulty:'starter', tags:[], reward:'', base_points:0, delivery_type:'link', thumb_url:'', status:'draft', visible:true }); refresh(); } finally { setBusy(false); } }} disabled={busy} aria-busy={busy}>{editingId ? 'Atualizar' : 'Salvar'} desafio</button>
+          {editingId && (<button className="btn btn-outline" onClick={()=>{ setEditingId(null); setForm({ name:'', objective:'', description:'', deadline:'', difficulty:'starter', tags:[], reward:'', base_points:0, delivery_type:'link', thumb_url:'', status:'draft', visible:true }); }}>Cancelar edição</button>)}
+        </div>
+      </section>
       {/* Pré-visualização */}
       <div style={{ marginTop: 12 }}>
         <div style={{ maxWidth: 600 }}>
@@ -1683,35 +1705,37 @@ export function Financas() {
       </section>
 
       {/* Filtros */}
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
-        <input 
-          placeholder="🔍 Buscar item ou status..." 
-          value={query} 
-          onChange={e => { setQuery(e.target.value); setPage(1); }}
-        />
-        <select value={filter.status} onChange={e => { setFilter({...filter, status: e.target.value}); setPage(1); }}>
-          <option value="">Todos os Status</option>
-          <option value="pending">⏳ Pendente</option>
-          <option value="paid">✅ Pago</option>
-          <option value="discount">💸 Desconto</option>
-          <option value="cancelled">❌ Cancelado</option>
-        </select>
-        <select value={filter.type} onChange={e => { setFilter({...filter, type: e.target.value}); setPage(1); }}>
-          <option value="">Todos os Tipos</option>
-          <option value="project">🎯 Projeto</option>
-          <option value="discount">💸 Desconto</option>
-          <option value="other">📋 Outros</option>
-        </select>
-        <select value={filter.project} onChange={e => { setFilter({...filter, project: e.target.value}); setPage(1); }}>
-          <option value="">Todos os Projetos</option>
-          {projects.map(p => (
-            <option key={p.id} value={p.id}>{p.title || p.titulo}</option>
-          ))}
-        </select>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button onClick={() => setPage(Math.max(1, page-1))}>◀</button>
-          <span>Página {page}/{totalPages}</span>
-          <button onClick={() => setPage(Math.min(totalPages, page+1))}>▶</button>
+      <section className="filters-section" style={{ marginBottom: 20 }}>
+        <div className="formRow" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+          <input 
+            placeholder="🔍 Buscar item ou status..." 
+            value={query} 
+            onChange={e => { setQuery(e.target.value); setPage(1); }}
+          />
+          <select value={filter.status} onChange={e => { setFilter({...filter, status: e.target.value}); setPage(1); }}>
+            <option value="">Todos os Status</option>
+            <option value="pending">⏳ Pendente</option>
+            <option value="paid">✅ Pago</option>
+            <option value="discount">💸 Desconto</option>
+            <option value="cancelled">❌ Cancelado</option>
+          </select>
+          <select value={filter.type} onChange={e => { setFilter({...filter, type: e.target.value}); setPage(1); }}>
+            <option value="">Todos os Tipos</option>
+            <option value="project">🎯 Projeto</option>
+            <option value="discount">💸 Desconto</option>
+            <option value="other">📋 Outros</option>
+          </select>
+          <select value={filter.project} onChange={e => { setFilter({...filter, project: e.target.value}); setPage(1); }}>
+            <option value="">Todos os Projetos</option>
+            {projects.map(p => (
+              <option key={p.id} value={p.id}>{p.title || p.titulo}</option>
+            ))}
+          </select>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button onClick={() => setPage(Math.max(1, page-1))}>◀</button>
+            <span>Página {page}/{totalPages}</span>
+            <button onClick={() => setPage(Math.min(totalPages, page+1))}>▶</button>
+          </div>
         </div>
       </section>
 
@@ -1940,10 +1964,12 @@ export function Config() {
     <div className="admin-content"><h1 className="title">Configurações</h1>
       <p>Nome da plataforma: {cfg.name}</p>
       <p>Paleta base bloqueada</p>
-      <div style={{ marginTop: 12 }}>
-        <label htmlFor="logQuery">Filtrar Logs</label>
-        <input id="logQuery" aria-label="Filtro de logs" placeholder="Digite tipo ou texto..." value={query} onChange={e=>setQuery(e.target.value)} style={{ display:'block', padding:8, border:'1px solid #ccc', borderRadius:8, marginTop:6 }} />
-      </div>
+      <section className="card" style={{ marginTop: 12 }}>
+        <h3>Filtrar Logs</h3>
+        <div className="formRow">
+          <input id="logQuery" aria-label="Filtro de logs" placeholder="Digite tipo ou texto..." value={query} onChange={e=>setQuery(e.target.value)} />
+        </div>
+      </section>
       <ul className="items" aria-live="polite" style={{ marginTop: 10 }}>
         {filtered.length === 0 ? (<li className="item">Nenhum log correspondente</li>) : filtered.slice(0,50).map(l => (
           <li key={l.id} className="item"><span className="logType">{l.type}</span><span className="logMsg">{l.message}</span><span className="logAt">{new Date(l.at).toLocaleString('pt-BR')}</span></li>

@@ -1,0 +1,90 @@
+/* Estilos comuns para páginas do Admin */
+
+.admin-content {
+  padding: 20px;
+}
+
+.title {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  color: #2c3e50;
+}
+
+.muted {
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.filters-section {
+  background: rgba(255,255,255,0.88);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  padding: 16px;
+  border-radius: 12px;
+  margin: 16px 0;
+  border: 1px solid rgba(104,0,123,0.12);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  display: grid;
+  gap: 12px;
+}
+
+.filter-group { display:flex; flex-direction:column; gap:8px; }
+.filter-input,
+.search-input,
+.filter-select,
+.statusSelect,
+.items-per-page-select {
+  padding: 10px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.filter-input:focus,
+.search-input:focus,
+.filter-select:focus,
+.statusSelect:focus,
+.items-per-page-select:focus {
+  outline: none;
+  border-color: #00E4F2;
+  box-shadow: 0 0 0 3px rgba(0, 228, 242, 0.18);
+}
+
+.card {
+  background: rgba(255,255,255,0.9);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(104,0,123,0.12);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.table { 
+  background: rgba(255,255,255,0.88);
+  border: 1px solid rgba(104,0,123,0.12);
+  border-radius: 12px; 
+  overflow: hidden; 
+  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+}
+.table table { width: 100%; border-collapse: collapse; }
+.table thead th { 
+  text-align: left; 
+  padding: 10px 12px; 
+  background: rgba(244,244,244,0.9);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.table tbody td { padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+.table tbody tr:hover { background: rgba(0,228,242,0.06); }
+
+.btn { 
+  padding: 8px 12px; 
+  border-radius: 8px; 
+  border: 1px solid rgba(0,0,0,0.12); 
+  background: #F4F4F4; 
+}
+.btn-primary { background: #00E4F2; border-color: #00b6c3; color: #000; }
+.btn-outline { background: transparent; border-color: #ced4da; }
+.btn-secondary { background: #68007B; border-color: #520062; color: #fff; }
+.btn-danger { background: #D12BF2; border-color: #9e20b9; color: #fff; }
