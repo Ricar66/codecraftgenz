@@ -85,37 +85,7 @@ const mockData = {
   ]
 };
 
-// --- Mock de Aplicativos, Histórico e Feedbacks ---
-const mockApps = [
-  {
-    id: 101,
-    ownerId: 1,
-    name: 'CodeCraft CLI',
-    mainFeature: 'Automatiza tarefas de projeto',
-    description: 'Ferramenta de linha de comando para produtividade',
-    status: 'finalizado',
-    price: 49.9,
-    thumbnail: null,
-    executableUrl: 'https://example.com/downloads/codecraft-cli.exe',
-    created_at: new Date().toISOString(),
-    feedbacks: []
-  },
-  {
-    id: 102,
-    ownerId: 1,
-    name: 'Craft Studio',
-    mainFeature: 'IDE leve com plugins',
-    description: 'Editor com integrações CodeCraft',
-    status: 'ready',
-    price: 129.0,
-    thumbnail: null,
-    executableUrl: 'https://example.com/downloads/craft-studio.exe',
-    created_at: new Date().toISOString(),
-    feedbacks: []
-  }
-];
-
-const mockHistory = [];
+// Removido: mocks de apps e histórico; rotas agora usam SQL (dbo.apps, dbo.app_history, dbo.app_payments)
 
 // --- Configuração Mercado Pago ---
 const MP_ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN || '';
@@ -482,12 +452,12 @@ app.get('/api/ranking', async (req, res, next) => {
   }
 });
 
-// Rota de feedbacks (mock)
+// Rota de feedbacks (site)
 app.get('/api/feedbacks', async (req, res, next) => {
   try {
     const pool = await getConnectionPool();
-    const result = await pool.request().query('SELECT * FROM feedbacks');
-    res.json(result.recordset);
+    const result = await pool.request().query('SELECT * FROM dbo.site_feedbacks ORDER BY created_at DESC');
+    res.json({ success: true, data: result.recordset });
   } catch (err) {
     console.error('Erro ao buscar feedbacks no banco:', err);
     next(err);
@@ -506,10 +476,10 @@ app.post('/api/feedbacks', async (req, res, next) => {
       .input('email', dbSql.NVarChar(255), email)
       .input('feedback', dbSql.NVarChar(dbSql.MAX), feedback)
       .input('rating', dbSql.Int, Number.isFinite(rating) ? rating : 5)
-      .query(`INSERT INTO feedbacks (nome, email, feedback, rating, created_at)
+      .query(`INSERT INTO dbo.site_feedbacks (nome, email, feedback, rating)
               OUTPUT INSERTED.*
-              VALUES (@nome, @email, @feedback, @rating, GETDATE())`);
-    res.status(201).json({ message: 'Feedback enviado com sucesso!', feedback: result.recordset[0] });
+              VALUES (@nome, @email, @feedback, @rating)`);
+    res.status(201).json({ success: true, message: 'Feedback enviado com sucesso!', feedback: result.recordset[0] });
   } catch (err) {
     console.error('Erro ao inserir feedback no banco:', err);
     next(err);
@@ -535,195 +505,319 @@ app.get('/api/stats', async (req, res, next) => {
   }
 });
 
-// --- Rotas de Aplicativos (mock) ---
+// --- Rotas de Aplicativos (SQL) ---
 // Lista apps do usuário autenticado
-app.get('/api/apps/mine', authenticate, (req, res) => {
-  // Simples: associa todos ao usuário 1
-  const page = parseInt(req.query.page || '1', 10);
-  const pageSize = parseInt(req.query.pageSize || '12', 10);
-  const userId = req.user?.id || 1;
-  const list = mockApps.filter(a => a.ownerId === userId);
-  const start = (page - 1) * pageSize;
-  const paged = list.slice(start, start + pageSize);
-  res.json({ success: true, data: paged, pagination: { total: list.length, page, pageSize } });
+app.get('/api/apps/mine', authenticate, async (req, res, next) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page || '1', 10));
+    const pageSize = Math.max(1, Math.min(100, parseInt(req.query.pageSize || '12', 10)));
+    const offset = (page - 1) * pageSize;
+    const userId = req.user?.id;
+    const pool = await getConnectionPool();
+    const totalResult = await pool.request()
+      .input('owner_id', dbSql.Int, userId)
+      .query('SELECT COUNT(*) AS total FROM dbo.apps WHERE owner_id = @owner_id');
+    const total = totalResult.recordset[0]?.total || 0;
+    const rowsResult = await pool.request()
+      .input('owner_id', dbSql.Int, userId)
+      .input('offset', dbSql.Int, offset)
+      .input('limit', dbSql.Int, pageSize)
+      .query('SELECT * FROM dbo.apps WHERE owner_id = @owner_id ORDER BY id OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY');
+    res.json({ success: true, data: rowsResult.recordset, pagination: { total, page, pageSize } });
+  } catch (err) {
+    console.error('Erro ao listar apps do usuário:', err);
+    next(err);
+  }
 });
 
 // Lista todos apps (admin)
-app.get('/api/apps', authenticate, authorizeAdmin, (req, res) => {
-  const page = parseInt(req.query.page || '1', 10);
-  const pageSize = parseInt(req.query.pageSize || '50', 10);
-  const start = (page - 1) * pageSize;
-  const paged = mockApps.slice(start, start + pageSize);
-  res.json({ success: true, data: paged, pagination: { total: mockApps.length, page, pageSize } });
+app.get('/api/apps', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page || '1', 10));
+    const pageSize = Math.max(1, Math.min(100, parseInt(req.query.pageSize || '50', 10)));
+    const offset = (page - 1) * pageSize;
+    const pool = await getConnectionPool();
+    const totalResult = await pool.request().query('SELECT COUNT(*) AS total FROM dbo.apps');
+    const total = totalResult.recordset[0]?.total || 0;
+    const rowsResult = await pool.request()
+      .input('offset', dbSql.Int, offset)
+      .input('limit', dbSql.Int, pageSize)
+      .query('SELECT * FROM dbo.apps ORDER BY id OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY');
+    res.json({ success: true, data: rowsResult.recordset, pagination: { total, page, pageSize } });
+  } catch (err) {
+    console.error('Erro ao listar todos apps:', err);
+    next(err);
+  }
 });
 
 // Detalhes de um app
-app.get('/api/apps/:id', authenticate, (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const appItem = mockApps.find(a => a.id === id);
-  if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
-  res.json({ success: true, data: appItem });
+app.get('/api/apps/:id', authenticate, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const pool = await getConnectionPool();
+    const result = await pool.request().input('id', dbSql.Int, id).query('SELECT * FROM dbo.apps WHERE id = @id');
+    if (result.recordset.length === 0) return res.status(404).json({ error: 'Aplicativo não encontrado' });
+    res.json({ success: true, data: result.recordset[0] });
+  } catch (err) {
+    console.error('Erro ao buscar app por ID:', err);
+    next(err);
+  }
 });
 
 // Criar/atualizar card de app a partir de um projeto (admin)
-app.post('/api/apps/from-project/:projectId', authenticate, authorizeAdmin, (req, res) => {
-  const projectId = parseInt(req.params.projectId, 10);
-  const { name, mainFeature, price, thumbnail, executableUrl, status, ownerId } = req.body || {};
-  // Procura app existente com id igual ao projectId ou cria novo
-  let appItem = mockApps.find(a => a.id === projectId);
-  if (!appItem) {
-    appItem = {
-      id: projectId,
-      ownerId: ownerId ?? req.user?.id ?? 1,
-      name: name || `App do Projeto ${projectId}`,
-      mainFeature: mainFeature || 'Funcionalidade principal',
-      description: mainFeature || '—',
-      status: status || 'finalizado',
-      price: price || 0,
-      thumbnail: thumbnail || null,
-      executableUrl: executableUrl || null,
-      created_at: new Date().toISOString(),
-      feedbacks: []
-    };
-    mockApps.push(appItem);
-  } else {
-    appItem.name = name ?? appItem.name;
-    appItem.mainFeature = mainFeature ?? appItem.mainFeature;
-    appItem.status = status ?? appItem.status;
-    appItem.price = price ?? appItem.price;
-    appItem.thumbnail = thumbnail ?? appItem.thumbnail;
-    appItem.executableUrl = executableUrl ?? appItem.executableUrl;
-    // Atualiza ownerId se enviado
-    appItem.ownerId = ownerId ?? appItem.ownerId;
+app.post('/api/apps/from-project/:projectId', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const projectId = parseInt(req.params.projectId, 10);
+    const { name, mainFeature, price, thumbnail, executableUrl, status, ownerId } = req.body || {};
+    const pool = await getConnectionPool();
+    // Tenta UPDATE; se nenhum afetado, faz INSERT
+    const update = await pool.request()
+      .input('id', dbSql.Int, projectId)
+      .input('owner_id', dbSql.Int, ownerId ?? req.user?.id ?? null)
+      .input('name', dbSql.NVarChar(120), name ?? `App do Projeto ${projectId}`)
+      .input('main_feature', dbSql.NVarChar(400), mainFeature ?? null)
+      .input('description', dbSql.NVarChar(dbSql.MAX), mainFeature ?? null)
+      .input('status', dbSql.NVarChar(50), status ?? 'finalizado')
+      .input('price', dbSql.Decimal(10, 2), price ?? 0)
+      .input('thumbnail', dbSql.NVarChar(512), thumbnail ?? null)
+      .input('executable_url', dbSql.NVarChar(512), executableUrl ?? null)
+      .query(`UPDATE dbo.apps SET owner_id=@owner_id, name=@name, main_feature=@main_feature, description=@description,
+              status=@status, price=@price, thumbnail=@thumbnail, executable_url=@executable_url
+              WHERE id=@id`);
+    if ((update.rowsAffected?.[0] || 0) === 0) {
+      const insert = await pool.request()
+        .input('id', dbSql.Int, projectId)
+        .input('owner_id', dbSql.Int, ownerId ?? req.user?.id ?? null)
+        .input('name', dbSql.NVarChar(120), name ?? `App do Projeto ${projectId}`)
+        .input('main_feature', dbSql.NVarChar(400), mainFeature ?? null)
+        .input('description', dbSql.NVarChar(dbSql.MAX), mainFeature ?? null)
+        .input('status', dbSql.NVarChar(50), status ?? 'finalizado')
+        .input('price', dbSql.Decimal(10, 2), price ?? 0)
+        .input('thumbnail', dbSql.NVarChar(512), thumbnail ?? null)
+        .input('executable_url', dbSql.NVarChar(512), executableUrl ?? null)
+        .query(`INSERT INTO dbo.apps (id, owner_id, name, main_feature, description, status, price, thumbnail, executable_url)
+                VALUES (@id, @owner_id, @name, @main_feature, @description, @status, @price, @thumbnail, @executable_url)`);
+    }
+    const fetch = await pool.request().input('id', dbSql.Int, projectId).query('SELECT * FROM dbo.apps WHERE id=@id');
+    res.status(201).json({ success: true, data: fetch.recordset[0] });
+  } catch (err) {
+    console.error('Erro ao upsert app de projeto:', err);
+    next(err);
   }
-  res.status(201).json({ success: true, data: appItem });
 });
 
 // Editar card de app (admin)
-app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const idx = mockApps.findIndex(a => a.id === id);
-  if (idx < 0) return res.status(404).json({ error: 'Aplicativo não encontrado' });
-  const { name, mainFeature, price, thumbnail, executableUrl, status, ownerId } = req.body || {};
-  mockApps[idx] = {
-    ...mockApps[idx],
-    ...(name !== undefined ? { name } : {}),
-    ...(mainFeature !== undefined ? { mainFeature } : {}),
-    ...(price !== undefined ? { price } : {}),
-    ...(thumbnail !== undefined ? { thumbnail } : {}),
-    ...(executableUrl !== undefined ? { executableUrl } : {}),
-    ...(status !== undefined ? { status } : {}),
-    ...(ownerId !== undefined ? { ownerId } : {}),
-  };
-  res.json({ success: true, data: mockApps[idx] });
-});
-
-// Mercado Livre/Mercado Pago – criar preferência de pagamento (mock)
-app.post('/api/apps/:id/purchase', authenticate, async (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const appItem = mockApps.find(a => a.id === id);
-  if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
-
-  // Fluxo real com Mercado Pago se configurado; caso contrário, fluxo mock
-  if (mpClient) {
-    try {
-      const successUrl = MP_SUCCESS_URL.replace(':id', String(id));
-      const failureUrl = MP_FAILURE_URL.replace(':id', String(id));
-      const pendingUrl = MP_PENDING_URL.replace(':id', String(id));
-      const pref = new Preference(mpClient);
-      const prefResult = await pref.create({
-        body: {
-          items: [
-            {
-              title: appItem.name,
-              description: appItem.mainFeature || appItem.description || 'Aplicativo CodeCraft',
-              currency_id: 'BRL',
-              quantity: 1,
-              unit_price: Number(appItem.price || 0),
-            },
-          ],
-          back_urls: { success: successUrl, failure: failureUrl, pending: pendingUrl },
-          notification_url: MP_WEBHOOK_URL,
-          auto_return: 'approved',
-          external_reference: String(id),
-        },
-      });
-      const preference_id = prefResult?.id || `pref_${Date.now()}`;
-      const init_point = prefResult?.init_point || prefResult?.sandbox_init_point;
-      mockHistory.push({ type: 'purchase', appId: id, app_name: appItem.name, status: 'pending', date: new Date().toISOString() });
-      return res.status(201).json({ success: true, preference_id, init_point });
-    } catch (e) {
-      console.error('Erro ao criar preferência Mercado Pago:', e);
-      return res.status(500).json({ error: 'Falha ao iniciar pagamento' });
-    }
+app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { name, mainFeature, price, thumbnail, executableUrl, status, ownerId } = req.body || {};
+    const pool = await getConnectionPool();
+    const result = await pool.request()
+      .input('id', dbSql.Int, id)
+      .input('owner_id', dbSql.Int, ownerId ?? null)
+      .input('name', dbSql.NVarChar(120), name ?? null)
+      .input('main_feature', dbSql.NVarChar(400), mainFeature ?? null)
+      .input('description', dbSql.NVarChar(dbSql.MAX), null)
+      .input('status', dbSql.NVarChar(50), status ?? null)
+      .input('price', dbSql.Decimal(10, 2), price ?? null)
+      .input('thumbnail', dbSql.NVarChar(512), thumbnail ?? null)
+      .input('executable_url', dbSql.NVarChar(512), executableUrl ?? null)
+      .query(`UPDATE dbo.apps SET
+                owner_id = COALESCE(@owner_id, owner_id),
+                name = COALESCE(@name, name),
+                main_feature = COALESCE(@main_feature, main_feature),
+                description = COALESCE(@description, description),
+                status = COALESCE(@status, status),
+                price = COALESCE(@price, price),
+                thumbnail = COALESCE(@thumbnail, thumbnail),
+                executable_url = COALESCE(@executable_url, executable_url)
+              WHERE id = @id`);
+    if ((result.rowsAffected?.[0] || 0) === 0) return res.status(404).json({ error: 'Aplicativo não encontrado' });
+    const fetch = await pool.request().input('id', dbSql.Int, id).query('SELECT * FROM dbo.apps WHERE id=@id');
+    res.json({ success: true, data: fetch.recordset[0] });
+  } catch (err) {
+    console.error('Erro ao atualizar app:', err);
+    next(err);
   }
-
-  // Fallback mock
-  const preference_id = `pref_${Date.now()}`;
-  const init_point = `http://localhost:5173/apps/${id}/compra?preference_id=${preference_id}&status=approved`;
-  mockHistory.push({ type: 'purchase', appId: id, app_name: appItem.name, status: 'approved', date: new Date().toISOString() });
-  res.status(201).json({ success: true, preference_id, init_point });
 });
 
-// Consultar status da compra (mock)
-app.get('/api/apps/:id/purchase/status', authenticate, async (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const { status: statusQuery, payment_id } = req.query;
-  const appItem = mockApps.find(a => a.id === id);
-  if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
+// Mercado Pago – criar preferência de pagamento (SQL)
+app.post('/api/apps/:id/purchase', authenticate, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const pool = await getConnectionPool();
+    const appFetch = await pool.request().input('id', dbSql.Int, id).query('SELECT * FROM dbo.apps WHERE id=@id');
+    const appItem = appFetch.recordset[0];
+    if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
 
-  if (mpClient && payment_id) {
-    try {
-      const payment = new Payment(mpClient);
-      const data = await payment.get({ id: payment_id });
-      const status = data?.status || statusQuery || 'pending';
-      const download_url = status === 'approved' ? (appItem.executableUrl || 'https://example.com/downloads/dev-placeholder.exe') : null;
-      paymentsByApp.set(id, { payment_id, status });
-      return res.json({ success: true, status, download_url });
-    } catch (e) {
-      console.warn('Falha ao consultar pagamento no Mercado Pago:', e?.message || e);
-      return res.status(500).json({ error: 'Não foi possível consultar status do pagamento' });
+    if (mpClient) {
+      try {
+        const successUrl = MP_SUCCESS_URL.replace(':id', String(id));
+        const failureUrl = MP_FAILURE_URL.replace(':id', String(id));
+        const pendingUrl = MP_PENDING_URL.replace(':id', String(id));
+        const pref = new Preference(mpClient);
+        const prefResult = await pref.create({
+          body: {
+            items: [
+              {
+                title: appItem.name,
+                description: appItem.main_feature || appItem.description || 'Aplicativo CodeCraft',
+                currency_id: 'BRL',
+                quantity: 1,
+                unit_price: Number(appItem.price || 0),
+              },
+            ],
+            back_urls: { success: successUrl, failure: failureUrl, pending: pendingUrl },
+            notification_url: MP_WEBHOOK_URL,
+            auto_return: 'approved',
+            external_reference: String(id),
+          },
+        });
+        const preference_id = prefResult?.id || `pref_${Date.now()}`;
+        const init_point = prefResult?.init_point || prefResult?.sandbox_init_point;
+        await pool.request()
+          .input('type', dbSql.NVarChar(30), 'purchase')
+          .input('app_id', dbSql.Int, id)
+          .input('app_name', dbSql.NVarChar(200), appItem.name)
+          .input('status', dbSql.NVarChar(30), 'pending')
+          .query(`INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)`);
+        return res.status(201).json({ success: true, preference_id, init_point });
+      } catch (e) {
+        console.error('Erro ao criar preferência Mercado Pago:', e);
+        return res.status(500).json({ error: 'Falha ao iniciar pagamento' });
+      }
     }
+
+    // Fallback mock
+    const preference_id = `pref_${Date.now()}`;
+    const init_point = `http://localhost:5173/apps/${id}/compra?preference_id=${preference_id}&status=approved`;
+    await pool.request()
+      .input('type', dbSql.NVarChar(30), 'purchase')
+      .input('app_id', dbSql.Int, id)
+      .input('app_name', dbSql.NVarChar(200), appItem.name)
+      .input('status', dbSql.NVarChar(30), 'approved')
+      .query(`INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)`);
+    res.status(201).json({ success: true, preference_id, init_point });
+  } catch (err) {
+    next(err);
   }
-
-  const status = statusQuery || paymentsByApp.get(id)?.status || 'approved';
-  const download_url = status === 'approved' ? (appItem.executableUrl || 'https://example.com/downloads/dev-placeholder.exe') : null;
-  res.json({ success: true, status, download_url });
 });
 
-// Registrar download (mock)
-app.post('/api/apps/:id/download', authenticate, (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const appItem = mockApps.find(a => a.id === id);
-  if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
-  const statusOk = paymentsByApp.get(id)?.status === 'approved' || !mpClient; // permite mock
-  if (!statusOk) return res.status(403).json({ error: 'Download não liberado. Pagamento não aprovado.' });
-  const url = appItem.executableUrl || 'https://example.com/downloads/dev-placeholder.exe';
-  mockHistory.push({ type: 'download', appId: id, app_name: appItem.name, status: 'done', date: new Date().toISOString() });
-  res.json({ success: true, download_url: url });
+// Consultar status da compra (SQL)
+app.get('/api/apps/:id/purchase/status', authenticate, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { status: statusQuery, payment_id } = req.query;
+    const pool = await getConnectionPool();
+    const appFetch = await pool.request().input('id', dbSql.Int, id).query('SELECT * FROM dbo.apps WHERE id=@id');
+    const appItem = appFetch.recordset[0];
+    if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
+
+    if (mpClient && payment_id) {
+      try {
+        const payment = new Payment(mpClient);
+        const data = await payment.get({ id: payment_id });
+        const status = data?.status || statusQuery || 'pending';
+        const download_url = status === 'approved' ? (appItem.executable_url || 'https://example.com/downloads/dev-placeholder.exe') : null;
+        paymentsByApp.set(id, { payment_id, status });
+        await pool.request()
+          .input('payment_id', dbSql.NVarChar(64), String(payment_id))
+          .input('app_id', dbSql.Int, id)
+          .input('user_id', dbSql.Int, req.user?.id ?? null)
+          .input('status', dbSql.NVarChar(30), status)
+          .query(`MERGE dbo.app_payments AS t
+                  USING (SELECT @payment_id AS payment_id) AS s
+                  ON (t.payment_id = s.payment_id)
+                  WHEN MATCHED THEN
+                    UPDATE SET status=@status
+                  WHEN NOT MATCHED THEN
+                    INSERT (payment_id, app_id, user_id, status) VALUES (@payment_id, @app_id, @user_id, @status);`);
+        return res.json({ success: true, status, download_url });
+      } catch (e) {
+        console.warn('Falha ao consultar pagamento no Mercado Pago:', e?.message || e);
+        return res.status(500).json({ error: 'Não foi possível consultar status do pagamento' });
+      }
+    }
+
+    const fallbackStatus = statusQuery || paymentsByApp.get(id)?.status || 'approved';
+    const download_url = fallbackStatus === 'approved' ? (appItem.executable_url || 'https://example.com/downloads/dev-placeholder.exe') : null;
+    res.json({ success: true, status: fallbackStatus, download_url });
+  } catch (err) {
+    next(err);
+  }
 });
 
-// Histórico de compras e downloads (mock)
-app.get('/api/apps/history', authenticate, (req, res) => {
-  const page = parseInt(req.query.page || '1', 10);
-  const pageSize = parseInt(req.query.pageSize || '20', 10);
-  const start = (page - 1) * pageSize;
-  const paged = mockHistory.slice(start, start + pageSize);
-  res.json({ success: true, data: paged, pagination: { total: mockHistory.length, page, pageSize } });
+// Registrar download (SQL)
+app.post('/api/apps/:id/download', authenticate, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const pool = await getConnectionPool();
+    const appFetch = await pool.request().input('id', dbSql.Int, id).query('SELECT * FROM dbo.apps WHERE id=@id');
+    const appItem = appFetch.recordset[0];
+    if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
+    let statusOk = !mpClient;
+    if (mpClient) {
+      const pay = await pool.request()
+        .input('app_id', dbSql.Int, id)
+        .input('user_id', dbSql.Int, req.user?.id ?? null)
+        .query(`SELECT TOP 1 status FROM dbo.app_payments WHERE app_id=@app_id AND user_id=@user_id ORDER BY created_at DESC`);
+      const st = pay.recordset[0]?.status || paymentsByApp.get(id)?.status;
+      statusOk = st === 'approved';
+    }
+    if (!statusOk) return res.status(403).json({ error: 'Download não liberado. Pagamento não aprovado.' });
+    const url = appItem.executable_url || 'https://example.com/downloads/dev-placeholder.exe';
+    await pool.request()
+      .input('type', dbSql.NVarChar(30), 'download')
+      .input('app_id', dbSql.Int, id)
+      .input('app_name', dbSql.NVarChar(200), appItem.name)
+      .input('status', dbSql.NVarChar(30), 'done')
+      .query(`INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)`);
+    res.json({ success: true, download_url: url });
+  } catch (err) {
+    next(err);
+  }
 });
 
-// Feedback do app (mock)
-app.post('/api/apps/:id/feedback', authenticate, (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const { rating = 5, comment = '' } = req.body || {};
-  const appItem = mockApps.find(a => a.id === id);
-  if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
-  const fb = { rating, comment, date: new Date().toISOString() };
-  appItem.feedbacks.push(fb);
-  res.status(201).json({ success: true, feedback: fb });
+// Histórico de compras e downloads (SQL)
+app.get('/api/apps/history', authenticate, async (req, res, next) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page || '1', 10));
+    const pageSize = Math.max(1, Math.min(100, parseInt(req.query.pageSize || '20', 10)));
+    const offset = (page - 1) * pageSize;
+    const pool = await getConnectionPool();
+    const totalResult = await pool.request().query('SELECT COUNT(*) AS total FROM dbo.app_history');
+    const total = totalResult.recordset[0]?.total || 0;
+    const rowsResult = await pool.request()
+      .input('offset', dbSql.Int, offset)
+      .input('limit', dbSql.Int, pageSize)
+      .query('SELECT * FROM dbo.app_history ORDER BY date DESC OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY');
+    res.json({ success: true, data: rowsResult.recordset, pagination: { total, page, pageSize } });
+  } catch (err) {
+    next(err);
+  }
 });
 
-// Webhook de pagamento Mercado Pago (mock/real)
+// Feedback do app (SQL)
+app.post('/api/apps/:id/feedback', authenticate, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { rating = 5, comment = '' } = req.body || {};
+    const pool = await getConnectionPool();
+    const appFetch = await pool.request().input('id', dbSql.Int, id).query('SELECT id, name FROM dbo.apps WHERE id=@id');
+    if (appFetch.recordset.length === 0) return res.status(404).json({ error: 'Aplicativo não encontrado' });
+    const ins = await pool.request()
+      .input('app_id', dbSql.Int, id)
+      .input('user_id', dbSql.Int, req.user?.id ?? null)
+      .input('rating', dbSql.Int, Number.isFinite(rating) ? rating : 5)
+      .input('comment', dbSql.NVarChar(dbSql.MAX), comment ?? '')
+      .query('INSERT INTO dbo.app_feedbacks (app_id, user_id, rating, comment) OUTPUT INSERTED.* VALUES (@app_id, @user_id, @rating, @comment)');
+    res.status(201).json({ success: true, feedback: ins.recordset[0] });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Webhook de pagamento Mercado Pago (SQL)
 app.post('/api/apps/webhook', async (req, res) => {
   try {
     const { type, data } = req.body || {};
@@ -731,13 +825,31 @@ app.post('/api/apps/webhook', async (req, res) => {
       const payment = new Payment(mpClient);
       const pay = await payment.get({ id: data.id });
       const appId = parseInt(pay?.external_reference || '0', 10);
+      const status = pay?.status || 'pending';
+      paymentsByApp.set(appId, { payment_id: String(data.id), status });
       if (appId) {
-        paymentsByApp.set(appId, { payment_id: String(data.id), status: pay?.status || 'pending' });
-        if (pay?.status === 'approved') {
-          const appItem = mockApps.find(a => a.id === appId);
-          if (appItem) {
-            mockHistory.push({ type: 'purchase', appId, app_name: appItem.name, status: 'approved', date: new Date().toISOString() });
-          }
+        const pool = await getConnectionPool();
+        await pool.request()
+          .input('payment_id', dbSql.NVarChar(64), String(data.id))
+          .input('app_id', dbSql.Int, appId)
+          .input('user_id', dbSql.Int, null)
+          .input('status', dbSql.NVarChar(30), status)
+          .query(`MERGE dbo.app_payments AS t
+                  USING (SELECT @payment_id AS payment_id) AS s
+                  ON (t.payment_id = s.payment_id)
+                  WHEN MATCHED THEN
+                    UPDATE SET status=@status
+                  WHEN NOT MATCHED THEN
+                    INSERT (payment_id, app_id, user_id, status) VALUES (@payment_id, @app_id, @user_id, @status);`);
+        if (status === 'approved') {
+          const appFetch = await pool.request().input('id', dbSql.Int, appId).query('SELECT id, name FROM dbo.apps WHERE id=@id');
+          const appName = appFetch.recordset[0]?.name || null;
+          await pool.request()
+            .input('type', dbSql.NVarChar(30), 'purchase')
+            .input('app_id', dbSql.Int, appId)
+            .input('app_name', dbSql.NVarChar(200), appName)
+            .input('status', dbSql.NVarChar(30), 'approved')
+            .query(`INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)`);
         }
       }
     }

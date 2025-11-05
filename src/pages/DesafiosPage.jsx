@@ -4,12 +4,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { realtime } from '../lib/realtime';
+import { useAuth } from '../context/useAuth';
 
 export default function DesafiosPage() {
   const [desafios, setDesafios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deliverUrls, setDeliverUrls] = useState({});
+  const { user } = useAuth();
 
   const fetchDesafios = async () => {
     try {
@@ -36,8 +38,12 @@ export default function DesafiosPage() {
 
 
   const participar = async (id) => {
-    // Mock: usa crafter seed 'c1'. Em produção, obter do Auth.
-    const payload = { crafter_id: 'c1' };
+    const crafterId = user?.id;
+    if (!crafterId) {
+      alert('É necessário estar autenticado para participar.');
+      return;
+    }
+    const payload = { crafter_id: crafterId };
     try {
       const r = await fetch(`/api/desafios/${id}/inscrever`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const ok = r.ok;
@@ -56,7 +62,12 @@ export default function DesafiosPage() {
       alert('URL inválida.');
       return;
     }
-    const payload = { crafter_id: 'c1', delivery: { url, notes: '' } };
+    const crafterId = user?.id;
+    if (!crafterId) {
+      alert('É necessário estar autenticado para enviar a entrega.');
+      return;
+    }
+    const payload = { crafter_id: crafterId, delivery: { url, notes: '' } };
     try {
       const r = await fetch(`/api/desafios/${d.id}/entregar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const ok = r.ok;

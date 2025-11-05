@@ -40,9 +40,6 @@ export default function LoginPage() {
             <button className="btnPrimary" type="submit" disabled={loading}>
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
-            <button className="btnLink" type="button" onClick={() => alert('Link de redefinição enviado (mock)')}>
-              Esqueci minha senha
-            </button>
           </form>
         </div>
       </section>
@@ -59,7 +56,6 @@ export default function LoginPage() {
         .input:focus { border-color: #00E4F2; box-shadow: 0 0 0 3px rgba(0,228,242,0.2); }
         .btnPrimary { background: #D12BF2; color: white; border: none; border-radius: 10px; padding: 10px 14px; font-weight: 600; cursor: pointer; }
         .btnPrimary:hover { filter: brightness(1.05); }
-        .btnLink { background: transparent; border: none; color: #00E4F2; text-decoration: underline; cursor: pointer; }
         .error { background: rgba(209,43,242,0.1); border: 1px solid rgba(209,43,242,0.3); padding: 8px 10px; border-radius: 8px; color: #68007B; }
         @media (max-width: 480px) { .login-card { margin: 0 16px; } }
       `}</style>
