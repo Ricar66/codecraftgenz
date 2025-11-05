@@ -3,33 +3,19 @@
 import { useState, useEffect } from 'react';
 
 // Detecta o ambiente e configura a URL base da API
-const getApiBaseUrl = () => {
-  // Verifica se há uma variável de ambiente VITE_API_URL definida
-  const apiUrl = import.meta.env.VITE_API_URL;
-  if (apiUrl) {
-    return apiUrl;
-  }
-  
-  // Em desenvolvimento, usa o proxy do Vite (localhost:8080)
-  if (import.meta.env.DEV) {
-    return 'http://localhost:8080';
-  }
-  
-  // Em produção, assume API na mesma origem (mesmo domínio)
-  // Isso funciona para deploy no mesmo servidor do frontend e backend
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
-  }
-  
-  // Fallback para SSR ou ambientes sem window
-  return '';
-};
-
-export const API_BASE_URL = getApiBaseUrl();
+// Em desenvolvimento, usa localhost:8080/api
+// Em produção (Azure), usa URL relativa "/api" no mesmo domínio do site
+const isDevelopment = import.meta.env.DEV;
+export const API_BASE_URL = isDevelopment ? 'http://localhost:8080/api' : '/api';
 
 // Função para fazer requisições com tratamento de erro melhorado
 export async function apiRequest(endpoint, options = {}) {
-  const url = `${API_BASE_URL}${endpoint}`;
+  // Normaliza endpoint para evitar duplicação de "/api"
+  const hasApiInBase = API_BASE_URL.endsWith('/api');
+  const normalizedEndpoint = hasApiInBase && endpoint.startsWith('/api')
+    ? endpoint.replace(/^\/api/, '')
+    : endpoint;
+  const url = `${API_BASE_URL}${normalizedEndpoint}`;
   // Recupera token da sessão se existir
   let authHeader = {};
   try {
