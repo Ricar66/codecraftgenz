@@ -3,19 +3,36 @@
 import { useState, useEffect } from 'react';
 
 // Detecta o ambiente e configura a URL base da API
-// Em desenvolvimento, usa localhost:8080/api
-// Em produção (Azure), usa URL relativa "/api" no mesmo domínio do site
-const isDevelopment = import.meta.env.DEV;
-export const API_BASE_URL = isDevelopment ? 'http://localhost:8080/api' : '/api';
+const getApiBaseUrl = () => {
+  // Verifica se há uma variável de ambiente VITE_API_URL definida
+  const apiUrl = import.meta.env.VITE_API_URL;
+  if (apiUrl) {
+    return apiUrl; // Ex: http://localhost:8080
+  }
+  
+  // Em desenvolvimento, usa o proxy do Vite (localhost:8080)
+  if (import.meta.env.DEV) {
+    // CORREÇÃO: Removido o '/api' daqui.
+    return 'http://localhost:8080';
+  }
+  
+  // Em produção, usa a URL relativa (mesmo domínio)
+  if (typeof window !== 'undefined') {
+    // CORREÇÃO: Removido o '/api'. Agora é apenas uma string vazia.
+    return ''; 
+  }
+  
+  // Fallback
+  return '';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 // Função para fazer requisições com tratamento de erro melhorado
 export async function apiRequest(endpoint, options = {}) {
-  // Normaliza endpoint para evitar duplicação de "/api"
-  const hasApiInBase = API_BASE_URL.endsWith('/api');
-  const normalizedEndpoint = hasApiInBase && endpoint.startsWith('/api')
-    ? endpoint.replace(/^\/api/, '')
-    : endpoint;
-  const url = `${API_BASE_URL}${normalizedEndpoint}`;
+  // Agora o endpoint DEVE começar com /api/ (ex: /api/projetos)
+  const url = `${API_BASE_URL}${endpoint}`;
+  
   // Recupera token da sessão se existir
   let authHeader = {};
   try {
@@ -50,14 +67,22 @@ export async function apiRequest(endpoint, options = {}) {
         // Se não conseguir parsear JSON, usa mensagem padrão
       }
       
-      throw new Error(errorMessage);
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
     }
 
-    return await response.json();
+    // Retorna a resposta JSON se houver conteúdo
+    const text = await response.text();
+    return text ? JSON.parse(text) : {};
+
   } catch (error) {
-    // Se for erro de rede, fornece uma mensagem mais clara
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('Não foi possível conectar com o servidor. Verifique se a API está rodando.');
+    // Se for erro de rede (ex: ERR_CONNECTION_REFUSED)
+    if (error.name === 'TypeError' && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
+      const networkError = new Error('Erro de conexão: Verifique sua internet e tente novamente');
+      networkError.type = 'network';
+      networkError.status = 0;
+      throw networkError;
     }
     
     throw error;
@@ -67,7 +92,8 @@ export async function apiRequest(endpoint, options = {}) {
 // Função para verificar se a API está disponível
 export async function checkApiHealth() {
   try {
-    await apiRequest('/api/test-db');
+    // A rota /api/health é definida no server.js
+    await apiRequest('/api/health'); 
     return { available: true };
   } catch (error) {
     return { 

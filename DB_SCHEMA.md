@@ -148,9 +148,11 @@ GO
 ```
 
 ## Notas iniciais
+
 - Tabelas incluídas nesta parte: `users`, `mentores`, `mentores_history`, `crafters`, `projetos`, `projetos_mentores`, `equipes`, `inscricoes`.
 - `dbo.projetos.status` tem default `'desenvolvimento'` e `tecnologias` aceita JSON/CSV.
 - Chaves estrangeiras configuradas para integridade (algumas com `ON DELETE CASCADE`).
+
 
 Quando você enviar a segunda etapa, adiciono aqui em sequência e crio um índice por tabela com mapeamento para os serviços do frontend/backend.
 
@@ -251,6 +253,7 @@ GO
 ```
 
 ## Notas (Parte 2)
+
 - `ideias` e `ideias_comentarios` com relação 1:N e `ON DELETE CASCADE` para comentários.
 - Ranking dividido em: `ranking_top3` (posições únicas 1–3), `ranking_filters` (configuração global com default inserido), e `ranking_audit` (auditoria de ações).
 - `apps` referenciam `users` via `owner_id`; `id` pode reutilizar o ID de projeto quando derivado.
@@ -367,6 +370,7 @@ GO
 ```
 
 ## Notas (Parte 3)
+
 - `app_feedbacks`: vínculo com `apps` (cascade) e `users` (opcional), `rating` validado 1–5.
 - `app_history`: log de compras/downloads com `status`; cascade ao remover app.
 - `app_payments`: pagamentos (Mercado Pago) com `payment_id` como PK; cascade ao remover app.

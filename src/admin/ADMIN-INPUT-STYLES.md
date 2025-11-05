@@ -1,9 +1,11 @@
-Admin – Padrões de Inputs e Formulários
+# Admin – Padrões de Inputs e Formulários
 
 Objetivo
+
 - Unificar visual e usabilidade dos campos na área administrativa, mantendo responsividade e acessibilidade.
 
 Classes e padrões
+
 - `.formRow`: linha de formulário com espaçamento consistente; empilha verticalmente em telas pequenas.
 - `.formGroup`: empacota `label + input` verticalmente.
 - `.form-label`: estilo de rótulo claro (14px, cor #2c3e50).
@@ -17,16 +19,19 @@ Classes e padrões
 - Botões: `.btn`, `.btn-primary`, `.btn-outline`, `.btn-secondary`, `.btn-danger` com estados `:hover`, `:focus-visible` e `:disabled`.
 
 Transparência (glass)
+
 - Containers `.card` e `.filters-section` usam fundo translúcido com `backdrop-filter` para efeito glass, garantindo legibilidade.
 - Inputs mantêm fundo levemente translúcido para leitura clara sobre qualquer plano de fundo.
 
 Diretrizes de uso
+
 - Prefira incluir rótulos visíveis quando possível; se não for viável, use `aria-label` ou um `<label class="sr-only">` vinculado por `htmlFor`/`id`.
 - Marque campos obrigatórios com `required` e/ou `aria-required="true"` e forneça feedback com `.input-error`.
 - Em listas de filtros, mantenha espaçamento com `.formRow`; em telas estreitas, a classe já empilha os itens.
 
 Exemplo básico
-```
+
+```html
 <div class="card">
   <div class="formRow">
     <div class="formGroup">
@@ -39,10 +44,11 @@ Exemplo básico
       <input id="email" type="email" placeholder="email@exemplo.com" />
     </div>
     <label class="checkbox-row"><input type="checkbox" /> Visível</label>
-  </div>
+</div>
 </div>
 ```
 
 Manutenção
+
 - Centralize estilos em `src/admin/AdminCommon.css`. Evite estilos inline para facilitar consistência.
 - Ao criar novos formulários, reutilize `.formRow`, `.formGroup` e os estados padrão.

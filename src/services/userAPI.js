@@ -1,7 +1,6 @@
 // src/services/userAPI.js
 // Serviço centralizado para operações com usuários administrativos
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+import { apiRequest } from '../lib/apiConfig.js'; // Importa a função central
 
 /**
  * Busca todos os usuários administrativos
@@ -9,20 +8,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
  */
 export async function getUsers() {
   try {
-    const token = localStorage.getItem('authToken');
-    const response = await fetch(`${API_BASE_URL}/api/auth/users`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
+    // CORREÇÃO: Usa apiRequest
+    const data = await apiRequest('/api/auth/users', {
+      method: 'GET'
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
     
     // Mapear os campos do banco para o formato esperado pelo frontend
     return data.map(user => ({
@@ -45,13 +34,9 @@ export async function getUsers() {
  */
 export async function createUser(user) {
   try {
-    const token = localStorage.getItem('authToken');
-    const response = await fetch(`${API_BASE_URL}/api/auth/users`, {
+    // CORREÇÃO: Usa apiRequest
+    const data = await apiRequest('/api/auth/users', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify({
         nome: user.name,
         email: user.email,
@@ -60,13 +45,6 @@ export async function createUser(user) {
       })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    
     // Mapear o resultado para o formato esperado
     return {
       ok: true,
@@ -95,13 +73,9 @@ export async function createUser(user) {
  */
 export async function updateUser(id, updates) {
   try {
-    const token = localStorage.getItem('authToken');
-    const response = await fetch(`${API_BASE_URL}/api/auth/users/${id}`, {
+    // CORREÇÃO: Usa apiRequest
+    const data = await apiRequest(`/api/auth/users/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify({
         nome: updates.name,
         email: updates.email,
@@ -109,13 +83,6 @@ export async function updateUser(id, updates) {
         status: updates.status === 'active' ? 'ativo' : 'inativo'
       })
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
     
     return {
       ok: true,
@@ -143,21 +110,10 @@ export async function updateUser(id, updates) {
  */
 export async function toggleUserStatus(id) {
   try {
-    const token = localStorage.getItem('authToken');
-    const response = await fetch(`${API_BASE_URL}/api/auth/users/${id}/toggle-status`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
+    // CORREÇÃO: Usa apiRequest
+    const data = await apiRequest(`/api/auth/users/${id}/toggle-status`, {
+      method: 'PATCH'
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
     
     return {
       ok: true,
