@@ -193,10 +193,12 @@ app.get('/api/projetos', async (req, res, next) => {
     if (all !== '1') {
        // 'visivel=true' é usado pela página pública (ProjectsPage)
       if (visivel === 'true') {
-        whereClauses.push("status = @status AND visible = 1"); // Assumindo que a tabela projetos tem 'visible' (sim, tem no schema)
+        // Alguns ambientes não possuem a coluna 'visible' em dbo.projetos.
+        // Para evitar erro 500, aplicamos apenas o filtro por status.
+        whereClauses.push("status = @status");
         request.input('status', dbSql.NVarChar, 'finalizado'); // Ou 'ativo', dependendo da regra
       } else {
-        // Filtro padrão (talvez apenas os ativos?)
+        // Filtro padrão (sem depender de coluna 'visible')
         whereClauses.push("status <> 'arquivado'");
       }
     }
@@ -276,8 +278,8 @@ app.post('/api/projetos', authenticate, authorizeAdmin, async (req, res, next) =
   try {
     const pool = await getConnectionPool();
     const query = `
-      INSERT INTO dbo.projetos (titulo, nome, descricao, tecnologias, status, data_inicio, preco, progresso, thumb_url, visible, mentor_id)
-      OUTPUT Inserted.* VALUES (@titulo, @nome, @descricao, @tecnologias, @status, @data_inicio, @preco, @progresso, @thumb_url, @visible, @mentor_id)
+      INSERT INTO dbo.projetos (titulo, nome, descricao, tecnologias, status, data_inicio, preco, progresso, thumb_url, mentor_id)
+      OUTPUT Inserted.* VALUES (@titulo, @nome, @descricao, @tecnologias, @status, @data_inicio, @preco, @progresso, @thumb_url, @mentor_id)
     `;
 
     const result = await pool.request()
@@ -290,7 +292,6 @@ app.post('/api/projetos', authenticate, authorizeAdmin, async (req, res, next) =
       .input('preco', dbSql.Decimal(10, 2), Number(preco || 0))
       .input('progresso', dbSql.Int, Number(progresso || 0))
       .input('thumb_url', dbSql.NVarChar, thumb_url || null)
-      .input('visible', dbSql.Bit, visivel ? 1 : 0)
       .input('mentor_id', dbSql.Int, null) // 'owner' não é mentor_id, admin associa depois
       .query(query);
 
@@ -331,7 +332,6 @@ app.put('/api/projetos/:id', authenticate, authorizeAdmin, async (req, res, next
         preco = @preco,
         progresso = @progresso,
         thumb_url = @thumb_url,
-        visible = @visible,
         updated_at = SYSUTCDATETIME()
       OUTPUT Inserted.*
       WHERE id = @id
@@ -348,7 +348,6 @@ app.put('/api/projetos/:id', authenticate, authorizeAdmin, async (req, res, next
       .input('preco', dbSql.Decimal(10, 2), Number(preco || 0))
       .input('progresso', dbSql.Int, Number(progresso || 0))
       .input('thumb_url', dbSql.NVarChar, thumb_url || null)
-      .input('visible', dbSql.Bit, visivel ? 1 : 0)
       .query(query);
 
     if (result.recordset.length === 0) {
