@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import helmet from 'helmet';
 import MercadoPagoConfig, { Preference, Payment } from 'mercadopago';
+
 import { getConnectionPool, dbSql } from './src/lib/db.js';
 
 // Carregar variáveis de ambiente (db.js já faz isso, mas garantimos aqui também)
@@ -70,7 +71,7 @@ function authenticate(req, res, next) {
       token,
     };
     next();
-  } catch (e) {
+  } catch {
     return res.status(401).json({ error: 'Sessão inválida' });
   }
 }
@@ -264,7 +265,7 @@ app.get('/api/projetos/:id', async (req, res, next) => {
 // Rota POST (Criar) - Lógica 4
 app.post('/api/projetos', authenticate, authorizeAdmin, async (req, res, next) => {
   // O formulário do admin envia 'titulo', 'descricao', 'preco', etc.
-  const { titulo, descricao, tecnologias, data_inicio, status, preco, progresso, thumb_url, visivel, owner } = req.body;
+  const { titulo, descricao, tecnologias, data_inicio, status, preco, progresso, thumb_url, visivel } = req.body;
   
   if (!titulo) {
     return res.status(400).json({ error: 'Título é obrigatório' });
@@ -525,7 +526,7 @@ app.get('/api/ranking', async (req, res, next) => {
 // Rota para ATUALIZAR pontos (Lógica 3)
 app.put('/api/ranking/points/:crafterId', authenticate, authorizeAdmin, async (req, res, next) => {
   const { crafterId } = req.params;
-  const { delta, set, reason } = req.body; // delta: +10, set: 100
+  const { delta, set } = req.body; // delta: +10, set: 100
 
   try {
     const pool = await getConnectionPool();
@@ -982,7 +983,8 @@ app.get('*', (req, res) => {
 });
 
 // --- Middleware de Tratamento de Erros ---
-app.use((err, req, res, _next) => {
+app.use((err, req, res, next) => {
+  void next; // marca como usado para o ESLint mantendo a assinatura de 4 parâmetros
   console.error('Erro no servidor:', err);
   res.status(500).json({
     error: 'Erro interno do servidor',
