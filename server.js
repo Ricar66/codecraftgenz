@@ -193,10 +193,8 @@ app.get('/api/projetos', async (req, res, next) => {
     if (all !== '1') {
        // 'visivel=true' é usado pela página pública (ProjectsPage)
       if (visivel === 'true') {
-        // Alguns ambientes não possuem a coluna 'visible' em dbo.projetos.
-        // Para evitar erro 500, aplicamos apenas o filtro por status.
-        whereClauses.push("status = @status");
-        request.input('status', dbSql.NVarChar, 'finalizado'); // Ou 'ativo', dependendo da regra
+        // Listagem pública: considerar projetos 'ativo' e 'finalizado'
+        whereClauses.push("status IN ('ativo','finalizado')");
       } else {
         // Filtro padrão (sem depender de coluna 'visible')
         whereClauses.push("status <> 'arquivado'");
