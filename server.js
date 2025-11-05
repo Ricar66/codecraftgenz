@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import helmet from 'helmet';
 import MercadoPagoConfig, { Preference, Payment } from 'mercadopago';
+
 import { getConnectionPool, dbSql } from './src/lib/db.js';
 
 // Carregar variáveis de ambiente

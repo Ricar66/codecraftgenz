@@ -357,7 +357,14 @@ const useProjects = (options = {}) => {
       return s === 'completed' || s === 'concluído' || s === 'concluido';
     }).length,
     averageProgress: projects.length > 0 
-      ? Math.round(projects.reduce((acc, p) => acc + (p.progress || 0), 0) / projects.length)
+      ? Math.round(
+          projects.reduce((acc, p) => {
+            const raw = (p.progress ?? p.progresso ?? 0);
+            const n = Number(raw);
+            const val = Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0;
+            return acc + val;
+          }, 0) / projects.length
+        )
       : 0
   };
 
