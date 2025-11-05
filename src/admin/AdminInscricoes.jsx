@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { apiRequest } from '../lib/apiConfig.js';
 
 import styles from './AdminInscricoes.module.css';
+import './AdminCommon.css';
 
 const AdminInscricoes = () => {
   const [inscricoes, setInscricoes] = useState([]);
@@ -141,7 +142,7 @@ const AdminInscricoes = () => {
 
   if (loading) {
     return (
-      <div className={styles.adminContent}>
+      <div className={styles.adminContent + ' admin-content'}>
         <div className={styles.loadingState}>
           <div className={styles.spinner}></div>
           <p>Carregando inscrições...</p>
@@ -152,7 +153,7 @@ const AdminInscricoes = () => {
 
   if (error) {
     return (
-      <div className={styles.adminContent}>
+      <div className={styles.adminContent + ' admin-content'}>
         <div className={styles.errorState}>
           <h2>Erro ao carregar inscrições</h2>
           <p>{error}</p>
@@ -165,7 +166,7 @@ const AdminInscricoes = () => {
   }
 
   return (
-    <div className={styles.adminContent}>
+    <div className={styles.adminContent + ' admin-content'}>
       {toast && (
         <div
           role="status"
@@ -184,18 +185,18 @@ const AdminInscricoes = () => {
         </div>
       )}
       <div className={styles.pageHeader}>
-        <h1>Inscrições de Crafters</h1>
-        <p>Gerencie as inscrições recebidas através do formulário "Quero ser um Crafter"</p>
+        <h1 className="title">Inscrições de Crafters</h1>
+        <p className="muted">Gerencie as inscrições recebidas através do formulário "Quero ser um Crafter"</p>
       </div>
 
-        <div className={styles.filtersSection}>
+        <div className={styles.filtersSection + ' filters-section'}>
         <div className={styles.searchBox}>
           <input
             type="text"
             placeholder="Buscar por nome, email, cidade, estado ou área..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={styles.searchInput}
+            className={styles.searchInput + ' search-input'}
           />
         </div>
         
@@ -204,7 +205,7 @@ const AdminInscricoes = () => {
             <select
               value={filtroStatus}
               onChange={(e) => setFiltroStatus(e.target.value)}
-              className={styles.statusSelect}
+              className={styles.statusSelect + ' filter-select'}
             >
               <option value="">Todos os status</option>
               {statusOptions.map(option => (
@@ -219,7 +220,7 @@ const AdminInscricoes = () => {
             <select
               value={filtroArea}
               onChange={(e) => setFiltroArea(e.target.value)}
-              className={styles.areaSelect}
+              className={styles.areaSelect + ' filter-select'}
             >
               <option value="">Todas as áreas</option>
               {areasInteresse.map(area => (
@@ -234,7 +235,7 @@ const AdminInscricoes = () => {
             <select
               value={filtroData}
               onChange={(e) => setFiltroData(e.target.value)}
-              className={styles.dateSelect}
+              className={styles.dateSelect + ' filter-select'}
             >
               <option value="">Todas as datas</option>
               <option value="hoje">Hoje</option>
@@ -267,7 +268,7 @@ const AdminInscricoes = () => {
             const statusInfo = getStatusInfo(inscricao.status);
             
             return (
-              <div key={inscricao.id} className={styles.inscricaoCard}>
+              <div key={inscricao.id} className={styles.inscricaoCard + ' card'}>
                 <div className={styles.cardHeader}>
                   <h3>{inscricao.nome}</h3>
                   <div 

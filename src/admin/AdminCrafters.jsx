@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 
 import { useCrafters, CraftersRepo } from '../hooks/useAdminRepo';
 import './AdminCrafters.css';
+import './AdminCommon.css';
 
 export default function AdminCrafters() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,7 +76,7 @@ export default function AdminCrafters() {
 
   if (loading && crafters.length === 0) {
     return (
-      <div className="admin-crafters">
+      <div className="admin-content">
         <div className="loading-state">
           <div className="spinner"></div>
           <p>Carregando crafters...</p>
@@ -86,7 +87,7 @@ export default function AdminCrafters() {
 
   if (error) {
     return (
-      <div className="admin-crafters">
+      <div className="admin-content">
         <div className="error-state">
           <h3>Erro ao carregar crafters</h3>
           <p>{error}</p>
@@ -99,10 +100,10 @@ export default function AdminCrafters() {
   }
 
   return (
-    <div className="admin-crafters">
+    <div className="admin-content">
       <div className="admin-crafters-header">
-        <h2>Gerenciar Crafters</h2>
-        <div className="header-stats">
+        <h1 className="title">Gerenciar Crafters</h1>
+        <div className="header-stats muted">
           <span className="stat-item">
             Total: <strong>{pagination.total}</strong>
           </span>
@@ -112,8 +113,8 @@ export default function AdminCrafters() {
         </div>
       </div>
 
-      <div className="admin-crafters-controls">
-        <div className="search-section">
+      <div className="filters-section">
+        <div className="filter-group">
           <input
             type="text"
             placeholder="Buscar por nome ou email..."
@@ -123,7 +124,7 @@ export default function AdminCrafters() {
           />
         </div>
 
-        <div className="filters-section">
+        <div style={{ display:'flex', gap:12, alignItems:'center' }}>
           <select
             value={activeFilter}
             onChange={(e) => setActiveFilter(e.target.value)}
@@ -147,7 +148,7 @@ export default function AdminCrafters() {
         </div>
       </div>
 
-      <div className="crafters-table-container">
+      <div className="table">
         <table className="crafters-table">
           <thead>
             <tr>
@@ -239,7 +240,7 @@ export default function AdminCrafters() {
       </div>
 
       {pagination.totalPages > 1 && (
-        <div className="pagination-container">
+        <div className="pagination-container card" style={{ marginTop:16 }}>
           <div className="pagination-info">
             Mostrando {((pagination.page - 1) * itemsPerPage) + 1} a {Math.min(pagination.page * itemsPerPage, pagination.total)} de {pagination.total} crafters
           </div>
