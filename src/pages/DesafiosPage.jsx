@@ -3,8 +3,8 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import Navbar from '../components/Navbar/Navbar';
-import { realtime } from '../lib/realtime';
 import { useAuth } from '../context/useAuth';
+import { realtime } from '../lib/realtime';
 
 export default function DesafiosPage() {
   const [desafios, setDesafios] = useState([]);

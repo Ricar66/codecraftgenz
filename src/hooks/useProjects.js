@@ -314,7 +314,7 @@ const useProjects = (options = {}) => {
         intervalRef.current = null;
       }
     };
-  }, [autoFetch, refetchInterval]); // Removido fetchProjects da dependência para evitar loop infinito
+  }, [autoFetch, refetchInterval, fetchProjects]);
 
   /**
    * Cleanup ao desmontar componente
