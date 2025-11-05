@@ -236,17 +236,35 @@ export const getProjects = async (options = {}) => {
     const projects = Array.isArray(data?.data) ? data.data : (Array.isArray(data?.projects) ? data.projects : []);
     console.log('🔍 Dados originais do banco:', projects);
     
+    const normalizeStatus = (s) => {
+      const m = String(s || '').toLowerCase();
+      if (['desenvolvimento', 'em andamento', 'andamento', 'ongoing'].includes(m)) return 'ongoing';
+      if (['ativo', 'active'].includes(m)) return 'active';
+      if (['finalizado', 'concluido', 'concluído', 'completed'].includes(m)) return 'completed';
+      if (['pausado', 'paused'].includes(m)) return 'paused';
+      if (['cancelado', 'cancelled'].includes(m)) return 'cancelled';
+      if (['rascunho', 'draft'].includes(m)) return 'rascunho';
+      return m || 'active';
+    };
+
     const mappedProjects = projects.map(project => ({
       ...project,
-      title: project.titulo || project.title,
-      description: project.descricao || project.description,
+      // Título: aceita múltiplos nomes de coluna
+      title: project.titulo || project.nome || project.projeto_titulo || project.title || `Projeto ${project.id}`,
+      // Descrição: aceita múltiplos nomes de coluna
+      description: project.descricao || project.projeto_descricao || project.description || '',
+      // Status: normaliza para valores aceitos pelo validador
+      status: normalizeStatus(project.status),
+      // Datas: padroniza nomes
       createdAt: project.created_at || project.createdAt,
       updatedAt: project.updated_at || project.updatedAt,
       startDate: project.data_inicio || project.startDate,
+      // Mídia
       thumbUrl: project.thumb_url || project.thumbUrl,
+      // Mentor vinculado (se houver)
       mentorId: project.mentor_id || project.mentorId,
       mentorName: project.mentor_nome || project.mentorName,
-      mentorEmail: project.mentor_email || project.mentorEmail
+      mentorEmail: project.mentor_email || project.mentorEmail,
     }));
     
     console.log('🔄 Dados mapeados:', mappedProjects);
