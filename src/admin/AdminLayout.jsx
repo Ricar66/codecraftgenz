@@ -322,10 +322,13 @@ export function Usuarios() {
       <section className="card" style={{ marginTop: 16 }}>
         <h3 style={{ marginBottom: 12 }}>Novo Usuário</h3>
         <div className="formRow">
-          <input aria-label="Nome" placeholder="Nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} />
-          <input aria-label="E-mail" placeholder="E-mail" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} />
-          <input aria-label="Senha" placeholder="Senha" type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} />
-          <select value={form.role} onChange={e=>setForm({...form,role:e.target.value})}>
+          <label className="sr-only" htmlFor="user-name">Nome</label>
+          <input id="user-name" aria-label="Nome" placeholder="Nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required />
+          <label className="sr-only" htmlFor="user-email">E-mail</label>
+          <input id="user-email" aria-label="E-mail" placeholder="E-mail" type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} required />
+          <label className="sr-only" htmlFor="user-password">Senha</label>
+          <input id="user-password" aria-label="Senha" placeholder="Senha" type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} required />
+          <select aria-label="Perfil" value={form.role} onChange={e=>setForm({...form,role:e.target.value})}>
             <option value="admin">admin</option>
             <option value="editor">editor</option>
             <option value="viewer">viewer</option>
@@ -531,22 +534,22 @@ export function Mentores() {
         <div className="formRow" style={{ gridTemplateColumns: '2fr 1fr' }}>
           <div>
             <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
-              <input aria-label="Nome" placeholder="Nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} aria-invalid={!!errors.name} />
-              <input aria-label="Especialidade" placeholder="Especialidade" value={form.specialty} onChange={e=>setForm({...form,specialty:e.target.value})} aria-invalid={!!errors.specialty} />
+              <input aria-label="Nome" placeholder="Nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} aria-invalid={!!errors.name} aria-required="true" required />
+              <input aria-label="Especialidade" placeholder="Especialidade" value={form.specialty} onChange={e=>setForm({...form,specialty:e.target.value})} aria-invalid={!!errors.specialty} aria-required="true" required />
             </div>
             <div className="formRow">
-              <input aria-label="Bio" placeholder="Descrição" value={form.bio} onChange={e=>setForm({...form,bio:e.target.value})} aria-invalid={!!errors.bio} />
+              <input aria-label="Bio" placeholder="Descrição" value={form.bio} onChange={e=>setForm({...form,bio:e.target.value})} aria-invalid={!!errors.bio} aria-required="true" required />
             </div>
             <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
-              <input aria-label="E-mail" placeholder="E-mail" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} aria-invalid={!!errors.email} />
-              <input aria-label="Telefone" placeholder="Telefone" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} aria-invalid={!!errors.phone} />
+              <input aria-label="E-mail" placeholder="E-mail" type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} aria-invalid={!!errors.email} />
+              <input aria-label="Telefone" placeholder="Telefone" type="tel" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} aria-invalid={!!errors.phone} />
             </div>
             <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
               <input aria-label="Foto (URL)" placeholder="Foto (URL)" value={form.photo} onChange={e=>setForm({...form,photo:e.target.value})} />
               <input aria-label="Enviar foto" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>onPhotoFile(e.target.files?.[0])} />
             </div>
             <div className="formRow">
-              <label style={{ alignSelf:'center' }}><input type="checkbox" checked={form.visible} onChange={e=>setForm({...form,visible:e.target.checked})} /> Visível</label>
+              <label className="checkbox-row" style={{ alignSelf:'center' }}><input type="checkbox" checked={form.visible} onChange={e=>setForm({...form,visible:e.target.checked})} /> Visível</label>
             </div>
           </div>
           <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>

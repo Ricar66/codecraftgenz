@@ -214,10 +214,12 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 // Rotas de Projetos (integradas com banco)
+// Rotas de Projetos (integradas com banco)
 app.get('/api/projetos', async (req, res, next) => {
   try {
     const pool = await getConnectionPool();
-    const result = await pool.request().query('SELECT * FROM projetos');
+    // CORREÇÃO: Adicione dbo.
+    const result = await pool.request().query('SELECT * FROM dbo.projetos'); 
     res.json({ success: true, data: result.recordset });
   } catch (err) {
     console.error('Erro ao buscar projetos no banco:', err);
@@ -234,7 +236,8 @@ app.get('/api/projetos/:id', async (req, res, next) => {
     const pool = await getConnectionPool();
     const result = await pool.request()
       .input('id', dbSql.Int, id)
-      .query('SELECT * FROM projetos WHERE id = @id');
+       // CORREÇÃO: Adicione dbo.
+      .query('SELECT * FROM dbo.projetos WHERE id = @id');
     if (result.recordset.length === 0) {
       return res.status(404).json({ error: 'Projeto não encontrado' });
     }
@@ -245,36 +248,35 @@ app.get('/api/projetos/:id', async (req, res, next) => {
   }
 });
 
+// Substituição: inserir projeto diretamente no banco (dbo.projetos)
 app.post('/api/projetos', async (req, res, next) => {
+  const { nome, descricao, tecnologias } = req.body;
+
+  if (!nome || !descricao) {
+    return res.status(400).json({ error: 'Nome e descrição são obrigatórios' });
+  }
+
+  // 'tecnologias' é NVARCHAR(MAX). Se vier array, salvar como JSON.
+  const tecnologiasString = JSON.stringify(tecnologias || []);
+
   try {
-    const { nome, descricao, tecnologias } = req.body;
-    if (!nome || !descricao) {
-      return res.status(400).json({ error: 'Nome e descrição são obrigatórios' });
-    }
-
     const pool = await getConnectionPool();
-    const request = pool.request()
-      .input('nome', dbSql.NVarChar(255), nome)
-      .input('descricao', dbSql.NVarChar(dbSql.MAX), descricao)
-      .input('status', dbSql.NVarChar(50), 'desenvolvimento');
 
-    let query;
-    if (tecnologias !== undefined) {
-      const tecnologiasStr = Array.isArray(tecnologias) ? JSON.stringify(tecnologias) : String(tecnologias);
-      request.input('tecnologias', dbSql.NVarChar(dbSql.MAX), tecnologiasStr);
-      query = `INSERT INTO projetos (nome, descricao, status, tecnologias, created_at)
-               OUTPUT INSERTED.*
-               VALUES (@nome, @descricao, @status, @tecnologias, GETDATE())`;
-    } else {
-      query = `INSERT INTO projetos (nome, descricao, status, created_at)
-               OUTPUT INSERTED.*
-               VALUES (@nome, @descricao, @status, GETDATE())`;
-    }
+    const query = `
+      INSERT INTO dbo.projetos (nome, descricao, tecnologias, status)
+      OUTPUT Inserted.* VALUES (@nome, @descricao, @tecnologias, @status)
+    `;
 
-    const result = await request.query(query);
-    return res.status(201).json({ project: result.recordset[0] });
+    const result = await pool.request()
+      .input('nome', dbSql.NVarChar, nome)
+      .input('descricao', dbSql.NVarChar, descricao)
+      .input('tecnologias', dbSql.NVarChar(dbSql.MAX), tecnologiasString)
+      .input('status', dbSql.NVarChar, 'desenvolvimento')
+      .query(query);
+
+    res.status(201).json(result.recordset[0]);
   } catch (err) {
-    console.error('Erro ao inserir projeto no banco:', err);
+    console.error('Erro ao INSERIR projeto no banco:', err);
     next(err);
   }
 });
