@@ -4,25 +4,16 @@ import { useState, useEffect } from 'react';
 
 // Detecta o ambiente e configura a URL base da API
 const getApiBaseUrl = () => {
-  // Verifica se há uma variável de ambiente VITE_API_URL definida
-  const apiUrl = import.meta.env.VITE_API_URL;
-  if (apiUrl) {
-    return apiUrl; // Ex: http://localhost:8080
+  const isDev = import.meta.env.DEV;
+  const devApiUrl = import.meta.env.VITE_API_URL;
+
+  // Em desenvolvimento: respeita VITE_API_URL se definida; caso contrário, usa backend local
+  if (isDev) {
+    return devApiUrl || 'http://localhost:8080';
   }
-  
-  // Em desenvolvimento, usa o proxy do Vite (localhost:8080)
-  if (import.meta.env.DEV) {
-    // CORREÇÃO: Removido o '/api' daqui.
-    return 'http://localhost:8080';
-  }
-  
-  // Em produção, usa a URL relativa (mesmo domínio)
-  if (typeof window !== 'undefined') {
-    // CORREÇÃO: Removido o '/api'. Agora é apenas uma string vazia.
-    return ''; 
-  }
-  
-  // Fallback
+
+  // Em produção: SEMPRE usar URL relativa ao mesmo domínio
+  // Não respeitar VITE_API_URL para evitar vazar configuração de .env genérico
   return '';
 };
 
