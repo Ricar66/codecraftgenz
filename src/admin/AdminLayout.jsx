@@ -132,12 +132,12 @@ export function Dashboard() {
       </header>
 
       <section className="kpis" style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:12 }}>
-        <div className="card" style={{ background:'#F4F4F4', color:'#000' }}><h3>🧩 Projetos Ativos</h3><p>{kpis.projetos_ativos || 0}</p></div>
-        <div className="card" style={{ background:'#F4F4F4', color:'#000' }}><h3>🏁 Projetos Finalizados</h3><p>{kpis.projetos_finalizados || 0}</p></div>
-        <div className="card" style={{ background:'#F4F4F4', color:'#000' }}><h3>💰 Receita Total</h3><p>R$ {(kpis.receita_total || 0).toLocaleString('pt-BR')}</p></div>
-        <div className="card" style={{ background:'#F4F4F4', color:'#000' }}><h3>⏳ Receita Pendente</h3><p>R$ {(kpis.receita_pendente || 0).toLocaleString('pt-BR')}</p></div>
-        <div className="card" style={{ background:'#F4F4F4', color:'#000' }}><h3>📈 Progresso Médio</h3><p>{kpis.media_progresso || 0}%</p></div>
-        <div className="card" style={{ background:'#F4F4F4', color:'#000' }}><h3>💳 Receita Paga</h3><p>R$ {(kpis.receita_paga || 0).toLocaleString('pt-BR')}</p></div>
+        <div className="card"><h3>🧩 Projetos Ativos</h3><p>{kpis.projetos_ativos || 0}</p></div>
+        <div className="card"><h3>🏁 Projetos Finalizados</h3><p>{kpis.projetos_finalizados || 0}</p></div>
+        <div className="card"><h3>💰 Receita Total</h3><p>R$ {(kpis.receita_total || 0).toLocaleString('pt-BR')}</p></div>
+        <div className="card"><h3>⏳ Receita Pendente</h3><p>R$ {(kpis.receita_pendente || 0).toLocaleString('pt-BR')}</p></div>
+        <div className="card"><h3>📈 Progresso Médio</h3><p>{kpis.media_progresso || 0}%</p></div>
+        <div className="card"><h3>💳 Receita Paga</h3><p>R$ {(kpis.receita_paga || 0).toLocaleString('pt-BR')}</p></div>
       </section>
 
       <section className="graficos" style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:12, marginTop:16 }}>
@@ -172,14 +172,23 @@ export function Dashboard() {
         <div className="chart card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', borderRadius:12, padding:12 }}>
           <h3 style={{ marginBottom:8 }}>Status Financeiro</h3>
           {(() => {
-            const total = pieData.reduce((acc, s) => acc + Math.abs(s.value), 0);
-            let acc = 0; const cx=60, cy=60, r=50;
+            const total = pieData.reduce((acc, s) => acc + Math.abs(s.value || 0), 0);
+            const cx=60, cy=60, r=50;
+            if (total <= 0) {
+              return (
+                <svg width="120" height="120" viewBox="0 0 120 120">
+                  <circle cx={cx} cy={cy} r={r} fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.16)" strokeWidth="2" />
+                </svg>
+              );
+            }
+            let acc = 0;
             return (
               <svg width="120" height="120" viewBox="0 0 120 120">
                 {pieData.map((s, i) => {
-                  const frac = total>0 ? Math.abs(s.value)/total : 0;
-                  const start = (acc/total) * 2*Math.PI; acc += Math.abs(s.value);
+                  const value = Math.abs(s.value || 0);
+                  const start = (acc/total) * 2*Math.PI; acc += value;
                   const end = (acc/total) * 2*Math.PI;
+                  const frac = total>0 ? value/total : 0;
                   const x1 = cx + r*Math.cos(start), y1 = cy + r*Math.sin(start);
                   const x2 = cx + r*Math.cos(end), y2 = cy + r*Math.sin(end);
                   const largeArc = frac > 0.5 ? 1 : 0;
@@ -213,7 +222,7 @@ export function Dashboard() {
         </div>
         <div className="chart card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', borderRadius:12, padding:12 }}>
           <h3>Média de Progresso</h3>
-          <div style={{ height:18, background:'#F4F4F4', borderRadius:10 }}>
+          <div style={{ height:18, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.16)', borderRadius:10 }}>
             <div style={{ width:`${kpis.media_progresso || 0}%`, height:'100%', background:'#D12BF2', borderRadius:10, transition:'width 300ms ease' }} />
           </div>
           <p style={{ marginTop:8 }}>{kpis.media_progresso || 0}%</p>
@@ -1224,7 +1233,7 @@ export function Projetos() {
       ))}</tbody></table></div>
       
       {/* Formulário melhorado */}
-      <section className="card" style={{ background: '#F4F4F4', padding: 20, marginTop: 20 }}>
+  <section className="card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', padding: 20, marginTop: 20 }}>
         <h3 style={{ marginBottom: 16, color: '#000' }}>
           {form.id ? '✏️ Editar Projeto' : '➕ Novo Projeto'}
         </h3>
@@ -1675,31 +1684,31 @@ export function Financas() {
 
       {/* Estatísticas */}
       <section className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
-        <div className="card" style={{ background: '#F4F4F4', color: '#000', textAlign: 'center' }}>
+  <div className="card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', color: 'var(--texto-gelo)', textAlign: 'center' }}>
           <h3>💰 Total</h3>
           <p style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#00E4F2' }}>
             R$ {stats.total.toLocaleString('pt-BR')}
           </p>
         </div>
-        <div className="card" style={{ background: '#F4F4F4', color: '#000', textAlign: 'center' }}>
+  <div className="card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', color: 'var(--texto-gelo)', textAlign: 'center' }}>
           <h3>✅ Pago</h3>
           <p style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#00E4F2' }}>
             R$ {stats.paid.toLocaleString('pt-BR')}
           </p>
         </div>
-        <div className="card" style={{ background: '#F4F4F4', color: '#000', textAlign: 'center' }}>
+  <div className="card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', color: 'var(--texto-gelo)', textAlign: 'center' }}>
           <h3>⏳ Pendente</h3>
           <p style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#FFA500' }}>
             R$ {stats.pending.toLocaleString('pt-BR')}
           </p>
         </div>
-        <div className="card" style={{ background: '#F4F4F4', color: '#000', textAlign: 'center' }}>
+  <div className="card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', color: 'var(--texto-gelo)', textAlign: 'center' }}>
           <h3>💸 Descontos</h3>
           <p style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#D12BF2' }}>
             R$ {stats.discount.toLocaleString('pt-BR')}
           </p>
         </div>
-        <div className="card" style={{ background: '#F4F4F4', color: '#000', textAlign: 'center' }}>
+  <div className="card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', color: 'var(--texto-gelo)', textAlign: 'center' }}>
           <h3>📊 Registros</h3>
           <p style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#68007B' }}>
             {stats.count}
@@ -1753,7 +1762,7 @@ export function Financas() {
               <p>📭 Nenhum registro encontrado</p>
             </div>
           ) : pageItems.map(f => (
-            <div key={f.id} className="card" style={{ background: '#F4F4F4', border: `3px solid ${statusColors[f.status] || '#ccc'}` }}>
+  <div key={f.id} className="card" style={{ background:'rgba(255,255,255,0.06)', border: `3px solid ${statusColors[f.status] || 'rgba(255,255,255,0.16)'}` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <div>
                   <h3 style={{ margin: 0, color: '#000' }}>{f.item}</h3>
@@ -1885,7 +1894,7 @@ export function Financas() {
       )}
 
       {/* Formulário */}
-      <section className="card" style={{ background: '#F4F4F4', padding: 20 }}>
+  <section className="card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', padding: 20 }}>
         <h3 style={{ marginBottom: 16, color: '#000' }}>
           {editingId ? '✏️ Editar Registro' : '➕ Novo Registro Financeiro'}
         </h3>
@@ -2203,7 +2212,7 @@ export function Apps() {
         </table>
       </div>
 
-      <section className="card" style={{ background:'#F4F4F4', padding:16, marginTop:16 }}>
+  <section className="card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', padding:16, marginTop:16 }}>
         <h3 style={{ color:'#000' }}>{form.id ? '✏️ Editar App' : 'Selecionar app para editar'}</h3>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:12 }}>
           <input placeholder="Nome" value={form.name} onChange={e=>setForm({ ...form, name:e.target.value })} />
