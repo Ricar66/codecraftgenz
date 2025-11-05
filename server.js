@@ -245,147 +245,291 @@ app.get('/api/projetos/:id', async (req, res, next) => {
   }
 });
 
-app.post('/api/projetos', (req, res) => {
-  const { nome, descricao, tecnologias } = req.body;
-  
-  if (!nome || !descricao) {
-    return res.status(400).json({ error: 'Nome e descrição são obrigatórios' });
+app.post('/api/projetos', async (req, res, next) => {
+  try {
+    const { nome, descricao, tecnologias } = req.body;
+    if (!nome || !descricao) {
+      return res.status(400).json({ error: 'Nome e descrição são obrigatórios' });
+    }
+
+    const pool = await getConnectionPool();
+    const request = pool.request()
+      .input('nome', dbSql.NVarChar(255), nome)
+      .input('descricao', dbSql.NVarChar(dbSql.MAX), descricao)
+      .input('status', dbSql.NVarChar(50), 'desenvolvimento');
+
+    let query;
+    if (tecnologias !== undefined) {
+      const tecnologiasStr = Array.isArray(tecnologias) ? JSON.stringify(tecnologias) : String(tecnologias);
+      request.input('tecnologias', dbSql.NVarChar(dbSql.MAX), tecnologiasStr);
+      query = `INSERT INTO projetos (nome, descricao, status, tecnologias, created_at)
+               OUTPUT INSERTED.*
+               VALUES (@nome, @descricao, @status, @tecnologias, GETDATE())`;
+    } else {
+      query = `INSERT INTO projetos (nome, descricao, status, created_at)
+               OUTPUT INSERTED.*
+               VALUES (@nome, @descricao, @status, GETDATE())`;
+    }
+
+    const result = await request.query(query);
+    return res.status(201).json({ project: result.recordset[0] });
+  } catch (err) {
+    console.error('Erro ao inserir projeto no banco:', err);
+    next(err);
   }
-  
-  const novoProjeto = {
-    id: mockData.projetos.length + 1,
-    nome,
-    descricao,
-    status: 'desenvolvimento',
-    tecnologias: tecnologias || [],
-    created_at: new Date().toISOString()
-  };
-  
-  mockData.projetos.push(novoProjeto);
-  res.status(201).json(novoProjeto);
 });
 
 // Rotas de Mentores
-app.get('/api/mentores', (req, res) => {
-  res.json(mockData.mentores);
+app.get('/api/mentores', async (req, res, next) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page || '1', 10));
+    const pageSize = Math.max(1, Math.min(100, parseInt(req.query.pageSize || '50', 10)));
+    const offset = (page - 1) * pageSize;
+
+    const pool = await getConnectionPool();
+    const totalResult = await pool.request().query('SELECT COUNT(*) AS total FROM mentores');
+    const total = totalResult.recordset[0]?.total || 0;
+    const rowsResult = await pool.request()
+      .input('offset', dbSql.Int, offset)
+      .input('limit', dbSql.Int, pageSize)
+      .query('SELECT * FROM mentores ORDER BY id OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY');
+
+    const data = rowsResult.recordset;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    res.json({
+      success: true,
+      data,
+      pagination: {
+        total,
+        page,
+        pageSize,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    });
+  } catch (err) {
+    console.error('Erro ao buscar mentores no banco:', err);
+    next(err);
+  }
 });
 
-app.get('/api/mentores/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  const mentor = mockData.mentores.find(m => m.id === id);
-  
-  if (!mentor) {
-    return res.status(404).json({ error: 'Mentor não encontrado' });
+app.get('/api/mentores/:id', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'ID do mentor inválido' });
+    }
+    const pool = await getConnectionPool();
+    const result = await pool.request()
+      .input('id', dbSql.Int, id)
+      .query('SELECT * FROM mentores WHERE id = @id');
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ error: 'Mentor não encontrado' });
+    }
+    res.json({ success: true, mentor: result.recordset[0] });
+  } catch (err) {
+    console.error('Erro ao buscar mentor por ID:', err);
+    next(err);
   }
-  
-  res.json(mentor);
+});
+
+// Cria um novo mentor
+app.post('/api/mentores', async (req, res, next) => {
+  try {
+    const { nome, email, especialidade, bio, visible, ativo } = req.body || {};
+    if (!nome || !email) {
+      return res.status(400).json({ error: 'Nome e email são obrigatórios' });
+    }
+    const pool = await getConnectionPool();
+    const result = await pool.request()
+      .input('nome', dbSql.NVarChar(255), nome)
+      .input('email', dbSql.NVarChar(255), email)
+      .input('especialidade', dbSql.NVarChar(255), especialidade ?? null)
+      .input('bio', dbSql.NVarChar(dbSql.MAX), bio ?? null)
+      .input('visible', dbSql.Bit, visible !== undefined ? !!visible : null)
+      .input('ativo', dbSql.Bit, ativo !== undefined ? !!ativo : null)
+      .query(`INSERT INTO mentores (nome, email, especialidade, bio, visible, ativo, created_at)
+              OUTPUT INSERTED.*
+              VALUES (@nome, @email, @especialidade, @bio, @visible, @ativo, GETDATE())`);
+    return res.status(201).json({ mentor: result.recordset[0] });
+  } catch (err) {
+    console.error('Erro ao criar mentor:', err);
+    next(err);
+  }
+});
+
+// Atualiza um mentor existente
+app.put('/api/mentores/:id', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'ID do mentor inválido' });
+    }
+    const { nome, email, especialidade, bio, visible, ativo } = req.body || {};
+    const pool = await getConnectionPool();
+    const result = await pool.request()
+      .input('id', dbSql.Int, id)
+      .input('nome', dbSql.NVarChar(255), nome ?? null)
+      .input('email', dbSql.NVarChar(255), email ?? null)
+      .input('especialidade', dbSql.NVarChar(255), especialidade ?? null)
+      .input('bio', dbSql.NVarChar(dbSql.MAX), bio ?? null)
+      .input('visible', dbSql.Bit, visible !== undefined ? !!visible : null)
+      .input('ativo', dbSql.Bit, ativo !== undefined ? !!ativo : null)
+      .query(`UPDATE mentores SET
+                nome = COALESCE(@nome, nome),
+                email = COALESCE(@email, email),
+                especialidade = COALESCE(@especialidade, especialidade),
+                bio = COALESCE(@bio, bio),
+                visible = COALESCE(@visible, visible),
+                ativo = COALESCE(@ativo, ativo)
+              OUTPUT INSERTED.*
+              WHERE id = @id`);
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ error: 'Mentor não encontrado' });
+    }
+    return res.json({ mentor: result.recordset[0] });
+  } catch (err) {
+    console.error('Erro ao atualizar mentor:', err);
+    next(err);
+  }
+});
+
+// Remove um mentor
+app.delete('/api/mentores/:id', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'ID do mentor inválido' });
+    }
+    const pool = await getConnectionPool();
+    const del = await pool.request()
+      .input('id', dbSql.Int, id)
+      .query('DELETE FROM mentores WHERE id = @id');
+    if ((del.rowsAffected?.[0] || 0) === 0) {
+      return res.status(404).json({ error: 'Mentor não encontrado' });
+    }
+    return res.json({ removed: { id } });
+  } catch (err) {
+    console.error('Erro ao remover mentor:', err);
+    next(err);
+  }
 });
 
 // Rotas de Crafters
-app.get('/api/crafters', (req, res) => {
-  // Estrutura esperada pelo componente AdminCrafters
-  const craftersWithStatus = mockData.crafters.map(crafter => ({
-    ...crafter,
-    points: crafter.pontos, // Mapear pontos para points
-    active: true, // Adicionar status ativo
-    avatar_url: null // Adicionar campo de avatar
-  }));
+app.get('/api/crafters', async (req, res, next) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page || '1', 10));
+    const pageSize = Math.max(1, Math.min(100, parseInt(req.query.pageSize || '50', 10)));
+    const offset = (page - 1) * pageSize;
 
-  // Estrutura de resposta paginada esperada pelo hook useCrafters
-  const response = {
-    success: true,
-    data: craftersWithStatus,
-    pagination: {
-      total: craftersWithStatus.length,
-      page: 1,
-      totalPages: 1,
-      hasNext: false,
-      hasPrev: false
-    }
-  };
-  
-  res.json(response);
+    const pool = await getConnectionPool();
+    const totalResult = await pool.request().query('SELECT COUNT(*) AS total FROM crafters');
+    const total = totalResult.recordset[0]?.total || 0;
+    const rowsResult = await pool.request()
+      .input('offset', dbSql.Int, offset)
+      .input('limit', dbSql.Int, pageSize)
+      .query('SELECT * FROM crafters ORDER BY id OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY');
+
+    const craftersWithStatus = rowsResult.recordset.map(crafter => ({
+      ...crafter,
+      points: crafter.points ?? crafter.pontos ?? 0,
+      active: crafter.active ?? true,
+      avatar_url: crafter.avatar_url ?? null,
+    }));
+
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    res.json({
+      success: true,
+      data: craftersWithStatus,
+      pagination: {
+        total,
+        page,
+        pageSize,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    });
+  } catch (err) {
+    console.error('Erro ao buscar crafters no banco:', err);
+    next(err);
+  }
 });
 
-app.get('/api/ranking', (req, res) => {
-  // Estrutura esperada pelo componente RankingPage
-  const crafters = mockData.crafters.map(crafter => ({
-    ...crafter,
-    points: crafter.pontos, // Mapear pontos para points
-    name: crafter.nome // Mapear nome para name
-  }));
-  
-  // Criar top3 baseado nos pontos
-  const sortedCrafters = [...crafters].sort((a, b) => b.points - a.points);
-  const top3 = sortedCrafters.slice(0, 3).map((crafter, index) => ({
-    crafter_id: crafter.id,
-    position: index + 1,
-    reward: index === 0 ? 'Badge Ouro' : index === 1 ? 'Badge Prata' : 'Badge Bronze'
-  }));
-  
-  const response = {
-    crafters: crafters,
-    top3: top3
-  };
-  
-  res.json(response);
+app.get('/api/ranking', async (req, res, next) => {
+  try {
+    const pool = await getConnectionPool();
+    const result = await pool.request().query('SELECT * FROM crafters ORDER BY pontos DESC');
+    const crafters = result.recordset.map(crafter => ({
+      ...crafter,
+      points: crafter.points ?? crafter.pontos ?? 0,
+      name: crafter.name ?? crafter.nome,
+    }));
+    const top3 = crafters.slice(0, 3).map((crafter, index) => ({
+      crafter_id: crafter.id,
+      position: index + 1,
+      reward: index === 0 ? 'Badge Ouro' : index === 1 ? 'Badge Prata' : 'Badge Bronze'
+    }));
+    res.json({ crafters, top3 });
+  } catch (err) {
+    console.error('Erro ao buscar ranking no banco:', err);
+    next(err);
+  }
 });
 
 // Rota de feedbacks (mock)
-app.get('/api/feedbacks', (req, res) => {
-  const feedbacks = [
-    {
-      id: 1,
-      nome: "Carlos Silva",
-      email: "carlos@example.com",
-      feedback: "Excelente plataforma! Muito intuitiva.",
-      rating: 5,
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 2,
-      nome: "Lucia Oliveira",
-      email: "lucia@example.com",
-      feedback: "Ótima para aprender e colaborar.",
-      rating: 4,
-      created_at: new Date().toISOString()
-    }
-  ];
-  
-  res.json(feedbacks);
+app.get('/api/feedbacks', async (req, res, next) => {
+  try {
+    const pool = await getConnectionPool();
+    const result = await pool.request().query('SELECT * FROM feedbacks');
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Erro ao buscar feedbacks no banco:', err);
+    next(err);
+  }
 });
 
-app.post('/api/feedbacks', (req, res) => {
-  const { nome, email, feedback, rating } = req.body;
-  
-  if (!nome || !email || !feedback) {
-    return res.status(400).json({ error: 'Nome, email e feedback são obrigatórios' });
+app.post('/api/feedbacks', async (req, res, next) => {
+  try {
+    const { nome, email, feedback, rating } = req.body;
+    if (!nome || !email || !feedback) {
+      return res.status(400).json({ error: 'Nome, email e feedback são obrigatórios' });
+    }
+    const pool = await getConnectionPool();
+    const result = await pool.request()
+      .input('nome', dbSql.NVarChar(255), nome)
+      .input('email', dbSql.NVarChar(255), email)
+      .input('feedback', dbSql.NVarChar(dbSql.MAX), feedback)
+      .input('rating', dbSql.Int, Number.isFinite(rating) ? rating : 5)
+      .query(`INSERT INTO feedbacks (nome, email, feedback, rating, created_at)
+              OUTPUT INSERTED.*
+              VALUES (@nome, @email, @feedback, @rating, GETDATE())`);
+    res.status(201).json({ message: 'Feedback enviado com sucesso!', feedback: result.recordset[0] });
+  } catch (err) {
+    console.error('Erro ao inserir feedback no banco:', err);
+    next(err);
   }
-  
-  const novoFeedback = {
-    id: Date.now(),
-    nome,
-    email,
-    feedback,
-    rating: rating || 5,
-    created_at: new Date().toISOString()
-  };
-  
-  res.status(201).json({
-    message: 'Feedback enviado com sucesso!',
-    feedback: novoFeedback
-  });
 });
 
 // Rota de estatísticas (mock)
-app.get('/api/stats', (req, res) => {
-  res.json({
-    totalProjetos: mockData.projetos.length,
-    totalMentores: mockData.mentores.length,
-    totalCrafters: mockData.crafters.length,
-    projetosAtivos: mockData.projetos.filter(p => p.status === 'ativo').length,
-    timestamp: new Date().toISOString()
-  });
+app.get('/api/stats', async (req, res, next) => {
+  try {
+    const pool = await getConnectionPool();
+    const result = await pool.request().query(`
+      SELECT
+        (SELECT COUNT(*) FROM projetos) AS totalProjetos,
+        (SELECT COUNT(*) FROM mentores) AS totalMentores,
+        (SELECT COUNT(*) FROM crafters) AS totalCrafters,
+        (SELECT COUNT(*) FROM projetos WHERE status = 'ativo') AS projetosAtivos
+    `);
+    const row = result.recordset[0] || { totalProjetos: 0, totalMentores: 0, totalCrafters: 0, projetosAtivos: 0 };
+    res.json({ ...row, timestamp: new Date().toISOString() });
+  } catch (err) {
+    console.error('Erro ao buscar estatísticas no banco:', err);
+    next(err);
+  }
 });
 
 // --- Rotas de Aplicativos (mock) ---
