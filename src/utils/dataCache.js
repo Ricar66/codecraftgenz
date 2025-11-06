@@ -301,4 +301,7 @@ export class ProjectDataValidator {
 // Instância global do cache
 export const projectsCache = new DataCache(10 * 60 * 1000); // 10 minutos
 
+// Cache dedicado para Apps (lista do usuário, hub público, etc.)
+export const appsCache = new DataCache(5 * 60 * 1000); // 5 minutos
+
 export default DataCache;

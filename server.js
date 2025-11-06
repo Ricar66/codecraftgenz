@@ -7,7 +7,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import helmet from 'helmet';
-import MercadoPagoConfig, { Preference, Payment } from 'mercadopago';
+import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 
 import { getConnectionPool, dbSql } from './src/lib/db.js';
 
@@ -289,7 +289,7 @@ app.get('/api/projetos/:id', async (req, res, next) => {
 // Rota POST (Criar) - Lógica 4
 app.post('/api/projetos', authenticate, authorizeAdmin, async (req, res, next) => {
   // O formulário do admin envia 'titulo', 'descricao', 'preco', etc.
-  const { titulo, descricao, tecnologias, data_inicio, status, preco, progresso, thumb_url, visivel } = req.body;
+  const { titulo, descricao, tecnologias, data_inicio, status, preco, progresso, thumb_url } = req.body;
   
   if (!titulo) {
     return res.status(400).json({ error: 'Título é obrigatório' });
@@ -336,7 +336,7 @@ app.post('/api/projetos', authenticate, authorizeAdmin, async (req, res, next) =
 // Rota PUT (Atualizar) - Lógica 4
 app.put('/api/projetos/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   const { id } = req.params;
-  const { titulo, descricao, tecnologias, data_inicio, status, preco, progresso, thumb_url, visivel } = req.body;
+  const { titulo, descricao, tecnologias, data_inicio, status, preco, progresso, thumb_url } = req.body;
 
   if (!titulo) {
     return res.status(400).json({ error: 'Título é obrigatório' });

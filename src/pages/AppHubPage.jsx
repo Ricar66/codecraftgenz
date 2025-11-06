@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 
 import Navbar from '../components/Navbar/Navbar.jsx';
 import { getAllApps } from '../services/appsAPI.js';
+import { appsCache } from '../utils/dataCache.js';
 
 import styles from './AppHubPage.module.css';
 
@@ -17,17 +18,44 @@ const AppHubPage = () => {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
+  const [fromCache, setFromCache] = useState(false);
+  const [showCacheBadge, setShowCacheBadge] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   useEffect(() => {
     loadApps();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, sortBy, sortOrder]);
+
+  // Debounce para busca
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
 
   const loadApps = async () => {
     try {
       setLoading(true);
-      const json = await getAllApps({ page: 1, pageSize: 50 });
+      const cacheKey = appsCache.generateKey('publicApps', { page, pageSize, sortBy, sortOrder });
+      const cached = appsCache.get(cacheKey);
+      if (cached) {
+        setApps(cached);
+        setFromCache(true);
+        setShowCacheBadge(true);
+        setTimeout(() => setShowCacheBadge(false), 2000);
+        return;
+      }
+
+      const json = await getAllApps({ page, pageSize, sortBy, sortOrder });
       const list = Array.isArray(json?.data) ? json.data : (Array.isArray(json) ? json : []);
       setApps(list);
+      appsCache.set(cacheKey, list);
+      setFromCache(false);
+      setShowCacheBadge(false);
     } catch (err) {
       setError('Erro ao carregar aplicativos');
       console.error('Erro ao carregar apps:', err);
@@ -38,8 +66,9 @@ const AppHubPage = () => {
 
   const filteredApps = apps.filter(app => {
     const matchesFilter = filter === 'all' || app.category === filter;
-    const matchesSearch = app.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         app.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const term = (debouncedSearch || '').toLowerCase();
+    const matchesSearch = app.name.toLowerCase().includes(term) ||
+                         (app.description || '').toLowerCase().includes(term);
     return matchesFilter && matchesSearch;
   });
 
@@ -92,7 +121,7 @@ const AppHubPage = () => {
               type="text"
               placeholder="Buscar aplicativos..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
               className={styles.searchInput}
             />
             <div className={styles.searchIcon}>🔍</div>
@@ -100,7 +129,7 @@ const AppHubPage = () => {
         </div>
       </section>
 
-      {/* Filter Section */}
+      {/* Filter & Sort Section */}
       <section className={styles.filterSection}>
         <div className={styles.filterContainer}>
           <h3>Filtrar por Categoria</h3>
@@ -114,6 +143,36 @@ const AppHubPage = () => {
                 {category === 'all' ? 'Todos' : category}
               </button>
             ))}
+          </div>
+
+          <div className={styles.sortControls} style={{ marginTop: '1rem', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              Ordenar por
+              <select value={sortBy} onChange={(e) => { setPage(1); setSortBy(e.target.value); }} className={styles.filterButton} style={{ padding: '8px 12px' }}>
+                <option value="name">Nome</option>
+                <option value="price">Preço</option>
+                <option value="updatedAt">Atualização</option>
+              </select>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              Ordem
+              <select value={sortOrder} onChange={(e) => { setPage(1); setSortOrder(e.target.value); }} className={styles.filterButton} style={{ padding: '8px 12px' }}>
+                <option value="asc">Ascendente</option>
+                <option value="desc">Descendente</option>
+              </select>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              Página
+              <input type="number" min={1} value={page} onChange={(e) => setPage(Math.max(1, Number(e.target.value) || 1))} style={{ padding: '8px 12px', width: '80px' }} />
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              Itens por página
+              <select value={pageSize} onChange={(e) => { setPage(1); setPageSize(Number(e.target.value)); }} className={styles.filterButton} style={{ padding: '8px 12px' }}>
+                <option value={12}>12</option>
+                <option value={24}>24</option>
+                <option value={48}>48</option>
+              </select>
+            </label>
           </div>
         </div>
       </section>
@@ -129,7 +188,22 @@ const AppHubPage = () => {
           ) : (
             <>
               <div className={styles.resultsInfo}>
-                <p>{filteredApps.length} aplicativo(s) encontrado(s)</p>
+                <p>
+                  {filteredApps.length} aplicativo(s) encontrado(s)
+                  {showCacheBadge && (
+                    <span style={{
+                      marginLeft: 12,
+                      padding: '4px 8px',
+                      borderRadius: 999,
+                      background: 'rgba(0,228,242,0.15)',
+                      border: '1px solid rgba(0,228,242,0.45)',
+                      color: '#00E4F2',
+                      fontSize: 12
+                    }} title={fromCache ? 'Dados carregados do cache em memória' : ''}>
+                      carregado do cache
+                    </span>
+                  )}
+                </p>
               </div>
               
               <div className={styles.appsGrid}>
@@ -186,6 +260,31 @@ const AppHubPage = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Pagination Controls */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '24px' }}>
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className={styles.filterButton}
+                  style={{ opacity: page === 1 ? 0.5 : 1 }}
+                >
+                  Página anterior
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span>Página {page}</span>
+                  <span>•</span>
+                  <span>Itens carregados: {apps.length}</span>
+                </div>
+                <button
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={apps.length < pageSize}
+                  className={styles.filterButton}
+                  style={{ opacity: apps.length < pageSize ? 0.5 : 1 }}
+                >
+                  Próxima página
+                </button>
               </div>
             </>
           )}

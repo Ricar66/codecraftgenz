@@ -2,13 +2,23 @@
 import { apiRequest } from '../lib/apiConfig.js';
 
 // Lista apps do usuário autenticado
-export async function getMyApps({ page = 1, pageSize = 12 } = {}) {
-  return apiRequest(`/api/apps/mine?page=${page}&pageSize=${pageSize}`, { method: 'GET' });
+export async function getMyApps({ page = 1, pageSize = 12, limit, sortBy, sortOrder = 'desc' } = {}) {
+  const qp = new URLSearchParams();
+  qp.set('page', page);
+  qp.set('pageSize', pageSize ?? limit ?? 12);
+  if (sortBy) qp.set('sortBy', sortBy);
+  if (sortOrder) qp.set('sortOrder', sortOrder);
+  return apiRequest(`/api/apps/mine?${qp.toString()}`, { method: 'GET' });
 }
 
-// Lista todos apps (admin)
-export async function getAllApps({ page = 1, pageSize = 50 } = {}) {
-  return apiRequest(`/api/apps?page=${page}&pageSize=${pageSize}`, { method: 'GET' });
+// Lista todos apps (admin ou público conforme backend)
+export async function getAllApps({ page = 1, pageSize = 50, limit, sortBy, sortOrder = 'desc' } = {}) {
+  const qp = new URLSearchParams();
+  qp.set('page', page);
+  qp.set('pageSize', pageSize ?? limit ?? 50);
+  if (sortBy) qp.set('sortBy', sortBy);
+  if (sortOrder) qp.set('sortOrder', sortOrder);
+  return apiRequest(`/api/apps?${qp.toString()}`, { method: 'GET' });
 }
 
 // Detalhes de um app
