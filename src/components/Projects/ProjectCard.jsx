@@ -12,12 +12,11 @@ import styles from './ProjectCard.module.css';
  * @param {string} props.project.id - ID único do projeto
  * Aceita chaves tanto em inglês quanto em português (titulo, data_inicio, descricao, progresso).
  * @param {number} props.maxDescriptionLength - Limite de caracteres para descrição (padrão: 150)
- * @param {Function} props.onEnroll - Callback para inscrição no projeto
- */
+ *
+*/
 const ProjectCard = ({ 
   project, 
   maxDescriptionLength = 150,
-  onEnroll 
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -94,17 +93,7 @@ const ProjectCard = ({
   const mentorEmail = project?.mentorEmail || project?.mentor_email || project?.mentor?.email || null;
   const hasMentor = mentorName && mentorEmail;
 
-  /**
-   * Manipula a inscrição no projeto
-   */
-  const handleEnroll = () => {
-    if (onEnroll && typeof onEnroll === 'function') {
-      onEnroll(project);
-    } else {
-      // Fallback: mostrar alerta ou redirecionar para página de inscrição
-      alert(`Inscrição no projeto: ${title}\nEm breve você será redirecionado para o formulário de inscrição.`);
-    }
-  };
+  // Botão de inscrição removido por solicitação; função não utilizada
 
   return (
     <article className={styles.projectCard} role="article" aria-labelledby={`project-${project.id}-title`}>

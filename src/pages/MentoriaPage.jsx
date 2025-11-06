@@ -1,6 +1,7 @@
 // src/pages/MentoriaPage.jsx
 import React, { useEffect, useState } from 'react';
 
+import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
 import { API_BASE_URL } from '../lib/apiConfig';
 import { realtime } from '../lib/realtime';
@@ -97,7 +98,14 @@ export default function MentoriaPage() {
   }, []); // Sem dependências para evitar re-execução desnecessária
 
   return (
-    <div className="mentoria-page">
+    <div className="mentoria-page" style={{
+      backgroundImage: `url(${heroBackground})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundAttachment: 'fixed',
+      minHeight: '100vh'
+    }}>
       <Navbar />
 
       <section className="section-block">
@@ -146,11 +154,7 @@ export default function MentoriaPage() {
       </section>
 
       <style>{`
-        .mentoria-page {
-          min-height: 100vh;
-          width: 100%;
-          background-color: transparent;
-        }
+        .mentoria-page { min-height: 100vh; width: 100%; background: transparent; }
 
         .section-block { padding: var(--espaco-3xl) var(--espaco-xl); }
 
@@ -167,7 +171,7 @@ export default function MentoriaPage() {
         }
 
         .section-header { text-align: center; margin-bottom: var(--espaco-lg); }
-        .title { font-family: var(--fonte-titulos); font-size: clamp(2rem, 4vw, 3rem); color: var(--texto-branco); }
+        .title { font-family: var(--fonte-titulos); font-size: clamp(2.5rem, 8vw, 4rem); color: var(--texto-branco); }
         .subtitle { font-size: clamp(1.25rem, 2.5vw, 1.5rem); color: var(--texto-gelo); margin-top: var(--espaco-xs); }
         .lead { font-size: 1.05rem; color: var(--texto-gelo); margin-top: var(--espaco-sm); }
 
@@ -200,7 +204,7 @@ export default function MentoriaPage() {
           gap: var(--espaco-md);
           align-items: start; /* conteúdo começa no topo, permitindo descer com margem */
           background: rgba(255,255,255,0.06);
-          border: 1px solid rgba(255,255,255,0.16);
+          border: 1px solid rgba(255,255,255,0.18);
           border-radius: var(--raio-lg);
           padding: var(--espaco-md);
           box-shadow: 0 4px 18px rgba(0,0,0,0.22);
@@ -233,7 +237,7 @@ export default function MentoriaPage() {
         .contact { display: flex; flex-wrap: wrap; gap: var(--espaco-sm); margin-top: var(--espaco-xs); color: var(--texto-gelo); }
         .contact-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 6px 10px; max-width: 100%; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .mentor-card:hover .contact-item { border-color: #00E4F2; }
-        .bio { margin-top: var(--espaco-sm); color: var(--texto-gelo); line-height: 1.5; word-break: break-word; hyphens: auto; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+        .bio { margin-top: var(--espaco-sm); color: var(--texto-gelo); line-height: 1.5; word-break: break-word; hyphens: auto; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
 
         .section-footer { margin-top: 20px; }
         .helper-text { color: var(--texto-gelo); text-align: center; }

@@ -13,6 +13,7 @@ import heroBackground from './assets/hero-background.svg';
 import AppHubPage from './pages/AppHubPage.jsx';
 import AppPurchasePage from './pages/AppPurchasePage.jsx';
 import AppsPage from './pages/AppsPage.jsx';
+import CacheMaintenancePage from './pages/CacheMaintenancePage.jsx';
 import DesafiosPage from './pages/DesafiosPage.jsx';
 import FeedbacksPage from './pages/FeedbacksPage.jsx';
 import HomePage from './pages/HomePage/HomePage.jsx';
@@ -48,6 +49,7 @@ function App() {
         <Route path="/desafios" element={<DesafiosPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/aplicativos" element={<AppHubPage />} />
+        <Route path="/cache/clear" element={<CacheMaintenancePage />} />
         <Route path="/apps" element={
           <ProtectedRoute allowed={["admin","user","editor","viewer"]}>
             <AppsPage />
