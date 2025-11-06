@@ -20,7 +20,15 @@ export default function MentoriaPage() {
       // Normaliza campos vindos do endpoint (foto_url → photo)
       const normalized = list.map(m => ({
         ...m,
+        // normalização de nomes de campo banco -> UI
         photo: m.foto_url || m.photo || null,
+        name: m.nome || m.name || '',
+        phone: m.telefone || m.phone || '',
+        specialty: m.especialidade || m.specialty || '',
+        cargo: m.cargo || m.role || '',
+        bio: m.bio || m.descricao || '',
+        email: m.email || '',
+        visible: m.visible !== undefined ? !!m.visible : true,
       }));
       setMentors(normalized.filter(m => m.visible));
     } catch (error) {
@@ -57,7 +65,17 @@ export default function MentoriaPage() {
             if (!isMounted) return; // Evita setState se componente foi desmontado
             
             const list = Array.isArray(json?.data) ? json.data : [];
-            const normalized = list.map(m => ({ ...m, photo: m.foto_url || m.photo || null }));
+            const normalized = list.map(m => ({
+              ...m,
+              photo: m.foto_url || m.photo || null,
+              name: m.nome || m.name || '',
+              phone: m.telefone || m.phone || '',
+              specialty: m.especialidade || m.specialty || '',
+              cargo: m.cargo || m.role || '',
+              bio: m.bio || m.descricao || '',
+              email: m.email || '',
+              visible: m.visible !== undefined ? !!m.visible : true,
+            }));
             setMentors(normalized.filter(m => m.visible));
           })
           .catch(() => {

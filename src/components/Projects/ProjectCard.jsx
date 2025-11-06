@@ -181,16 +181,7 @@ const ProjectCard = ({
           </div>
         </div>
 
-        {/* Botão de Inscrição */}
-        <div className={styles.cardActions}>
-          <button 
-            className={styles.enrollButton}
-            onClick={handleEnroll}
-            aria-label={`Inscrever-se no projeto ${title}`}
-          >
-            Inscrever-se
-          </button>
-        </div>
+        {/* Ações do card – sem botão de inscrição por solicitação */}
       </div>
     </article>
   );

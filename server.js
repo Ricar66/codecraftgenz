@@ -792,10 +792,10 @@ app.post('/api/projetos/:id/mentor', authenticate, authorizeAdmin, async (req, r
 
     // 1) Tentar inserir na tabela de associação múltipla
     try {
-      await request.query('
+      await request.query(`
         INSERT INTO dbo.projetos_mentores (projeto_id, mentor_id)
         VALUES (@projeto_id, @mentor_id)
-      ');
+      `);
     } catch (e) {
       // Ignorar se já associado (chave única)
       if (!(e && e.number === 2627)) throw e;
@@ -970,11 +970,11 @@ const mockApps = [
   }
 ];
 const mockHistory = [];
-// Lista apps do usuário autenticado
-app.get('/api/apps/mine', authenticate, (req, res) => {
+// Lista apps do usuário (permite acesso sem autenticação no ambiente atual)
+app.get('/api/apps/mine', (req, res) => {
   const page = parseInt(req.query.page || '1', 10);
   const pageSize = parseInt(req.query.pageSize || '12', 10);
-  const userId = req.user?.id || 1;
+  const userId = (req.user && req.user.id) ? req.user.id : 2; // default usuário comum
   const list = mockApps.filter(a => a.ownerId === userId);
   const start = (page - 1) * pageSize;
   const paged = list.slice(start, start + pageSize);
@@ -1133,8 +1133,8 @@ app.post('/api/apps/:id/download', authenticate, (req, res) => {
   res.json({ success: true, download_url: url });
 });
 
-// Histórico de compras e downloads (mock)
-app.get('/api/apps/history', authenticate, (req, res) => {
+// Histórico de compras e downloads (mock, sem autenticação para usuário comum)
+app.get('/api/apps/history', (req, res) => {
   const page = parseInt(req.query.page || '1', 10);
   const pageSize = parseInt(req.query.pageSize || '20', 10);
   const start = (page - 1) * pageSize;
