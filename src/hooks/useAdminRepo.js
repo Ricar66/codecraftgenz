@@ -1,7 +1,7 @@
 // src/hooks/useAdminRepo.js
 import { useEffect, useState, useCallback } from 'react';
 
-import { apiConfig } from '../lib/apiConfig';
+import { apiConfig, apiRequest } from '../lib/apiConfig';
 import { realtime } from '../lib/realtime';
 import * as mentorAPI from '../services/mentorAPI';
 import * as rankingAPI from '../services/rankingAPI';
@@ -136,31 +136,23 @@ export function useProjects() {
 export const ProjectsRepo = {
   async create(project) {
     try {
-      // Mapear campos do frontend para API
+      // Mapear para campos pt-BR esperados pelo backend
       const apiProject = {
-        title: project.titulo || project.title,
+        titulo: project.titulo || project.title,
         owner: project.owner,
-        description: project.descricao || project.description,
-        startDate: project.data_inicio || project.startDate,
+        descricao: project.descricao || project.description,
+        data_inicio: project.data_inicio || project.startDate,
         status: project.status,
-        price: project.preco || project.price,
-        progress: project.progresso || project.progress,
-        visible: project.visivel !== undefined ? project.visivel : project.visible,
+        preco: project.preco || project.price,
+        progresso: project.progresso || project.progress,
         thumb_url: project.thumb_url,
-        tags: project.tags || []
+        tecnologias: project.tags || []
       };
 
-      const response = await fetch(`${apiConfig.baseURL}/api/projetos`, {
+      const data = await apiRequest(`/api/projetos`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(apiProject),
+        body: JSON.stringify(apiProject)
       });
-      
-      if (!response.ok) {
-        throw new Error(`Erro HTTP: ${response.status}`);
-      }
-      
-      const data = await response.json();
       realtime.publish('projects_changed', { projects: null });
       return { ok: true, project: data.project };
     } catch (err) {
@@ -170,31 +162,23 @@ export const ProjectsRepo = {
 
   async update(id, updates) {
     try {
-      // Mapear campos do frontend para API
+      // Mapear para campos pt-BR esperados pelo backend
       const apiUpdates = {
-        title: updates.titulo || updates.title,
+        titulo: updates.titulo || updates.title,
         owner: updates.owner,
-        description: updates.descricao || updates.description,
-        startDate: updates.data_inicio || updates.startDate,
+        descricao: updates.descricao || updates.description,
+        data_inicio: updates.data_inicio || updates.startDate,
         status: updates.status,
-        price: updates.preco || updates.price,
-        progress: updates.progresso || updates.progress,
-        visible: updates.visivel !== undefined ? updates.visivel : updates.visible,
+        preco: updates.preco || updates.price,
+        progresso: updates.progresso || updates.progress,
         thumb_url: updates.thumb_url,
-        tags: updates.tags || []
+        tecnologias: updates.tags || []
       };
 
-      const response = await fetch(`${apiConfig.baseURL}/api/projetos/${id}`, {
+      const data = await apiRequest(`/api/projetos/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(apiUpdates),
+        body: JSON.stringify(apiUpdates)
       });
-      
-      if (!response.ok) {
-        throw new Error(`Erro HTTP: ${response.status}`);
-      }
-      
-      const data = await response.json();
       realtime.publish('projects_changed', { projects: null });
       return { ok: true, project: data.project };
     } catch (err) {
@@ -204,16 +188,9 @@ export const ProjectsRepo = {
 
   async delete(id) {
     try {
-      const response = await fetch(`${apiConfig.baseURL}/api/projetos/${id}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+      const data = await apiRequest(`/api/projetos/${id}`, {
+        method: 'DELETE'
       });
-      
-      if (!response.ok) {
-        throw new Error(`Erro HTTP: ${response.status}`);
-      }
-      
-      const data = await response.json();
       realtime.publish('projects_changed', { projects: null });
       return { ok: true, project: data.project };
     } catch (err) {
@@ -221,59 +198,31 @@ export const ProjectsRepo = {
     }
   },
 
-  async toggleVisibility(id) {
-    try {
-      // A API de projetos já tem endpoint específico para visibilidade
-      const response = await fetch(`${apiConfig.baseURL}/api/projetos/${id}/visibilidade`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Erro HTTP: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      realtime.publish('projects_changed', { projects: null });
-      return { ok: true, project: data.project };
-    } catch (err) {
-      return { ok: false, error: err.message };
-    }
-  },
+  // Removido: visibilidade baseada em coluna não existente
 
   async upsert(project) {
     try {
       const isUpdate = !!project.id;
       
-      // Mapear campos do frontend para API
+      // Mapear para campos pt-BR esperados pelo backend
       const apiProject = {
-        title: project.titulo || project.title,
+        titulo: project.titulo || project.title,
         owner: project.owner,
-        description: project.descricao || project.description,
-        startDate: project.data_inicio || project.startDate,
+        descricao: project.descricao || project.description,
+        data_inicio: project.data_inicio || project.startDate,
         status: project.status,
-        price: project.preco || project.price,
-        progress: project.progresso || project.progress,
-        visible: project.visivel !== undefined ? project.visivel : project.visible,
+        preco: project.preco || project.price,
+        progresso: project.progresso || project.progress,
         thumb_url: project.thumb_url,
-        tags: project.tags || []
+        tecnologias: project.tags || []
       };
 
-      const url = isUpdate ? `${apiConfig.baseURL}/api/projetos/${project.id}` : `${apiConfig.baseURL}/api/projetos`;
+      const endpoint = isUpdate ? `/api/projetos/${project.id}` : `/api/projetos`;
       const method = isUpdate ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
+      const data = await apiRequest(endpoint, {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(apiProject),
+        body: JSON.stringify(apiProject)
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
-      }
-
-      const data = await response.json();
       realtime.publish('projects_changed', { projects: null });
       return { ok: true, project: data.project };
     } catch (err) {
@@ -281,26 +230,7 @@ export const ProjectsRepo = {
     }
   },
 
-  async publish(id, visible) {
-    try {
-      const response = await fetch(`${apiConfig.baseURL}/api/projetos/${id}/visibilidade`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ visivel: !!visible }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
-      }
-
-      const data = await response.json();
-      realtime.publish('projects_changed', { projects: null });
-      return { ok: true, project: data.project };
-    } catch (err) {
-      return { ok: false, error: err.message };
-    }
-  },
+  // Removido: publish baseado em coluna de visibilidade
 };
 
 // Ranking

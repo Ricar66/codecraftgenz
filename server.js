@@ -118,18 +118,13 @@ app.post('/api/auth/login', (req, res) => {
 // Função auxiliar para Lógica 4
 // Sincroniza um projeto com a tabela de finanças
 async function syncProjectToFinance(projectId, projeto) {
-  if (!projeto.preco || projeto.preco <= 0) {
-    return; // Não faz nada se o projeto não tiver preço
-  }
-
   const pool = await getConnectionPool();
   const financeRecord = {
     item: `Projeto: ${projeto.titulo || projeto.nome}`,
-    valor: Number(projeto.preco),
+    valor: Number(projeto.preco || 0),
     status: (projeto.status === 'finalizado' || projeto.progresso === 100) ? 'paid' : 'pending',
     type: 'project',
     project_id: projectId,
-    progress: Number(projeto.progresso || 0),
     date: projeto.data_inicio || new Date().toISOString()
   };
 
@@ -146,9 +141,8 @@ async function syncProjectToFinance(projectId, projeto) {
       .input('item', dbSql.NVarChar, financeRecord.item)
       .input('valor', dbSql.Decimal(10, 2), financeRecord.valor)
       .input('status', dbSql.NVarChar, financeRecord.status)
-      .input('progress', dbSql.Int, financeRecord.progress)
       .query(`UPDATE dbo.financas 
-              SET item = @item, valor = @valor, status = @status, progress = @progress, updated_at = SYSUTCDATETIME()
+              SET item = @item, valor = @valor, status = @status, updated_at = SYSUTCDATETIME()
               WHERE id = @id`);
     console.log(`[Finanças] Registro ${existingId} atualizado para Projeto ${projectId}`);
   } else {
@@ -159,10 +153,9 @@ async function syncProjectToFinance(projectId, projeto) {
       .input('status', dbSql.NVarChar, financeRecord.status)
       .input('type', dbSql.NVarChar, financeRecord.type)
       .input('project_id', dbSql.Int, financeRecord.project_id)
-      .input('progress', dbSql.Int, financeRecord.progress)
       .input('date', dbSql.DateTime2, new Date(financeRecord.date))
-      .query(`INSERT INTO dbo.financas (item, valor, status, type, project_id, progress, date)
-              VALUES (@item, @valor, @status, @type, @project_id, @progress, @date)`);
+      .query(`INSERT INTO dbo.financas (item, valor, status, type, project_id, date)
+              VALUES (@item, @valor, @status, @type, @project_id, @date)`);
     console.log(`[Finanças] Novo registro criado para Projeto ${projectId}`);
   }
 }
@@ -194,10 +187,10 @@ app.get('/api/projetos', async (req, res, next) => {
        // 'visivel=true' é usado pela página pública (ProjectsPage)
       if (visivel === 'true') {
         // Listagem pública: considerar projetos 'ativo' e 'finalizado'
-        whereClauses.push("status IN ('ativo','finalizado')");
+        whereClauses.push("p.status IN ('ativo','finalizado')");
       } else {
         // Filtro padrão (sem depender de coluna 'visible')
-        whereClauses.push("status <> 'arquivado'");
+        whereClauses.push("p.status <> 'arquivado'");
       }
     }
     // Se 'all=1', whereClauses fica vazio, buscando todos.
@@ -205,16 +198,30 @@ app.get('/api/projetos', async (req, res, next) => {
     const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
     // Contagem
-    const countQuery = `SELECT COUNT(*) as total FROM dbo.projetos ${whereSql}`;
+    const countQuery = `SELECT COUNT(*) as total FROM dbo.projetos p ${whereSql}`;
     const totalResult = await request.query(countQuery);
     const total = totalResult.recordset[0].total;
     const totalPages = Math.ceil(total / limitNum);
 
     // Dados Paginados
     const dataQuery = `
-      SELECT * FROM dbo.projetos
+      SELECT 
+        p.id,
+        p.titulo,
+        p.nome,
+        p.descricao,
+        p.status,
+        p.tecnologias,
+        p.data_inicio,
+        p.thumb_url,
+        p.mentor_id,
+        p.created_at,
+        p.updated_at,
+        p.preco,
+        COALESCE(p.progresso, 0) AS progresso
+      FROM dbo.projetos p
       ${whereSql}
-      ORDER BY ${sortColumn} ${sortDirection}
+      ORDER BY p.${sortColumn} ${sortDirection}
       OFFSET @offset ROWS
       FETCH NEXT @limit ROWS ONLY
     `;
@@ -250,7 +257,24 @@ app.get('/api/projetos/:id', async (req, res, next) => {
     const pool = await getConnectionPool();
     const result = await pool.request()
       .input('id', dbSql.Int, id)
-      .query('SELECT * FROM dbo.projetos WHERE id = @id');
+      .query(`
+        SELECT 
+          p.id,
+          p.titulo,
+          p.nome,
+          p.descricao,
+          p.status,
+          p.tecnologias,
+          p.data_inicio,
+          p.thumb_url,
+          p.mentor_id,
+          p.created_at,
+          p.updated_at,
+          p.preco,
+          COALESCE(p.progresso, 0) AS progresso
+        FROM dbo.projetos p
+        WHERE p.id = @id
+      `);
       
     if (result.recordset.length === 0) {
       return res.status(404).json({ error: 'Projeto não encontrado' });
@@ -276,8 +300,8 @@ app.post('/api/projetos', authenticate, authorizeAdmin, async (req, res, next) =
   try {
     const pool = await getConnectionPool();
     const query = `
-      INSERT INTO dbo.projetos (titulo, nome, descricao, tecnologias, status, data_inicio, preco, progresso, thumb_url, mentor_id)
-      OUTPUT Inserted.* VALUES (@titulo, @nome, @descricao, @tecnologias, @status, @data_inicio, @preco, @progresso, @thumb_url, @mentor_id)
+      INSERT INTO dbo.projetos (titulo, nome, descricao, tecnologias, status, data_inicio, thumb_url, mentor_id, progresso)
+      OUTPUT Inserted.* VALUES (@titulo, @nome, @descricao, @tecnologias, @status, @data_inicio, @thumb_url, @mentor_id, @progresso)
     `;
 
     const result = await pool.request()
@@ -287,13 +311,15 @@ app.post('/api/projetos', authenticate, authorizeAdmin, async (req, res, next) =
       .input('tecnologias', dbSql.NVarChar, tecnologiasString)
       .input('status', dbSql.NVarChar, status || 'rascunho')
       .input('data_inicio', dbSql.DateTime2, data_inicio ? new Date(data_inicio) : null)
-      .input('preco', dbSql.Decimal(10, 2), Number(preco || 0))
-      .input('progresso', dbSql.Int, Number(progresso || 0))
       .input('thumb_url', dbSql.NVarChar, thumb_url || null)
       .input('mentor_id', dbSql.Int, null) // 'owner' não é mentor_id, admin associa depois
+      .input('progresso', dbSql.Int, Number(progresso || 0))
       .query(query);
 
     const novoProjeto = result.recordset[0];
+    // Propagar valores recebidos para sincronização financeira
+    novoProjeto.preco = Number(preco || 0);
+    novoProjeto.progresso = Number(progresso || 0);
     
     // Lógica 4: Sincronizar com finanças
     await syncProjectToFinance(novoProjeto.id, novoProjeto);
@@ -327,9 +353,8 @@ app.put('/api/projetos/:id', authenticate, authorizeAdmin, async (req, res, next
         tecnologias = @tecnologias,
         status = @status,
         data_inicio = @data_inicio,
-        preco = @preco,
-        progresso = @progresso,
         thumb_url = @thumb_url,
+        progresso = @progresso,
         updated_at = SYSUTCDATETIME()
       OUTPUT Inserted.*
       WHERE id = @id
@@ -343,9 +368,8 @@ app.put('/api/projetos/:id', authenticate, authorizeAdmin, async (req, res, next
       .input('tecnologias', dbSql.NVarChar, tecnologiasString)
       .input('status', dbSql.NVarChar, status)
       .input('data_inicio', dbSql.DateTime2, data_inicio ? new Date(data_inicio) : null)
-      .input('preco', dbSql.Decimal(10, 2), Number(preco || 0))
-      .input('progresso', dbSql.Int, Number(progresso || 0))
       .input('thumb_url', dbSql.NVarChar, thumb_url || null)
+      .input('progresso', dbSql.Int, Number(progresso || 0))
       .query(query);
 
     if (result.recordset.length === 0) {
@@ -353,6 +377,9 @@ app.put('/api/projetos/:id', authenticate, authorizeAdmin, async (req, res, next
     }
     
     const projetoAtualizado = result.recordset[0];
+    // Propagar valores recebidos para sincronização financeira
+    projetoAtualizado.preco = Number(preco || 0);
+    projetoAtualizado.progresso = Number(progresso || 0);
 
     // Lógica 4: Sincronizar com finanças
     await syncProjectToFinance(projetoAtualizado.id, projetoAtualizado);
@@ -360,6 +387,61 @@ app.put('/api/projetos/:id', authenticate, authorizeAdmin, async (req, res, next
     res.json({ success: true, project: projetoAtualizado });
   } catch (err) {
     console.error(`Erro ao ATUALIZAR projeto ${id}:`, err);
+    next(err);
+  }
+});
+
+// Rota DELETE (Excluir) - remove registros financeiros relacionados e o projeto
+app.delete('/api/projetos/:id', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'ID do projeto inválido' });
+    }
+
+    const pool = await getConnectionPool();
+
+    // Remove registros de finanças associados ao projeto
+    await pool.request()
+      .input('project_id', dbSql.Int, id)
+      .query(`DELETE FROM dbo.financas WHERE project_id = @project_id`);
+
+    // Remove o projeto
+    const delResult = await pool.request()
+      .input('id', dbSql.Int, id)
+      .query(`DELETE FROM dbo.projetos WHERE id = @id`);
+
+    // delResult.rowsAffected é um array com contagem por operação
+    const affected = Array.isArray(delResult.rowsAffected) ? delResult.rowsAffected.reduce((a,b)=>a+b,0) : (delResult.rowsAffected || 0);
+    if (!affected) {
+      return res.status(404).json({ error: 'Projeto não encontrado para exclusão' });
+    }
+
+    return res.json({ success: true, removed: id });
+  } catch (err) {
+    console.error('Erro ao EXCLUIR projeto:', err);
+    next(err);
+  }
+});
+
+// Endpoint auxiliar: verificar tipo da coluna "progresso" em dbo.projetos
+app.get('/api/projetos/column/progresso', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const pool = await getConnectionPool();
+    const result = await pool.request().query(`
+      SELECT DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'projetos' AND COLUMN_NAME = 'progresso'
+    `);
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ success: false, message: 'Coluna progresso não encontrada em dbo.projetos' });
+    }
+
+    const info = result.recordset[0];
+    return res.json({ success: true, column: { name: 'progresso', ...info } });
+  } catch (err) {
+    console.error('Erro ao consultar coluna progresso:', err);
     next(err);
   }
 });
@@ -697,7 +779,7 @@ app.get('/api/dashboard/resumo', async (req, res, next) => {
         (SELECT COUNT(*) FROM dbo.projetos WHERE status = 'ongoing' OR status = 'ativo') as projetos_ativos,
         (SELECT COUNT(*) FROM dbo.projetos WHERE status = 'finalizado' OR status = 'concluido') as projetos_finalizados,
         (SELECT COUNT(*) FROM dbo.projetos WHERE status = 'rascunho' OR status = 'desenvolvimento') as projetos_rascunho,
-        (SELECT AVG(progresso) FROM dbo.projetos WHERE status = 'ongoing' OR status = 'ativo') as media_progresso,
+        (SELECT AVG(CAST(progresso AS FLOAT)) FROM dbo.projetos WHERE status = 'ongoing' OR status = 'ativo') as media_progresso,
         (SELECT ISNULL(SUM(valor), 0) FROM dbo.financas WHERE status = 'paid') as receita_paga,
         (SELECT ISNULL(SUM(valor), 0) FROM dbo.financas WHERE status = 'pending') as receita_pendente,
         (SELECT ISNULL(SUM(valor), 0) FROM dbo.financas WHERE status = 'discount') as descontos
