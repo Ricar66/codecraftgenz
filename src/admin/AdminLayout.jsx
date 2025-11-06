@@ -1196,7 +1196,7 @@ export function Projetos() {
           <td>
             <div className="btn-group">
               <button className="btn btn-secondary" onClick={()=>setForm({ id:p.id, titulo:p.title||p.titulo||'', owner:p.owner||'', descricao:p.description||p.descricao||'', data_inicio:p.startDate||p.data_inicio||'', status:p.status||'rascunho', preco:p.price??0, progresso:p.progress??0, thumb_url:p.thumb_url||'', tags:p.tags||[] })}>✏️</button>
-              <button className="btn btn-danger" onClick={async()=>{ if(!window.confirm('Arquivar este projeto?')) return; await apiRequest(`/api/projetos/${p.id}`, { method:'DELETE' }); refresh(); }}>🗑️</button>
+              <button className="btn btn-danger" onClick={async()=>{ if(!window.confirm('Deletar este projeto?')) return; await apiRequest(`/api/projetos/${p.id}`, { method:'DELETE' }); refresh(); }}>🗑️</button>
             </div>
           </td>
         </tr>
@@ -1220,7 +1220,7 @@ export function Projetos() {
             <option value="rascunho">📝 Rascunho</option>
             <option value="ongoing">🔄 Andamento</option>
             <option value="finalizado">✅ Finalizado</option>
-            <option value="arquivado">📦 Arquivado</option>
+            {/* Removido status de arquivado para promover deleção definitiva */}
           </select>
           <input aria-label="Preço" placeholder="Preço (R$)" type="number" value={form.preco} onChange={e=>setForm({...form,preco:Number(e.target.value)})} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
