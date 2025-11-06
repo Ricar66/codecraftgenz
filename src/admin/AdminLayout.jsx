@@ -1089,40 +1089,12 @@ export function Ranking() {
 
 export function Projetos() {
   const { data: list, loading, error, refresh } = useProjects();
-  const [form, setForm] = React.useState({ titulo:'', owner:'', descricao:'', data_inicio:'', status:'rascunho', preco:0, progresso:0, visivel:false, thumb_url:'', tags:[] });
+  const [form, setForm] = React.useState({ titulo:'', owner:'', descricao:'', data_inicio:'', status:'rascunho', preco:0, progresso:0, thumb_url:'', tags:[] });
   
   const onSave = async () => { 
     try {
       const savedProject = await ProjectsRepo.upsert(form);
-      
-      // Se o projeto tem preço, criar/atualizar registro financeiro automaticamente
-      if (form.preco > 0) {
-        const financeData = {
-          item: `Projeto: ${form.titulo}`,
-          valor: Number(form.preco),
-          status: form.status === 'finalizado' ? 'paid' : 'pending',
-          type: 'project',
-          project_id: savedProject.id || form.id,
-          progress: Number(form.progresso),
-          date: new Date().toISOString()
-        };
-        
-        try {
-          // Verificar se já existe registro financeiro para este projeto
-          const financeResponse = await apiRequest(`/api/financas?project_id=${savedProject.id || form.id}`, { method: 'GET' });
-          
-          if (financeResponse.success && financeResponse.data.length > 0) {
-            // Atualizar registro existente
-            const existingRecord = financeResponse.data[0];
-            await apiRequest(`/api/financas/${existingRecord.id}`, { method: 'PUT', body: JSON.stringify(financeData) });
-          } else {
-            // Criar novo registro
-            await apiRequest('/api/financas', { method: 'POST', body: JSON.stringify(financeData) });
-          }
-        } catch (financeError) {
-          console.warn('Erro ao sincronizar com finanças:', financeError);
-        }
-      }
+
       
       // Cria/atualiza card de aplicativo automaticamente quando projeto finalizado
       try {
@@ -1169,8 +1141,8 @@ export function Projetos() {
         </div>
         <button onClick={()=>{
           // Gera CSV dos projetos atuais
-          const headers = 'id,title,status,price,visible,startDate\n';
-          const rows = filtered.map(p => `${p.id},"${p.title}",${p.status},${p.price || 0},${p.visible},${p.startDate || ''}`).join('\n');
+          const headers = 'id,title,status,price,startDate,progress\n';
+          const rows = filtered.map(p => `${p.id},"${p.title}",${p.status},${p.price || 0},${p.startDate || ''},${p.progress ?? p.progresso ?? 0}`).join('\n');
           const csv = headers + rows;
           const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
           const url = URL.createObjectURL(blob);
@@ -1190,7 +1162,7 @@ export function Projetos() {
       {loading && <p>🔄 Carregando...</p>}
       {error && <p role="alert" style={{ color: '#FF6B6B' }}>❌ {error}</p>}
       
-      <div className="table"><table><thead><tr><th>Título</th><th>Owner</th><th>Status</th><th>Preço</th><th>Progresso</th><th>📝</th><th>Visível</th><th>Ações</th></tr></thead><tbody>{pageItems.length===0 ? (<tr><td colSpan="8">📭 Nenhum projeto</td></tr>) : pageItems.map(p=> (
+      <div className="table"><table><thead><tr><th>Título</th><th>Owner</th><th>Status</th><th>Preço</th><th>Progresso</th><th>📝</th><th>Ações</th></tr></thead><tbody>{pageItems.length===0 ? (<tr><td colSpan="7">📭 Nenhum projeto</td></tr>) : pageItems.map(p=> (
         <tr key={p.id}>
           <td style={{ fontWeight: 'bold' }}>{p.title || p.titulo}</td>
           <td>{p.owner}</td>
@@ -1221,11 +1193,9 @@ export function Projetos() {
             </div>
           </td>
           <td title={(p.description || p.descricao || '').slice(0, 200)}>{String(p.description || p.descricao || '').slice(0, 80) || '—'}</td>
-          <td>{String(p.visible ?? p.visivel) === 'true' ? '✅' : '❌'}</td>
           <td>
             <div className="btn-group">
-              <button className="btn btn-secondary" onClick={()=>setForm({ id:p.id, titulo:p.title||p.titulo||'', owner:p.owner||'', descricao:p.description||p.descricao||'', data_inicio:p.startDate||p.data_inicio||'', status:p.status||'rascunho', preco:p.price??0, progresso:p.progress??0, visivel:p.visible??false, thumb_url:p.thumb_url||'', tags:p.tags||[] })}>✏️</button>
-              <button className="btn btn-outline" onClick={()=>ProjectsRepo.publish(p.id, !(p.visible ?? p.visivel))}>{(p.visible ?? p.visivel) ? '👁️‍🗨️' : '👁️'}</button>
+              <button className="btn btn-secondary" onClick={()=>setForm({ id:p.id, titulo:p.title||p.titulo||'', owner:p.owner||'', descricao:p.description||p.descricao||'', data_inicio:p.startDate||p.data_inicio||'', status:p.status||'rascunho', preco:p.price??0, progresso:p.progress??0, thumb_url:p.thumb_url||'', tags:p.tags||[] })}>✏️</button>
               <button className="btn btn-danger" onClick={async()=>{ if(!window.confirm('Arquivar este projeto?')) return; await apiRequest(`/api/projetos/${p.id}`, { method:'DELETE' }); refresh(); }}>🗑️</button>
             </div>
           </td>
@@ -1271,16 +1241,13 @@ export function Projetos() {
         />
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input type="checkbox" checked={form.visivel} onChange={e=>setForm({...form,visivel:e.target.checked})} /> 
-            <span>👁️ Visível publicamente</span>
-          </label>
+          <span style={{ fontSize: '0.9em', color: '#666' }}>Dica: Controle a visibilidade usando o campo de status (rascunho/ongoing/finalizado).</span>
           <div className="btn-group">
             <button className="btn btn-primary" onClick={onSave}>
               {form.id ? '💾 Atualizar' : '➕ Criar'} Projeto
             </button>
             {form.id && (
-              <button className="btn btn-outline" onClick={() => setForm({ titulo:'', owner:'', descricao:'', data_inicio:'', status:'rascunho', preco:0, progresso:0, visivel:false, thumb_url:'', tags:[] })}>
+              <button className="btn btn-outline" onClick={() => setForm({ titulo:'', owner:'', descricao:'', data_inicio:'', status:'rascunho', preco:0, progresso:0, thumb_url:'', tags:[] })}>
                 ❌ Cancelar
               </button>
             )}
