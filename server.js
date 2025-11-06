@@ -571,6 +571,45 @@ app.get('/api/crafters', async (req, res, next) => {
   }
 });
 
+// Criar novo Crafter
+app.post('/api/crafters', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const { nome, email, avatar_url, pontos, nivel, ativo } = req.body;
+
+    if (!nome) {
+      return res.status(400).json({ error: 'O campo "nome" é obrigatório.' });
+    }
+
+    const pool = await getConnectionPool();
+    const request = pool.request()
+      .input('nome', dbSql.NVarChar, nome)
+      .input('email', dbSql.NVarChar, email || null)
+      .input('avatar_url', dbSql.NVarChar, avatar_url || null)
+      .input('pontos', dbSql.Int, typeof pontos === 'number' ? pontos : 0)
+      .input('nivel', dbSql.NVarChar, nivel || null)
+      .input('ativo', dbSql.Bit, typeof ativo === 'boolean' ? (ativo ? 1 : 0) : 1);
+
+    const insertQuery = `
+      INSERT INTO dbo.crafters (nome, email, avatar_url, pontos, nivel, ativo)
+      OUTPUT Inserted.id, Inserted.nome, Inserted.email, Inserted.avatar_url, Inserted.pontos, Inserted.nivel, Inserted.ativo
+      VALUES (@nome, @email, @avatar_url, @pontos, @nivel, @ativo)
+    `;
+
+    const result = await request.query(insertQuery);
+    const row = result.recordset[0] || {};
+    const response = { ...row, points: row.pontos };
+    return res.status(201).json({ success: true, data: response });
+  } catch (err) {
+    // 2627: violation of UNIQUE KEY constraint (e.g., email)
+    if (err && (err.number === 2627 || err.code === 'EREQUEST')) {
+      console.error('Violação de chave única ao criar crafter:', err);
+      return res.status(409).json({ error: 'Email já cadastrado para um crafter.' });
+    }
+    console.error('Erro ao criar crafter:', err);
+    next(err);
+  }
+});
+
 // --- Rota de Ranking (Lógica 3) ---
 app.get('/api/ranking', async (req, res, next) => {
   // RankingPage precisa de crafters e top3
@@ -688,6 +727,89 @@ app.post('/api/equipes', authenticate, authorizeAdmin, async (req, res, next) =>
     if (err.number === 2627) { // Erro de violação de chave única
       return res.status(409).json({ error: 'Este crafter já está nessa equipe/projeto.' });
     }
+    next(err);
+  }
+});
+
+// Remover um membro (crafter) da equipe
+app.delete('/api/equipes/:id', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const pool = await getConnectionPool();
+    const del = await pool.request()
+      .input('id', dbSql.Int, id)
+      .query('DELETE FROM dbo.equipes WHERE id = @id');
+
+    // del.rowsAffected[0] indica número de linhas afetadas
+    if (!del.rowsAffected || del.rowsAffected[0] === 0) {
+      return res.status(404).json({ error: 'Equipe não encontrada' });
+    }
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Erro ao remover crafter da equipe:', err);
+    next(err);
+  }
+});
+
+// Alterar status de inscrição de um membro da equipe
+app.put('/api/equipes/:id/status', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status_inscricao } = req.body;
+    if (!status_inscricao) {
+      return res.status(400).json({ error: 'status_inscricao é obrigatório' });
+    }
+
+    const pool = await getConnectionPool();
+    const upd = await pool.request()
+      .input('id', dbSql.Int, id)
+      .input('status', dbSql.NVarChar, status_inscricao)
+      .query('UPDATE dbo.equipes SET status_inscricao = @status WHERE id = @id');
+
+    if (!upd.rowsAffected || upd.rowsAffected[0] === 0) {
+      return res.status(404).json({ error: 'Equipe não encontrada' });
+    }
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Erro ao alterar status da equipe:', err);
+    next(err);
+  }
+});
+
+// Associar mentor a projeto
+app.post('/api/projetos/:id/mentor', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params; // projeto_id
+    const { mentor_id } = req.body;
+    if (!mentor_id) {
+      return res.status(400).json({ error: 'mentor_id é obrigatório' });
+    }
+
+    const pool = await getConnectionPool();
+    const request = pool.request()
+      .input('projeto_id', dbSql.Int, id)
+      .input('mentor_id', dbSql.Int, mentor_id);
+
+    // 1) Tentar inserir na tabela de associação múltipla
+    try {
+      await request.query('
+        INSERT INTO dbo.projetos_mentores (projeto_id, mentor_id)
+        VALUES (@projeto_id, @mentor_id)
+      ');
+    } catch (e) {
+      // Ignorar se já associado (chave única)
+      if (!(e && e.number === 2627)) throw e;
+    }
+
+    // 2) Atualizar referência direta em dbo.projetos (opcional, para conveniência)
+    await pool.request()
+      .input('projeto_id', dbSql.Int, id)
+      .input('mentor_id', dbSql.Int, mentor_id)
+      .query('UPDATE dbo.projetos SET mentor_id = @mentor_id, updated_at = SYSUTCDATETIME() WHERE id = @projeto_id');
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Erro ao associar mentor ao projeto:', err);
     next(err);
   }
 });
