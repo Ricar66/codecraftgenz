@@ -300,8 +300,8 @@ app.post('/api/projetos', authenticate, authorizeAdmin, async (req, res, next) =
   try {
     const pool = await getConnectionPool();
     const query = `
-      INSERT INTO dbo.projetos (titulo, nome, descricao, tecnologias, status, data_inicio, thumb_url, mentor_id, progresso)
-      OUTPUT Inserted.* VALUES (@titulo, @nome, @descricao, @tecnologias, @status, @data_inicio, @thumb_url, @mentor_id, @progresso)
+      INSERT INTO dbo.projetos (titulo, nome, descricao, tecnologias, status, data_inicio, thumb_url, mentor_id, progresso, preco)
+      OUTPUT Inserted.* VALUES (@titulo, @nome, @descricao, @tecnologias, @status, @data_inicio, @thumb_url, @mentor_id, @progresso, @preco)
     `;
 
     const result = await pool.request()
@@ -314,6 +314,7 @@ app.post('/api/projetos', authenticate, authorizeAdmin, async (req, res, next) =
       .input('thumb_url', dbSql.NVarChar, thumb_url || null)
       .input('mentor_id', dbSql.Int, null) // 'owner' não é mentor_id, admin associa depois
       .input('progresso', dbSql.Int, Number(progresso || 0))
+      .input('preco', dbSql.Decimal(10, 2), Number(preco || 0))
       .query(query);
 
     const novoProjeto = result.recordset[0];
@@ -355,6 +356,7 @@ app.put('/api/projetos/:id', authenticate, authorizeAdmin, async (req, res, next
         data_inicio = @data_inicio,
         thumb_url = @thumb_url,
         progresso = @progresso,
+        preco = @preco,
         updated_at = SYSUTCDATETIME()
       OUTPUT Inserted.*
       WHERE id = @id
@@ -370,6 +372,7 @@ app.put('/api/projetos/:id', authenticate, authorizeAdmin, async (req, res, next
       .input('data_inicio', dbSql.DateTime2, data_inicio ? new Date(data_inicio) : null)
       .input('thumb_url', dbSql.NVarChar, thumb_url || null)
       .input('progresso', dbSql.Int, Number(progresso || 0))
+      .input('preco', dbSql.Decimal(10, 2), Number(preco || 0))
       .query(query);
 
     if (result.recordset.length === 0) {
