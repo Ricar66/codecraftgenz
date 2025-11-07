@@ -1,6 +1,7 @@
 // src/pages/AppHubPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import AppCard from '../components/AppCard/AppCard.jsx';
 
 import Navbar from '../components/Navbar/Navbar.jsx';
 import { getAllApps } from '../services/appsAPI.js';
@@ -208,59 +209,25 @@ const AppHubPage = () => {
               
               <div className={styles.appsGrid}>
                 {filteredApps.map(app => (
-                  <div key={app.id} className={styles.appCard}>
-                    <div className={styles.appImage}>
-                      {app.image ? (
-                        <img src={app.image} alt={app.name} />
-                      ) : (
-                        <div className={styles.appPlaceholder}>
-                          📱
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className={styles.appContent}>
-                      <h3 className={styles.appName}>{app.name}</h3>
-                      <p className={styles.appDescription}>
-                        {app.description || 'Sem descrição disponível'}
-                      </p>
-                      
-                      <div className={styles.appMeta}>
-                        {app.category && (
-                          <span className={styles.appCategory}>
-                            {app.category}
-                          </span>
-                        )}
-                        {app.price && (
-                          <span className={styles.appPrice}>
-                            R$ {app.price}
-                          </span>
-                        )}
-                      </div>
-                      
-                      <div className={styles.appActions}>
-                        <Link 
-                          to={`/apps/${app.id}/compra`}
-                          className={styles.buyButton}
-                        >
-                          Comprar Agora
-                        </Link>
-                        
-                        {app.demoUrl && (
-                          <a 
-                            href={app.demoUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className={styles.demoButton}
-                          >
-                            Ver Demo
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <AppCard key={app.id} app={app} mode="public" />
                 ))}
               </div>
+              
+              {/* Conteúdos adicionais (ex.: demo) podem ficar abaixo dos cards, se necessário */}
+              {/*
+                {filteredApps.map(app => (
+                  app.demoUrl && (
+                    <a 
+                          href={app.demoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.demoButton}
+                        >
+                          Ver Demo
+                      </a>
+                    )
+                ))}
+              */}
 
               {/* Pagination Controls */}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '24px' }}>
