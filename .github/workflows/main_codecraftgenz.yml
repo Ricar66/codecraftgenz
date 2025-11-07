@@ -30,6 +30,16 @@ jobs:
           VITE_APP_ENV=production
           VITE_DEBUG=false
           VITE_WP_API_URL=https://cms.codecraftgenz.com.br/wp-json
+          # Back-end runtime
+          ADMIN_RESET_TOKEN=${{ secrets.ADMIN_RESET_TOKEN }}
+          # Mercado Pago retorno (não secreto)
+          MERCADO_PAGO_SUCCESS_URL=https://codecraftgenz.azurewebsites.net/apps/:id/compra
+          MERCADO_PAGO_FAILURE_URL=https://codecraftgenz.azurewebsites.net/apps/:id/compra
+          MERCADO_PAGO_PENDING_URL=https://codecraftgenz.azurewebsites.net/apps/:id/compra
+          MERCADO_PAGO_WEBHOOK_URL=https://codecraftgenz.azurewebsites.net/api/apps/webhook
+          # Credenciais (usadas pelo server; mantidas em Secrets)
+          MERCADO_PAGO_ACCESS_TOKEN=${{ secrets.MERCADO_PAGO_ACCESS_TOKEN }}
+          MERCADO_PAGO_PUBLIC_KEY=${{ secrets.MERCADO_PAGO_PUBLIC_KEY }}
           EOF
           
           # Exibe conteúdo (apenas para debug no log)
