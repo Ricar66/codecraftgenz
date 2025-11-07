@@ -2,8 +2,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const AppCard = ({ app, onDownload }) => {
-  const { id, name, mainFeature, thumbnail, price, status, version, size } = app;
+const AppCard = ({ app, onDownload, mode = 'owned' }) => {
+  const { id, name, mainFeature, thumbnail, image, price, status, version, size } = app;
   const finalized = status === 'finalizado' || status === 'available' || status === 'ready';
   const displayPrice = price ? `R$ ${Number(price).toLocaleString('pt-BR')}` : 'Gratuito';
   const displayVersion = version ? `v${version}` : 'v1.0';
@@ -12,8 +12,8 @@ const AppCard = ({ app, onDownload }) => {
   return (
     <article className="app-card" aria-label={`Aplicativo ${name}`}>
       <div className="app-media">
-        {thumbnail ? (
-          <img src={thumbnail} alt={name} className="app-thumb" />
+        {(thumbnail || image) ? (
+          <img src={thumbnail || image} alt={name} className="app-thumb" />
         ) : (
           <div className="app-thumb placeholder" aria-hidden="true">APP</div>
         )}
@@ -31,21 +31,33 @@ const AppCard = ({ app, onDownload }) => {
           <span className="app-size">{displaySize}</span>
         </div>
         <div className="app-actions">
-          <button
-            className="btn btn-buy"
-            onClick={() => {
-              // Feedback visual imediato
-              try { navigator.vibrate?.(10); } catch {}
-              onDownload?.(app);
-            }}
-            aria-label={`Download de ${name}`}
-            data-qa="appcard-download-btn"
-          >
-            Download
-          </button>
-          <Link className="btn btn-secondary" to={`/apps/${id}/compra`} target="_blank" rel="noopener noreferrer" aria-label={`Detalhes de ${name}`}>
-            Detalhes
-          </Link>
+          {mode === 'public' ? (
+            <>
+              <Link className="btn btn-buy" to={`/apps/${id}/compra`} aria-label={`Comprar ${name}`} data-qa="appcard-buy-btn">
+                Comprar Agora
+              </Link>
+              <Link className="btn btn-secondary" to={`/apps/${id}/compra`} aria-label={`Detalhes de ${name}`}>
+                Detalhes
+              </Link>
+            </>
+          ) : (
+            <>
+              <button
+                className="btn btn-buy"
+                onClick={() => {
+                  try { navigator.vibrate?.(10); } catch {}
+                  onDownload?.(app);
+                }}
+                aria-label={`Download de ${name}`}
+                data-qa="appcard-download-btn"
+              >
+                Download
+              </button>
+              <Link className="btn btn-secondary" to={`/apps/${id}/compra`} target="_blank" rel="noopener noreferrer" aria-label={`Detalhes de ${name}`}>
+                Detalhes
+              </Link>
+            </>
+          )}
         </div>
       </div>
       <style>{`

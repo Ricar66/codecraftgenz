@@ -1,0 +1,37 @@
+/* src/pages/AppHubPage.module.css */
+.appHubPage { min-height: 100vh; }
+
+.heroSection { padding: 32px 16px; display: flex; justify-content: center; }
+.heroContent { max-width: 960px; width: 100%; }
+.heroTitle { color: var(--texto-branco); margin: 0 0 8px; font-size: 2rem; }
+.heroSubtitle { color: var(--texto-gelo); margin: 0 0 16px; }
+
+.searchContainer { position: relative; max-width: 560px; }
+.searchInput { width: 100%; padding: 12px 40px 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); color: var(--texto-branco); }
+.searchIcon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); }
+
+.filterSection { padding: 8px 16px 0; display: flex; justify-content: center; }
+.filterContainer { max-width: 960px; width: 100%; }
+.filterButtons { display:flex; gap:8px; flex-wrap:wrap; }
+.filterButton { padding: 8px 12px; border-radius: 999px; border:1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); color: var(--texto-branco); cursor: pointer; }
+.filterButton.active { background: linear-gradient(90deg, #D12BF2, #00E4F2); color: #000; border:none; }
+
+.appsSection { padding: 8px 16px 24px; }
+.container { max-width: 960px; margin: 0 auto; }
+.resultsInfo { color: var(--texto-gelo); margin-bottom: 8px; }
+.appsGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+
+.loadingContainer, .errorContainer, .noResults { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height: 40vh; gap: 12px; }
+.retryButton, .buyButton, .demoButton { padding: 10px 14px; border-radius: 10px; border:1px solid rgba(255,255,255,0.18); cursor:pointer; color: var(--texto-branco); background: rgba(255,255,255,0.06); }
+.demoButton { background: rgba(0,228,242,0.12); border-color: rgba(0,228,242,0.36); }
+
+.appCard { display:grid; grid-template-columns: 120px 1fr; gap: 12px; padding: 14px; border-radius: 12px; border:1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.06); }
+.appImage img { width: 120px; height: 90px; object-fit: cover; border-radius: 8px; border:1px solid rgba(255,255,255,0.18); }
+.appPlaceholder { width: 120px; height: 90px; display:flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.08); border-radius: 8px; }
+.appContent { display:flex; flex-direction:column; gap:8px; }
+.appName { color: var(--texto-branco); margin: 0; }
+.appDescription { color: var(--texto-gelo); margin: 0; }
+.appMeta { display:flex; gap:8px; color: var(--texto-gelo); }
+.appCategory { color: #b0e1ff; }
+.appPrice { color: #00E4F2; font-weight: 700; }
+.appActions { display:flex; gap:8px; }

@@ -1,7 +1,7 @@
+import fs from 'fs';
 import path from 'path';
 import process from 'process';
 import { fileURLToPath } from 'url';
-import fs from 'fs';
 
 import bcrypt from 'bcrypt';
 import compression from 'compression';
@@ -1266,8 +1266,8 @@ app.get('/api/apps/public', (req, res) => {
   res.json({ success: true, data: paged, pagination: { total: list.length, page, pageSize } });
 });
 
-// Detalhes de um app
-app.get('/api/apps/:id', authenticate, (req, res) => {
+// Detalhes de um app (público para exibição na página de compra)
+app.get('/api/apps/:id', (req, res) => {
   const id = parseInt(req.params.id, 10);
   const appItem = mockApps.find(a => a.id === id);
   if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
@@ -1326,7 +1326,7 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
 });
 
 // Mercado Livre/Mercado Pago – criar preferência de pagamento (mock)
-app.post('/api/apps/:id/purchase', authenticate, async (req, res) => {
+  app.post('/api/apps/:id/purchase', async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const appItem = mockApps.find(a => a.id === id);
   if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
@@ -1387,7 +1387,7 @@ app.post('/api/apps/:id/purchase', authenticate, async (req, res) => {
 });
 
 // Consultar status da compra (mock)
-app.get('/api/apps/:id/purchase/status', authenticate, async (req, res) => {
+  app.get('/api/apps/:id/purchase/status', async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const { status: statusQuery, payment_id } = req.query;
   const appItem = mockApps.find(a => a.id === id);

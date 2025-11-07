@@ -57,11 +57,7 @@ function App() {
             <AppsPage />
           </ProtectedRoute>
         } />
-        <Route path="/apps/:id/compra" element={
-          <ProtectedRoute allowed={["admin","user","editor","viewer"]}>
-            <AppPurchasePage />
-          </ProtectedRoute>
-        } />
+        <Route path="/apps/:id/compra" element={<AppPurchasePage />} />
         <Route path="/admin" element={
           <ProtectedRoute allowed={["admin","editor"]}>
             <AdminLayout />
