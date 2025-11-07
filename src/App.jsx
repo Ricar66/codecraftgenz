@@ -19,6 +19,7 @@ import FeedbacksPage from './pages/FeedbacksPage.jsx';
 import HomePage from './pages/HomePage/HomePage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import MentoriaPage from './pages/MentoriaPage.jsx';
+import PasswordResetPage from './pages/PasswordResetPage.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
 import RankingPage from './pages/RankingPage.jsx';
 
@@ -48,6 +49,7 @@ function App() {
         <Route path="/ranking" element={<RankingPage />} />
         <Route path="/desafios" element={<DesafiosPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/reset-password" element={<PasswordResetPage />} />
         <Route path="/aplicativos" element={<AppHubPage />} />
         <Route path="/cache/clear" element={<CacheMaintenancePage />} />
         <Route path="/apps" element={

@@ -44,6 +44,36 @@ export default function AdminEquipes() {
     carregarDados();
   }, []);
 
+  // Pré-preencher formulário de Crafter via parâmetros da URL (vindo da Auditoria de Inscrições)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const preNome = params.get('prefill_nome');
+      const preEmail = params.get('prefill_email');
+      const preAvatar = params.get('prefill_avatar_url');
+      const scrollTarget = params.get('scroll');
+
+      if (preNome || preEmail || preAvatar) {
+        setActiveTab('mentores');
+        setNovoCrafter(prev => ({
+          nome: preNome || prev.nome || '',
+          email: preEmail || prev.email || '',
+          avatar_url: preAvatar || prev.avatar_url || ''
+        }));
+        setMessage('Campos do crafter pré-preenchidos a partir da inscrição.');
+
+        if (scrollTarget === 'create-crafter') {
+          setTimeout(() => {
+            const el = document.getElementById('create-crafter');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 150);
+        }
+      }
+    } catch {
+      // silencioso
+    }
+  }, []);
+
   const carregarDados = async () => {
     try {
       setLoading(true);
@@ -87,6 +117,63 @@ export default function AdminEquipes() {
     return map;
   }, [equipes]);
 
+  // Auditoria de relacionamentos
+  const mentoresSemProjeto = useMemo(() =>
+    mentores.filter(m => !equipes.some(e => e.mentor_id === m.id)),
+    [mentores, equipes]
+  );
+
+  const projetosSemMentor = useMemo(() =>
+    projetos.filter(p => !equipes.some(e => e.projeto_id === p.id)),
+    [projetos, equipes]
+  );
+
+  const projetosComMultMentores = useMemo(() =>
+    projetos.filter(p => {
+      const mentorsSet = new Set(
+        equipes.filter(e => e.projeto_id === p.id).map(e => e.mentor_id)
+      );
+      return mentorsSet.size > 1;
+    }),
+    [projetos, equipes]
+  );
+
+  const craftersSemEquipe = useMemo(() =>
+    crafters.filter(c => !equipes.some(e => e.crafter_id === c.id)),
+    [crafters, equipes]
+  );
+
+  const craftersEmMultEquipes = useMemo(() => {
+    const countMap = {};
+    equipes.forEach(e => {
+      countMap[e.crafter_id] = (countMap[e.crafter_id] || 0) + 1;
+    });
+    return crafters.filter(c => (countMap[c.id] || 0) > 1);
+  }, [equipes, crafters]);
+
+  const equipesRefsInvalidas = useMemo(() =>
+    equipes.filter(e =>
+      !mentores.find(m => m.id === e.mentor_id) ||
+      !crafters.find(c => c.id === e.crafter_id) ||
+      !projetos.find(p => p.id === e.projeto_id)
+    ),
+    [equipes, mentores, crafters, projetos]
+  );
+
+  const equipesDuplicadas = useMemo(() => {
+    const seen = {};
+    const dupes = [];
+    equipes.forEach(e => {
+      const key = `${e.mentor_id}-${e.crafter_id}-${e.projeto_id}`;
+      if (seen[key]) {
+        dupes.push(e);
+      } else {
+        seen[key] = true;
+      }
+    });
+    return dupes;
+  }, [equipes]);
+
   // Funções de filtro otimizadas com useMemo
   const mentoresFiltrados = useMemo(() => 
     mentores.filter(mentor => 
@@ -115,6 +202,18 @@ export default function AdminEquipes() {
   const criarCrafter = async (e) => {
     e.preventDefault();
     try {
+      const emailNorm = (novoCrafter.email || '').trim().toLowerCase();
+      if (!emailNorm) {
+        setMessage('Informe um email válido para criar o crafter.');
+        return;
+      }
+      const jaExiste = crafters.some(c => (c.email || '').trim().toLowerCase() === emailNorm);
+      if (jaExiste) {
+        setMessage('Já existe um crafter com este email.');
+        alert('Já existe um crafter com este email.');
+        return;
+      }
+
       const response = await apiRequest('/api/crafters', {
         method: 'POST',
         body: JSON.stringify(novoCrafter)
@@ -298,6 +397,12 @@ export default function AdminEquipes() {
         >
           Equipes
         </button>
+        <button 
+          className={`tab ${activeTab === 'auditoria' ? 'active' : ''}`}
+          onClick={() => setActiveTab('auditoria')}
+        >
+          Auditoria
+        </button>
       </div>
 
       {/* Aba Mentores */}
@@ -339,7 +444,7 @@ export default function AdminEquipes() {
             </div>
           </div>
 
-          <div className="section">
+          <div className="section" id="create-crafter">
             <h2>Criar Novo Crafter</h2>
             <form onSubmit={criarCrafter} className="form">
               <div className="form-row">
@@ -815,6 +920,200 @@ export default function AdminEquipes() {
               </div>
               <button type="submit" className="btn btn-secondary">🔗 Associar Mentor ao Projeto</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Aba Auditoria */}
+      {activeTab === 'auditoria' && (
+        <div className="tab-content">
+          <div className="section">
+            <h2>🔎 Auditoria de Relacionamentos</h2>
+            <p className="info-text">
+              Esta seção destaca inconsistências nas relações entre Mentores, Projetos, Crafters e Equipes.
+            </p>
+            <div style={{ margin: '8px 0' }}>
+              <button className="btn btn-secondary" onClick={()=>{
+                const headers = ['categoria','id','nome','email','titulo_projeto'];
+                const rows = [];
+                mentoresSemProjeto.forEach(m => rows.push(['mentor_sem_projeto', m.id, m.nome || '', m.email || '', '']));
+                projetosSemMentor.forEach(p => rows.push(['projeto_sem_mentor', p.id, '', '', p.titulo || `Projeto #${p.id}`]));
+                projetosComMultMentores.forEach(p => rows.push(['projeto_multiplos_mentores', p.id, '', '', p.titulo || `Projeto #${p.id}`]));
+                craftersSemEquipe.forEach(c => rows.push(['crafter_sem_equipe', c.id, c.nome || '', c.email || '', '']));
+                craftersEmMultEquipes.forEach(c => rows.push(['crafter_multiplas_equipes', c.id, c.nome || '', c.email || '', '']));
+                equipesRefsInvalidas.forEach(e => rows.push(['equipe_ref_invalida', e.id, e.nome || '', '', '']));
+                equipesDuplicadas.forEach(e => rows.push(['equipe_duplicada', e.id, e.nome || '', '', '']));
+                const csv = [headers.join(','), ...rows.map(r => r.map(v => String(v).replace(/\n/g,' ').replace(/"/g,'"')).join(','))].join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'auditoria_equipes.csv'; a.click(); URL.revokeObjectURL(url);
+              }}>Exportar CSV das inconsistências</button>
+            </div>
+
+            <div className="table-container">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Verificação</th>
+                    <th>Quantidade</th>
+                    <th>Ação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Mentores sem equipes/projetos</td>
+                    <td>{mentoresSemProjeto.length}</td>
+                    <td>
+                      <button className="btn btn-secondary" onClick={() => setActiveTab('associacoes')}>
+                        Ver Mentores
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Projetos sem mentor/equipe</td>
+                    <td>{projetosSemMentor.length}</td>
+                    <td>
+                      <button className="btn btn-secondary" onClick={() => setActiveTab('associacoes')}>
+                        Ver Projetos
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Projetos com múltiplos mentores</td>
+                    <td>{projetosComMultMentores.length}</td>
+                    <td>
+                      <button className="btn btn-secondary" onClick={() => setActiveTab('associacoes')}>
+                        Revisar Associações
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Crafters sem equipe</td>
+                    <td>{craftersSemEquipe.length}</td>
+                    <td>
+                      <button className="btn btn-secondary" onClick={() => setActiveTab('associacoes')}>
+                        Adicionar a Equipes
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Crafters em múltiplas equipes</td>
+                    <td>{craftersEmMultEquipes.length}</td>
+                    <td>
+                      <button className="btn btn-secondary" onClick={() => setActiveTab('equipes')}>
+                        Ver Equipes
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Equipes com referências inválidas</td>
+                    <td>{equipesRefsInvalidas.length}</td>
+                    <td>
+                      <button className="btn btn-secondary" onClick={() => setActiveTab('equipes')}>
+                        Corrigir
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Equipes duplicadas (mentor-crafter-projeto)</td>
+                    <td>{equipesDuplicadas.length}</td>
+                    <td>
+                      <button className="btn btn-secondary" onClick={() => setActiveTab('equipes')}>
+                        Remover duplicatas
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="section">
+              <h3>Detalhes</h3>
+              {mentoresSemProjeto.length === 0 && projetosSemMentor.length === 0 && craftersSemEquipe.length === 0 && craftersEmMultEquipes.length === 0 && equipesRefsInvalidas.length === 0 && equipesDuplicadas.length === 0 ? (
+                <div className="empty-state">
+                  <p>Nenhuma inconsistência encontrada. Tudo certo! ✅</p>
+                </div>
+              ) : (
+                <div className="audit-details-grid">
+                  {mentoresSemProjeto.length > 0 && (
+                    <div className="audit-card">
+                      <h4>Mentores sem equipes</h4>
+                      <ul>
+                        {mentoresSemProjeto.map(m => (
+                          <li key={m.id}>{m.nome} — {m.email}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {projetosSemMentor.length > 0 && (
+                    <div className="audit-card">
+                      <h4>Projetos sem mentor</h4>
+                      <ul>
+                        {projetosSemMentor.map(p => (
+                          <li key={p.id}>{p.titulo || `Projeto #${p.id}`}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {projetosComMultMentores.length > 0 && (
+                    <div className="audit-card">
+                      <h4>Projetos com múltiplos mentores</h4>
+                      <ul>
+                        {projetosComMultMentores.map(p => (
+                          <li key={p.id}>{p.titulo || `Projeto #${p.id}`}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {craftersSemEquipe.length > 0 && (
+                    <div className="audit-card">
+                      <h4>Crafters sem equipe</h4>
+                      <ul>
+                        {craftersSemEquipe.map(c => (
+                          <li key={c.id}>{c.nome} — {c.email}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {craftersEmMultEquipes.length > 0 && (
+                    <div className="audit-card">
+                      <h4>Crafters em múltiplas equipes</h4>
+                      <ul>
+                        {craftersEmMultEquipes.map(c => (
+                          <li key={c.id}>{c.nome} — {c.email}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {equipesRefsInvalidas.length > 0 && (
+                    <div className="audit-card">
+                      <h4>Equipes com referências inválidas</h4>
+                      <ul>
+                        {equipesRefsInvalidas.map(e => (
+                          <li key={e.id}>Equipe #{e.id} — mentor:{e.mentor_id}, crafter:{e.crafter_id}, projeto:{e.projeto_id}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {equipesDuplicadas.length > 0 && (
+                    <div className="audit-card">
+                      <h4>Equipes duplicadas</h4>
+                      <ul>
+                        {equipesDuplicadas.map(e => (
+                          <li key={e.id}>Equipe #{e.id} — mentor:{e.mentor_id}, crafter:{e.crafter_id}, projeto:{e.projeto_id}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

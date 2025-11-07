@@ -2,10 +2,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const AppCard = ({ app }) => {
-  const { id, name, mainFeature, thumbnail, price, status } = app;
+const AppCard = ({ app, onDownload }) => {
+  const { id, name, mainFeature, thumbnail, price, status, version, size } = app;
   const finalized = status === 'finalizado' || status === 'available' || status === 'ready';
   const displayPrice = price ? `R$ ${Number(price).toLocaleString('pt-BR')}` : 'Gratuito';
+  const displayVersion = version ? `v${version}` : 'v1.0';
+  const displaySize = size ? `${size}` : '—';
 
   return (
     <article className="app-card" aria-label={`Aplicativo ${name}`}>
@@ -19,15 +21,19 @@ const AppCard = ({ app }) => {
       </div>
       <div className="app-body">
         <h3 className="app-title" title={name}>{name}</h3>
-        <p className="app-feature" title={mainFeature}>{mainFeature}</p>
+        <p className="app-feature clamp-2" title={mainFeature}>{mainFeature}</p>
         <div className="app-meta" aria-label="Preço e status">
           <span className="app-price">{displayPrice}</span>
           <span className={`app-status ${finalized ? 'ok' : 'pending'}`}>{finalized ? 'Pronto para compra' : 'Em preparação'}</span>
         </div>
+        <div className="app-submeta" aria-label="Versão e tamanho">
+          <span className="app-version">{displayVersion}</span>
+          <span className="app-size">{displaySize}</span>
+        </div>
         <div className="app-actions">
-          <Link className="btn btn-buy" to={`/apps/${id}/compra`} target="_blank" rel="noopener noreferrer" aria-label={`Comprar ${name}`}>
-            Comprar
-          </Link>
+          <button className="btn btn-buy" onClick={() => onDownload?.(app)} aria-label={`Download de ${name}`}>
+            Download
+          </button>
           <Link className="btn btn-secondary" to={`/apps/${id}/compra`} target="_blank" rel="noopener noreferrer" aria-label={`Detalhes de ${name}`}>
             Detalhes
           </Link>
@@ -55,10 +61,15 @@ const AppCard = ({ app }) => {
 
         .app-title { margin: 0; color: var(--texto-branco); font-size: 1.2rem; }
         .app-feature { color: var(--texto-gelo); margin: 6px 0; font-size: 0.95rem; }
+        .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .app-meta { display: flex; gap: 12px; align-items: center; color: var(--texto-gelo); font-size: 0.95rem; margin-top: 4px; }
         .app-price { color: #00E4F2; font-weight: 700; }
         .app-status.ok { color: #7CF6FF; font-weight: 600; }
         .app-status.pending { color: #FFA500; font-weight: 600; }
+
+        .app-submeta { display:flex; gap:12px; align-items:center; color: var(--texto-gelo); font-size: 0.85rem; }
+        .app-version { color: #b0e1ff; }
+        .app-size { color: #d6d6d6; }
 
         .app-actions { margin-top: 10px; display:flex; gap: 8px; }
         .btn { display:inline-block; padding: 10px 14px; border-radius: 10px; border:1px solid rgba(255,255,255,0.18); cursor:pointer; transition: transform .2s ease, box-shadow .2s ease; }
