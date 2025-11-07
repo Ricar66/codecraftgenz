@@ -1374,7 +1374,8 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
 
   // Fallback mock
   const preference_id = `pref_${Date.now()}`;
-  const init_point = `http://localhost:5173/apps/${id}/compra?preference_id=${preference_id}&status=approved`;
+  const successUrl = MP_SUCCESS_URL.replace(':id', String(id));
+  const init_point = `${successUrl}?preference_id=${preference_id}&status=approved`;
   paymentsByApp.set(id, {
     payment_id: preference_id,
     status: 'approved',

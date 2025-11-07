@@ -1,8 +1,8 @@
 // src/pages/AppHubPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import AppCard from '../components/AppCard/AppCard.jsx';
 
+import AppCard from '../components/AppCard/AppCard.jsx';
 import Navbar from '../components/Navbar/Navbar.jsx';
 import { getAllApps } from '../services/appsAPI.js';
 import { appsCache } from '../utils/dataCache.js';
