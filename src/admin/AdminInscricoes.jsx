@@ -1,5 +1,6 @@
 // src/admin/AdminInscricoes.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { apiRequest } from '../lib/apiConfig.js';
 
@@ -16,6 +17,8 @@ const AdminInscricoes = () => {
   const [filtroData, setFiltroData] = useState('');
   const [toast, setToast] = useState(null); // { type: 'success'|'error', message: string }
   const [updatingId, setUpdatingId] = useState(null);
+  const [crafters, setCrafters] = useState([]);
+  const navigate = useNavigate();
 
   const areasInteresse = [
     'Front-end',
@@ -96,6 +99,104 @@ const AdminInscricoes = () => {
   useEffect(() => {
     fetchInscricoes();
   }, [fetchInscricoes]);
+
+  // Buscar crafters para auditoria
+  useEffect(() => {
+    const fetchCrafters = async () => {
+      if (!import.meta.env.VITE_API_URL && import.meta.env.DEV) {
+        setCrafters([]);
+        return;
+      }
+      try {
+        const data = await apiRequest(`/api/crafters`, { method: 'GET' });
+        const arr = Array.isArray(data) ? data : (data?.data || []);
+        setCrafters(arr);
+      } catch {
+        setCrafters([]);
+      }
+    };
+    fetchCrafters();
+  }, []);
+
+  // Auditoria Inscrições ↔ Crafters
+  const normalizaEmail = (e) => (e || '').trim().toLowerCase();
+
+  const inscricoesPorEmail = useMemo(() => {
+    const map = {};
+    inscricoes.forEach(i => {
+      const email = normalizaEmail(i.email);
+      if (!email) return;
+      if (!map[email]) map[email] = [];
+      map[email].push(i);
+    });
+    return map;
+  }, [inscricoes]);
+
+  const craftersPorEmail = useMemo(() => {
+    const map = {};
+    crafters.forEach(c => {
+      const email = normalizaEmail(c.email);
+      if (!email) return;
+      if (!map[email]) map[email] = [];
+      map[email].push(c);
+    });
+    return map;
+  }, [crafters]);
+
+  const inscricoesSemCrafter = useMemo(() =>
+    inscricoes.filter(i => {
+      const email = normalizaEmail(i.email);
+      return email && !(craftersPorEmail[email] && craftersPorEmail[email].length > 0);
+    }),
+    [inscricoes, craftersPorEmail]
+  );
+
+  const craftersSemInscricao = useMemo(() =>
+    crafters.filter(c => {
+      const email = normalizaEmail(c.email);
+      return email && !(inscricoesPorEmail[email] && inscricoesPorEmail[email].length > 0);
+    }),
+    [crafters, inscricoesPorEmail]
+  );
+
+  const inscricoesDuplicadasEmail = useMemo(() => {
+    const dupes = [];
+    Object.values(inscricoesPorEmail).forEach((list) => {
+      if (list.length > 1) {
+        dupes.push(...list);
+      }
+    });
+    return dupes;
+  }, [inscricoesPorEmail]);
+
+  const nomesDivergentesMesmoEmail = useMemo(() => {
+    const mismatches = [];
+    Object.entries(inscricoesPorEmail).forEach(([email, inscList]) => {
+      const crafter = (craftersPorEmail[email] || [])[0];
+      if (!crafter) return;
+      inscList.forEach(i => {
+        if ((i.nome || '').trim().toLowerCase() !== (crafter.nome || '').trim().toLowerCase()) {
+          mismatches.push({ email, inscricao: i, crafter });
+        }
+      });
+    });
+    return mismatches;
+  }, [inscricoesPorEmail, craftersPorEmail]);
+
+  const exportAuditCsv = () => {
+    const headers = ['categoria','id','nome','email','extra'];
+    const rows = [];
+    inscricoesSemCrafter.forEach(i => rows.push(['inscricao_sem_crafter', i.id, i.nome || '', i.email || '', i.cidade || '']));
+    craftersSemInscricao.forEach(c => rows.push(['crafter_sem_inscricao', c.id, c.nome || '', c.email || '', '']));
+    inscricoesDuplicadasEmail.forEach(i => rows.push(['inscricao_duplicada_email', i.id, i.nome || '', i.email || '', '']));
+    nomesDivergentesMesmoEmail.forEach(({ email, inscricao, crafter }) => {
+      rows.push(['nome_divergente_mesmo_email', `${inscricao?.id || ''}/${crafter?.id || ''}`, `${(inscricao?.nome || '')} vs ${(crafter?.nome || '')}`.trim(), email || '', '']);
+    });
+    const csv = [headers.join(','), ...rows.map(r => r.map(v => String(v).replace(/\n/g,' ').replace(/"/g,'"')).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'auditoria_inscricoes.csv'; a.click(); URL.revokeObjectURL(url);
+  };
 
   const filteredInscricoes = inscricoes.filter(inscricao => {
     const matchesSearch = !searchTerm || 
@@ -251,6 +352,107 @@ const AdminInscricoes = () => {
         <span className="stat-item">
           Total: {filteredInscricoes.length}
         </span>
+      </div>
+
+      {/* Auditoria Inscrições ↔ Crafters */}
+      <div className={"section"}>
+        <h2>🔎 Auditoria: Inscrições ↔ Crafters</h2>
+        <p className="muted">Verifica sincronização por email entre inscrições e crafters cadastrados.</p>
+        <div style={{ margin: '8px 0' }}>
+          <button className="btn btn-secondary" onClick={exportAuditCsv}>Exportar CSV das inconsistências</button>
+        </div>
+
+        <div className="table-container">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Verificação</th>
+                <th>Quantidade</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Inscrições sem crafter correspondente</td>
+                <td>{inscricoesSemCrafter.length}</td>
+              </tr>
+              <tr>
+                <td>Crafters sem inscrição correspondente</td>
+                <td>{craftersSemInscricao.length}</td>
+              </tr>
+              <tr>
+                <td>Inscrições duplicadas por email</td>
+                <td>{inscricoesDuplicadasEmail.length}</td>
+              </tr>
+              <tr>
+                <td>Nome divergente para o mesmo email</td>
+                <td>{nomesDivergentesMesmoEmail.length}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="audit-details-grid" style={{ marginTop: '12px' }}>
+          {inscricoesSemCrafter.length > 0 && (
+            <div className="audit-card">
+              <h4>Inscrições sem Crafter</h4>
+              <ul>
+                {inscricoesSemCrafter.map(i => (
+                  <li key={i.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>{i.nome} — {i.email}</span>
+                    <button
+                      className="btn btn-primary btn-small"
+                      onClick={() => {
+                        const params = new URLSearchParams({
+                          prefill_nome: i.nome || '',
+                          prefill_email: i.email || '',
+                          scroll: 'create-crafter'
+                        });
+                        navigate(`/admin/equipes?${params.toString()}`);
+                      }}
+                    >
+                      Criar Crafter
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {craftersSemInscricao.length > 0 && (
+            <div className="audit-card">
+              <h4>Crafters sem Inscrição</h4>
+              <ul>
+                {craftersSemInscricao.map(c => (
+                  <li key={c.id}>{c.nome} — {c.email}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {inscricoesDuplicadasEmail.length > 0 && (
+            <div className="audit-card">
+              <h4>Inscrições Duplicadas (Email)</h4>
+              <ul>
+                {inscricoesDuplicadasEmail.map(i => (
+                  <li key={i.id}>#{i.id} — {i.nome} — {i.email}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {nomesDivergentesMesmoEmail.length > 0 && (
+            <div className="audit-card">
+              <h4>Nome Divergente (mesmo email)</h4>
+              <ul>
+                {nomesDivergentesMesmoEmail.map(({ email, inscricao, crafter }, idx) => (
+                  <li key={`${email}-${idx}`}>
+                    {email}: inscrição "{inscricao.nome}" vs crafter "{crafter.nome}"
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className={"inscricoesGrid"}>

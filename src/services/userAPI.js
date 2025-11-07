@@ -133,3 +133,29 @@ export async function toggleUserStatus(id) {
     };
   }
 }
+
+/**
+ * Redefine a senha de um usuário admin via endpoint seguro
+ * @param {Object} params
+ * @param {string} params.email - E-mail do admin
+ * @param {string} params.newPassword - Nova senha
+ * @param {string} params.token - Token de reset (header x-admin-reset-token)
+ * @returns {Promise<{ok:boolean, message?:string, error?:string}>}
+ */
+export async function resetAdminPassword({ email, newPassword, token }) {
+  try {
+    const data = await apiRequest('/api/auth/admin/reset-password', {
+      method: 'POST',
+      headers: {
+        'x-admin-reset-token': token || '',
+      },
+      body: JSON.stringify({
+        email,
+        new_password: newPassword,
+      })
+    });
+    return { ok: true, message: data.message || 'Senha redefinida com sucesso' };
+  } catch (error) {
+    return { ok: false, error: error.message };
+  }
+}

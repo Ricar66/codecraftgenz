@@ -1,10 +1,12 @@
 // src/pages/AppsPage.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import AppCard from '../components/AppCard/AppCard';
 import Navbar from '../components/Navbar/Navbar';
-import { getMyApps, getHistory, upsertAppFromProject } from '../services/appsAPI.js';
+import { API_BASE_URL, apiRequest } from '../lib/apiConfig.js';
+import { getHistory, upsertAppFromProject } from '../services/appsAPI.js';
+import { getPublicApps, getPurchaseStatus } from '../services/appsPublicAPI.js';
 import { getProjects } from '../services/projectsAPI.js';
 import { appsCache } from '../utils/dataCache.js';
 import { globalPerformanceMonitor } from '../utils/performanceMonitor.js';
@@ -19,6 +21,10 @@ const AppsPage = () => {
   const [projects, setProjects] = useState([]);
   const [publishing, setPublishing] = useState(false);
   const [publishMessage, setPublishMessage] = useState('');
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('todas');
+  const [sortMode, setSortMode] = useState('categoria'); // 'categoria' | 'uso'
+  const [payModal, setPayModal] = useState({ open: false, app: null, loading: false, error: '' });
 
   useEffect(() => {
     let mounted = true;
@@ -30,13 +36,13 @@ const AppsPage = () => {
         globalPerformanceMonitor.startMeasure(metricId, { page: 1, pageSize: 24 });
 
         // Cache em memória
-        const cacheKey = appsCache.generateKey('my-apps', { page: 1, pageSize: 24 });
+        const cacheKey = appsCache.generateKey('public-apps', { page: 1, pageSize: 24 });
         const cached = appsCache.get(cacheKey);
         let jsonApps;
         if (cached) {
           jsonApps = cached;
         } else {
-          jsonApps = await getMyApps({ page: 1, pageSize: 24, sortBy: 'updatedAt' });
+          jsonApps = await getPublicApps({ page: 1, pageSize: 24, sortBy: 'updatedAt' });
           appsCache.set(cacheKey, jsonApps, 5 * 60 * 1000);
         }
         const list = Array.isArray(jsonApps?.data) ? jsonApps.data : (Array.isArray(jsonApps) ? jsonApps : []);
@@ -75,6 +81,129 @@ const AppsPage = () => {
     return () => { mounted = false; };
   }, [showPublish]);
 
+  const usageByApp = useMemo(() => {
+    const counts = new Map();
+    for (const h of history) {
+      const id = h.appId || h.app_id;
+      if (!id) continue;
+      counts.set(id, (counts.get(id) || 0) + 1);
+    }
+    return counts;
+  }, [history]);
+
+  const categories = useMemo(() => {
+    const set = new Set(['todas']);
+    for (const a of apps) set.add(a.category || 'outros');
+    return Array.from(set);
+  }, [apps]);
+
+  const filteredApps = useMemo(() => {
+    let list = [...apps];
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(a => String(a.name||'').toLowerCase().includes(q) || String(a.mainFeature||'').toLowerCase().includes(q));
+    }
+    if (category !== 'todas') {
+      list = list.filter(a => (a.category || 'outros') === category);
+    }
+    if (sortMode === 'uso') {
+      list.sort((a,b)=> (usageByApp.get(b.id)||0) - (usageByApp.get(a.id)||0));
+    } else {
+      list.sort((a,b)=> String(a.category||'outros').localeCompare(String(b.category||'outros')) || String(a.name||'').localeCompare(String(b.name||'')));
+    }
+    return list;
+  }, [apps, search, category, sortMode, usageByApp]);
+
+  const openPaymentModal = (app) => {
+    setPayModal({ open: true, app, loading: false, error: '' });
+  };
+
+  const closePaymentModal = () => setPayModal({ open: false, app: null, loading: false, error: '' });
+
+  const startCheckout = async () => {
+    if (!payModal.app) return;
+    try {
+      setPayModal(s => ({ ...s, loading: true, error: '' }));
+      const { init_point } = await apiRequest(`/api/apps/${encodeURIComponent(payModal.app.id)}/purchase`, { method: 'POST' });
+      if (init_point) window.open(init_point, '_blank', 'noopener');
+      else setPayModal(s => ({ ...s, error: 'Não foi possível iniciar o checkout' }));
+    } catch (e) {
+      setPayModal(s => ({ ...s, error: e.message || 'Erro ao iniciar pagamento' }));
+    } finally {
+      setPayModal(s => ({ ...s, loading: false }));
+    }
+  };
+
+  const checkPaymentStatus = async () => {
+    if (!payModal.app) return;
+    try {
+      setPayModal(s => ({ ...s, checking: true, downloadError: '', status: 'checking' }));
+      const res = await getPurchaseStatus(payModal.app.id);
+      const status = res?.status || res?.data?.status || 'unknown';
+      if (status === 'approved' || status === 'paid') {
+        setPayModal(s => ({ ...s, status: 'approved', checking: false }));
+        await downloadWithProgress(payModal.app);
+      } else if (status === 'pending') {
+        setPayModal(s => ({ ...s, status: 'pending', checking: false }));
+      } else {
+        setPayModal(s => ({ ...s, status: 'unknown', checking: false }));
+      }
+    } catch (e) {
+      setPayModal(s => ({ ...s, checking: false, downloadError: e.message || 'Erro ao verificar pagamento' }));
+    }
+  };
+
+  const downloadWithProgress = async (app) => {
+    try {
+      setPayModal(s => ({ ...s, status: 'downloading', progress: 0, downloadError: '' }));
+      let token = null;
+      try {
+        const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('cc_session') : null;
+        if (raw) { const session = JSON.parse(raw); token = session?.token || null; }
+      } catch {
+        // Ambiente sem localStorage ou JSON inválido; segue sem token
+        token = null;
+      }
+      const resp = await fetch(`${API_BASE_URL}/api/apps/${encodeURIComponent(app.id)}/download`, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+      if (!resp.ok) throw new Error(`Falha no download (HTTP ${resp.status})`);
+      const total = Number(resp.headers.get('content-length')) || 0;
+      const reader = resp.body?.getReader ? resp.body.getReader() : null;
+      const chunks = [];
+      let received = 0;
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          received += value.length;
+          if (total > 0) {
+            const pct = Math.round((received / total) * 100);
+            setPayModal(s => ({ ...s, progress: Math.min(100, pct) }));
+          } else {
+            setPayModal(s => ({ ...s, progress: Math.min(100, s.progress + 3) }));
+          }
+        }
+      }
+      const blob = new Blob(chunks.length ? chunks : [await resp.arrayBuffer()], { type: resp.headers.get('content-type') || 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeName = (app.name || 'aplicativo').replace(/[^a-z0-9\-_.]/gi, '_');
+      a.download = `${safeName}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setPayModal(s => ({ ...s, status: 'done', progress: 100 }));
+    } catch (e) {
+      setPayModal(s => ({ ...s, status: 'error', downloadError: e.message || 'Erro no download' }));
+    }
+  };
+
   const handlePublish = async (project) => {
     try {
       setPublishing(true);
@@ -85,7 +214,7 @@ const AppsPage = () => {
       });
       setPublishMessage('Projeto publicado com sucesso!');
       // Recarrega lista de apps
-      const jsonApps = await getMyApps({ page: 1, pageSize: 24, sortBy: 'updatedAt' });
+      const jsonApps = await getPublicApps({ page: 1, pageSize: 24, sortBy: 'updatedAt' });
       const list = Array.isArray(jsonApps?.data) ? jsonApps.data : (Array.isArray(jsonApps) ? jsonApps : []);
       setApps(list);
     } catch (e) {
@@ -100,11 +229,21 @@ const AppsPage = () => {
       <Navbar />
       <header className="apps-header">
         <h1>Meus Aplicativos</h1>
-        <p>Organize, destaque e venda seus apps com visual profissional.</p>
+        <p>Baixe e compre seus apps com visual profissional.</p>
         <div className="apps-actions">
           <button className="btn btn-primary" onClick={() => setShowPublish(v=>!v)}>
             {showPublish ? 'Fechar publicação' : 'Publicar projeto'}
           </button>
+        </div>
+        <div className="apps-filters" role="search">
+          <input aria-label="Buscar aplicativos" className="input" placeholder="Buscar aplicativos" value={search} onChange={e=>setSearch(e.target.value)} />
+          <select aria-label="Filtrar por categoria" className="select" value={category} onChange={e=>setCategory(e.target.value)}>
+            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select aria-label="Ordenar" className="select" value={sortMode} onChange={e=>setSortMode(e.target.value)}>
+            <option value="categoria">Categoria</option>
+            <option value="uso">Uso frequente</option>
+          </select>
         </div>
       </header>
 
@@ -115,7 +254,7 @@ const AppsPage = () => {
         {apps.length === 0 && !loading ? (
           <div className="card-empty">Nenhum aplicativo disponível no momento.</div>
         ) : (
-          apps.map(app => <AppCard key={app.id} app={app} />)
+          filteredApps.map(app => <AppCard key={app.id} app={app} onDownload={openPaymentModal} />)
         )}
       </section>
 
@@ -167,6 +306,8 @@ const AppsPage = () => {
         .apps-header h1 { color: var(--texto-branco); margin: 0; font-size: 2rem; }
         .apps-header p { color: var(--texto-gelo); margin-top: 6px; font-size: 1rem; }
         .apps-actions { margin-top: 16px; display:flex; justify-content:center; }
+        .apps-filters { margin-top: 16px; display:flex; gap: 8px; justify-content:center; flex-wrap: wrap; }
+        .input, .select { padding: 10px 12px; border-radius: 10px; border:1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); color: var(--texto-branco); }
         .apps-grid { max-width: 1200px; margin: 20px auto; padding: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
         @media (max-width: 992px) { .apps-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 640px) { .apps-grid { grid-template-columns: 1fr; } }
@@ -187,6 +328,46 @@ const AppsPage = () => {
         .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 18px rgba(0,0,0,0.25); }
         .btn-outline { background: transparent; color: var(--texto-branco); }
       `}</style>
+
+      {payModal.open && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Pagamento do aplicativo">
+          <div className="modal">
+            <h3 className="title">{payModal.app?.name}</h3>
+            <p className="muted">{payModal.app?.mainFeature}</p>
+            <p className="price">Preço: {payModal.app?.price ? `R$ ${Number(payModal.app.price).toLocaleString('pt-BR')}` : 'a definir'}</p>
+            {payModal.error && <p role="alert" style={{ color: '#FF6B6B' }}>❌ {payModal.error}</p>}
+            <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+              <button className="btn btn-primary" onClick={startCheckout} disabled={payModal.loading}>
+                {payModal.loading ? 'Iniciando...' : 'Pagar com Mercado Livre'}
+              </button>
+              <button className="btn btn-outline" onClick={checkPaymentStatus} disabled={payModal.checking}>
+                {payModal.checking ? 'Verificando…' : 'Verificar pagamento'}
+              </button>
+              <button className="btn btn-outline" onClick={()=>window.open(`/apps/${payModal.app?.id}/compra`, '_blank', 'noopener')}>Ir para tela de pagamento</button>
+              <button className="btn btn-outline" onClick={closePaymentModal}>Fechar</button>
+            </div>
+            {(payModal.status === 'downloading' || payModal.status === 'done') && (
+              <div aria-live="polite" className="progress-wrap">
+                <div className="progress-bar"><div className="progress" style={{ width: `${payModal.progress}%` }} /></div>
+                <p className="muted">{payModal.status === 'done' ? 'Download concluído!' : `Baixando… ${payModal.progress}%`}</p>
+              </div>
+            )}
+            {payModal.downloadError && <p role="alert" style={{ color: '#FF6B6B' }}>❌ {payModal.downloadError}</p>}
+          </div>
+          <style>{`
+            .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; padding:16px; }
+            .modal { width: 100%; max-width: 520px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 16px; }
+            .title { color: var(--texto-branco); margin: 0 0 6px; }
+            .price { color: var(--texto-branco); font-weight: 600; }
+            .btn { padding: 8px 12px; border-radius: 8px; border:1px solid rgba(255,255,255,0.18); }
+            .btn-primary { background: #00E4F2; color: #000; }
+            .btn-outline { background: transparent; color: var(--texto-branco); }
+            .progress-wrap { margin-top: 12px; }
+            .progress-bar { width: 100%; height: 8px; background: rgba(255,255,255,0.12); border-radius: 999px; overflow: hidden; }
+            .progress { height: 100%; background: linear-gradient(90deg, #D12BF2, #00E4F2); }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 };

@@ -2,15 +2,16 @@ import path from 'path';
 import process from 'process';
 import { fileURLToPath } from 'url';
 
+import bcrypt from 'bcrypt';
 import compression from 'compression';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import helmet from 'helmet';
-import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
-import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 
+import { mercadoLivre } from './src/integrations/mercadoLivre.js';
 import { getConnectionPool, dbSql } from './src/lib/db.js';
 
 // Carregar variáveis de ambiente (db.js já faz isso, mas garantimos aqui também)
@@ -23,6 +24,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 8080;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-this';
+const ADMIN_RESET_TOKEN = process.env.ADMIN_RESET_TOKEN || '';
 
 // --- Middlewares Essenciais ---
 app.use(helmet({
@@ -56,6 +58,21 @@ try {
   console.warn('⚠️ Falha ao inicializar Mercado Pago SDK:', e?.message || e);
 }
 
+// Inicialização do módulo Mercado Livre (OAuth + sincronização)
+try {
+  mercadoLivre.init({
+    clientId: process.env.MELI_CLIENT_ID,
+    clientSecret: process.env.MELI_CLIENT_SECRET,
+    redirectUri: process.env.MELI_REDIRECT_URI,
+    oauthUrl: process.env.MELI_OAUTH_URL,
+    syncUrl: process.env.MELI_SYNC_URL,
+    logLevel: process.env.MELI_LOG_LEVEL || 'info',
+  });
+  console.log('✅ Módulo Mercado Livre inicializado');
+} catch (e) {
+  console.warn('⚠️ Mercado Livre não inicializado:', e?.message || e);
+}
+
 const paymentsByApp = new Map();
 
 // --- Middleware de Autenticação (JWT) ---
@@ -75,7 +92,7 @@ function authenticate(req, res, next) {
       token,
     };
     next();
-  } catch (e) {
+  } catch {
     return res.status(401).json({ error: 'Sessão inválida' });
   }
 }
@@ -167,6 +184,39 @@ app.post('/api/auth/login', (req, res) => {
       return res.status(500).json({ error: 'Erro interno no login' });
     }
   })();
+});
+
+// Rota segura para reset de senha do admin via token (para recuperar acesso)
+app.post('/api/auth/admin/reset-password', async (req, res) => {
+  try {
+    const token = req.headers['x-admin-reset-token'] || '';
+    if (!ADMIN_RESET_TOKEN || token !== ADMIN_RESET_TOKEN) {
+      return res.status(403).json({ error: 'Token de reset inválido ou não configurado' });
+    }
+    const { email, new_password } = req.body || {};
+    if (!email || !new_password) {
+      return res.status(400).json({ error: 'email e new_password são obrigatórios' });
+    }
+    const pool = await getConnectionPool();
+    const userQ = await pool.request().input('email', dbSql.NVarChar, email)
+      .query('SELECT id, role FROM dbo.users WHERE email = @email');
+    if (userQ.recordset.length === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+    const row = userQ.recordset[0];
+    if (String(row.role || '').toLowerCase() !== 'admin') {
+      return res.status(403).json({ error: 'Apenas usuários admin podem ser resetados por esta rota' });
+    }
+    const hash = await bcrypt.hash(String(new_password), 10);
+    await pool.request()
+      .input('id', dbSql.Int, row.id)
+      .input('pwd', dbSql.NVarChar, hash)
+      .query('UPDATE dbo.users SET password_hash = @pwd, updated_at = SYSUTCDATETIME() WHERE id = @id');
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Erro no reset de senha admin:', err);
+    return res.status(500).json({ error: 'Erro interno' });
+  }
 });
 
 // --- Rotas de Usuários Admin ---
@@ -1272,6 +1322,14 @@ app.post('/api/apps/:id/purchase', authenticate, async (req, res) => {
       });
       const preference_id = prefResult?.id || `pref_${Date.now()}`;
       const init_point = prefResult?.init_point || prefResult?.sandbox_init_point;
+      // Persistir metadados básicos da compra para sincronização pós-aprovação
+      paymentsByApp.set(id, {
+        payment_id: preference_id,
+        status: 'pending',
+        buyer: { id: req.user?.id, email: req.user?.email, name: req.user?.name },
+        amount: Number(appItem.price || 0),
+        products: [{ title: appItem.name, quantity: 1, unit_price: Number(appItem.price || 0) }],
+      });
       mockHistory.push({ type: 'purchase', appId: id, app_name: appItem.name, status: 'pending', date: new Date().toISOString() });
       return res.status(201).json({ success: true, preference_id, init_point });
     } catch (e) {
@@ -1283,6 +1341,13 @@ app.post('/api/apps/:id/purchase', authenticate, async (req, res) => {
   // Fallback mock
   const preference_id = `pref_${Date.now()}`;
   const init_point = `http://localhost:5173/apps/${id}/compra?preference_id=${preference_id}&status=approved`;
+  paymentsByApp.set(id, {
+    payment_id: preference_id,
+    status: 'approved',
+    buyer: { id: req.user?.id, email: req.user?.email, name: req.user?.name },
+    amount: Number(appItem.price || 0),
+    products: [{ title: appItem.name, quantity: 1, unit_price: Number(appItem.price || 0) }],
+  });
   mockHistory.push({ type: 'purchase', appId: id, app_name: appItem.name, status: 'approved', date: new Date().toISOString() });
   res.status(201).json({ success: true, preference_id, init_point });
 });
@@ -1301,6 +1366,19 @@ app.get('/api/apps/:id/purchase/status', authenticate, async (req, res) => {
       const status = data?.status || statusQuery || 'pending';
       const download_url = status === 'approved' ? (appItem.executableUrl || 'https://example.com/downloads/dev-placeholder.exe') : null;
       paymentsByApp.set(id, { payment_id, status });
+      if (status === 'approved') {
+        try {
+          const meta = paymentsByApp.get(id) || {};
+          const tx = {
+            amount: Number(appItem.price || data?.transaction_amount || 0),
+            products: meta.products || [{ title: appItem.name, quantity: 1, unit_price: Number(appItem.price || 0) }],
+            customer: { email: req.user?.email, name: req.user?.name },
+          };
+          await mercadoLivre.sendTransaction(tx, { external_reference: String(id), metadata: { payment_id } });
+        } catch (syncErr) {
+          console.warn('Sync Mercado Livre falhou (fallback mantido):', syncErr?.message || syncErr);
+        }
+      }
       return res.json({ success: true, status, download_url });
     } catch (e) {
       console.warn('Falha ao consultar pagamento no Mercado Pago:', e?.message || e);
@@ -1310,6 +1388,19 @@ app.get('/api/apps/:id/purchase/status', authenticate, async (req, res) => {
 
   const status = statusQuery || paymentsByApp.get(id)?.status || 'approved';
   const download_url = status === 'approved' ? (appItem.executableUrl || 'https://example.com/downloads/dev-placeholder.exe') : null;
+  if (status === 'approved') {
+    try {
+      const meta = paymentsByApp.get(id) || {};
+      const tx = {
+        amount: Number(meta.amount || appItem.price || 0),
+        products: meta.products || [{ title: appItem.name, quantity: 1, unit_price: Number(appItem.price || 0) }],
+        customer: { email: req.user?.email, name: req.user?.name },
+      };
+      await mercadoLivre.sendTransaction(tx, { external_reference: String(id), metadata: { source: 'status_check' } });
+    } catch (syncErr) {
+      console.warn('Sync Mercado Livre (status) falhou, mantendo fallback:', syncErr?.message || syncErr);
+    }
+  }
   res.json({ success: true, status, download_url });
 });
 
@@ -1359,6 +1450,17 @@ app.post('/api/apps/webhook', async (req, res) => {
           const appItem = mockApps.find(a => a.id === appId);
           if (appItem) {
             mockHistory.push({ type: 'purchase', appId, app_name: appItem.name, status: 'approved', date: new Date().toISOString() });
+            // Sincronizar transação com Mercado Livre (não bloqueia o webhook)
+            try {
+              const tx = {
+                amount: Number(pay?.transaction_amount || appItem.price || 0),
+                products: [{ title: appItem.name, quantity: 1, unit_price: Number(appItem.price || 0) }],
+                customer: { email: pay?.payer?.email || undefined, name: undefined },
+              };
+              await mercadoLivre.sendTransaction(tx, { external_reference: String(appId), metadata: { payment_id: String(data.id), source: 'webhook' } });
+            } catch (syncErr) {
+              console.warn('Webhook: falha ao sincronizar com Mercado Livre:', syncErr?.message || syncErr);
+            }
           }
         }
       }
@@ -1410,4 +1512,16 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
   console.log('🛑 Recebido SIGINT, encerrando servidor...');
   process.exit(0);
+});
+
+// OAuth callback Mercado Livre para troca de código por tokens
+app.get('/api/mercado-livre/oauth/callback', async (req, res) => {
+  try {
+    const { code } = req.query;
+    await mercadoLivre.exchangeCode(code);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Erro no OAuth callback Mercado Livre:', err);
+    res.status(500).json({ error: 'OAuth callback error' });
+  }
 });

@@ -315,13 +315,24 @@ export function Usuarios() {
       {error && <p role="alert">{error}</p>}
       <div className="table" aria-busy={loading}>
         <table>
-          <thead><tr><th>Nome</th><th>E-mail</th><th>Role</th><th>Status</th></tr></thead>
+          <thead><tr><th>Nome</th><th>E-mail</th><th>Role</th><th>Status</th><th>Ações</th></tr></thead>
           <tbody>
-            {pageItems.length === 0 ? (<tr><td colSpan="4">Nenhum usuário</td></tr>) : pageItems.map(u => (
+            {pageItems.length === 0 ? (<tr><td colSpan="5">Nenhum usuário</td></tr>) : pageItems.map(u => (
               <tr key={u.id}>
                 <td>{u.name}</td><td>{u.email}</td><td>{u.role}</td><td>{u.status}</td>
                 <td>
                   <button onClick={()=>{UsersRepo.toggleStatus(u.id); refresh();}}>{u.status==='active'?'Desativar':'Ativar'}</button>
+                  <select aria-label="Alterar perfil" value={u.role} onChange={async (e)=>{
+                    const newRole = e.target.value;
+                    if (newRole !== u.role) {
+                      const res = await UsersRepo.update(u.id, { role: newRole });
+                      if (!res.ok) { alert(res.error || 'Falha ao atualizar perfil'); } else { refresh(); }
+                    }
+                  }} style={{ marginLeft: 8 }}>
+                    <option value="admin">admin</option>
+                    <option value="editor">editor</option>
+                    <option value="viewer">viewer</option>
+                  </select>
                 </td>
               </tr>
             ))}
@@ -356,7 +367,7 @@ export function Usuarios() {
 
 export function Mentores() {
   const { data: list, loading, error, refresh } = useMentors();
-  const [form, setForm] = React.useState({ name: '', specialty: '', bio: '', email: '', phone: '', photo: '', status: 'published', visible: true });
+  const [form, setForm] = React.useState({ name: '', specialty: '', bio: '', email: '', phone: '', photo: '', avatar_url: '', status: 'published', visible: true });
   const [editingId, setEditingId] = React.useState(null);
   const [errors, setErrors] = React.useState({});
   const [busy, setBusy] = React.useState(false);
@@ -420,7 +431,7 @@ export function Mentores() {
     reader.readAsDataURL(file);
   };
   const toggleVisible = async (m) => { await MentorsRepo.toggleVisible(m); refresh(); };
-  const onEdit = (m) => { setEditingId(m.id); setForm({ name:m.name, specialty:m.specialty, bio:m.bio, email:m.email, phone:m.phone, photo:m.photo||'', status:m.status||'draft', visible: !!m.visible }); };
+  const onEdit = (m) => { setEditingId(m.id); setForm({ name:m.name, specialty:m.specialty, bio:m.bio, email:m.email, phone:m.phone, photo:m.photo||m.avatar_url||'', avatar_url:m.avatar_url||'', status:m.status||'draft', visible: !!m.visible }); };
   const onDelete = async (id) => { if (!window.confirm('Confirma remover este mentor?')) return; await MentorsRepo.delete(id); refresh(); };
   const onUndo = async (id) => { await MentorsRepo.undo(id); refresh(); };
   const onToggleSelect = (id, checked) => {
@@ -506,7 +517,7 @@ export function Mentores() {
             <div className="left">
               <input type="checkbox" aria-label={`Selecionar ${m.name}`} checked={selected.has(m.id)} onChange={e=>onToggleSelect(m.id, e.target.checked)} />
               <div className="avatar">
-                {m.photo ? (<img src={m.photo} alt={`Foto de ${m.name}`} />) : null}
+                {m.photo || m.avatar_url ? (<img src={m.photo || m.avatar_url} alt={`Foto de ${m.name}`} />) : null}
               </div>
             </div>
             <div className="center">
@@ -514,10 +525,19 @@ export function Mentores() {
                 <span className="name">{m.name}</span>
                 <span className="spec">{m.specialty}</span>
               </div>
+              {m.specialty ? (
+                <div className="chips" aria-label="Tags">
+                  <span className="chip">{m.specialty}</span>
+                </div>
+              ) : null}
               <div className="bio">{m.bio}</div>
               <div className="contact">
                 <span>📱 {m.phone || '(00) 00000-0000'}</span>
                 <span>✉️ {m.email || 'email@exemplo.com'}</span>
+              </div>
+              <div className="stats">
+                {m.created_at ? (<span className="stat-item">Mentor desde {new Date(m.created_at).toLocaleDateString('pt-BR', { month:'2-digit', year:'numeric' })}</span>) : null}
+                {m.updated_at ? (<span className="stat-item">Atualizado {new Date(m.updated_at).toLocaleDateString('pt-BR')}</span>) : null}
               </div>
             </div>
             <div className="right">
@@ -558,16 +578,19 @@ export function Mentores() {
               <input aria-label="Enviar foto" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>onPhotoFile(e.target.files?.[0])} />
             </div>
             <div className="formRow">
+              <input aria-label="Avatar URL (banco)" placeholder="Avatar URL (banco)" value={form.avatar_url} onChange={e=>setForm({...form,avatar_url:e.target.value})} />
+            </div>
+            <div className="formRow">
               <label className="checkbox-row" style={{ alignSelf:'center' }}><input type="checkbox" checked={form.visible} onChange={e=>setForm({...form,visible:e.target.checked})} /> Visível</label>
             </div>
           </div>
           <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
-            {form.photo && <img src={form.photo} alt="Preview" style={{maxWidth: '100px', maxHeight: '100px'}}/>}
+            {(form.photo || form.avatar_url) && <img src={form.photo || form.avatar_url} alt="Preview" style={{maxWidth: '100px', maxHeight: '100px'}}/>}
           </div>
         </div>
         <div className="formRow">
           <button className="btn btn-primary" onClick={onSave} disabled={busy || Object.keys(errors).length > 0}>{busy?'Salvando...':(editingId?'Atualizar':'Salvar')}</button>
-          {editingId && (<button className="btn btn-outline" onClick={()=>{ setEditingId(null); setForm({ name: '', specialty: '', bio: '', email: '', phone: '', photo: '', status: 'published', visible: true }); }}>Cancelar</button>)}
+          {editingId && (<button className="btn btn-outline" onClick={()=>{ setEditingId(null); setForm({ name: '', specialty: '', bio: '', email: '', phone: '', photo: '', avatar_url: '', status: 'published', visible: true }); }}>Cancelar</button>)}
           <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="draft">Rascunho</option><option value="published">Publicado</option></select>
         </div>
       </section>
@@ -582,7 +605,7 @@ export function Mentores() {
         <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 12, padding: 12, maxWidth: 600 }}>
           <div style={{ display:'grid', gridTemplateColumns:'100px 1fr', gap: 12 }}>
             <div style={{ width: 100, height: 100, borderRadius: 12, background: 'linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))', border: '1px solid rgba(255,255,255,0.18)', overflow: 'hidden' }}>
-              {form.photo ? (<img src={form.photo} alt="Prévia da foto" style={{ width:'100%', height:'100%', objectFit:'cover' }} />) : null}
+              {(form.photo || form.avatar_url) ? (<img src={form.photo || form.avatar_url} alt="Prévia da foto" style={{ width:'100%', height:'100%', objectFit:'cover' }} />) : null}
             </div>
             <div>
               <div style={{ color:'#fff', fontWeight:700 }}>{form.name || 'Nome do mentor'}</div>
