@@ -18,7 +18,15 @@ export async function getAllApps({ page = 1, pageSize = 50, limit, sortBy, sortO
   qp.set('pageSize', pageSize ?? limit ?? 50);
   if (sortBy) qp.set('sortBy', sortBy);
   if (sortOrder) qp.set('sortOrder', sortOrder);
-  return apiRequest(`/api/apps?${qp.toString()}`, { method: 'GET' });
+  try {
+    // Tenta rota admin; se 401, faz fallback para rota pública
+    return await apiRequest(`/api/apps?${qp.toString()}`, { method: 'GET' });
+  } catch (err) {
+    if (err && (err.status === 401 || String(err.message).toLowerCase().includes('não autenticado'))) {
+      return apiRequest(`/api/apps/public?${qp.toString()}`, { method: 'GET' });
+    }
+    throw err;
+  }
 }
 
 // Detalhes de um app

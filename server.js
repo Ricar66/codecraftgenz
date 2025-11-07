@@ -990,6 +990,38 @@ app.get('/api/apps', authenticate, authorizeAdmin, (req, res) => {
   res.json({ success: true, data: paged, pagination: { total: mockApps.length, page, pageSize } });
 });
 
+// Lista todos apps (público) – sem autenticação
+app.get('/api/apps/public', (req, res) => {
+  const page = parseInt(req.query.page || '1', 10);
+  const pageSize = parseInt(req.query.pageSize || '50', 10);
+  const sortBy = String(req.query.sortBy || '').toLowerCase();
+  const sortOrder = String(req.query.sortOrder || 'desc').toLowerCase();
+
+  const start = (page - 1) * pageSize;
+
+  // Ordenação básica
+  let list = [...mockApps];
+  if (sortBy) {
+    list.sort((a, b) => {
+      const dir = sortOrder === 'asc' ? 1 : -1;
+      switch (sortBy) {
+        case 'name':
+          return String(a.name || '').localeCompare(String(b.name || '')) * dir;
+        case 'price':
+          return ((a.price || 0) - (b.price || 0)) * dir;
+        case 'update':
+        case 'created_at':
+          return (new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) * dir;
+        default:
+          return 0;
+      }
+    });
+  }
+
+  const paged = list.slice(start, start + pageSize);
+  res.json({ success: true, data: paged, pagination: { total: list.length, page, pageSize } });
+});
+
 // Detalhes de um app
 app.get('/api/apps/:id', authenticate, (req, res) => {
   const id = parseInt(req.params.id, 10);
