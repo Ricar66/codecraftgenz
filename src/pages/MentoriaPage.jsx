@@ -30,6 +30,9 @@ export default function MentoriaPage() {
         bio: m.bio || m.descricao || '',
         email: m.email || '',
         visible: m.visible !== undefined ? !!m.visible : true,
+        createdAt: m.created_at || m.createdAt || null,
+        updatedAt: m.updated_at || m.updatedAt || null,
+        projects_count: m.projects_count || m.projetos_count || m.projectsCount || null,
       }));
       setMentors(normalized.filter(m => m.visible));
     } catch (error) {
@@ -76,6 +79,9 @@ export default function MentoriaPage() {
               bio: m.bio || m.descricao || '',
               email: m.email || '',
               visible: m.visible !== undefined ? !!m.visible : true,
+              createdAt: m.created_at || m.createdAt || null,
+              updatedAt: m.updated_at || m.updatedAt || null,
+              projects_count: m.projects_count || m.projetos_count || m.projectsCount || null,
             }));
             setMentors(normalized.filter(m => m.visible));
           })
@@ -96,6 +102,18 @@ export default function MentoriaPage() {
       }
     };
   }, []); // Sem dependências para evitar re-execução desnecessária
+
+  const sanitizePhone = (raw) => String(raw || '').replace(/\D/g, '');
+  const buildWhatsapp = (raw) => {
+    const digits = sanitizePhone(raw);
+    const hasCountry = digits.length > 11 && digits.startsWith('55');
+    const withCountry = hasCountry ? digits : (`55${digits}`);
+    return `https://wa.me/${withCountry}`;
+  };
+  const formatMonthYear = (iso) => {
+    try { return new Date(iso).toLocaleDateString('pt-BR', { month:'2-digit', year:'numeric' }); }
+    catch { return '—'; }
+  };
 
   return (
     <div className="mentoria-page" style={{
@@ -120,7 +138,7 @@ export default function MentoriaPage() {
 
           <div className="mentors-grid" aria-busy={loading}>
             {mentors.map((m) => (
-              <article key={m.id || m.email || m.name} className="mentor-card">
+              <article key={m.id || m.email || m.name} className="mentor-card" aria-label={`Mentor ${m.name}`}>
                 <div className="avatar" aria-hidden={!!m.photo}>
                   {m.photo ? (<img src={m.photo} alt={`Foto de ${m.name}`} style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />) : null}
                 </div>
@@ -128,6 +146,10 @@ export default function MentoriaPage() {
                   <div className="header">
                     <h3 className="name">{m.name}</h3>
                     <p className="role">{m.cargo || m.specialty}</p>
+                    <div className="chips">
+                      {m.specialty ? (<span className="chip" aria-label="Especialidade">{m.specialty}</span>) : null}
+                      {m.cargo ? (<span className="chip alt" aria-label="Cargo">{m.cargo}</span>) : null}
+                    </div>
                   </div>
                   <div className="details">
                     <div className="contact">
@@ -135,6 +157,22 @@ export default function MentoriaPage() {
                       {m.email ? (<span className="contact-item" title={m.email}>📧 {m.email}</span>) : null}
                     </div>
                     <p className="bio">{m.bio}</p>
+                    <div className="stats">
+                      <span className="stat-item">Projetos orientados: {m.projects_count ?? '—'}</span>
+                      {m.createdAt ? (<span className="stat-item">Mentor desde {formatMonthYear(m.createdAt)}</span>) : null}
+                    </div>
+                    <div className="actions">
+                      {m.phone ? (
+                        <a className="btn btn-whatsapp" href={buildWhatsapp(m.phone)} target="_blank" rel="noopener noreferrer" aria-label={`Abrir WhatsApp de ${m.name}`}>
+                          WhatsApp
+                        </a>
+                      ) : null}
+                      {m.email ? (
+                        <a className="btn btn-email" href={`mailto:${m.email}`} target="_blank" rel="noopener noreferrer" aria-label={`Enviar email para ${m.name}`}>
+                          Email
+                        </a>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </article>
@@ -228,9 +266,13 @@ export default function MentoriaPage() {
 
         .info { display: flex; flex-direction: column; gap: var(--espaco-xs); min-width: 0; }
         .header { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-        .details { margin-top: var(--espaco-xs); text-align: left; }
-        .details .bio { margin-top: var(--espaco-sm); }
-        .contact { justify-content: flex-start; min-width: 0; }
+      .details { margin-top: var(--espaco-xs); text-align: left; }
+      .details .bio { margin-top: var(--espaco-sm); }
+      .contact { justify-content: flex-start; min-width: 0; }
+
+        .chips { display:flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+        .chip { display:inline-block; padding: 6px 10px; border-radius: 999px; font-size: 0.8rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); color: var(--texto-branco); }
+        .chip.alt { background: rgba(209,43,242,0.12); border-color: rgba(209,43,242,0.35); }
 
         .name { font-weight: 700; color: var(--texto-branco); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .role { color: var(--texto-gelo); font-size: 0.95rem; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -238,6 +280,13 @@ export default function MentoriaPage() {
         .contact-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 6px 10px; max-width: 100%; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .mentor-card:hover .contact-item { border-color: #00E4F2; }
         .bio { margin-top: var(--espaco-sm); color: var(--texto-gelo); line-height: 1.5; word-break: break-word; hyphens: auto; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
+        .stats { display:flex; flex-wrap: wrap; gap: 10px; margin-top: var(--espaco-sm); color: var(--texto-gelo); }
+        .stat-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 8px; }
+        .actions { display:flex; gap: 8px; margin-top: var(--espaco-sm); }
+        .btn { padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.18); cursor: pointer; transition: transform .2s ease, box-shadow .2s ease; }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 18px rgba(0,0,0,0.25); }
+        .btn-whatsapp { background: #25D366; color: #000; border: none; font-weight: 700; }
+        .btn-email { background: linear-gradient(90deg, #00E4F2, #7CF6FF); color: #000; border: none; font-weight: 700; }
 
         .section-footer { margin-top: 20px; }
         .helper-text { color: var(--texto-gelo); text-align: center; }
