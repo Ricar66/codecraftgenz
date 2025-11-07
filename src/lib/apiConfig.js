@@ -68,9 +68,15 @@ export async function apiRequest(endpoint, options = {}) {
       throw apiError;
     }
 
-    // Retorna a resposta JSON se houver conteúdo
+    // Retorna a resposta respeitando Content-Type
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      return await response.json();
+    }
     const text = await response.text();
-    return text ? JSON.parse(text) : {};
+    if (!text) return {};
+    // Evita SyntaxError quando backend retorna HTML/erro genérico
+    throw new Error('Resposta da API não é JSON');
 
   } catch (error) {
     // Se for erro de rede (ex: ERR_CONNECTION_REFUSED)
