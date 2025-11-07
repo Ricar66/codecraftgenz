@@ -140,7 +140,18 @@ export default function MentoriaPage() {
             {mentors.map((m) => (
               <article key={m.id || m.email || m.name} className="mentor-card" aria-label={`Mentor ${m.name}`}>
                 <div className="avatar" aria-hidden={!!m.photo}>
-                  {m.photo ? (<img src={m.photo} alt={`Foto de ${m.name}`} style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />) : null}
+                  {m.photo ? (
+                    <img
+                      src={m.photo}
+                      alt={`Foto de ${m.name}`}
+                      style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }}
+                      loading="lazy"
+                      decoding="async"
+                      fetchpriority="low"
+                      width="160"
+                      height="160"
+                    />
+                  ) : null}
                 </div>
                 <div className="info">
                   <div className="header">

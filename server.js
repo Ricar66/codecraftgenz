@@ -1365,6 +1365,48 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
         products: [{ title: appItem.name, quantity: 1, unit_price: Number(appItem.price || 0) }],
       });
       mockHistory.push({ type: 'purchase', appId: id, app_name: appItem.name, status: 'pending', date: new Date().toISOString() });
+      // Persistir no banco: app_history (pending) e app_payments (pending) com novas colunas
+      try {
+        const pool = await getConnectionPool();
+        // Histórico
+        await pool.request()
+          .input('type', dbSql.NVarChar, 'purchase')
+          .input('app_id', dbSql.Int, id)
+          .input('app_name', dbSql.NVarChar, appItem.name)
+          .input('status', dbSql.NVarChar, 'pending')
+          .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
+        // Pagamento (usa preference_id tanto em payment_id quanto na coluna preference_id para manter PK)
+        const metadataJson = JSON.stringify({ external_reference: String(id) });
+        await pool.request()
+          .input('payment_id', dbSql.NVarChar, String(preference_id))
+          .input('preference_id', dbSql.NVarChar, String(preference_id))
+          .input('app_id', dbSql.Int, id)
+          .input('user_id', dbSql.Int, req.user?.id || null)
+          .input('status', dbSql.NVarChar, 'pending')
+          .input('amount', dbSql.Decimal(18, 2), Number(appItem.price || 0))
+          .input('currency', dbSql.NVarChar, 'BRL')
+          .input('payer_email', dbSql.NVarChar, req.user?.email || null)
+          .input('source', dbSql.NVarChar, 'mercado_pago')
+          .input('metadata', dbSql.NVarChar(dbSql.MAX), metadataJson)
+          .query('INSERT INTO dbo.app_payments (payment_id, preference_id, app_id, user_id, status, amount, currency, payer_email, source, metadata) VALUES (@payment_id, @preference_id, @app_id, @user_id, @status, @amount, @currency, @payer_email, @source, @metadata)');
+        // Auditoria
+        await pool.request()
+          .input('payment_id', dbSql.NVarChar, String(preference_id))
+          .input('preference_id', dbSql.NVarChar, String(preference_id))
+          .input('app_id', dbSql.Int, id)
+          .input('user_id', dbSql.Int, req.user?.id || null)
+          .input('action', dbSql.NVarChar, 'create_preference')
+          .input('from_status', dbSql.NVarChar, null)
+          .input('to_status', dbSql.NVarChar, 'pending')
+          .input('from_payment_id', dbSql.NVarChar, null)
+          .input('to_payment_id', dbSql.NVarChar, String(preference_id))
+          .input('amount', dbSql.Decimal(18, 2), Number(appItem.price || 0))
+          .input('currency', dbSql.NVarChar, 'BRL')
+          .input('payer_email', dbSql.NVarChar, req.user?.email || null)
+          .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
+      } catch (dbErr) {
+        console.warn('Falha ao persistir compra pendente no banco:', dbErr?.message || dbErr);
+      }
       return res.status(201).json({ success: true, preference_id, init_point });
     } catch (e) {
       console.error('Erro ao criar preferência Mercado Pago:', e);
@@ -1384,6 +1426,46 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
     products: [{ title: appItem.name, quantity: 1, unit_price: Number(appItem.price || 0) }],
   });
   mockHistory.push({ type: 'purchase', appId: id, app_name: appItem.name, status: 'approved', date: new Date().toISOString() });
+  // Persistir no banco: app_history (approved) e app_payments (approved) com novas colunas
+  try {
+    const pool = await getConnectionPool();
+    await pool.request()
+      .input('type', dbSql.NVarChar, 'purchase')
+      .input('app_id', dbSql.Int, id)
+      .input('app_name', dbSql.NVarChar, appItem.name)
+      .input('status', dbSql.NVarChar, 'approved')
+      .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
+    const metadataJson = JSON.stringify({ external_reference: String(id), source: 'mock' });
+    await pool.request()
+      .input('payment_id', dbSql.NVarChar, String(preference_id))
+      .input('preference_id', dbSql.NVarChar, String(preference_id))
+      .input('app_id', dbSql.Int, id)
+      .input('user_id', dbSql.Int, req.user?.id || null)
+      .input('status', dbSql.NVarChar, 'approved')
+      .input('amount', dbSql.Decimal(18, 2), Number(appItem.price || 0))
+      .input('currency', dbSql.NVarChar, 'BRL')
+      .input('payer_email', dbSql.NVarChar, req.user?.email || null)
+      .input('source', dbSql.NVarChar, 'mercado_pago')
+      .input('metadata', dbSql.NVarChar(dbSql.MAX), metadataJson)
+      .query('INSERT INTO dbo.app_payments (payment_id, preference_id, app_id, user_id, status, amount, currency, payer_email, source, metadata) VALUES (@payment_id, @preference_id, @app_id, @user_id, @status, @amount, @currency, @payer_email, @source, @metadata)');
+    // Auditoria
+    await pool.request()
+      .input('payment_id', dbSql.NVarChar, String(preference_id))
+      .input('preference_id', dbSql.NVarChar, String(preference_id))
+      .input('app_id', dbSql.Int, id)
+      .input('user_id', dbSql.Int, req.user?.id || null)
+      .input('action', dbSql.NVarChar, 'status_update')
+      .input('from_status', dbSql.NVarChar, 'pending')
+      .input('to_status', dbSql.NVarChar, 'approved')
+      .input('from_payment_id', dbSql.NVarChar, String(preference_id))
+      .input('to_payment_id', dbSql.NVarChar, String(preference_id))
+      .input('amount', dbSql.Decimal(18, 2), Number(appItem.price || 0))
+      .input('currency', dbSql.NVarChar, 'BRL')
+      .input('payer_email', dbSql.NVarChar, req.user?.email || null)
+      .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
+  } catch (dbErr) {
+    console.warn('Falha ao persistir compra aprovada (mock) no banco:', dbErr?.message || dbErr);
+  }
   res.status(201).json({ success: true, preference_id, init_point });
 });
 
@@ -1413,6 +1495,108 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
         } catch (syncErr) {
           console.warn('Sync Mercado Livre falhou (fallback mantido):', syncErr?.message || syncErr);
         }
+        // Persistir no banco: atualizar/registrar pagamento e histórico aprovado (novas colunas)
+        try {
+          const pool = await getConnectionPool();
+          const payerEmail = data?.payer?.email || req.user?.email || null;
+          const amountVal = Number(appItem.price || data?.transaction_amount || 0);
+          const currencyVal = data?.currency_id || 'BRL';
+
+          // 1) Tenta atualizar pelo payment_id
+          const updByPid = await pool.request()
+            .input('pid', dbSql.NVarChar, String(payment_id))
+            .input('status', dbSql.NVarChar, 'approved')
+            .input('amount', dbSql.Decimal(18, 2), amountVal)
+            .input('currency', dbSql.NVarChar, currencyVal)
+            .input('payer_email', dbSql.NVarChar, payerEmail)
+            .query('UPDATE dbo.app_payments SET status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, updated_at=SYSUTCDATETIME() WHERE payment_id=@pid');
+
+          let affected = updByPid?.rowsAffected?.[0] || 0;
+          if (affected === 0) {
+            // 2) Se não encontrou, atualiza o registro pendente pelo app_id, ajustando o payment_id
+            const updPending = await pool.request()
+              .input('pid', dbSql.NVarChar, String(payment_id))
+              .input('app_id', dbSql.Int, id)
+              .input('status', dbSql.NVarChar, 'approved')
+              .input('amount', dbSql.Decimal(18, 2), amountVal)
+              .input('currency', dbSql.NVarChar, currencyVal)
+              .input('payer_email', dbSql.NVarChar, payerEmail)
+              .query("UPDATE dbo.app_payments SET payment_id=@pid, status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND status='pending'");
+            affected = updPending?.rowsAffected?.[0] || 0;
+            if (affected > 0) {
+              // Auditoria de correção de payment_id
+              await pool.request()
+                .input('payment_id', dbSql.NVarChar, String(payment_id))
+                .input('preference_id', dbSql.NVarChar, null)
+                .input('app_id', dbSql.Int, id)
+                .input('user_id', dbSql.Int, req.user?.id || null)
+                .input('action', dbSql.NVarChar, 'pid_correction')
+                .input('from_status', dbSql.NVarChar, 'pending')
+                .input('to_status', dbSql.NVarChar, 'approved')
+                .input('from_payment_id', dbSql.NVarChar, null)
+                .input('to_payment_id', dbSql.NVarChar, String(payment_id))
+                .input('amount', dbSql.Decimal(18, 2), amountVal)
+                .input('currency', dbSql.NVarChar, currencyVal)
+                .input('payer_email', dbSql.NVarChar, payerEmail)
+                .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
+            }
+          }
+          if (affected === 0) {
+            // 3) Se ainda não há registro, insere um novo
+            await pool.request()
+              .input('pid', dbSql.NVarChar, String(payment_id))
+              .input('app_id', dbSql.Int, id)
+              .input('user_id', dbSql.Int, req.user?.id || null)
+              .input('status', dbSql.NVarChar, 'approved')
+              .input('amount', dbSql.Decimal(18, 2), amountVal)
+              .input('currency', dbSql.NVarChar, currencyVal)
+              .input('payer_email', dbSql.NVarChar, payerEmail)
+              .input('source', dbSql.NVarChar, 'mercado_pago')
+              .query('INSERT INTO dbo.app_payments (payment_id, app_id, user_id, status, amount, currency, payer_email, source) VALUES (@pid, @app_id, @user_id, @status, @amount, @currency, @payer_email, @source)');
+            // Auditoria de inserção faltante
+            await pool.request()
+              .input('payment_id', dbSql.NVarChar, String(payment_id))
+              .input('preference_id', dbSql.NVarChar, null)
+              .input('app_id', dbSql.Int, id)
+              .input('user_id', dbSql.Int, req.user?.id || null)
+              .input('action', dbSql.NVarChar, 'insert_missing')
+              .input('from_status', dbSql.NVarChar, null)
+              .input('to_status', dbSql.NVarChar, 'approved')
+              .input('from_payment_id', dbSql.NVarChar, null)
+              .input('to_payment_id', dbSql.NVarChar, String(payment_id))
+              .input('amount', dbSql.Decimal(18, 2), amountVal)
+              .input('currency', dbSql.NVarChar, currencyVal)
+              .input('payer_email', dbSql.NVarChar, payerEmail)
+              .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
+          }
+
+          // Auditoria de status update (caso 1: atualização por payment_id)
+          if ((updByPid?.rowsAffected?.[0] || 0) > 0) {
+            await pool.request()
+              .input('payment_id', dbSql.NVarChar, String(payment_id))
+              .input('preference_id', dbSql.NVarChar, null)
+              .input('app_id', dbSql.Int, id)
+              .input('user_id', dbSql.Int, req.user?.id || null)
+              .input('action', dbSql.NVarChar, 'status_update')
+              .input('from_status', dbSql.NVarChar, 'pending')
+              .input('to_status', dbSql.NVarChar, 'approved')
+              .input('from_payment_id', dbSql.NVarChar, null)
+              .input('to_payment_id', dbSql.NVarChar, String(payment_id))
+              .input('amount', dbSql.Decimal(18, 2), amountVal)
+              .input('currency', dbSql.NVarChar, currencyVal)
+              .input('payer_email', dbSql.NVarChar, payerEmail)
+              .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
+          }
+
+          await pool.request()
+            .input('type', dbSql.NVarChar, 'purchase')
+            .input('app_id', dbSql.Int, id)
+            .input('app_name', dbSql.NVarChar, appItem.name)
+            .input('status', dbSql.NVarChar, 'approved')
+            .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
+        } catch (dbErr) {
+          console.warn('Falha ao atualizar pagamento aprovado no banco:', dbErr?.message || dbErr);
+        }
       }
       return res.json({ success: true, status, download_url });
     } catch (e) {
@@ -1435,6 +1619,18 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
     } catch (syncErr) {
       console.warn('Sync Mercado Livre (status) falhou, mantendo fallback:', syncErr?.message || syncErr);
     }
+    // Persistir no banco: histórico aprovado (fallback)
+    try {
+      const pool = await getConnectionPool();
+      await pool.request()
+        .input('type', dbSql.NVarChar, 'purchase')
+        .input('app_id', dbSql.Int, id)
+        .input('app_name', dbSql.NVarChar, appItem.name)
+        .input('status', dbSql.NVarChar, 'approved')
+        .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
+    } catch (dbErr) {
+      console.warn('Falha ao persistir histórico aprovado (fallback) no banco:', dbErr?.message || dbErr);
+    }
   }
   res.json({ success: true, status, download_url });
 });
@@ -1448,6 +1644,20 @@ app.post('/api/apps/:id/download', authenticate, (req, res) => {
   if (!statusOk) return res.status(403).json({ error: 'Download não liberado. Pagamento não aprovado.' });
   const url = appItem.executableUrl || 'https://example.com/downloads/dev-placeholder.exe';
   mockHistory.push({ type: 'download', appId: id, app_name: appItem.name, status: 'done', date: new Date().toISOString() });
+  // Persistir no banco: app_history (download)
+  (async () => {
+    try {
+      const pool = await getConnectionPool();
+      await pool.request()
+        .input('type', dbSql.NVarChar, 'download')
+        .input('app_id', dbSql.Int, id)
+        .input('app_name', dbSql.NVarChar, appItem.name)
+        .input('status', dbSql.NVarChar, 'done')
+        .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
+    } catch (dbErr) {
+      console.warn('Falha ao persistir download no banco:', dbErr?.message || dbErr);
+    }
+  })();
   res.json({ success: true, download_url: url });
 });
 
@@ -1495,6 +1705,108 @@ app.post('/api/apps/webhook', async (req, res) => {
               await mercadoLivre.sendTransaction(tx, { external_reference: String(appId), metadata: { payment_id: String(data.id), source: 'webhook' } });
             } catch (syncErr) {
               console.warn('Webhook: falha ao sincronizar com Mercado Livre:', syncErr?.message || syncErr);
+            }
+            // Persistir no banco: app_history aprovado e app_payments atualizado (novas colunas)
+            try {
+              const pool = await getConnectionPool();
+              await pool.request()
+                .input('type', dbSql.NVarChar, 'purchase')
+                .input('app_id', dbSql.Int, appId)
+                .input('app_name', dbSql.NVarChar, appItem.name)
+                .input('status', dbSql.NVarChar, 'approved')
+                .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
+
+              const payerEmail = pay?.payer?.email || null;
+              const amountVal = Number(pay?.transaction_amount || appItem.price || 0);
+              const currencyVal = pay?.currency_id || 'BRL';
+
+              // 1) Atualiza pelo payment_id do webhook
+              const updByPid = await pool.request()
+                .input('pid', dbSql.NVarChar, String(data.id))
+                .input('status', dbSql.NVarChar, 'approved')
+                .input('amount', dbSql.Decimal(18, 2), amountVal)
+                .input('currency', dbSql.NVarChar, currencyVal)
+                .input('payer_email', dbSql.NVarChar, payerEmail)
+                .query('UPDATE dbo.app_payments SET status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, updated_at=SYSUTCDATETIME() WHERE payment_id=@pid');
+
+              let affected = updByPid?.rowsAffected?.[0] || 0;
+              if (affected === 0) {
+                // 2) Atualiza o pendente pelo app_id
+                const updPending = await pool.request()
+                  .input('pid', dbSql.NVarChar, String(data.id))
+                  .input('app_id', dbSql.Int, appId)
+                  .input('status', dbSql.NVarChar, 'approved')
+                  .input('amount', dbSql.Decimal(18, 2), amountVal)
+                  .input('currency', dbSql.NVarChar, currencyVal)
+                  .input('payer_email', dbSql.NVarChar, payerEmail)
+                  .query("UPDATE dbo.app_payments SET payment_id=@pid, status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND status='pending'");
+                affected = updPending?.rowsAffected?.[0] || 0;
+                if (affected > 0) {
+                  // Auditoria de correção de payment_id (webhook)
+                  await pool.request()
+                    .input('payment_id', dbSql.NVarChar, String(data.id))
+                    .input('preference_id', dbSql.NVarChar, null)
+                    .input('app_id', dbSql.Int, appId)
+                    .input('user_id', dbSql.Int, null)
+                    .input('action', dbSql.NVarChar, 'pid_correction')
+                    .input('from_status', dbSql.NVarChar, 'pending')
+                    .input('to_status', dbSql.NVarChar, 'approved')
+                    .input('from_payment_id', dbSql.NVarChar, null)
+                    .input('to_payment_id', dbSql.NVarChar, String(data.id))
+                    .input('amount', dbSql.Decimal(18, 2), amountVal)
+                    .input('currency', dbSql.NVarChar, currencyVal)
+                    .input('payer_email', dbSql.NVarChar, payerEmail)
+                    .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
+                }
+              }
+              if (affected === 0) {
+                // 3) Insere um novo se não achar
+                await pool.request()
+                  .input('pid', dbSql.NVarChar, String(data.id))
+                  .input('app_id', dbSql.Int, appId)
+                  .input('user_id', dbSql.Int, null)
+                  .input('status', dbSql.NVarChar, 'approved')
+                  .input('amount', dbSql.Decimal(18, 2), amountVal)
+                  .input('currency', dbSql.NVarChar, currencyVal)
+                  .input('payer_email', dbSql.NVarChar, payerEmail)
+                  .input('source', dbSql.NVarChar, 'mercado_pago')
+                  .query('INSERT INTO dbo.app_payments (payment_id, app_id, user_id, status, amount, currency, payer_email, source) VALUES (@pid, @app_id, @user_id, @status, @amount, @currency, @payer_email, @source)');
+                // Auditoria de inserção faltante (webhook)
+                await pool.request()
+                  .input('payment_id', dbSql.NVarChar, String(data.id))
+                  .input('preference_id', dbSql.NVarChar, null)
+                  .input('app_id', dbSql.Int, appId)
+                  .input('user_id', dbSql.Int, null)
+                  .input('action', dbSql.NVarChar, 'insert_missing')
+                  .input('from_status', dbSql.NVarChar, null)
+                  .input('to_status', dbSql.NVarChar, 'approved')
+                  .input('from_payment_id', dbSql.NVarChar, null)
+                  .input('to_payment_id', dbSql.NVarChar, String(data.id))
+                  .input('amount', dbSql.Decimal(18, 2), amountVal)
+                  .input('currency', dbSql.NVarChar, currencyVal)
+                  .input('payer_email', dbSql.NVarChar, payerEmail)
+                  .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
+              }
+
+              // Auditoria de status update (caso 1: atualização por payment_id)
+              if ((updByPid?.rowsAffected?.[0] || 0) > 0) {
+                await pool.request()
+                  .input('payment_id', dbSql.NVarChar, String(data.id))
+                  .input('preference_id', dbSql.NVarChar, null)
+                  .input('app_id', dbSql.Int, appId)
+                  .input('user_id', dbSql.Int, null)
+                  .input('action', dbSql.NVarChar, 'webhook_update')
+                  .input('from_status', dbSql.NVarChar, 'pending')
+                  .input('to_status', dbSql.NVarChar, 'approved')
+                  .input('from_payment_id', dbSql.NVarChar, null)
+                  .input('to_payment_id', dbSql.NVarChar, String(data.id))
+                  .input('amount', dbSql.Decimal(18, 2), amountVal)
+                  .input('currency', dbSql.NVarChar, currencyVal)
+                  .input('payer_email', dbSql.NVarChar, payerEmail)
+                  .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
+              }
+            } catch (dbErr) {
+              console.warn('Webhook: falha ao persistir atualização de pagamento no banco:', dbErr?.message || dbErr);
             }
           }
         }

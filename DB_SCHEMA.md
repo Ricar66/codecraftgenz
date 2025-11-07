@@ -377,3 +377,191 @@ GO
 - `site_feedbacks`: feedbacks gerais do site com `rating` default 5 e validação 1–5.
 - `desafios`: campos para uso em Admin/`useDesafios` (status default `draft`, `tags` JSON/CSV, visibilidade).
 - Índices criados para melhorar consultas por `nome`, `status` e `status_inscricao`.
+
+---
+
+## SQL recebido (Parte 4)
+
+```sql
+-- Evolução da tabela de pagamentos (Mercado Pago) para melhor rastreabilidade
+-- Idempotente: usa COL_LENGTH e EXISTS para evitar erros em execuções repetidas
+
+------------------------------------------------------------
+-- 1) Adicionar colunas (cada bloco separado)
+------------------------------------------------------------
+
+IF COL_LENGTH('dbo.app_payments', 'preference_id') IS NULL
+BEGIN
+  ALTER TABLE dbo.app_payments
+    ADD preference_id NVARCHAR(64) NULL;
+END;
+GO
+
+IF COL_LENGTH('dbo.app_payments', 'amount') IS NULL
+BEGIN
+  ALTER TABLE dbo.app_payments
+    ADD amount DECIMAL(18,2) NULL;
+END;
+GO
+
+IF COL_LENGTH('dbo.app_payments', 'currency') IS NULL
+BEGIN
+  ALTER TABLE dbo.app_payments
+    ADD currency NVARCHAR(3) NOT NULL
+      CONSTRAINT DF_app_payments_currency DEFAULT 'BRL';
+END;
+GO
+
+IF COL_LENGTH('dbo.app_payments', 'payer_email') IS NULL
+BEGIN
+  ALTER TABLE dbo.app_payments
+    ADD payer_email NVARCHAR(255) NULL;
+END;
+GO
+
+IF COL_LENGTH('dbo.app_payments', 'updated_at') IS NULL
+BEGIN
+  ALTER TABLE dbo.app_payments
+    ADD updated_at DATETIME2(0) NOT NULL
+      CONSTRAINT DF_app_payments_updated DEFAULT SYSUTCDATETIME();
+END;
+GO
+
+IF COL_LENGTH('dbo.app_payments', 'source') IS NULL
+BEGIN
+  ALTER TABLE dbo.app_payments
+    ADD source NVARCHAR(20) NULL;  -- ex: 'mercado_pago'
+END;
+GO
+
+IF COL_LENGTH('dbo.app_payments', 'metadata') IS NULL
+BEGIN
+  ALTER TABLE dbo.app_payments
+    ADD metadata NVARCHAR(MAX) NULL;  -- JSON livre
+END;
+GO
+
+------------------------------------------------------------
+-- 2) Migração básica: preencher preference_id nos pendentes
+--    (usa dynamic SQL para evitar erro de compilação)
+------------------------------------------------------------
+
+IF COL_LENGTH('dbo.app_payments', 'preference_id') IS NOT NULL
+BEGIN
+  EXEC sp_executesql N'
+    UPDATE dbo.app_payments
+       SET preference_id = payment_id
+     WHERE preference_id IS NULL
+       AND status = ''pending'';
+  ';
+END;
+GO
+
+------------------------------------------------------------
+-- 3) Índices recomendados em app_payments
+------------------------------------------------------------
+
+IF NOT EXISTS (
+  SELECT 1 FROM sys.indexes
+   WHERE name = 'IX_app_payments_app_status'
+     AND object_id = OBJECT_ID('dbo.app_payments')
+)
+BEGIN
+  CREATE INDEX IX_app_payments_app_status
+    ON dbo.app_payments(app_id, status);
+END;
+GO
+
+IF COL_LENGTH('dbo.app_payments', 'preference_id') IS NOT NULL
+   AND NOT EXISTS (
+     SELECT 1 FROM sys.indexes
+      WHERE name = 'IX_app_payments_preference'
+        AND object_id = OBJECT_ID('dbo.app_payments')
+)
+BEGIN
+  EXEC sp_executesql N'
+    CREATE INDEX IX_app_payments_preference
+      ON dbo.app_payments(preference_id);
+  ';
+END;
+GO
+
+IF NOT EXISTS (
+  SELECT 1 FROM sys.indexes
+   WHERE name = 'IX_app_payments_user'
+     AND object_id = OBJECT_ID('dbo.app_payments')
+)
+BEGIN
+  CREATE INDEX IX_app_payments_user
+    ON dbo.app_payments(user_id);
+END;
+GO
+
+------------------------------------------------------------
+-- 4) Índice útil em app_history (opcional, para relatórios)
+------------------------------------------------------------
+
+IF OBJECT_ID('dbo.app_history', 'U') IS NOT NULL
+   AND NOT EXISTS (
+     SELECT 1 FROM sys.indexes
+      WHERE name = 'IX_app_history_app_type_date'
+        AND object_id = OBJECT_ID('dbo.app_history')
+)
+BEGIN
+  CREATE INDEX IX_app_history_app_type_date
+    ON dbo.app_history(app_id, type, date);
+END;
+GO
+```
+
+## Notas (Parte 4)
+
+- Adiciona colunas em `dbo.app_payments` para rastrear `preference_id`, valores (`amount`, `currency`), `payer_email`, `updated_at`, `source` e `metadata`.
+- Preenche `preference_id` para registros pendentes que só têm `payment_id`.
+- Cria índices úteis para consultas por `app_id,status`, `preference_id` e `user_id`.
+- Índice opcional em `dbo.app_history` para apoiar relatórios e histórico por app.
+
+---
+
+## SQL recebido (Parte 5)
+
+```sql
+-- Auditoria de pagamentos: registra transições, correções de payment_id e atualizações
+IF OBJECT_ID('dbo.app_payments_audit', 'U') IS NULL
+BEGIN
+  CREATE TABLE dbo.app_payments_audit (
+    id               INT IDENTITY(1,1) PRIMARY KEY,
+    payment_id       NVARCHAR(64) NULL,
+    preference_id    NVARCHAR(64) NULL,
+    app_id           INT NOT NULL,
+    user_id          INT NULL,
+    action           NVARCHAR(50) NOT NULL,  -- 'create_preference','status_update','webhook_update','pid_correction','insert_missing'
+    from_status      NVARCHAR(30) NULL,
+    to_status        NVARCHAR(30) NULL,
+    from_payment_id  NVARCHAR(64) NULL,
+    to_payment_id    NVARCHAR(64) NULL,
+    amount           DECIMAL(18,2) NULL,
+    currency         NVARCHAR(3) NULL,
+    payer_email      NVARCHAR(255) NULL,
+    created_at       DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT fk_app_pay_audit_app  FOREIGN KEY (app_id)  REFERENCES dbo.apps(id)   ON DELETE CASCADE,
+    CONSTRAINT fk_app_pay_audit_user FOREIGN KEY (user_id) REFERENCES dbo.users(id)
+  );
+END
+GO
+
+IF NOT EXISTS (
+  SELECT 1 FROM sys.indexes
+   WHERE name = 'IX_app_payments_audit_app_date'
+     AND object_id = OBJECT_ID('dbo.app_payments_audit')
+)
+BEGIN
+  CREATE INDEX IX_app_payments_audit_app_date ON dbo.app_payments_audit (app_id, created_at);
+END
+GO
+```
+
+## Notas (Parte 5)
+
+- `dbo.app_payments_audit` registra eventos do fluxo de pagamento, inclusive correções de `payment_id` (preferência → pagamento real).
+- Índice por `app_id, created_at` facilita consultas cronológicas por aplicativo.

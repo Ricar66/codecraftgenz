@@ -2,26 +2,25 @@
 
 .admin-content {
   padding: 20px;
+  color: #fff;
 }
 
 .title {
   margin: 0 0 8px 0;
   font-size: 24px;
-  color: #2c3e50;
+  color: #fff;
 }
 
 .muted {
-  color: #7f8c8d;
+  color: rgba(255, 255, 255, 0.8);
   font-size: 14px;
 }
 
 .filters-section {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: var(--raio-xl);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: none;
   padding: var(--espaco-xl);
   margin: 16px 0;
   display: grid;
@@ -52,41 +51,40 @@
 }
 
 .card {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: var(--raio-xl);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: none;
   padding: var(--espaco-xl);
 }
 
 .table { 
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: var(--raio-xl); 
-  overflow: hidden; 
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  overflow: auto; 
+  box-shadow: none;
 }
 .table table { width: 100%; border-collapse: collapse; }
 .table thead th { 
   text-align: left; 
   padding: 10px 12px; 
-  background: rgba(255, 255, 255, 0.06);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
 }
-.table tbody td { padding: 10px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
+.table tbody td { padding: 10px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.16); color: #fff; }
 .table tbody tr:hover { background: rgba(0,228,242,0.08); }
 
 .btn { 
   padding: 8px 12px; 
   border-radius: 8px; 
-  border: 1px solid rgba(255,255,255,0.16); 
-  background: rgba(255,255,255,0.06);
-  color: var(--texto-gelo);
+  border: 1px solid rgba(255,255,255,0.3); 
+  background: transparent;
+  color: #fff;
 }
 .btn-primary { background: #00E4F2; border-color: #00b6c3; color: #000; }
-.btn-outline { background: transparent; border-color: #ced4da; }
+.btn-outline { background: transparent; border-color: rgba(255,255,255,0.6); color: #fff; }
 .btn-secondary { background: #68007B; border-color: #520062; color: #fff; }
 .btn-danger { background: #D12BF2; border-color: #9e20b9; color: #fff; }
 
@@ -106,29 +104,29 @@
 
 /* Grupos verticais (label + input) */
 .formGroup { display: flex; flex-direction: column; gap: 6px; }
-.form-label { font-size: 14px; color: #2c3e50; }
-.form-help { font-size: 12px; color: #7f8c8d; }
+.form-label { font-size: 14px; color: #fff; }
+.form-help { font-size: 12px; color: rgba(255, 255, 255, 0.75); }
 
 /* Inputs base */
 .admin-content input:not([type="checkbox"]):not([type="radio"]),
 .admin-content select,
 .admin-content textarea {
   padding: 10px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 8px;
   font-size: 14px;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--texto-gelo);
+  background: transparent;
+  color: #fff;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 .admin-content textarea { min-height: 80px; resize: vertical; }
 .admin-content input::placeholder,
-.admin-content textarea::placeholder { color: #A6A6A6; }
+.admin-content textarea::placeholder { color: rgba(255, 255, 255, 0.65); }
 
 /* Estados: hover/focus/disabled */
 .admin-content input:not([type="checkbox"]):not([type="radio"]):hover,
 .admin-content select:hover,
-.admin-content textarea:hover { border-color: rgba(255, 255, 255, 0.28); }
+.admin-content textarea:hover { border-color: rgba(255, 255, 255, 0.42); }
 
 .admin-content input:not([type="checkbox"]):not([type="radio"]):focus,
 .admin-content input:not([type="checkbox"]):not([type="radio"]):focus-visible,
@@ -138,16 +136,16 @@
 .admin-content textarea:focus-visible {
   outline: none;
   border-color: #00E4F2;
-  box-shadow: 0 0 0 3px rgba(0, 228, 242, 0.18);
-  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(0, 228, 242, 0.28);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .admin-content input:disabled,
 .admin-content select:disabled,
 .admin-content textarea:disabled {
   cursor: not-allowed;
-  background: rgba(255, 255, 255, 0.04);
-  color: #A6A6A6;
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255,255,255,0.6);
   border-color: rgba(255, 255, 255, 0.12);
 }
 
@@ -159,7 +157,7 @@
 .checkbox-row { display:flex; align-items:center; gap:8px; }
 
 /* Validação visual */
-.admin-content .input-error { color: #c62828; font-size: 12px; }
+.admin-content .input-error { color: #ffb3b3; font-size: 12px; }
 .admin-content [aria-invalid="true"],
 .admin-content .is-invalid,
 .admin-content input:invalid,
@@ -178,14 +176,37 @@
 .section-card { 
   max-width: 1200px; 
   margin: 0 auto; 
-  background: rgba(255, 255, 255, 0.06); 
-  border: 1px solid rgba(255, 255, 255, 0.18); 
+  background: transparent; 
+  border: 1px solid rgba(255, 255, 255, 0.22); 
   border-radius: var(--raio-xl); 
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px); 
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25); 
+  box-shadow: none; 
   padding: var(--espaco-xl); 
   overflow: hidden; 
+}
+
+/* Responsividade adicional para seções do Admin */
+@media (max-width: 992px) {
+  .kpis { grid-template-columns: repeat(2, 1fr) !important; }
+  .graficos { grid-template-columns: 1fr !important; }
+  .barras { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 640px) {
+  .kpis { grid-template-columns: 1fr !important; }
+  .barras { grid-template-columns: 1fr !important; }
+  .table table { display: block; }
+  .table thead, .table tbody, .table th, .table td, .table tr { display: block; }
+  .table thead { position: absolute; top: -9999px; left: -9999px; }
+  .table tr { border-bottom: 1px solid rgba(255,255,255,0.12); }
+  .table td { position: relative; padding-left: 50%; }
+  .table td::before { 
+    position: absolute; 
+    left: 12px; 
+    width: 45%; 
+    white-space: nowrap; 
+    color: rgba(255,255,255,0.7); 
+    content: attr(data-label);
+  }
 }
 
 /* Utilitário: texto apenas para leitores de tela */

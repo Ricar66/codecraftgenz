@@ -428,15 +428,15 @@ export default function AdminEquipes() {
                 <tbody>
                   {mentores.map(mentor => (
                     <tr key={mentor.id}>
-                      <td>{mentor.nome}</td>
-                      <td>{mentor.email}</td>
-                      <td>{mentor.telefone || '-'}</td>
-                      <td>
+                      <td data-label="Nome">{mentor.nome}</td>
+                      <td data-label="Email">{mentor.email}</td>
+                      <td data-label="Telefone">{mentor.telefone || '-'}</td>
+                      <td data-label="Status">
                         <span className={`status ${mentor.visible ? 'status-ativo' : 'status-inativo'}`}>
                           {mentor.visible ? 'Visível' : 'Oculto'}
                         </span>
                       </td>
-                      <td>{mentor.bio ? mentor.bio.substring(0, 50) + '...' : '-'}</td>
+                      <td data-label="Bio">{mentor.bio ? mentor.bio.substring(0, 50) + '...' : '-'}</td>
                     </tr>
                   ))}
                 </tbody>

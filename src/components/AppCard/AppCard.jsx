@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const AppCard = ({ app, onDownload, mode = 'owned' }) => {
-  const { id, name, mainFeature, thumbnail, image, price, status, version, size } = app;
+  const { id, name, mainFeature, thumbnail, image, price, status, version, size, category } = app;
   const finalized = status === 'finalizado' || status === 'available' || status === 'ready';
   const displayPrice = price ? `R$ ${Number(price).toLocaleString('pt-BR')}` : 'Gratuito';
   const displayVersion = version ? `v${version}` : 'v1.0';
@@ -13,7 +13,16 @@ const AppCard = ({ app, onDownload, mode = 'owned' }) => {
     <article className="app-card" aria-label={`Aplicativo ${name}`}>
       <div className="app-media">
         {(thumbnail || image) ? (
-          <img src={thumbnail || image} alt={name} className="app-thumb" />
+          <img
+            src={thumbnail || image}
+            alt={name}
+            className="app-thumb"
+            loading="lazy"
+            decoding="async"
+            width="140"
+            height="100"
+            fetchpriority="low"
+          />
         ) : (
           <div className="app-thumb placeholder" aria-hidden="true">APP</div>
         )}
@@ -21,6 +30,7 @@ const AppCard = ({ app, onDownload, mode = 'owned' }) => {
       </div>
       <div className="app-body">
         <h3 className="app-title" title={name}>{name}</h3>
+        {category && <span className="app-chip" aria-label="Categoria">{category}</span>}
         <p className="app-feature clamp-2" title={mainFeature}>{mainFeature}</p>
         <div className="app-meta" aria-label="Preço e status">
           <span className="app-price">{displayPrice}</span>
@@ -65,14 +75,13 @@ const AppCard = ({ app, onDownload, mode = 'owned' }) => {
           display: grid;
           grid-template-columns: 140px 1fr;
           gap: 14px;
-          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
-          border: 1px solid rgba(255,255,255,0.14);
+          background: transparent;
           border-radius: 16px;
           padding: 16px;
-          box-shadow: 0 10px 24px rgba(0,0,0,0.28);
-          transition: transform .2s ease, box-shadow .2s ease;
+          transition: transform .2s ease;
+          width: 100%;
+          box-sizing: border-box;
         }
-        .app-card:hover { transform: translateY(-2px); box-shadow: 0 16px 30px rgba(0,0,0,0.34); }
         @media (max-width: 560px) { .app-card { grid-template-columns: 1fr; } }
 
         .app-media { position: relative; }
@@ -80,7 +89,8 @@ const AppCard = ({ app, onDownload, mode = 'owned' }) => {
         .app-thumb.placeholder { display:flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.06); color: var(--texto-gelo); font-weight: 700; letter-spacing: 1px; }
         .app-ribbon { position: absolute; top: 8px; left: 8px; background: linear-gradient(90deg, #D12BF2, #00E4F2); color: #000; padding: 4px 8px; border-radius: 999px; font-size: 0.75rem; border: 1px solid rgba(0,0,0,0.2); }
 
-        .app-title { margin: 0; color: var(--texto-branco); font-size: 1.2rem; }
+        .app-title { margin: 0; color: var(--texto-branco); font-size: clamp(1.1rem, 2.5vw, 1.3rem); letter-spacing: .2px; }
+        .app-chip { display:inline-flex; align-items:center; gap:6px; padding: 4px 8px; border-radius: 999px; background: rgba(255,255,255,0.08); color: #b0e1ff; font-size: .75rem; border: 1px solid rgba(255,255,255,0.14); margin-top: 6px; width: fit-content; }
         .app-feature { color: var(--texto-gelo); margin: 6px 0; font-size: 0.95rem; }
         .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .app-meta { display: flex; gap: 12px; align-items: center; color: var(--texto-gelo); font-size: 0.95rem; margin-top: 4px; }
@@ -92,13 +102,17 @@ const AppCard = ({ app, onDownload, mode = 'owned' }) => {
         .app-version { color: #b0e1ff; }
         .app-size { color: #d6d6d6; }
 
-        .app-actions { margin-top: 10px; display:flex; gap: 8px; }
-        .btn { display:inline-block; padding: 10px 14px; border-radius: 10px; border:1px solid rgba(255,255,255,0.18); cursor:pointer; transition: transform .12s ease, box-shadow .12s ease, filter .12s ease; }
+        .app-actions { margin-top: 10px; display:flex; gap: 8px; flex-wrap: wrap; }
+        .btn { display:inline-block; padding: 10px 14px; border-radius: 10px; border:1px solid rgba(255,255,255,0.18); cursor:pointer; transition: transform .12s ease, box-shadow .12s ease, filter .12s ease; min-width: 140px; }
         .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 18px rgba(0,0,0,0.25); }
         .btn:active { transform: translateY(0px) scale(0.98); filter: brightness(0.95); }
         .btn:focus-visible { outline: 2px solid #00E4F2; outline-offset: 2px; }
         .btn-buy { background: linear-gradient(90deg, #D12BF2, #00E4F2); color: #000; border:none; font-weight: 700; }
         .btn-secondary { background: rgba(255,255,255,0.08); color: var(--texto-branco); }
+
+        @media (max-width: 560px) {
+          .btn { width: 100%; min-width: unset; }
+        }
       `}</style>
     </article>
   );
