@@ -100,9 +100,9 @@ const AppsPage = () => {
       <Navbar />
       <header className="apps-header">
         <h1>Meus Aplicativos</h1>
-        <p>Aplicativos finalizados com base em seus projetos.</p>
-        <div style={{ marginTop: 8 }}>
-          <button className="btn btn-outline" onClick={() => setShowPublish(v=>!v)}>
+        <p>Organize, destaque e venda seus apps com visual profissional.</p>
+        <div className="apps-actions">
+          <button className="btn btn-primary" onClick={() => setShowPublish(v=>!v)}>
             {showPublish ? 'Fechar publicação' : 'Publicar projeto'}
           </button>
         </div>
@@ -163,24 +163,28 @@ const AppsPage = () => {
 
       <style>{`
         .apps-page { min-height: 100vh; }
-        .apps-header { max-width: 1100px; margin: 12px auto; padding: 0 12px; }
-        .apps-header h1 { color: var(--texto-branco); margin: 0; }
-        .apps-header p { color: var(--texto-gelo); margin-top: 4px; }
-        .apps-grid { max-width: 1100px; margin: 16px auto; padding: 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        @media (max-width: 768px) { .apps-grid { grid-template-columns: 1fr; } }
-        .card-empty { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 24px; text-align: center; color: var(--texto-gelo); }
-        .apps-history { max-width: 1100px; margin: 8px auto; padding: 12px; }
+        .apps-header { max-width: 1200px; margin: 24px auto; padding: 0 16px; text-align: center; }
+        .apps-header h1 { color: var(--texto-branco); margin: 0; font-size: 2rem; }
+        .apps-header p { color: var(--texto-gelo); margin-top: 6px; font-size: 1rem; }
+        .apps-actions { margin-top: 16px; display:flex; justify-content:center; }
+        .apps-grid { max-width: 1200px; margin: 20px auto; padding: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        @media (max-width: 992px) { .apps-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 640px) { .apps-grid { grid-template-columns: 1fr; } }
+        .card-empty { background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04)); border: 1px solid rgba(255,255,255,0.14); border-radius: 16px; padding: 28px; text-align: center; color: var(--texto-gelo); }
+        .apps-history { max-width: 1200px; margin: 16px auto; padding: 16px; }
         .history-title { color: var(--texto-branco); margin: 0 0 8px; }
-        .publish-section { max-width: 1100px; margin: 16px auto; padding: 12px; }
+        .publish-section { max-width: 1200px; margin: 24px auto; padding: 16px; }
         .publish-title { color: var(--texto-branco); margin: 0 0 12px; }
-        .projects-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        @media (max-width: 768px) { .projects-grid { grid-template-columns: 1fr; } }
-        .project-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 12px; display: grid; grid-template-columns: 1fr auto; gap: 12px; }
+        .projects-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        @media (max-width: 992px) { .projects-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 640px) { .projects-grid { grid-template-columns: 1fr; } }
+        .project-card { background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04)); border: 1px solid rgba(255,255,255,0.14); border-radius: 16px; padding: 16px; display: grid; grid-template-columns: 1fr auto; gap: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
         .project-title { margin: 0; color: var(--texto-branco); font-size: 1rem; }
         .project-desc { color: var(--texto-gelo); font-size: 0.9rem; }
         .project-actions { display:flex; align-items:center; }
-        .btn { padding: 8px 12px; border-radius: 8px; border:1px solid rgba(255,255,255,0.18); }
-        .btn-primary { background: #00E4F2; color: #000; }
+        .btn { padding: 10px 14px; border-radius: 10px; border:1px solid rgba(255,255,255,0.18); cursor:pointer; transition: transform .2s ease, box-shadow .2s ease; }
+        .btn-primary { background: linear-gradient(90deg, #D12BF2, #00E4F2); color: #000; border:none; }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 18px rgba(0,0,0,0.25); }
         .btn-outline { background: transparent; color: var(--texto-branco); }
       `}</style>
     </div>

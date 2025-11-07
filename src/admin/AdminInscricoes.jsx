@@ -247,15 +247,15 @@ const AdminInscricoes = () => {
         </div>
       </div>
 
-      <div className={styles.stats}>
+      <div className={"stats"}>
         <span className="stat-item">
           Total: {filteredInscricoes.length}
         </span>
       </div>
 
-      <div className={styles.inscricoesGrid}>
+      <div className={"inscricoesGrid"}>
         {filteredInscricoes.length === 0 ? (
-          <div className={styles.emptyState}>
+          <div className={"emptyState"}>
             <h3>Nenhuma inscrição encontrada</h3>
             <p>
               {searchTerm || filtroStatus || filtroArea || filtroData
