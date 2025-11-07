@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import Navbar from '../components/Navbar/Navbar';
+import { API_BASE_URL } from '../lib/apiConfig.js';
 import { getAppById, createPaymentPreference, getPurchaseStatus, registerDownload, submitFeedback } from '../services/appsAPI.js';
 
 const AppPurchasePage = () => {
@@ -13,6 +14,9 @@ const AppPurchasePage = () => {
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
+  const [progress, setProgress] = useState(0);
+  const [downloadStatus, setDownloadStatus] = useState('idle'); // idle | downloading | done | error
+  const [downloadError, setDownloadError] = useState('');
   const [feedback, setFeedback] = useState({ rating: 5, comment: '' });
 
   useEffect(() => {
@@ -35,9 +39,12 @@ const AppPurchasePage = () => {
       (async () => {
         try {
           const s = await getPurchaseStatus(id, { preference_id: prefId, payment_id: paymentId, status: statusParam });
-          setStatus(s?.status || statusParam || '');
-          if ((s?.status || statusParam) === 'approved' && s?.download_url) {
-            setDownloadUrl(s.download_url);
+          const resolvedStatus = s?.status || statusParam || '';
+          setStatus(resolvedStatus);
+          if (resolvedStatus === 'approved') {
+            if (s?.download_url) setDownloadUrl(s.download_url);
+            // Dispara download automático
+            autoDownload();
           }
         } catch (e) {
           console.warn('Erro ao consultar status:', e);
@@ -64,6 +71,55 @@ const AppPurchasePage = () => {
     } catch (e) { alert('Erro ao registrar download: ' + e.message); }
   };
 
+  const autoDownload = async () => {
+    try {
+      setDownloadError('');
+      setDownloadStatus('downloading');
+      setProgress(0);
+      // Tenta baixar via streaming para mostrar progresso (fallback para arrayBuffer)
+      let token = null;
+      try {
+        const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('cc_session') : null;
+        if (raw) { const session = JSON.parse(raw); token = session?.token || null; }
+      } catch { token = null; }
+
+      const resp = await fetch(`${API_BASE_URL}/api/apps/${encodeURIComponent(id)}/download`, {
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+      });
+      if (!resp.ok) throw new Error(`Falha no download (HTTP ${resp.status})`);
+      const total = Number(resp.headers.get('content-length')) || 0;
+      const reader = resp.body?.getReader ? resp.body.getReader() : null;
+      const chunks = [];
+      let received = 0;
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          received += value.length;
+          if (total > 0) setProgress(Math.min(100, Math.round((received / total) * 100)));
+          else setProgress(p => Math.min(100, (p || 0) + 3));
+        }
+      }
+      const blob = new Blob(chunks.length ? chunks : [await resp.arrayBuffer()], { type: resp.headers.get('content-type') || 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(app?.name || 'aplicativo').replace(/[^a-z0-9\-_.]/gi, '_')}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setProgress(100);
+      setDownloadStatus('done');
+      console.info('[Download] concluído para app', id);
+    } catch (e) {
+      setDownloadError(e.message || 'Erro no download');
+      setDownloadStatus('error');
+      console.error('[Download] erro', e);
+    }
+  };
+
   const sendFeedback = async () => {
     try {
       await submitFeedback(id, feedback);
@@ -88,11 +144,19 @@ const AppPurchasePage = () => {
             <p className="muted">{app?.description || app?.mainFeature}</p>
             <p className="price">Preço: {app?.price ? `R$ ${Number(app.price).toLocaleString('pt-BR')}` : 'a definir'}</p>
 
-            <div className="btn-group" style={{ display:'flex', gap:8 }}>
+            <div className="btn-group" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
               <button className="btn btn-primary" onClick={startCheckout}>Pagar com Mercado Livre</button>
               <button className="btn btn-outline" onClick={handleDownload} disabled={!downloadUrl && status!=='approved'}>Baixar executável</button>
             </div>
             {status && <p className="muted">Status da compra: {status}</p>}
+
+            {(downloadStatus === 'downloading' || downloadStatus === 'done') && (
+              <div aria-live="polite" className="progress-wrap" style={{ marginTop: 12 }}>
+                <div className="progress-bar"><div className="progress" style={{ width: `${progress}%` }} /></div>
+                <p className="muted">{downloadStatus === 'done' ? 'Download concluído!' : `Baixando… ${progress}%`}</p>
+              </div>
+            )}
+            {downloadError && <p role="alert" style={{ color: '#FF6B6B' }}>❌ {downloadError}</p>}
 
             {status === 'approved' && (
               <section style={{ marginTop: 12 }}>
@@ -119,9 +183,12 @@ const AppPurchasePage = () => {
         .title { color: var(--texto-branco); margin: 0 0 6px; }
         .muted { color: var(--texto-gelo); }
         .price { color: var(--texto-branco); font-weight: 600; }
-        .btn { padding: 8px 12px; border-radius: 8px; border:1px solid rgba(255,255,255,0.18); }
+        .btn { padding: 8px 12px; border-radius: 8px; border:1px solid rgba(255,255,255,0.18); transition: transform .12s ease, box-shadow .12s ease; }
         .btn-primary { background: #00E4F2; color: #000; }
         .btn-outline { background: transparent; color: var(--texto-branco); }
+        .btn:active { transform: translateY(0px) scale(0.98); }
+        .progress-bar { width: 100%; height: 8px; background: rgba(255,255,255,0.12); border-radius: 999px; overflow: hidden; }
+        .progress { height: 100%; background: linear-gradient(90deg, #D12BF2, #00E4F2); }
       `}</style>
     </div>
   );
