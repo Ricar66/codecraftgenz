@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 import { apiRequest } from '../lib/apiConfig.js';
 
-import styles from './AdminInscricoes.module.css';
+import './AdminInscricoes.css';
 import './AdminCommon.css';
 
 const AdminInscricoes = () => {
@@ -142,9 +142,9 @@ const AdminInscricoes = () => {
 
   if (loading) {
     return (
-      <div className={styles.adminContent + ' admin-content'}>
-        <div className={styles.loadingState}>
-          <div className={styles.spinner}></div>
+      <div className={"adminContent admin-content"}>
+        <div className={"loadingState"}>
+          <div className={"spinner"}></div>
           <p>Carregando inscrições...</p>
         </div>
       </div>
@@ -153,11 +153,11 @@ const AdminInscricoes = () => {
 
   if (error) {
     return (
-      <div className={styles.adminContent + ' admin-content'}>
-        <div className={styles.errorState}>
+      <div className={"adminContent admin-content"}>
+        <div className={"errorState"}>
           <h2>Erro ao carregar inscrições</h2>
           <p>{error}</p>
-          <button onClick={fetchInscricoes} className={styles.retryBtn}>
+          <button onClick={fetchInscricoes} className={"retryBtn"}>
             Tentar novamente
           </button>
         </div>
@@ -166,7 +166,7 @@ const AdminInscricoes = () => {
   }
 
   return (
-    <div className={styles.adminContent + ' admin-content'}>
+    <div className={"adminContent admin-content"}>
       {toast && (
         <div
           role="status"
@@ -184,28 +184,28 @@ const AdminInscricoes = () => {
           {toast.message}
         </div>
       )}
-      <div className={styles.pageHeader}>
+      <div className={"pageHeader"}>
         <h1 className="title">Inscrições de Crafters</h1>
         <p className="muted">Gerencie as inscrições recebidas através do formulário "Quero ser um Crafter"</p>
       </div>
 
-        <div className={styles.filtersSection + ' filters-section'}>
-        <div className={styles.searchBox}>
+        <div className={"filtersSection filters-section"}>
+        <div className={"searchBox"}>
           <input
             type="text"
             placeholder="Buscar por nome, email, cidade, estado ou área..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={styles.searchInput + ' search-input'}
+            className={"searchInput search-input"}
           />
         </div>
         
-        <div className={styles.filtersRow}>
-          <div className={styles.statusFilter}>
+        <div className={"filtersRow"}>
+          <div className={"statusFilter"}>
             <select
               value={filtroStatus}
               onChange={(e) => setFiltroStatus(e.target.value)}
-              className={styles.statusSelect + ' filter-select'}
+              className={"statusSelect filter-select"}
             >
               <option value="">Todos os status</option>
               {statusOptions.map(option => (
@@ -216,11 +216,11 @@ const AdminInscricoes = () => {
             </select>
           </div>
 
-          <div className={styles.areaFilter}>
+          <div className={"areaFilter"}>
             <select
               value={filtroArea}
               onChange={(e) => setFiltroArea(e.target.value)}
-              className={styles.areaSelect + ' filter-select'}
+              className={"areaSelect filter-select"}
             >
               <option value="">Todas as áreas</option>
               {areasInteresse.map(area => (
@@ -231,11 +231,11 @@ const AdminInscricoes = () => {
             </select>
           </div>
 
-          <div className={styles.dateFilter}>
+          <div className={"dateFilter"}>
             <select
               value={filtroData}
               onChange={(e) => setFiltroData(e.target.value)}
-              className={styles.dateSelect + ' filter-select'}
+              className={"dateSelect filter-select"}
             >
               <option value="">Todas as datas</option>
               <option value="hoje">Hoje</option>
@@ -268,32 +268,32 @@ const AdminInscricoes = () => {
             const statusInfo = getStatusInfo(inscricao.status);
             
             return (
-              <div key={inscricao.id} className={styles.inscricaoCard + ' card'}>
-                <div className={styles.cardHeader}>
+              <div key={inscricao.id} className={"inscricaoCard card"}>
+                <div className={"cardHeader"}>
                   <h3>{inscricao.nome}</h3>
                   <div 
-                    className={styles.statusBadge}
+                    className={"statusBadge"}
                     style={{ backgroundColor: statusInfo.color }}
                   >
                     {statusInfo.label}
                   </div>
                 </div>
 
-                <div className={styles.cardContent}>
-                  <div className={styles.infoRow}>
+                <div className={"cardContent"}>
+                  <div className={"infoRow"}>
                     <strong>Email:</strong>
                     <a href={`mailto:${inscricao.email}`}>{inscricao.email}</a>
                   </div>
                   
                   {inscricao.telefone && (
-                    <div className={styles.infoRow}>
+                    <div className={"infoRow"}>
                       <strong>Telefone:</strong>
                       <span>{inscricao.telefone}</span>
                     </div>
                   )}
                   
                   {(inscricao.cidade || inscricao.estado) && (
-                    <div className={styles.infoRow}>
+                    <div className={"infoRow"}>
                       <strong>Localização:</strong>
                       <span>
                         {[inscricao.cidade, inscricao.estado].filter(Boolean).join(', ')}
@@ -302,30 +302,30 @@ const AdminInscricoes = () => {
                   )}
                   
                   {inscricao.area_interesse && (
-                    <div className={styles.infoRow}>
+                    <div className={"infoRow"}>
                       <strong>Área de Interesse:</strong>
-                      <span className={styles.areaTag}>{inscricao.area_interesse}</span>
+                      <span className={"areaTag"}>{inscricao.area_interesse}</span>
                     </div>
                   )}
                   
                   {inscricao.mensagem && (
-                    <div className={`${styles.infoRow} ${styles.messageRow}`}>
+                    <div className={"infoRow messageRow"}>
                       <strong>Mensagem:</strong>
-                      <p className={styles.messageText}>{inscricao.mensagem}</p>
+                      <p className={"messageText"}>{inscricao.mensagem}</p>
                     </div>
                   )}
                   
-                  <div className={styles.infoRow}>
+                  <div className={"infoRow"}>
                     <strong>Data da Inscrição:</strong>
                     <span>{formatDate(inscricao.data_inscricao)}</span>
                   </div>
                 </div>
 
-                <div className={styles.cardActions}>
+                <div className={"cardActions"}>
                   <select
                     value={inscricao.status}
                     onChange={(e) => updateStatus(inscricao.id, e.target.value)}
-                    className={styles.statusSelectInline}
+                    className={"statusSelectInline"}
                     disabled={updatingId === inscricao.id}
                   >
                     {statusOptions.map(option => (
