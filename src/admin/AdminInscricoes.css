@@ -1,4 +1,4 @@
-/* src/admin/AdminInscricoes.module.css */
+/* src/admin/AdminInscricoes.css */
 
 .adminContent {
   padding: 2rem;
@@ -246,19 +246,6 @@
   .statusFilter,
   .areaFilter,
   .dateFilter {
-    min-width: auto;
-  }
-
-  .inscricoesGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .infoRow {
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .infoRow strong {
     min-width: auto;
   }
 }
