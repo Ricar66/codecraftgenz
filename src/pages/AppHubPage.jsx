@@ -1,5 +1,5 @@
 // src/pages/AppHubPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 import AppCard from '../components/AppCard/AppCard.jsx';
@@ -74,6 +74,109 @@ const AppHubPage = () => {
   });
 
   const categories = ['all', ...new Set(apps.map(app => app.category).filter(Boolean))];
+  const featuredApps = React.useMemo(() => {
+    const list = Array.isArray(apps) ? apps : [];
+    const dateVal = (d) => {
+      try { return d ? new Date(d).getTime() : 0; } catch { return 0; }
+    };
+    const priceVal = (p) => {
+      const n = Number(p);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const isAvailable = (s) => ['available', 'ready', 'finalizado'].includes(String(s||'').toLowerCase());
+
+    const pinned = list.filter(a => a.isFeatured).sort((a,b) => (dateVal(b.updatedAt) - dateVal(a.updatedAt)) || (priceVal(b.price) - priceVal(a.price)) || String(a.name||'').localeCompare(String(b.name||'')) );
+    const avail = list.filter(a => !a.isFeatured && isAvailable(a.status)).sort((a,b) => (dateVal(b.updatedAt) - dateVal(a.updatedAt)) || (priceVal(b.price) - priceVal(a.price)) || String(a.name||'').localeCompare(String(b.name||'')) );
+    const rest = list.filter(a => !a.isFeatured && !isAvailable(a.status)).sort((a,b) => (dateVal(b.updatedAt) - dateVal(a.updatedAt)) || (priceVal(b.price) - priceVal(a.price)) || String(a.name||'').localeCompare(String(b.name||'')) );
+    return [...pinned, ...avail, ...rest].slice(0, 6);
+  }, [apps]);
+
+  // Slider controls
+  const trackRef = useRef(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isAutoPlay, setIsAutoPlay] = useState(true);
+  const resumeTimerRef = useRef(null);
+  const intervalRef = useRef(null);
+  const scrollToIndex = (i) => {
+    const el = trackRef.current?.children?.[i];
+    if (el && trackRef.current) {
+      trackRef.current.scrollTo({ left: el.offsetLeft, behavior: 'smooth' });
+      setCurrentSlide(i);
+    }
+  };
+  const handlePrev = () => {
+    const prev = currentSlide - 1 < 0 ? Math.max(0, (featuredApps.length || 1) - 1) : currentSlide - 1;
+    scrollToIndex(prev);
+    pauseAndScheduleResume();
+  };
+  const handleNext = () => {
+    const next = currentSlide + 1 >= (featuredApps.length || 1) ? 0 : currentSlide + 1;
+    scrollToIndex(next);
+    pauseAndScheduleResume();
+  };
+  const handleScroll = () => {
+    const tr = trackRef.current;
+    if (!tr) return;
+    const mid = tr.scrollLeft + tr.clientWidth / 2;
+    const children = Array.from(tr.children || []);
+    let best = 0; let bestDist = Infinity;
+    children.forEach((c, i) => {
+      const center = c.offsetLeft + c.offsetWidth / 2;
+      const dist = Math.abs(center - mid);
+      if (dist < bestDist) { bestDist = dist; best = i; }
+    });
+    setCurrentSlide(best);
+    pauseAndScheduleResume();
+  };
+
+  const pauseAndScheduleResume = () => {
+    setIsAutoPlay(false);
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = setTimeout(() => setIsAutoPlay(true), 5000);
+  };
+  const handleKeyDown = (e) => {
+    if (e.key === 'ArrowLeft') {
+      handlePrev();
+      pauseAndScheduleResume();
+    } else if (e.key === 'ArrowRight') {
+      // Avança com loop no keydown para experiência fluida
+      const next = currentSlide + 1 >= featuredApps.length ? 0 : currentSlide + 1;
+      scrollToIndex(next);
+      pauseAndScheduleResume();
+    } else if (e.key === 'PageUp') {
+      handlePrev();
+      pauseAndScheduleResume();
+    } else if (e.key === 'PageDown') {
+      handleNext();
+      pauseAndScheduleResume();
+    } else if (e.key === 'Home') {
+      scrollToIndex(0);
+      pauseAndScheduleResume();
+    } else if (e.key === 'End') {
+      const last = Math.max(0, (featuredApps.length || 1) - 1);
+      scrollToIndex(last);
+      pauseAndScheduleResume();
+    }
+  };
+
+  const handleMouseEnter = () => setIsAutoPlay(false);
+  const handleMouseLeave = () => setIsAutoPlay(true);
+  const handleFocus = () => setIsAutoPlay(false);
+  const handleBlur = () => setIsAutoPlay(true);
+
+  useEffect(() => {
+    if (!isAutoPlay || (featuredApps?.length || 0) < 2) {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+      return;
+    }
+    intervalRef.current = setInterval(() => {
+      const next = currentSlide + 1 >= featuredApps.length ? 0 : currentSlide + 1;
+      scrollToIndex(next);
+    }, 4000);
+    return () => {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+    };
+  }, [isAutoPlay, currentSlide, featuredApps]);
 
   if (loading) {
     return (
@@ -146,29 +249,29 @@ const AppHubPage = () => {
             ))}
           </div>
 
-          <div className={styles.sortControls} style={{ marginTop: '1rem', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className={styles.sortControls}>
+            <label>
               Ordenar por
-              <select value={sortBy} onChange={(e) => { setPage(1); setSortBy(e.target.value); }} className={styles.filterButton} style={{ padding: '8px 12px' }}>
+              <select value={sortBy} onChange={(e) => { setPage(1); setSortBy(e.target.value); }} className={styles.filterButton}>
                 <option value="name">Nome</option>
                 <option value="price">Preço</option>
                 <option value="updatedAt">Atualização</option>
               </select>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label>
               Ordem
-              <select value={sortOrder} onChange={(e) => { setPage(1); setSortOrder(e.target.value); }} className={styles.filterButton} style={{ padding: '8px 12px' }}>
+              <select value={sortOrder} onChange={(e) => { setPage(1); setSortOrder(e.target.value); }} className={styles.filterButton}>
                 <option value="asc">Ascendente</option>
                 <option value="desc">Descendente</option>
               </select>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label>
               Página
-              <input type="number" min={1} value={page} onChange={(e) => setPage(Math.max(1, Number(e.target.value) || 1))} style={{ padding: '8px 12px', width: '80px' }} />
+              <input type="number" min={1} value={page} onChange={(e) => setPage(Math.max(1, Number(e.target.value) || 1))} className={styles.pageInput} />
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label>
               Itens por página
-              <select value={pageSize} onChange={(e) => { setPage(1); setPageSize(Number(e.target.value)); }} className={styles.filterButton} style={{ padding: '8px 12px' }}>
+              <select value={pageSize} onChange={(e) => { setPage(1); setPageSize(Number(e.target.value)); }} className={styles.filterButton}>
                 <option value={12}>12</option>
                 <option value={24}>24</option>
                 <option value={48}>48</option>
@@ -177,6 +280,74 @@ const AppHubPage = () => {
           </div>
         </div>
       </section>
+
+      {/* Highlights Section */}
+      {featuredApps.length > 0 && (
+        <section className={styles.highlightsSection}>
+          <div className={styles.highlightsHeader}>
+            <h3>Destaques</h3>
+            <p>Apps recomendados para você — populares e atualizados</p>
+          </div>
+          <div
+            className={styles.highlightsViewport}
+            tabIndex={0}
+            onKeyDown={handleKeyDown}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            aria-roledescription="carousel"
+            aria-label="Destaques"
+          >
+            <div ref={trackRef} className={styles.highlightsTrack} onScroll={handleScroll}>
+              {featuredApps.map((app, i) => (
+                <div key={app.id} className={styles.highlightCard}>
+                  <img
+                    className={styles.highlightMedia}
+                    src={app.image || app.thumbnail || '/vite.svg'}
+                    alt={app.name ? `Destaque: ${app.name}` : 'Destaque do Hub'}
+                    loading="lazy"
+                    decoding="async"
+                    draggable="false"
+                    fetchpriority={i === 0 ? 'high' : 'low'}
+                    sizes="(max-width: 640px) 80vw, (max-width: 1024px) 50vw, 360px"
+                    srcSet={(app.thumbnail && app.image)
+                      ? `${app.thumbnail} 480w, ${app.image} 800w, ${app.image} 1200w`
+                      : (app.image ? `${app.image} 800w, ${app.image} 1200w` : undefined)}
+                  />
+                  <div className={styles.highlightOverlay}>
+                    <div className={styles.highlightInfo}>
+                      <h4 className={styles.highlightTitle}>{app.name}</h4>
+                      <p className={styles.highlightDesc}>{(app.description || app.mainFeature || '').slice(0, 120)}</p>
+                    </div>
+                    <div className={styles.highlightActions}>
+                      <Link to={`/apps/${app.id}/compra`} className={styles.ctaPrimary}>Comprar Agora</Link>
+                      <Link to={`/apps/${app.id}/compra`} className={styles.ctaSecondary}>Ver Detalhes</Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button type="button" className={`${styles.navButton} ${styles.prev}`} onClick={handlePrev} aria-label="Anterior">‹</button>
+            <button type="button" className={`${styles.navButton} ${styles.next}`} onClick={handleNext} aria-label="Próximo">›</button>
+            <div className={styles.srOnly} role="status" aria-live="polite" aria-atomic="true">
+              Destaque {currentSlide + 1} de {featuredApps.length}: {featuredApps[currentSlide]?.name || ''}
+            </div>
+          </div>
+          <div className={styles.highlightsDots} role="tablist" aria-label="Navegação dos destaques">
+            {featuredApps.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`${styles.dot} ${i === currentSlide ? styles.active : ''}`}
+                aria-label={`Ir ao destaque ${i + 1}`}
+                aria-selected={i === currentSlide}
+                onClick={() => scrollToIndex(i)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Apps Grid */}
       <section className={styles.appsSection}>
@@ -209,7 +380,9 @@ const AppHubPage = () => {
               
               <div className={styles.appsGrid}>
                 {filteredApps.map(app => (
-                  <AppCard key={app.id} app={app} mode="public" />
+                  <div key={app.id} className={styles.cardWrap}>
+                    <AppCard app={app} mode="public" />
+                  </div>
                 ))}
               </div>
               

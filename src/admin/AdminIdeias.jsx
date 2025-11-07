@@ -258,7 +258,7 @@ export default function AdminIdeias() {
 
               <div className="ideia-actions">
                 <button 
-                  className="btn-vote"
+                  className="btn btn-outline"
                   onClick={() => handleVotar(ideia.id)}
                   title="Votar nesta ideia"
                 >
@@ -266,7 +266,7 @@ export default function AdminIdeias() {
                 </button>
 
                 <button 
-                  className="btn-comment"
+                  className="btn btn-outline"
                   onClick={() => setComentarioAberto(comentarioAberto === ideia.id ? null : ideia.id)}
                 >
                   💬 {ideia.comentarios.length}

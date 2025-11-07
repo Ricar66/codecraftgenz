@@ -191,7 +191,7 @@ export default function AdminCrafters() {
             ) : (
               crafters.map((crafter) => (
                 <tr key={crafter.id}>
-                  <td>
+                  <td data-label="Nome">
                     <div className="crafter-name">
                       {crafter.avatar_url && (
                         <img 
@@ -203,28 +203,28 @@ export default function AdminCrafters() {
                       <span>{crafter.nome}</span>
                     </div>
                   </td>
-                  <td>{crafter.email || '-'}</td>
+                  <td data-label="Email">{crafter.email || '-'}</td>
                   <td>
                     <span className="points-badge">
                       {crafter.points || 0}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Status">
                     <span className={`status-badge ${crafter.active ? 'active' : 'inactive'}`}>
                       {crafter.active ? 'Ativo' : 'Inativo'}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Ações">
                     <div className="action-buttons">
                       <button 
-                        className="edit-button"
+                        className="btn btn-secondary"
                         onClick={() => {/* TODO: Implementar edição */}}
                         title="Editar crafter"
                       >
                         ✏️
                       </button>
                       <button 
-                        className="delete-button"
+                        className="btn btn-danger"
                         onClick={() => handleDeleteCrafter(crafter.id)}
                         title="Excluir crafter"
                       >
@@ -249,7 +249,8 @@ export default function AdminCrafters() {
             <button
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={!pagination.hasPrev || loading}
-              className="pagination-button"
+              className="btn btn-outline"
+              aria-label="Página anterior"
             >
               ← Anterior
             </button>
@@ -272,7 +273,8 @@ export default function AdminCrafters() {
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
                     disabled={loading}
-                    className={`pagination-number ${pageNum === pagination.page ? 'active' : ''}`}
+                    className={`btn btn-outline ${pageNum === pagination.page ? 'active' : ''}`}
+                    aria-label={`Ir para página ${pageNum}`}
                   >
                     {pageNum}
                   </button>
@@ -283,7 +285,8 @@ export default function AdminCrafters() {
             <button
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={!pagination.hasNext || loading}
-              className="pagination-button"
+              className="btn btn-outline"
+              aria-label="Página seguinte"
             >
               Próxima →
             </button>

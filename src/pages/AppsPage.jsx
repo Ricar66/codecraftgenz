@@ -293,7 +293,12 @@ const AppsPage = () => {
               {history.length === 0 ? (
                 <tr><td colSpan="4">Sem histórico</td></tr>
               ) : history.map((h,i)=> (
-                <tr key={i}><td>{h.app_name || h.appId}</td><td>{h.type}</td><td>{h.date ? new Date(h.date).toLocaleString('pt-BR') : '—'}</td><td>{h.status || '—'}</td></tr>
+                <tr key={i}>
+                  <td data-label="App">{h.app_name || h.appId}</td>
+                  <td data-label="Tipo">{h.type}</td>
+                  <td data-label="Data">{h.date ? new Date(h.date).toLocaleString('pt-BR') : '—'}</td>
+                  <td data-label="Status">{h.status || '—'}</td>
+                </tr>
               ))}
             </tbody>
           </table>

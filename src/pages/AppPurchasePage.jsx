@@ -53,12 +53,23 @@ const AppPurchasePage = () => {
     }
   }, [id, searchParams]);
 
+  // Auto-inicia o checkout ao entrar na página quando não é retorno do pagamento
+  useEffect(() => {
+    const hasReturnParams = !!(searchParams.get('preference_id') || searchParams.get('payment_id') || searchParams.get('status'));
+    if (!hasReturnParams) {
+      startCheckout();
+    }
+  }, [id]);
+
   const startCheckout = async () => {
     try {
       const { init_point } = await createPaymentPreference(id);
-      // Abre o checkout do Mercado Livre/Mercado Pago em nova aba
-      if (init_point) window.open(init_point, '_blank', 'noopener');
-      else alert('Não foi possível iniciar o checkout');
+      // Redireciona para o checkout na mesma aba para evitar bloqueio de popup
+      if (init_point) {
+        window.location.href = init_point;
+      } else {
+        alert('Não foi possível iniciar o checkout');
+      }
     } catch (e) { setError(e.message || 'Erro ao iniciar pagamento'); }
   };
 

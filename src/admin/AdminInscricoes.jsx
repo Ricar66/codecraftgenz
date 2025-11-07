@@ -372,20 +372,20 @@ const AdminInscricoes = () => {
             </thead>
             <tbody>
               <tr>
-                <td>Inscrições sem crafter correspondente</td>
-                <td>{inscricoesSemCrafter.length}</td>
+                <td data-label="Verificação">Inscrições sem crafter correspondente</td>
+                <td data-label="Quantidade">{inscricoesSemCrafter.length}</td>
               </tr>
               <tr>
-                <td>Crafters sem inscrição correspondente</td>
-                <td>{craftersSemInscricao.length}</td>
+                <td data-label="Verificação">Crafters sem inscrição correspondente</td>
+                <td data-label="Quantidade">{craftersSemInscricao.length}</td>
               </tr>
               <tr>
-                <td>Inscrições duplicadas por email</td>
-                <td>{inscricoesDuplicadasEmail.length}</td>
+                <td data-label="Verificação">Inscrições duplicadas por email</td>
+                <td data-label="Quantidade">{inscricoesDuplicadasEmail.length}</td>
               </tr>
               <tr>
-                <td>Nome divergente para o mesmo email</td>
-                <td>{nomesDivergentesMesmoEmail.length}</td>
+                <td data-label="Verificação">Nome divergente para o mesmo email</td>
+                <td data-label="Quantidade">{nomesDivergentesMesmoEmail.length}</td>
               </tr>
             </tbody>
           </table>

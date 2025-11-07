@@ -205,7 +205,7 @@ export function Dashboard() {
       </section>
 
       {/* Barras – status projeto + Termômetro progresso */}
-      <section style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginTop:16 }}>
+      <section className="barras" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginTop:16 }}>
         <div className="chart card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', borderRadius:12, padding:12 }}>
           <h3>Distribuição de Projetos</h3>
           <div style={{ display:'grid', gap:8, marginTop:8 }}>
@@ -239,7 +239,13 @@ export function Dashboard() {
               {filteredProjects.length === 0 ? (
                 <tr><td colSpan="5">⚠️ Sem registros para os filtros aplicados.</td></tr>
               ) : filteredProjects.map(p => (
-                <tr key={p.id}><td>{p.title}</td><td>{statusMap(p.status)}</td><td>R$ {Number(p.price||0).toLocaleString('pt-BR')}</td><td>{Number(p.progress||0)}%</td><td>{p.startDate ? new Date(p.startDate).toLocaleDateString('pt-BR') : '—'}</td></tr>
+                <tr key={p.id}>
+                  <td data-label="Projeto">{p.title}</td>
+                  <td data-label="Status">{statusMap(p.status)}</td>
+                  <td data-label="Valor">R$ {Number(p.price||0).toLocaleString('pt-BR')}</td>
+                  <td data-label="Progresso">{Number(p.progress||0)}%</td>
+                  <td data-label="Última Atualização">{p.startDate ? new Date(p.startDate).toLocaleDateString('pt-BR') : '—'}</td>
+                </tr>
               ))}
             </tbody>
           </table>
@@ -297,10 +303,10 @@ export function Usuarios() {
       <div className="filters-section">
         <div className="formRow" style={{ gridTemplateColumns: '1fr auto auto auto auto' }}>
           <input aria-label="Buscar" placeholder="Buscar (nome/e-mail/role)" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} />
-          <button onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
+          <button className="btn btn-outline" aria-label="Página anterior" onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
           <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
-          <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
-          <button onClick={()=>{
+          <button className="btn btn-outline" aria-label="Próxima página" onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
+          <button className="btn btn-outline" onClick={()=>{
             // Gera CSV dos usuários atuais
             const headers = 'id,name,email,role,status\n';
             const rows = filtered.map(u => `${u.id},${u.name},${u.email},${u.role},${u.status}`).join('\n');
@@ -319,9 +325,12 @@ export function Usuarios() {
           <tbody>
             {pageItems.length === 0 ? (<tr><td colSpan="5">Nenhum usuário</td></tr>) : pageItems.map(u => (
               <tr key={u.id}>
-                <td>{u.name}</td><td>{u.email}</td><td>{u.role}</td><td>{u.status}</td>
-                <td>
-                  <button onClick={()=>{UsersRepo.toggleStatus(u.id); refresh();}}>{u.status==='active'?'Desativar':'Ativar'}</button>
+                <td data-label="Nome">{u.name}</td>
+                <td data-label="E-mail">{u.email}</td>
+                <td data-label="Perfil">{u.role}</td>
+                <td data-label="Status">{u.status}</td>
+                <td data-label="Ações">
+                  <button className="btn btn-secondary" onClick={()=>{UsersRepo.toggleStatus(u.id); refresh();}}>{u.status==='active'?'Desativar':'Ativar'}</button>
                   <select aria-label="Alterar perfil" value={u.role} onChange={async (e)=>{
                     const newRole = e.target.value;
                     if (newRole !== u.role) {
@@ -1176,9 +1185,9 @@ export function Projetos() {
       <div className="filters-section">
         <div className="formRow" style={{ gridTemplateColumns: '1fr auto auto auto' }}>
           <input aria-label="Buscar" placeholder="🔍 Buscar (título/owner/status)" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} />
-          <button onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
+          <button className="btn btn-outline" onClick={()=>setPage(Math.max(1, page-1))} aria-label="Página anterior">◀</button>
           <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
-          <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
+          <button className="btn btn-outline" onClick={()=>setPage(Math.min(totalPages, page+1))} aria-label="Página seguinte">▶</button>
         </div>
       </div>
       
@@ -1187,9 +1196,9 @@ export function Projetos() {
       
       <div className="table"><table><thead><tr><th>Título</th><th>Owner</th><th>Status</th><th>Preço</th><th>Progresso</th><th>📝</th><th>Ações</th></tr></thead><tbody>{pageItems.length===0 ? (<tr><td colSpan="7">📭 Nenhum projeto</td></tr>) : pageItems.map(p=> (
         <tr key={p.id}>
-          <td style={{ fontWeight: 'bold' }}>{p.title || p.titulo}</td>
-          <td>{p.owner}</td>
-          <td>
+          <td data-label="Título" style={{ fontWeight: 'bold' }}>{p.title || p.titulo}</td>
+          <td data-label="Owner">{p.owner}</td>
+          <td data-label="Status">
             <span style={{ 
               background: p.status === 'finalizado' ? '#00E4F2' : p.status === 'ongoing' ? '#FFA500' : '#666', 
               color: '#fff', 
@@ -1201,8 +1210,8 @@ export function Projetos() {
               {p.status}
             </span>
           </td>
-          <td style={{ fontWeight: 'bold', color: '#00E4F2' }}>R$ {(p.price ?? p.preco ?? 0).toLocaleString('pt-BR')}</td>
-          <td>
+          <td data-label="Preço" style={{ fontWeight: 'bold', color: '#00E4F2' }}>R$ {(p.price ?? p.preco ?? 0).toLocaleString('pt-BR')}</td>
+          <td data-label="Progresso">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 60, height: 6, background: '#E0E0E0', borderRadius: 3 }}>
                 <div style={{ 
@@ -1215,8 +1224,8 @@ export function Projetos() {
               <span style={{ fontSize: '0.8em' }}>{p.progress ?? p.progresso ?? 0}%</span>
             </div>
           </td>
-          <td title={(p.description || p.descricao || '').slice(0, 200)}>{String(p.description || p.descricao || '').slice(0, 80) || '—'}</td>
-          <td>
+          <td data-label="Resumo" title={(p.description || p.descricao || '').slice(0, 200)}>{String(p.description || p.descricao || '').slice(0, 80) || '—'}</td>
+          <td data-label="Ações">
             <div className="btn-group">
               <button className="btn btn-secondary" onClick={()=>setForm({ id:p.id, titulo:p.title||p.titulo||'', owner:p.owner||'', descricao:p.description||p.descricao||'', data_inicio:p.startDate||p.data_inicio||'', status:p.status||'rascunho', preco:p.price??0, progresso:p.progress??0, thumb_url:p.thumb_url||'', tags:p.tags||[] })}>✏️</button>
               <button className="btn btn-danger" onClick={async()=>{ if(!window.confirm('Deletar este projeto?')) return; await apiRequest(`/api/projetos/${p.id}`, { method:'DELETE' }); refresh(); }}>🗑️</button>
@@ -1226,8 +1235,8 @@ export function Projetos() {
       ))}</tbody></table></div>
       
       {/* Formulário melhorado */}
-  <section className="card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', padding: 20, marginTop: 20 }}>
-        <h3 style={{ marginBottom: 16, color: '#000' }}>
+  <section className="card" style={{ padding: 20, marginTop: 20 }}>
+        <h3 style={{ marginBottom: 16 }}>
           {form.id ? '✏️ Editar Projeto' : '➕ Novo Projeto'}
         </h3>
         
@@ -1247,7 +1256,7 @@ export function Projetos() {
           </select>
           <input aria-label="Preço" placeholder="Preço (R$)" type="number" value={form.preco} onChange={e=>setForm({...form,preco:Number(e.target.value)})} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <label style={{ fontSize: '0.9em', color: '#666' }}>Progresso:</label>
+            <label style={{ fontSize: '0.9em' }}>Progresso:</label>
             <input aria-label="Progresso" type="range" min="0" max="100" value={form.progresso} onChange={e=>setForm({...form,progresso:Number(e.target.value)})} style={{ flex: 1 }} />
             <span style={{ fontSize: '0.9em', fontWeight: 'bold' }}>{form.progresso}%</span>
           </div>
@@ -1401,10 +1410,10 @@ export function Desafios() {
       <div className="filters-section">
         <div className="formRow" style={{ gridTemplateColumns: '1fr auto auto auto auto' }}>
           <input aria-label="Buscar" placeholder="Buscar (nome/objetivo/status)" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} />
-          <button onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
+          <button className="btn btn-outline" onClick={()=>setPage(Math.max(1, page-1))} aria-label="Página anterior">◀</button>
           <span style={{ alignSelf:'center' }}>Página {page} / {totalPages}</span>
-          <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
-          <button onClick={()=>{
+          <button className="btn btn-outline" onClick={()=>setPage(Math.min(totalPages, page+1))} aria-label="Página seguinte">▶</button>
+          <button className="btn btn-outline" onClick={()=>{
             // Gera CSV dos desafios atuais
             const headers = 'id,name,objective,status,visible,deadline,base_points\n';
             const rows = filtered.map(d => `${d.id},"${d.name}","${d.objective}",${d.status},${d.visible},${d.deadline || ''},${d.base_points || 0}`).join('\n');
@@ -1420,12 +1429,12 @@ export function Desafios() {
       <div className="table"><table><thead><tr><th>Nome</th><th>Status</th><th>Deadline</th><th>Base points</th><th>Visível</th><th>Ações</th></tr></thead><tbody>{pageItems.length===0 ? (<tr><td colSpan="6">Nenhum desafio</td></tr>) : pageItems.map(d=> (
         <React.Fragment key={d.id}>
           <tr>
-            <td>{d.name}</td>
-            <td>{d.status}</td>
-            <td>{d.deadline ? new Date(d.deadline).toLocaleString('pt-BR') : '—'}</td>
-            <td>{d.base_points ?? 0}</td>
-            <td>{String(d.visible)}</td>
-            <td>
+            <td data-label="Nome">{d.name}</td>
+            <td data-label="Status">{d.status}</td>
+            <td data-label="Deadline">{d.deadline ? new Date(d.deadline).toLocaleString('pt-BR') : '—'}</td>
+            <td data-label="Base points">{d.base_points ?? 0}</td>
+            <td data-label="Visível">{String(d.visible)}</td>
+            <td data-label="Ações">
               <div className="btn-group">
                 <button className="btn btn-secondary" onClick={()=>onEdit(d)}>Editar</button>
                 <button className="btn btn-outline" onClick={()=>toggleVisible(d)} aria-label={`Visibilidade ${d.name}`} disabled={busy}>{d.visible ? 'Ocultar' : 'Exibir'}</button>
@@ -1440,7 +1449,7 @@ export function Desafios() {
                 {detailsLoading && (<p>Carregando detalhes...</p>)}
                 {detailsError && (<p role="alert">{detailsError}</p>)}
                 {details && (
-                  <div style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', borderRadius:12, padding:12 }}>
+                  <div style={{ borderRadius:12, padding:12 }}>
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                       <div>
                         <h4>Inscrições</h4>
@@ -1833,13 +1842,13 @@ export function Financas() {
                 <tr><td colSpan="8" style={{ textAlign: 'center', padding: 40 }}>📭 Nenhum registro encontrado</td></tr>
               ) : pageItems.map(f => (
                 <tr key={f.id}>
-                  <td style={{ fontWeight: 'bold' }}>{f.item}</td>
-                  <td>{typeLabels[f.type] || f.type}</td>
-                  <td>{f.project_id ? getProjectName(f.project_id) : '—'}</td>
-                  <td style={{ fontWeight: 'bold', color: '#00E4F2' }}>
+                  <td data-label="Item" style={{ fontWeight: 'bold' }}>{f.item}</td>
+                  <td data-label="Tipo">{typeLabels[f.type] || f.type}</td>
+                  <td data-label="Projeto">{f.project_id ? getProjectName(f.project_id) : '—'}</td>
+                  <td data-label="Valor" style={{ fontWeight: 'bold', color: '#00E4F2' }}>
                     R$ {Number(f.valor || 0).toLocaleString('pt-BR')}
                   </td>
-                  <td>
+                  <td data-label="Status">
                     <span style={{ 
                       background: statusColors[f.status] || '#ccc', 
                       color: '#fff', 
@@ -1851,7 +1860,7 @@ export function Financas() {
                       {f.status}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Progresso">
                     {f.progress > 0 ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div style={{ width: 60, height: 6, background: '#E0E0E0', borderRadius: 3 }}>
@@ -1866,8 +1875,8 @@ export function Financas() {
                       </div>
                     ) : '—'}
                   </td>
-                  <td>{f.date ? new Date(f.date).toLocaleDateString('pt-BR') : '—'}</td>
-                  <td>
+                  <td data-label="Data">{f.date ? new Date(f.date).toLocaleDateString('pt-BR') : '—'}</td>
+                  <td data-label="Ações">
                     <div className="btn-group">
                       <button className="btn btn-secondary" onClick={() => onEdit(f)}>✏️</button>
                       <button className="btn btn-primary" onClick={() => onUpdate(f, { status: f.status === 'paid' ? 'pending' : 'paid' })}>
@@ -1884,8 +1893,8 @@ export function Financas() {
       )}
 
       {/* Formulário */}
-  <section className="card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', padding: 20 }}>
-        <h3 style={{ marginBottom: 16, color: '#000' }}>
+  <section className="card" style={{ padding: 20 }}>
+        <h3 style={{ marginBottom: 16 }}>
           {editingId ? '✏️ Editar Registro' : '➕ Novo Registro Financeiro'}
         </h3>
         
@@ -2182,12 +2191,12 @@ export function Apps() {
             <tr><td colSpan="6">📭 Nenhum aplicativo</td></tr>
           ) : apps.map(a => (
             <tr key={a.id}>
-              <td>{a.name}</td>
-              <td title={a.mainFeature}>{String(a.mainFeature || '').slice(0, 60)}</td>
-              <td>R$ {Number(a.price||0).toLocaleString('pt-BR')}</td>
-              <td><a href={a.thumbnail} target="_blank" rel="noopener noreferrer">thumbnail</a></td>
-              <td><a href={a.exec_url} target="_blank" rel="noopener noreferrer">exec</a></td>
-              <td>
+              <td data-label="Nome">{a.name}</td>
+              <td data-label="Feature" title={a.mainFeature}>{String(a.mainFeature || '').slice(0, 60)}</td>
+              <td data-label="Preço">R$ {Number(a.price||0).toLocaleString('pt-BR')}</td>
+              <td data-label="Thumb"><a href={a.thumbnail} target="_blank" rel="noopener noreferrer">thumbnail</a></td>
+              <td data-label="Exec URL"><a href={a.exec_url} target="_blank" rel="noopener noreferrer">exec</a></td>
+              <td data-label="Ações">
                 <div className="btn-group">
                   <button className="btn btn-secondary" onClick={()=>setForm({ id:a.id, name:a.name||'', mainFeature:a.mainFeature||'', price:a.price||0, thumbnail:a.thumbnail||'', exec_url:a.exec_url||'' })}>✏️</button>
                 </div>
@@ -2198,8 +2207,8 @@ export function Apps() {
         </table>
       </div>
 
-  <section className="card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', padding:16, marginTop:16 }}>
-        <h3 style={{ color:'#000' }}>{form.id ? '✏️ Editar App' : 'Selecionar app para editar'}</h3>
+  <section className="card" style={{ padding:16, marginTop:16 }}>
+        <h3>{form.id ? '✏️ Editar App' : 'Selecionar app para editar'}</h3>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:12 }}>
           <input placeholder="Nome" value={form.name} onChange={e=>setForm({ ...form, name:e.target.value })} />
           <input placeholder="Feature principal" value={form.mainFeature} onChange={e=>setForm({ ...form, mainFeature:e.target.value })} />
