@@ -1,6 +1,7 @@
 import path from 'path';
 import process from 'process';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 import bcrypt from 'bcrypt';
 import compression from 'compression';
@@ -15,7 +16,35 @@ import { mercadoLivre } from './src/integrations/mercadoLivre.js';
 import { getConnectionPool, dbSql } from './src/lib/db.js';
 
 // Carregar variáveis de ambiente (db.js já faz isso, mas garantimos aqui também)
-dotenv.config();
+// Seleciona arquivo conforme NODE_ENV, com fallback para .env
+try {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const nodeEnv = process.env.NODE_ENV || 'development';
+  const candidates = [
+    nodeEnv === 'production' ? '.env.production' : null,
+    nodeEnv === 'staging' ? '.env.staging' : null,
+    nodeEnv === 'development' ? '.env.development' : null,
+    '.env',
+  ].filter(Boolean);
+
+  let loadedEnvFile = null;
+  for (const f of candidates) {
+    const p = path.join(__dirname, f);
+    if (fs.existsSync(p)) {
+      dotenv.config({ path: p });
+      loadedEnvFile = f;
+      break;
+    }
+  }
+  if (!loadedEnvFile) {
+    dotenv.config();
+  }
+  console.log(`✅ Variáveis de ambiente carregadas: NODE_ENV=${nodeEnv}; arquivo=${loadedEnvFile || 'padrão (.env)'}`);
+} catch (e) {
+  console.warn('⚠️ Falha ao carregar variáveis de ambiente via dotenv:', e?.message || e);
+  dotenv.config();
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,6 +54,11 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-this';
 const ADMIN_RESET_TOKEN = process.env.ADMIN_RESET_TOKEN || '';
+if (ADMIN_RESET_TOKEN) {
+  console.log('🔐 ADMIN_RESET_TOKEN definido (valor não exibido)');
+} else {
+  console.warn('🚫 ADMIN_RESET_TOKEN ausente; /api/auth/admin/reset-password retornará 403 até configurar.');
+}
 
 // --- Middlewares Essenciais ---
 app.use(helmet({
