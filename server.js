@@ -8,6 +8,8 @@ import dotenv from 'dotenv';
 import express from 'express';
 import helmet from 'helmet';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 import { getConnectionPool, dbSql } from './src/lib/db.js';
 
@@ -20,6 +22,7 @@ const __dirname = path.dirname(__filename);
 // --- Configuração do Servidor Express ---
 const app = express();
 const PORT = process.env.PORT || 8080;
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-this';
 
 // --- Middlewares Essenciais ---
 app.use(helmet({
@@ -55,7 +58,7 @@ try {
 
 const paymentsByApp = new Map();
 
-// --- Middleware de Autenticação (Mock mantido) ---
+// --- Middleware de Autenticação (JWT) ---
 function authenticate(req, res, next) {
   try {
     const auth = req.headers['authorization'] || '';
@@ -63,15 +66,16 @@ function authenticate(req, res, next) {
     if (type !== 'Bearer' || !token) {
       return res.status(401).json({ error: 'Não autenticado' });
     }
-    const isAdmin = token.startsWith('admin-token');
+    const payload = jwt.verify(token, JWT_SECRET);
     req.user = {
-      id: isAdmin ? 1 : 2,
-      email: isAdmin ? 'admin@codecraft.dev' : 'user@example.com',
-      role: isAdmin ? 'admin' : 'user',
+      id: payload.id,
+      email: payload.email,
+      role: payload.role,
+      name: payload.name,
       token,
     };
     next();
-  } catch {
+  } catch (e) {
     return res.status(401).json({ error: 'Sessão inválida' });
   }
 }
@@ -81,6 +85,33 @@ function authorizeAdmin(req, res, next) {
     return res.status(403).json({ error: 'Acesso negado' });
   }
   next();
+}
+
+// --- Garantir esquema de dbo.users (password_hash, role, status) ---
+async function ensureUserTableSchema() {
+  try {
+    const pool = await getConnectionPool();
+    // Adicionar colunas se não existirem (execuções separadas para evitar batch issues)
+    await pool.request().query(`IF COL_LENGTH('dbo.users', 'password_hash') IS NULL BEGIN ALTER TABLE dbo.users ADD password_hash NVARCHAR(256) NULL; END;`);
+    await pool.request().query(`IF COL_LENGTH('dbo.users', 'role') IS NULL BEGIN ALTER TABLE dbo.users ADD role NVARCHAR(32) NULL; END;`);
+    await pool.request().query(`IF COL_LENGTH('dbo.users', 'status') IS NULL BEGIN ALTER TABLE dbo.users ADD status NVARCHAR(16) NOT NULL DEFAULT 'ativo'; END;`);
+    // Normalizações
+    await pool.request().query(`UPDATE dbo.users SET role = ISNULL(role, 'viewer');`);
+    await pool.request().query(`UPDATE dbo.users SET status = ISNULL(status, 'ativo');`);
+    console.log('✅ Esquema de dbo.users verificado/ajustado');
+  } catch (err) {
+    console.error('Erro ao garantir esquema de dbo.users:', err);
+  }
+}
+
+function mapUserRow(row) {
+  return {
+    id: row.id,
+    nome: row.name,
+    email: row.email,
+    role: row.role || 'viewer',
+    status: row.status || 'ativo',
+  };
 }
 
 // --- ROTAS DA API (CONECTADAS AO BANCO) ---
@@ -95,21 +126,150 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Rota de autenticação (Hardcoded mantida)
+// Rota de autenticação (JWT)
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
-  const adminCredentials = { email: 'admin@codecraft.dev', password: 'admin123' };
-  
   if (!email || !password) {
     return res.status(400).json({ error: 'Email e senha são obrigatórios' });
   }
-  
-  if (email === adminCredentials.email && password === adminCredentials.password) {
-    const token = 'admin-token-' + Date.now();
-    const user = { id: 1, email: adminCredentials.email, name: 'Administrador', role: 'admin' };
-    res.json({ success: true, token, user });
-  } else {
-    res.status(401).json({ error: 'Credenciais inválidas' });
+
+  (async () => {
+    try {
+      const pool = await getConnectionPool();
+      const result = await pool.request()
+        .input('email', dbSql.NVarChar, email)
+        .query('SELECT id, name, email, role, status, password_hash FROM dbo.users WHERE email = @email');
+
+      if (result.recordset.length > 0) {
+        const row = result.recordset[0];
+        if (row.status && row.status.toLowerCase() === 'inativo') {
+          return res.status(403).json({ error: 'Usuário inativo' });
+        }
+
+        if (!row.password_hash) {
+          return res.status(401).json({ error: 'Usuário sem senha definida' });
+        }
+
+        const ok = await bcrypt.compare(password, row.password_hash);
+        if (!ok) {
+          return res.status(401).json({ error: 'Credenciais inválidas' });
+        }
+
+        const user = { id: row.id, email: row.email, name: row.name, role: row.role || 'viewer' };
+        const token = jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
+        return res.json({ success: true, token, user });
+      }
+
+      // Sem fallback: exige usuário no banco
+      return res.status(401).json({ error: 'Credenciais inválidas' });
+    } catch (err) {
+      console.error('Erro no login:', err);
+      return res.status(500).json({ error: 'Erro interno no login' });
+    }
+  })();
+});
+
+// --- Rotas de Usuários Admin ---
+app.get('/api/auth/users', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const pool = await getConnectionPool();
+    const result = await pool.request().query('SELECT id, name, email, role, status FROM dbo.users');
+    const users = result.recordset.map(mapUserRow);
+    res.json(users);
+  } catch (err) {
+    console.error('Erro ao listar usuários:', err);
+    next(err);
+  }
+});
+
+app.post('/api/auth/users', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const { nome, email, senha, role } = req.body || {};
+    if (!nome || !email || !senha) {
+      return res.status(400).json({ error: 'Campos nome, email e senha são obrigatórios' });
+    }
+    const hash = await bcrypt.hash(String(senha), 10);
+
+    const pool = await getConnectionPool();
+    const result = await pool.request()
+      .input('name', dbSql.NVarChar, nome)
+      .input('email', dbSql.NVarChar, email)
+      .input('role', dbSql.NVarChar, role || 'viewer')
+      .input('status', dbSql.NVarChar, 'ativo')
+      .input('pwd', dbSql.NVarChar, hash)
+      .query(`
+        INSERT INTO dbo.users (name, email, role, status, password_hash, created_at)
+        OUTPUT Inserted.id, Inserted.name, Inserted.email, Inserted.role, Inserted.status
+        VALUES (@name, @email, @role, @status, @pwd, SYSUTCDATETIME())
+      `);
+    const user = mapUserRow(result.recordset[0]);
+    res.status(201).json({ success: true, user });
+  } catch (err) {
+    if (err && (err.number === 2627 || String(err.message).includes('UNIQUE'))) {
+      return res.status(409).json({ error: 'Email já cadastrado.' });
+    }
+    console.error('Erro ao criar usuário:', err);
+    next(err);
+  }
+});
+
+app.put('/api/auth/users/:id', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { nome, email, role, status, senha } = req.body || {};
+    const pool = await getConnectionPool();
+
+    const request = pool.request()
+      .input('id', dbSql.Int, Number(id))
+      .input('name', dbSql.NVarChar, nome || null)
+      .input('email', dbSql.NVarChar, email || null)
+      .input('role', dbSql.NVarChar, role || null)
+      .input('status', dbSql.NVarChar, status || null);
+
+    let setPwdSql = '';
+    if (senha) {
+      const hash = await bcrypt.hash(String(senha), 10);
+      request.input('pwd', dbSql.NVarChar, hash);
+      setPwdSql = ', password_hash = @pwd';
+    }
+
+    const result = await request.query(`
+      UPDATE dbo.users SET
+        name = COALESCE(@name, name),
+        email = COALESCE(@email, email),
+        role = COALESCE(@role, role),
+        status = COALESCE(@status, status)
+        ${setPwdSql}
+      WHERE id = @id;
+      SELECT id, name, email, role, status FROM dbo.users WHERE id = @id;
+    `);
+    const user = mapUserRow(result.recordset[0]);
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error('Erro ao atualizar usuário:', err);
+    next(err);
+  }
+});
+
+app.patch('/api/auth/users/:id/toggle-status', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const pool = await getConnectionPool();
+    const current = await pool.request().input('id', dbSql.Int, Number(id))
+      .query('SELECT status FROM dbo.users WHERE id = @id');
+    if (current.recordset.length === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+    const cur = (current.recordset[0].status || 'ativo').toLowerCase();
+    const nextStatus = cur === 'ativo' ? 'inativo' : 'ativo';
+    const result = await pool.request().input('id', dbSql.Int, Number(id)).input('status', dbSql.NVarChar, nextStatus)
+      .query(`UPDATE dbo.users SET status = @status, updated_at = SYSUTCDATETIME() WHERE id = @id;
+              SELECT id, name, email, role, status FROM dbo.users WHERE id = @id;`);
+    const user = mapUserRow(result.recordset[0]);
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error('Erro ao alternar status do usuário:', err);
+    next(err);
   }
 });
 
@@ -1229,7 +1389,8 @@ app.use((err, req, res, next) => {
 });
 
 // --- Inicialização do Servidor (aguarda conexão ao banco) ---
-getConnectionPool().then(() => {
+getConnectionPool().then(async () => {
+  await ensureUserTableSchema();
   app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
     console.log(`📱 Ambiente: ${process.env.NODE_ENV || 'development'}`);
