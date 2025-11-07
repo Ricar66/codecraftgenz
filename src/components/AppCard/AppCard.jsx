@@ -31,7 +31,16 @@ const AppCard = ({ app, onDownload }) => {
           <span className="app-size">{displaySize}</span>
         </div>
         <div className="app-actions">
-          <button className="btn btn-buy" onClick={() => onDownload?.(app)} aria-label={`Download de ${name}`}>
+          <button
+            className="btn btn-buy"
+            onClick={() => {
+              // Feedback visual imediato
+              try { navigator.vibrate?.(10); } catch {}
+              onDownload?.(app);
+            }}
+            aria-label={`Download de ${name}`}
+            data-qa="appcard-download-btn"
+          >
             Download
           </button>
           <Link className="btn btn-secondary" to={`/apps/${id}/compra`} target="_blank" rel="noopener noreferrer" aria-label={`Detalhes de ${name}`}>
@@ -72,8 +81,10 @@ const AppCard = ({ app, onDownload }) => {
         .app-size { color: #d6d6d6; }
 
         .app-actions { margin-top: 10px; display:flex; gap: 8px; }
-        .btn { display:inline-block; padding: 10px 14px; border-radius: 10px; border:1px solid rgba(255,255,255,0.18); cursor:pointer; transition: transform .2s ease, box-shadow .2s ease; }
+        .btn { display:inline-block; padding: 10px 14px; border-radius: 10px; border:1px solid rgba(255,255,255,0.18); cursor:pointer; transition: transform .12s ease, box-shadow .12s ease, filter .12s ease; }
         .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 18px rgba(0,0,0,0.25); }
+        .btn:active { transform: translateY(0px) scale(0.98); filter: brightness(0.95); }
+        .btn:focus-visible { outline: 2px solid #00E4F2; outline-offset: 2px; }
         .btn-buy { background: linear-gradient(90deg, #D12BF2, #00E4F2); color: #000; border:none; font-weight: 700; }
         .btn-secondary { background: rgba(255,255,255,0.08); color: var(--texto-branco); }
       `}</style>
