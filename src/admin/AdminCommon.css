@@ -34,12 +34,15 @@
 .statusSelect,
 .items-per-page-select {
   padding: 10px 12px;
-  border: 1px solid #ced4da;
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 8px;
   font-size: 14px;
-  background: white;
+  background: transparent;
+  color: #fff;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
+.filter-input::placeholder,
+.search-input::placeholder { color: rgba(255,255,255,0.75); }
 .filter-input:focus,
 .search-input:focus,
 .filter-select:focus,
@@ -292,5 +295,22 @@
 /* Stack interno em telas menores: direita abaixo do conteúdo */
 @media (max-width: 820px) {
   .mentorAdminCard { grid-template-columns: auto 1fr; }
-  .mentorAdminCard .right { justify-items: start; }
+  /* Fazer a coluna direita ocupar a largura inteira abaixo do conteúdo */
+  .mentorAdminCard .right { justify-items: start; grid-column: 1 / -1; }
+  /* Evitar quebra feia e garantir que textos não vazem */
+  .mentorAdminCard .center, .mentorAdminCard .right { min-width: 0; }
 }
+
+/* Em telas muito pequenas, empilhar tudo em uma coluna para máxima legibilidade */
+@media (max-width: 560px) {
+  .mentorAdminCard { grid-template-columns: 1fr; }
+  .mentorAdminCard .left,
+  .mentorAdminCard .center,
+  .mentorAdminCard .right { grid-column: 1 / -1; }
+}
+
+/* Melhorias de robustez de texto para evitar sobreposição/overflow */
+.mentorAdminCard .bio,
+.mentorAdminCard .contact,
+.mentorAdminCard .stats { word-break: break-word; overflow-wrap: anywhere; }
+.mentorAdminCard .actions { row-gap: 6px; }

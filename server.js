@@ -733,6 +733,112 @@ app.get('/api/mentores/:id', async (req, res, next) => {
   }
 });
 
+// Criar novo mentor
+app.post('/api/mentores', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const { nome, email, telefone, bio, avatar_url, visible } = req.body || {};
+
+    if (!nome || !email) {
+      return res.status(400).json({ error: 'Os campos "nome" e "email" são obrigatórios.' });
+    }
+
+    const pool = await getConnectionPool();
+    const request = pool.request()
+      .input('nome', dbSql.NVarChar, nome)
+      .input('email', dbSql.NVarChar, email)
+      .input('telefone', dbSql.NVarChar, telefone || null)
+      .input('bio', dbSql.NVarChar(dbSql.MAX), bio || null)
+      .input('avatar_url', dbSql.NVarChar, avatar_url || null)
+      .input('visible', dbSql.Bit, (visible === undefined || visible === null) ? 1 : (visible ? 1 : 0));
+
+    const insertQuery = `
+      INSERT INTO dbo.mentores (nome, email, telefone, bio, avatar_url, visible)
+      OUTPUT Inserted.*
+      VALUES (@nome, @email, @telefone, @bio, @avatar_url, @visible)
+    `;
+    const result = await request.query(insertQuery);
+    const mentor = result.recordset[0] || {};
+    return res.status(201).json({ success: true, mentor });
+  } catch (err) {
+    if (err && err.number === 2627) {
+      // Violação de chave única (email)
+      return res.status(409).json({ error: 'Email já cadastrado para um mentor.' });
+    }
+    console.error('Erro ao criar mentor:', err);
+    next(err);
+  }
+});
+
+// Atualizar mentor existente
+app.put('/api/mentores/:id', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+
+    const { nome, email, telefone, bio, avatar_url, visible } = req.body || {};
+
+    const pool = await getConnectionPool();
+    const request = pool.request()
+      .input('id', dbSql.Int, id)
+      .input('nome', dbSql.NVarChar, nome || null)
+      .input('email', dbSql.NVarChar, email || null)
+      .input('telefone', dbSql.NVarChar, telefone || null)
+      .input('bio', dbSql.NVarChar(dbSql.MAX), bio || null)
+      .input('avatar_url', dbSql.NVarChar, avatar_url || null)
+      .input('visible', dbSql.Bit, visible === undefined || visible === null ? null : (visible ? 1 : 0));
+
+    // Atualização com SET completo (usa COALESCE para manter valores quando null)
+    const updateQuery = `
+      UPDATE dbo.mentores
+      SET 
+        nome = COALESCE(@nome, nome),
+        email = COALESCE(@email, email),
+        telefone = COALESCE(@telefone, telefone),
+        bio = COALESCE(@bio, bio),
+        avatar_url = COALESCE(@avatar_url, avatar_url),
+        visible = COALESCE(@visible, visible),
+        updated_at = SYSUTCDATETIME()
+      WHERE id = @id
+    `;
+    const upd = await request.query(updateQuery);
+    if (!upd.rowsAffected || upd.rowsAffected[0] === 0) {
+      return res.status(404).json({ error: 'Mentor não encontrado' });
+    }
+
+    const result = await pool.request()
+      .input('id', dbSql.Int, id)
+      .query('SELECT * FROM dbo.mentores WHERE id = @id');
+    return res.json({ success: true, mentor: result.recordset[0] });
+  } catch (err) {
+    if (err && err.number === 2627) {
+      return res.status(409).json({ error: 'Email já cadastrado para outro mentor.' });
+    }
+    console.error('Erro ao atualizar mentor:', err);
+    next(err);
+  }
+});
+
+// Remover mentor
+app.delete('/api/mentores/:id', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+
+    const pool = await getConnectionPool();
+    const del = await pool.request()
+      .input('id', dbSql.Int, id)
+      .query('DELETE FROM dbo.mentores WHERE id = @id');
+
+    if (!del.rowsAffected || del.rowsAffected[0] === 0) {
+      return res.status(404).json({ error: 'Mentor não encontrado' });
+    }
+    return res.json({ success: true, removed: true });
+  } catch (err) {
+    console.error('Erro ao remover mentor:', err);
+    next(err);
+  }
+});
+
 // --- Rotas de Crafters (Lógica 1, 3) ---
 app.get('/api/crafters', async (req, res, next) => {
   // Rota usada pelo AdminCrafters e Ranking
