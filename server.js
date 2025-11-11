@@ -75,9 +75,9 @@ app.use(express.json({ limit: '10mb' }));
 
 // --- Configuração Mercado Pago (Mantido) ---
 const MP_ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN || '';
-const MP_SUCCESS_URL = process.env.MERCADO_PAGO_SUCCESS_URL || 'http://localhost:5173/apps/:id/compra';
-const MP_FAILURE_URL = process.env.MERCADO_PAGO_FAILURE_URL || 'http://localhost:5173/apps/:id/compra';
-const MP_PENDING_URL = process.env.MERCADO_PAGO_PENDING_URL || 'http://localhost:5173/apps/:id/compra';
+const MP_SUCCESS_URL = process.env.MERCADO_PAGO_SUCCESS_URL || 'http://localhost:5174/apps/:id/compra';
+const MP_FAILURE_URL = process.env.MERCADO_PAGO_FAILURE_URL || 'http://localhost:5174/apps/:id/compra';
+const MP_PENDING_URL = process.env.MERCADO_PAGO_PENDING_URL || 'http://localhost:5174/apps/:id/compra';
 const MP_WEBHOOK_URL = process.env.MERCADO_PAGO_WEBHOOK_URL || 'http://localhost:8080/api/apps/webhook';
 
 let mpClient = null;
@@ -1416,7 +1416,15 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
 
   // Fallback mock
   const preference_id = `pref_${Date.now()}`;
-  const successUrl = MP_SUCCESS_URL.replace(':id', String(id));
+  // Detecta a origem da requisição em dev para construir URL de retorno coerente
+  const requestOrigin = req.headers.origin || req.headers.referer || '';
+  const baseAppUrl = (process.env.MERCADO_PAGO_SUCCESS_URL || '').includes('/apps/:id/compra')
+    ? null
+    : process.env.MERCADO_PAGO_SUCCESS_URL;
+  const computedSuccess = baseAppUrl
+    ? baseAppUrl
+    : (requestOrigin ? `${requestOrigin.replace(/\/$/, '')}/apps/:id/compra` : MP_SUCCESS_URL);
+  const successUrl = computedSuccess.replace(':id', String(id));
   const init_point = `${successUrl}?preference_id=${preference_id}&status=approved`;
   paymentsByApp.set(id, {
     payment_id: preference_id,

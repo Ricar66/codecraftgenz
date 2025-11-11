@@ -91,10 +91,10 @@ const ProjectsPage = () => {
             <div className="mentors-grid" aria-busy={loadingMentors}>
               {mentors.map((m) => (
                 <article key={m.id || m.email || m.name} className="mentor-card" aria-label={`Mentor ${m.name}`}>
-                  <div className="avatar" aria-hidden={!!m.photo}>
-                    {m.photo ? (
+                  <div className="avatar" aria-hidden={!!(m.avatar_url || m.photo)}>
+                    {m.avatar_url || m.photo ? (
                       <img
-                        src={m.photo}
+                        src={m.avatar_url || m.photo}
                         alt={`Foto de ${m.name}`}
                         style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }}
                         loading="lazy"
@@ -108,8 +108,10 @@ const ProjectsPage = () => {
                   <div className="info">
                     <div className="header">
                       <h3 className="name">{m.name}</h3>
+                      <p className="role">{m.specialty || ''}</p>
                       <div className="chips">
                         {m.id ? (<span className="chip" aria-label="ID">ID: {m.id}</span>) : (<span className="chip" aria-label="ID">ID: —</span>)}
+                        <span className={`chip ${m.visible ? 'alt' : ''}`} aria-label="Visibilidade">{m.visible ? 'Visível' : 'Oculto'}</span>
                       </div>
                     </div>
                     <div className="details">
@@ -120,8 +122,8 @@ const ProjectsPage = () => {
                       <p className="bio">{m.bio}</p>
                       <div className="stats">
                         <span className="stat-item">Projetos orientados: {m.projects_count ?? '—'}</span>
-                        {m.createdAt ? (<span className="stat-item">Mentor desde {new Date(m.createdAt).toLocaleDateString('pt-BR', { month:'2-digit', year:'numeric' })}</span>) : null}
-                        {m.updatedAt ? (<span className="stat-item">Atualizado {new Date(m.updatedAt).toLocaleDateString('pt-BR', { month:'2-digit', year:'numeric' })}</span>) : null}
+                        {m.created_at ? (<span className="stat-item">Mentor desde {new Date(m.created_at).toLocaleDateString('pt-BR', { month:'2-digit', year:'numeric' })}</span>) : null}
+                        {m.updated_at ? (<span className="stat-item">Atualizado {new Date(m.updated_at).toLocaleDateString('pt-BR', { month:'2-digit', year:'numeric' })}</span>) : null}
                       </div>
                     </div>
                   </div>
@@ -264,6 +266,8 @@ const ProjectsPage = () => {
         .header { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
         .chips { display:flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
         .chip { display:inline-block; padding: 6px 10px; border-radius: 999px; font-size: 0.8rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); color: var(--texto-branco); }
+        .chip.alt { background: rgba(209,43,242,0.12); border-color: rgba(209,43,242,0.35); }
+        .role { color: var(--texto-gelo); font-size: 0.95rem; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .name { font-weight: 700; color: var(--texto-branco); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .contact { display: flex; flex-wrap: wrap; gap: var(--espaco-sm); margin-top: var(--espaco-xs); color: var(--texto-gelo); }
         .contact-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 6px 10px; max-width: 100%; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
