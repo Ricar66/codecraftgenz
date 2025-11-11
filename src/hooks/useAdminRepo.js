@@ -55,7 +55,26 @@ export const UsersRepo = {
 
 // Mentores
 export function useMentors() {
-  const result = useAsyncList(() => mentorAPI.getMentors({ all: true }));
+  // Normaliza campos do backend (pt-BR) para o frontend (en-US)
+  const normalize = (m) => ({
+    id: m.id,
+    name: m.name ?? m.nome ?? '',
+    specialty: m.specialty ?? m.especialidade ?? '',
+    bio: m.bio ?? m.descricao ?? '',
+    email: m.email ?? '',
+    phone: m.phone ?? m.telefone ?? '',
+    avatar_url: m.avatar_url ?? m.foto_url ?? m.photo ?? '',
+    photo: m.photo ?? '',
+    status: m.status ?? 'published',
+    visible: m.visible !== false,
+    created_at: m.created_at,
+    updated_at: m.updated_at,
+  });
+
+  const result = useAsyncList(async () => {
+    const list = await mentorAPI.getMentors({ all: true });
+    return Array.isArray(list) ? list.map(normalize) : [];
+  });
 
   useEffect(() => {
     const unsub = realtime.subscribe('mentors_changed', () => {
@@ -70,11 +89,22 @@ export function useMentors() {
 export const MentorsRepo = {
   async upsert(m) {
     try {
+      // Mapeia campos do formulário para o backend (pt-BR)
+      const payload = {
+        nome: m.nome ?? m.name,
+        especialidade: m.especialidade ?? m.specialty,
+        bio: m.bio ?? m.descricao,
+        email: m.email,
+        telefone: m.telefone ?? m.phone,
+        avatar_url: m.avatar_url ?? m.photo ?? '',
+        status: m.status ?? 'published',
+        visible: m.visible !== false,
+      };
       let mentor;
       if (m.id) {
-        mentor = await mentorAPI.updateMentor(m.id, m);
+        mentor = await mentorAPI.updateMentor(m.id, payload);
       } else {
-        mentor = await mentorAPI.createMentor(m);
+        mentor = await mentorAPI.createMentor(payload);
       }
       realtime.publish('mentors_changed', { mentors: null });
       return { ok: true, mentor };
@@ -108,6 +138,12 @@ export const MentorsRepo = {
     } catch (err) {
       return { ok: false, error: err.message };
     }
+  },
+
+  // Compatibilidade com chamada existente na UI (recebe objeto inteiro)
+  async toggleVisible(m) {
+    if (!m || !m.id) return { ok: false, error: 'Mentor inválido' };
+    return await this.toggleVisibility(m.id);
   },
 };
 
