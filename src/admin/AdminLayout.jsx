@@ -261,6 +261,7 @@ export function Usuarios() {
   const [busy, setBusy] = React.useState(false);
   const [query, setQuery] = React.useState('');
   const [page, setPage] = React.useState(1);
+  const [pwdModal, setPwdModal] = React.useState({ open: false, userId: null, name: '', newPassword: '', confirm: '', saving: false, error: '' });
   const pageSize = 5;
   const filtered = list.filter(u =>
     u.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -342,6 +343,14 @@ export function Usuarios() {
                     <option value="editor">editor</option>
                     <option value="viewer">viewer</option>
                   </select>
+                  <button
+                    className="btn btn-outline"
+                    style={{ marginLeft: 8 }}
+                    onClick={() => setPwdModal({ open: true, userId: u.id, name: u.name, newPassword: '', confirm: '', saving: false, error: '' })}
+                    aria-label={`Editar senha de ${u.name}`}
+                  >
+                    Editar senha
+                  </button>
                 </td>
               </tr>
             ))}
@@ -370,6 +379,66 @@ export function Usuarios() {
         {validationErrors.email && <span style={{ color: 'red' }}>{validationErrors.email}</span>}
         {validationErrors.password && <span style={{ color: 'red' }}>{validationErrors.password}</span>}
       </div>
+
+      {pwdModal.open && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`Editar senha de ${pwdModal.name}`}>
+          <div className="modal">
+            <h3 className="title">Editar senha</h3>
+            <p className="muted">Usuário: {pwdModal.name}</p>
+            {pwdModal.error && <p role="alert" style={{ color: '#FF6B6B' }}>❌ {pwdModal.error}</p>}
+            <div className="formRow">
+              <label className="sr-only" htmlFor="new-password">Nova senha</label>
+              <input
+                id="new-password"
+                type="password"
+                placeholder="Nova senha"
+                value={pwdModal.newPassword}
+                onChange={(e)=>setPwdModal(s=>({ ...s, newPassword: e.target.value }))}
+                aria-label="Nova senha"
+              />
+              <label className="sr-only" htmlFor="confirm-password">Confirmar senha</label>
+              <input
+                id="confirm-password"
+                type="password"
+                placeholder="Confirmar senha"
+                value={pwdModal.confirm}
+                onChange={(e)=>setPwdModal(s=>({ ...s, confirm: e.target.value }))}
+                aria-label="Confirmar senha"
+              />
+            </div>
+            <div style={{ display:'flex', gap:8, marginTop:8 }}>
+              <button
+                className="btn btn-primary"
+                onClick={async ()=>{
+                  const npw = (pwdModal.newPassword||'').trim();
+                  const cpw = (pwdModal.confirm||'').trim();
+                  if (npw.length < 6) { setPwdModal(s=>({ ...s, error: 'Senha deve ter no mínimo 6 caracteres' })); return; }
+                  if (npw !== cpw) { setPwdModal(s=>({ ...s, error: 'As senhas não coincidem' })); return; }
+                  try {
+                    setPwdModal(s=>({ ...s, saving: true, error: '' }));
+                    const res = await UsersRepo.update(pwdModal.userId, { password: npw });
+                    if (!res.ok) { setPwdModal(s=>({ ...s, saving: false, error: res.error || 'Falha ao atualizar senha' })); }
+                    else { setPwdModal({ open: false, userId: null, name: '', newPassword: '', confirm: '', saving: false, error: '' }); refresh(); }
+                  } catch (e) {
+                    setPwdModal(s=>({ ...s, saving: false, error: e.message || 'Erro inesperado' }));
+                  }
+                }}
+                disabled={pwdModal.saving}
+              >
+                {pwdModal.saving ? 'Salvando…' : 'Salvar'}
+              </button>
+              <button className="btn btn-outline" onClick={()=>setPwdModal({ open:false, userId:null, name:'', newPassword:'', confirm:'', saving:false, error:'' })}>Cancelar</button>
+            </div>
+          </div>
+          <style>{`
+            .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; padding:16px; z-index: 50; }
+            .modal { width: 100%; max-width: 520px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 16px; }
+            .title { color: var(--texto-branco); margin: 0 0 6px; }
+            .muted { color: var(--texto-gelo); }
+            .formRow input { padding: 10px 12px; border-radius: 10px; border:1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); color: var(--texto-branco); }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }
