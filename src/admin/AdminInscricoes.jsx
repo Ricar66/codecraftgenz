@@ -81,7 +81,35 @@ const AdminInscricoes = () => {
             : inscricao
         )
       );
-      setToast({ type: 'success', message: 'Status atualizado com sucesso.' });
+      // Se confirmado, incluir automaticamente na tabela de crafters (se não existir)
+      if (novoStatus === 'confirmado') {
+        try {
+          const atual = (inscricoes || []).find(i => i.id === id);
+          const emailNorm = normalizaEmail(atual?.email);
+          const jaExiste = !!(emailNorm && craftersPorEmail[emailNorm] && craftersPorEmail[emailNorm].length > 0);
+          if (!jaExiste && emailNorm) {
+            const payload = {
+              nome: String(atual?.nome || '').trim(),
+              email: String(atual?.email || '').trim(),
+              avatar_url: ''
+            };
+            await apiRequest('/api/crafters', { method: 'POST', body: JSON.stringify(payload) });
+            // Atualiza lista de crafters para refletir criação
+            try {
+              const data = await apiRequest(`/api/crafters`, { method: 'GET' });
+              const arr = Array.isArray(data) ? data : (data?.data || []);
+              setCrafters(arr);
+            } catch {/* ignora */}
+            setToast({ type: 'success', message: 'Status atualizado e crafter criado com sucesso.' });
+          } else {
+            setToast({ type: 'success', message: 'Status atualizado. Crafter já existente para este email.' });
+          }
+        } catch (e) {
+          setToast({ type: 'error', message: `Status atualizado, mas falhou ao criar crafter: ${e.message}` });
+        }
+      } else {
+        setToast({ type: 'success', message: 'Status atualizado com sucesso.' });
+      }
     } catch (err) {
       setToast({ type: 'error', message: `Erro ao atualizar status: ${err.message}` });
     } finally {
