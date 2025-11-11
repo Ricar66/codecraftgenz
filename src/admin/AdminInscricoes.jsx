@@ -99,7 +99,9 @@ const AdminInscricoes = () => {
               const data = await apiRequest(`/api/crafters`, { method: 'GET' });
               const arr = Array.isArray(data) ? data : (data?.data || []);
               setCrafters(arr);
-            } catch {/* ignora */}
+            } catch (e) {
+              if (import.meta.env?.DEV) console.warn('Ignorando erro ao atualizar lista de crafters:', e);
+            }
             setToast({ type: 'success', message: 'Status atualizado e crafter criado com sucesso.' });
           } else {
             setToast({ type: 'success', message: 'Status atualizado. Crafter já existente para este email.' });
@@ -115,7 +117,9 @@ const AdminInscricoes = () => {
     } finally {
       setUpdatingId(null);
       // Recarrega inscrições do backend para refletir o status real
-      try { await fetchInscricoes(); } catch {}
+      try { await fetchInscricoes(); } catch (e) {
+        if (import.meta.env?.DEV) console.warn('Falha ao recarregar inscrições após status:', e);
+      }
     }
   };
 

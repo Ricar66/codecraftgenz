@@ -55,7 +55,9 @@ const AppCard = ({ app, onDownload, mode = 'owned' }) => {
               <button
                 className="btn btn-buy"
                 onClick={() => {
-                  try { navigator.vibrate?.(10); } catch {}
+                  try { navigator.vibrate?.(10); } catch (e) {
+                    if (import.meta.env?.DEV) console.warn('Vibrate não suportado ou bloqueado:', e);
+                  }
                   onDownload?.(app);
                 }}
                 aria-label={`Download de ${name}`}
