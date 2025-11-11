@@ -74,14 +74,19 @@ export async function createUser(user) {
 export async function updateUser(id, updates) {
   try {
     // CORREÇÃO: Usa apiRequest
+    const payload = {
+      nome: updates.name,
+      email: updates.email,
+      role: updates.role,
+      status: updates.status === 'active' ? 'ativo' : 'inativo'
+    };
+    // Permitir alteração de senha quando fornecida
+    if (updates.password) {
+      payload.senha = updates.password;
+    }
     const data = await apiRequest(`/api/auth/users/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({
-        nome: updates.name,
-        email: updates.email,
-        role: updates.role,
-        status: updates.status === 'active' ? 'ativo' : 'inativo'
-      })
+      body: JSON.stringify(payload)
     });
     
     return {
