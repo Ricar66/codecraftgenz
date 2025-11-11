@@ -114,6 +114,8 @@ const AdminInscricoes = () => {
       setToast({ type: 'error', message: `Erro ao atualizar status: ${err.message}` });
     } finally {
       setUpdatingId(null);
+      // Recarrega inscrições do backend para refletir o status real
+      try { await fetchInscricoes(); } catch {}
     }
   };
 
