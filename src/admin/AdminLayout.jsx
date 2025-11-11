@@ -621,7 +621,6 @@ export function Mentores() {
             <div className="right">
               <div className="badges">
                 <span className={`badge ${m.status==='published'?'badgeOk':'badgeNeutral'}`}>{m.status || 'draft'}</span>
-                <span className={`badge ${m.visible?'badgeOk':'badgeWarn'}`}>{m.visible ? 'visível' : 'oculto'}</span>
               </div>
               <div className="actions btn-group">
                 <button className="btn btn-secondary" onClick={()=>onEdit(m)}>Editar</button>

@@ -91,6 +91,7 @@ export default function AdminEquipes() {
         email: mentor.email,
         telefone: mentor.telefone,
         bio: mentor.bio,
+        avatar_url: mentor.avatar_url || mentor.foto_url || mentor.photo || '',
         visible: mentor.visible
       }));
 
