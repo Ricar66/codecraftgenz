@@ -22,7 +22,7 @@ export default function MentoriaPage() {
       const normalized = list.map(m => ({
         ...m,
         // normalização de nomes de campo banco -> UI
-        photo: m.foto_url || m.photo || null,
+        photo: m.avatar_url || m.foto_url || m.photo || null,
         name: m.nome || m.name || '',
         phone: m.telefone || m.phone || '',
         specialty: m.especialidade || m.specialty || '',
@@ -34,7 +34,8 @@ export default function MentoriaPage() {
         updatedAt: m.updated_at || m.updatedAt || null,
         projects_count: m.projects_count || m.projetos_count || m.projectsCount || null,
       }));
-      setMentors(normalized.filter(m => m.visible));
+      // Exibe todos os mentores criados, indicando visibilidade no card
+      setMentors(normalized);
     } catch (error) {
       console.error('Erro ao carregar mentores:', error);
       setMentors([]); // Em caso de erro, lista vazia
@@ -71,7 +72,7 @@ export default function MentoriaPage() {
             const list = Array.isArray(json?.data) ? json.data : [];
             const normalized = list.map(m => ({
               ...m,
-              photo: m.foto_url || m.photo || null,
+              photo: m.avatar_url || m.foto_url || m.photo || null,
               name: m.nome || m.name || '',
               phone: m.telefone || m.phone || '',
               specialty: m.especialidade || m.specialty || '',
@@ -83,7 +84,8 @@ export default function MentoriaPage() {
               updatedAt: m.updated_at || m.updatedAt || null,
               projects_count: m.projects_count || m.projetos_count || m.projectsCount || null,
             }));
-            setMentors(normalized.filter(m => m.visible));
+            // Exibe todos os mentores criados, indicando visibilidade no card
+            setMentors(normalized);
           })
           .catch(() => {
             if (!isMounted) return; // Evita setState se componente foi desmontado
@@ -160,6 +162,8 @@ export default function MentoriaPage() {
                     <div className="chips">
                       {m.specialty ? (<span className="chip" aria-label="Especialidade">{m.specialty}</span>) : null}
                       {m.cargo ? (<span className="chip alt" aria-label="Cargo">{m.cargo}</span>) : null}
+                      {m.id ? (<span className="chip" aria-label="ID">ID: {m.id}</span>) : (<span className="chip" aria-label="ID">ID: —</span>)}
+                      <span className={`chip ${m.visible ? 'alt' : ''}`} aria-label="Visibilidade">{m.visible ? 'Visível' : 'Oculto'}</span>
                     </div>
                   </div>
                   <div className="details">
@@ -171,6 +175,7 @@ export default function MentoriaPage() {
                     <div className="stats">
                       <span className="stat-item">Projetos orientados: {m.projects_count ?? '—'}</span>
                       {m.createdAt ? (<span className="stat-item">Mentor desde {formatMonthYear(m.createdAt)}</span>) : null}
+                      {m.updatedAt ? (<span className="stat-item">Atualizado {formatMonthYear(m.updatedAt)}</span>) : null}
                     </div>
                     <div className="actions">
                       {m.phone ? (
