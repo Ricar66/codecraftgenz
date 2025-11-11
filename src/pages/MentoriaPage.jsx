@@ -141,10 +141,10 @@ export default function MentoriaPage() {
           <div className="mentors-grid" aria-busy={loading}>
             {mentors.map((m) => (
               <article key={m.id || m.email || m.name} className="mentor-card" aria-label={`Mentor ${m.name}`}>
-                <div className="avatar" aria-hidden={!!m.photo}>
-                  {m.photo ? (
+                <div className="avatar" aria-hidden={!!(m.avatar_url || m.photo)}>
+                  {m.avatar_url || m.photo ? (
                     <img
-                      src={m.photo}
+                      src={m.avatar_url || m.photo}
                       alt={`Foto de ${m.name}`}
                       style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }}
                       loading="lazy"
@@ -174,8 +174,8 @@ export default function MentoriaPage() {
                     <p className="bio">{m.bio}</p>
                     <div className="stats">
                       <span className="stat-item">Projetos orientados: {m.projects_count ?? '—'}</span>
-                      {m.createdAt ? (<span className="stat-item">Mentor desde {formatMonthYear(m.createdAt)}</span>) : null}
-                      {m.updatedAt ? (<span className="stat-item">Atualizado {formatMonthYear(m.updatedAt)}</span>) : null}
+                      {m.created_at || m.createdAt ? (<span className="stat-item">Mentor desde {formatMonthYear(m.created_at || m.createdAt)}</span>) : null}
+                      {m.updated_at || m.updatedAt ? (<span className="stat-item">Atualizado {formatMonthYear(m.updated_at || m.updatedAt)}</span>) : null}
                     </div>
                     <div className="actions">
                       {m.phone ? (
