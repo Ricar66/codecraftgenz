@@ -1,15 +1,45 @@
 // src/pages/ProjectsPage.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
 import ProjectsList from '../components/Projects/ProjectsList';
+import * as mentorAPI from '../services/mentorAPI.js';
 
 /**
  * Página de Projetos
  * Mantém consistência visual com a página inicial usando o mesmo design system
  */
 const ProjectsPage = () => {
+  const [mentors, setMentors] = useState([]);
+  const [loadingMentors, setLoadingMentors] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const list = await mentorAPI.getMentors({ all: false });
+        // Normalizar nomes para UI
+        const normalized = (Array.isArray(list) ? list : []).map(m => ({
+          ...m,
+          photo: m.avatar_url || m.foto_url || m.photo || null,
+          name: m.nome || m.name || '',
+          phone: m.telefone || m.phone || '',
+          bio: m.bio || m.descricao || '',
+          email: m.email || '',
+          createdAt: m.created_at || m.createdAt || null,
+          updatedAt: m.updated_at || m.updatedAt || null,
+          projects_count: m.projects_count || m.projetos_count || m.projectsCount || null,
+        }));
+        setMentors(normalized.filter(m => m.visible !== false));
+      } catch (err) {
+        console.error('Erro ao carregar mentores (usuário):', err);
+        setMentors([]);
+      } finally {
+        setLoadingMentors(false);
+      }
+    };
+    load();
+  }, []);
   return (
     <div className="projects-page" style={{
       backgroundImage: `url(${heroBackground})`,
@@ -46,6 +76,61 @@ const ProjectsPage = () => {
         <div className="projects-container">
           <div className="section-card">
             <ProjectsList useAdminStore={false} />
+          </div>
+        </div>
+      </section>
+
+      {/* Seção de Mentores (Usuário) */}
+      <section className="mentors-section">
+        <div className="projects-container">
+          <div className="section-card">
+            <header className="mentors-header">
+              <h2 className="mentors-title">Mentores</h2>
+              <p className="mentors-subtitle">Conheça os profissionais que orientam nossos projetos</p>
+            </header>
+            <div className="mentors-grid" aria-busy={loadingMentors}>
+              {mentors.map((m) => (
+                <article key={m.id || m.email || m.name} className="mentor-card" aria-label={`Mentor ${m.name}`}>
+                  <div className="avatar" aria-hidden={!!m.photo}>
+                    {m.photo ? (
+                      <img
+                        src={m.photo}
+                        alt={`Foto de ${m.name}`}
+                        style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }}
+                        loading="lazy"
+                        decoding="async"
+                        fetchpriority="low"
+                        width="120"
+                        height="120"
+                      />
+                    ) : null}
+                  </div>
+                  <div className="info">
+                    <div className="header">
+                      <h3 className="name">{m.name}</h3>
+                      <div className="chips">
+                        {m.id ? (<span className="chip" aria-label="ID">ID: {m.id}</span>) : (<span className="chip" aria-label="ID">ID: —</span>)}
+                      </div>
+                    </div>
+                    <div className="details">
+                      <div className="contact">
+                        {m.phone ? (<span className="contact-item" title={m.phone}>📞 {m.phone}</span>) : null}
+                        {m.email ? (<span className="contact-item" title={m.email}>📧 {m.email}</span>) : null}
+                      </div>
+                      <p className="bio">{m.bio}</p>
+                      <div className="stats">
+                        <span className="stat-item">Projetos orientados: {m.projects_count ?? '—'}</span>
+                        {m.createdAt ? (<span className="stat-item">Mentor desde {new Date(m.createdAt).toLocaleDateString('pt-BR', { month:'2-digit', year:'numeric' })}</span>) : null}
+                        {m.updatedAt ? (<span className="stat-item">Atualizado {new Date(m.updatedAt).toLocaleDateString('pt-BR', { month:'2-digit', year:'numeric' })}</span>) : null}
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+              {!loadingMentors && mentors.length === 0 && (
+                <div className="empty" role="status">Nenhum mentor disponível no momento.</div>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -140,7 +225,7 @@ const ProjectsPage = () => {
           padding: 0 var(--espaco-xl);
         }
 
-        .section-card {
+      .section-card {
           max-width: 1200px;
           margin: 0 auto;
           background: rgba(255,255,255,0.06);
@@ -151,6 +236,40 @@ const ProjectsPage = () => {
           padding: var(--espaco-xl);
           overflow: hidden;
         }
+
+        /* ===== MENTORES (USUÁRIO) ===== */
+        .mentors-section { background: transparent; padding: var(--espaco-3xl) 0; }
+        .mentors-header { text-align: center; margin-bottom: var(--espaco-md); }
+        .mentors-title { font-family: var(--fonte-titulos); font-size: clamp(1.8rem, 3vw, 2.4rem); color: var(--texto-branco); }
+        .mentors-subtitle { color: var(--texto-gelo); }
+        .mentors-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+          gap: var(--espaco-lg);
+          margin-top: var(--espaco-md);
+        }
+        .mentor-card {
+          display: grid;
+          grid-template-columns: 100px 1fr;
+          gap: var(--espaco-md);
+          align-items: start;
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.18);
+          border-radius: var(--raio-lg);
+          padding: var(--espaco-md);
+          box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+        }
+        .avatar { width: 100px; height: 100px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, #D12BF2 0%, #68007B 100%); border: 2px solid rgba(244,244,244,0.6); }
+        .info { display: flex; flex-direction: column; gap: var(--espaco-xs); min-width: 0; }
+        .header { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+        .chips { display:flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+        .chip { display:inline-block; padding: 6px 10px; border-radius: 999px; font-size: 0.8rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); color: var(--texto-branco); }
+        .name { font-weight: 700; color: var(--texto-branco); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .contact { display: flex; flex-wrap: wrap; gap: var(--espaco-sm); margin-top: var(--espaco-xs); color: var(--texto-gelo); }
+        .contact-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 6px 10px; max-width: 100%; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .bio { margin-top: var(--espaco-sm); color: var(--texto-gelo); line-height: 1.5; word-break: break-word; }
+        .stats { display:flex; flex-wrap: wrap; gap: 10px; margin-top: var(--espaco-sm); color: var(--texto-gelo); }
+        .stat-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 8px; }
 
         /* ===== ANIMAÇÕES ===== */
         @keyframes gradientShift {
