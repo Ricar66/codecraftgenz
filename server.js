@@ -1454,26 +1454,35 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
         payer: payerRaw,
       } = req.body || {};
 
+      // Defaults via ENV
+      const ENV_INSTALLMENTS_MAX = Number(process.env.MERCADO_PAGO_INSTALLMENTS_MAX || 0);
+      const ENV_DEFAULT_INSTALLMENTS = Number(process.env.MERCADO_PAGO_DEFAULT_INSTALLMENTS || 0);
+      const ENV_EXC_TYPES = String(process.env.MERCADO_PAGO_EXCLUDED_PAYMENT_TYPES || '').split(',').map(s => s.trim()).filter(Boolean);
+      const ENV_EXC_METHODS = String(process.env.MERCADO_PAGO_EXCLUDED_PAYMENT_METHODS || '').split(',').map(s => s.trim()).filter(Boolean);
+
       const safePaymentMethods = (() => {
-        if (!pmRaw || typeof pmRaw !== 'object') return undefined;
         const out = {};
-        if (typeof pmRaw.installments === 'number' && pmRaw.installments > 0 && pmRaw.installments <= 24) {
-          out.installments = pmRaw.installments;
-        }
-        if (typeof pmRaw.default_installments === 'number' && pmRaw.default_installments > 0 && pmRaw.default_installments <= 24) {
-          out.default_installments = pmRaw.default_installments;
-        }
+        // Payload overrides ENV defaults when provided
+        const installments = (pmRaw && typeof pmRaw.installments === 'number') ? pmRaw.installments : ENV_INSTALLMENTS_MAX;
+        const defaultInstallments = (pmRaw && typeof pmRaw.default_installments === 'number') ? pmRaw.default_installments : ENV_DEFAULT_INSTALLMENTS;
+        if (installments > 0 && installments <= 24) out.installments = installments;
+        if (defaultInstallments > 0 && defaultInstallments <= 24) out.default_installments = defaultInstallments;
         const mapIds = (arr) => Array.isArray(arr)
           ? arr.slice(0, 20).map(x => ({ id: String(x?.id || x).slice(0, 32) })).filter(x => !!x.id)
           : undefined;
-        const excludedTypes = mapIds(pmRaw.excluded_payment_types);
-        const excludedMethods = mapIds(pmRaw.excluded_payment_methods);
+        const excTypesSrc = (pmRaw && pmRaw.excluded_payment_types) || ENV_EXC_TYPES;
+        const excMethodsSrc = (pmRaw && pmRaw.excluded_payment_methods) || ENV_EXC_METHODS;
+        const excludedTypes = mapIds(excTypesSrc);
+        const excludedMethods = mapIds(excMethodsSrc);
         if (excludedTypes && excludedTypes.length) out.excluded_payment_types = excludedTypes;
         if (excludedMethods && excludedMethods.length) out.excluded_payment_methods = excludedMethods;
         return Object.keys(out).length ? out : undefined;
       })();
 
-      const safeStatement = typeof statementRaw === 'string' ? statementRaw.trim().slice(0, 22) : undefined;
+      const envStatement = String(process.env.MERCADO_PAGO_STATEMENT_DESCRIPTOR || '').trim();
+      const safeStatement = typeof statementRaw === 'string'
+        ? statementRaw.trim().slice(0, 22)
+        : (envStatement ? envStatement.slice(0, 22) : undefined);
       const safeExpires = typeof expiresRaw === 'boolean' ? expiresRaw : undefined;
       const isValidDate = (s) => {
         if (typeof s !== 'string') return false;
@@ -1590,23 +1599,23 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
     ? baseAppUrl
     : (requestOrigin ? `${requestOrigin.replace(/\/$/, '')}/apps/:id/compra` : MP_SUCCESS_URL);
   const successUrl = computedSuccess.replace(':id', String(id));
-  const init_point = `${successUrl}?preference_id=${preference_id}&status=approved`;
+  const init_point = `${successUrl}?preference_id=${preference_id}&status=pending&mock=1`;
   paymentsByApp.set(id, {
     payment_id: preference_id,
-    status: 'approved',
+    status: 'pending',
     buyer: { id: req.user?.id, email: req.user?.email, name: req.user?.name },
     amount: Number(appItem.price || 0),
     products: [{ title: appItem.name, quantity: 1, unit_price: Number(appItem.price || 0) }],
   });
-  mockHistory.push({ type: 'purchase', appId: id, app_name: appItem.name, status: 'approved', date: new Date().toISOString() });
-  // Persistir no banco: app_history (approved) e app_payments (approved) com novas colunas
+  mockHistory.push({ type: 'purchase', appId: id, app_name: appItem.name, status: 'pending', date: new Date().toISOString() });
+  // Persistir no banco: app_history (pending) e app_payments (pending) com novas colunas
   try {
     const pool = await getConnectionPool();
     await pool.request()
       .input('type', dbSql.NVarChar, 'purchase')
       .input('app_id', dbSql.Int, id)
       .input('app_name', dbSql.NVarChar, appItem.name)
-      .input('status', dbSql.NVarChar, 'approved')
+      .input('status', dbSql.NVarChar, 'pending')
       .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
     const metadataJson = JSON.stringify({ external_reference: String(id), source: 'mock' });
     await pool.request()
@@ -1614,7 +1623,7 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
       .input('preference_id', dbSql.NVarChar, String(preference_id))
       .input('app_id', dbSql.Int, id)
       .input('user_id', dbSql.Int, req.user?.id || null)
-      .input('status', dbSql.NVarChar, 'approved')
+      .input('status', dbSql.NVarChar, 'pending')
       .input('amount', dbSql.Decimal(18, 2), Number(appItem.price || 0))
       .input('currency', dbSql.NVarChar, 'BRL')
       .input('payer_email', dbSql.NVarChar, req.user?.email || null)
@@ -1627,17 +1636,17 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
       .input('preference_id', dbSql.NVarChar, String(preference_id))
       .input('app_id', dbSql.Int, id)
       .input('user_id', dbSql.Int, req.user?.id || null)
-      .input('action', dbSql.NVarChar, 'status_update')
-      .input('from_status', dbSql.NVarChar, 'pending')
-      .input('to_status', dbSql.NVarChar, 'approved')
-      .input('from_payment_id', dbSql.NVarChar, String(preference_id))
+      .input('action', dbSql.NVarChar, 'create_preference')
+      .input('from_status', dbSql.NVarChar, null)
+      .input('to_status', dbSql.NVarChar, 'pending')
+      .input('from_payment_id', dbSql.NVarChar, null)
       .input('to_payment_id', dbSql.NVarChar, String(preference_id))
       .input('amount', dbSql.Decimal(18, 2), Number(appItem.price || 0))
       .input('currency', dbSql.NVarChar, 'BRL')
       .input('payer_email', dbSql.NVarChar, req.user?.email || null)
       .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
   } catch (dbErr) {
-    console.warn('Falha ao persistir compra aprovada (mock) no banco:', dbErr?.message || dbErr);
+    console.warn('Falha ao persistir compra pendente (mock) no banco:', dbErr?.message || dbErr);
   }
   res.status(201).json({ success: true, preference_id, init_point });
 });
