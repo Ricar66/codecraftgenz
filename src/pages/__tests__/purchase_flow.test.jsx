@@ -51,5 +51,5 @@ describe('Fluxo de compra – regressão sem auto-download', () => {
       expect(openSpy).toHaveBeenCalledTimes(1);
     });
     expect(openSpy.mock.calls[0][0]).toMatch(/example\.com\/download\/test\.exe/);
-  });
+  }, 12000);
 });

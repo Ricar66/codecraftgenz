@@ -190,10 +190,21 @@ const AppPurchasePage = () => {
             <h1 className="title">{app?.name || app?.titulo}</h1>
             <p className="muted">{app?.description || app?.mainFeature}</p>
             <p className="price">Preço: {app?.price ? `R$ ${Number(app.price).toLocaleString('pt-BR')}` : 'a definir'}</p>
+            <p className="muted" title="Informação de preço">
+              Preço final do produto. Taxas de processamento do pagamento são absorvidas pela plataforma.
+            </p>
+
+            <p className="muted" style={{ marginTop: 8 }}>
+              Modo selecionado: {useWallet ? 'Mercado Pago Wallet (no app)' : 'Checkout Mercado Livre (redirecionamento)'}
+            </p>
 
             <div className="btn-group" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-              <button className="btn btn-primary" onClick={startCheckout}>Pagar com Mercado Livre</button>
-              <button className="btn btn-outline" onClick={() => { setUseWallet(true); startCheckout(); }}>Pagar com Mercado Pago (Wallet)</button>
+              <button className="btn btn-primary" onClick={startCheckout} aria-label="Iniciar checkout no Mercado Livre">
+                Pagar com Mercado Livre
+              </button>
+              <button className="btn btn-outline" onClick={() => { setUseWallet(true); startCheckout(); }} aria-label="Iniciar Wallet do Mercado Pago">
+                Pagar com Mercado Pago (Wallet)
+              </button>
               <button className="btn btn-outline" onClick={handleDownload} disabled={!downloadUrl && status!=='approved'}>Baixar executável</button>
             </div>
             {useWallet && mpPrefId && (
@@ -304,8 +315,29 @@ const AppPurchasePage = () => {
             {status === 'approved' && (
               <div className="approved-wrap" style={{ marginTop: 10, padding: '10px 12px', border:'1px solid rgba(0,228,242,0.3)', borderRadius:8 }}>
                 <p className="muted" style={{ color:'#00E4F2' }}>✔ Pagamento aprovado. Você pode baixar o executável com segurança.</p>
+                <ol style={{ marginTop: 8, paddingLeft: 20 }}>
+                  <li>Clique em "Baixar executável" para iniciar o download.</li>
+                  <li>Mantenha o arquivo salvo em um local seguro.</li>
+                  <li>Em caso de dúvida, entre em contato pelo suporte informado na confirmação do pagamento.</li>
+                </ol>
               </div>
             )}
+
+            {status === 'pending' && (
+              <div className="pending-wrap" style={{ marginTop: 10, padding: '10px 12px', border:'1px solid rgba(255, 193, 7, 0.3)', borderRadius:8 }}>
+                <p className="muted" style={{ color:'#FFC107' }}>⏳ Pagamento pendente. Aguarde a compensação ou utilize outro método.</p>
+                <p className="muted">Você poderá baixar o executável assim que o status for atualizado para aprovado.</p>
+              </div>
+            )}
+
+            <details style={{ marginTop: 14 }}>
+              <summary style={{ cursor:'pointer' }}>Ajuda</summary>
+              <ul className="muted" style={{ marginTop: 8, paddingLeft: 20 }}>
+                <li>Se o checkout não abrir, desative bloqueadores de pop-up e tente novamente.</li>
+                <li>PIX e boleto podem levar alguns minutos para confirmação.</li>
+                <li>Após aprovação, o botão de download fica ativo nesta página.</li>
+              </ul>
+            </details>
 
             {(downloadStatus === 'downloading' || downloadStatus === 'done') && (
               <div aria-live="polite" className="progress-wrap" style={{ marginTop: 12 }}>
