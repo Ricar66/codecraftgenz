@@ -1443,23 +1443,82 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
       const failureUrl = MP_FAILURE_URL.replace(':id', String(id));
       const pendingUrl = MP_PENDING_URL.replace(':id', String(id));
       const pref = new Preference(mpClient);
-      const prefResult = await pref.create({
-        body: {
-          items: [
-            {
-              title: appItem.name,
-              description: appItem.mainFeature || appItem.description || 'Aplicativo CodeCraft',
-              currency_id: 'BRL',
-              quantity: 1,
-              unit_price: Number(appItem.price || 0),
-            },
-          ],
-          back_urls: { success: successUrl, failure: failureUrl, pending: pendingUrl },
-          notification_url: MP_WEBHOOK_URL,
-          auto_return: 'approved',
-          external_reference: String(id),
-        },
-      });
+
+      // Opções opcionais vindas do payload com validação básica (whitelist)
+      const {
+        payment_methods: pmRaw,
+        statement_descriptor: statementRaw,
+        expires: expiresRaw,
+        expiration_date_from: expFromRaw,
+        expiration_date_to: expToRaw,
+        payer: payerRaw,
+      } = req.body || {};
+
+      const safePaymentMethods = (() => {
+        if (!pmRaw || typeof pmRaw !== 'object') return undefined;
+        const out = {};
+        if (typeof pmRaw.installments === 'number' && pmRaw.installments > 0 && pmRaw.installments <= 24) {
+          out.installments = pmRaw.installments;
+        }
+        if (typeof pmRaw.default_installments === 'number' && pmRaw.default_installments > 0 && pmRaw.default_installments <= 24) {
+          out.default_installments = pmRaw.default_installments;
+        }
+        const mapIds = (arr) => Array.isArray(arr)
+          ? arr.slice(0, 20).map(x => ({ id: String(x?.id || x).slice(0, 32) })).filter(x => !!x.id)
+          : undefined;
+        const excludedTypes = mapIds(pmRaw.excluded_payment_types);
+        const excludedMethods = mapIds(pmRaw.excluded_payment_methods);
+        if (excludedTypes && excludedTypes.length) out.excluded_payment_types = excludedTypes;
+        if (excludedMethods && excludedMethods.length) out.excluded_payment_methods = excludedMethods;
+        return Object.keys(out).length ? out : undefined;
+      })();
+
+      const safeStatement = typeof statementRaw === 'string' ? statementRaw.trim().slice(0, 22) : undefined;
+      const safeExpires = typeof expiresRaw === 'boolean' ? expiresRaw : undefined;
+      const isValidDate = (s) => {
+        if (typeof s !== 'string') return false;
+        const t = Date.parse(s);
+        return !Number.isNaN(t);
+      };
+      const safeExpFrom = isValidDate(expFromRaw) ? expFromRaw : undefined;
+      const safeExpTo = isValidDate(expToRaw) ? expToRaw : undefined;
+      const safePayer = (() => {
+        if (!payerRaw || typeof payerRaw !== 'object') return undefined;
+        const email = typeof payerRaw.email === 'string' ? payerRaw.email.trim().slice(0, 128) : undefined;
+        const name = typeof payerRaw.name === 'string' ? payerRaw.name.trim().slice(0, 128) : undefined;
+        const identification = payerRaw.identification && typeof payerRaw.identification === 'object'
+          ? {
+              type: typeof payerRaw.identification.type === 'string' ? payerRaw.identification.type.trim().slice(0, 32) : undefined,
+              number: typeof payerRaw.identification.number === 'string' ? payerRaw.identification.number.trim().slice(0, 32) : undefined,
+            }
+          : undefined;
+        const out = { ...(email ? { email } : {}), ...(name ? { name } : {}), ...(identification?.type && identification?.number ? { identification } : {}) };
+        return Object.keys(out).length ? out : undefined;
+      })();
+
+      const prefBody = {
+        items: [
+          {
+            title: appItem.name,
+            description: appItem.mainFeature || appItem.description || 'Aplicativo CodeCraft',
+            currency_id: 'BRL',
+            quantity: 1,
+            unit_price: Number(appItem.price || 0),
+          },
+        ],
+        back_urls: { success: successUrl, failure: failureUrl, pending: pendingUrl },
+        notification_url: MP_WEBHOOK_URL,
+        auto_return: 'approved',
+        external_reference: String(id),
+        ...(safePaymentMethods ? { payment_methods: safePaymentMethods } : {}),
+        ...(safeStatement ? { statement_descriptor: safeStatement } : {}),
+        ...(safeExpires !== undefined ? { expires: safeExpires } : {}),
+        ...(safeExpFrom ? { expiration_date_from: safeExpFrom } : {}),
+        ...(safeExpTo ? { expiration_date_to: safeExpTo } : {}),
+        ...(safePayer ? { payer: safePayer } : {}),
+      };
+
+      const prefResult = await pref.create({ body: prefBody });
       const preference_id = prefResult?.id || `pref_${Date.now()}`;
       const init_point = prefResult?.init_point || prefResult?.sandbox_init_point;
       // Persistir metadados básicos da compra para sincronização pós-aprovação
@@ -1930,6 +1989,16 @@ app.post('/api/apps/webhook', async (req, res) => {
   } catch (e) {
     console.error('Erro no webhook:', e);
     res.status(500).json({ error: 'Webhook error' });
+  }
+});
+
+// Endpoint de verificação (GET) para testes de URL no painel do Mercado Pago
+// Alguns validadores fazem requisições GET/HEAD e esperam 200.
+app.get('/api/apps/webhook', (req, res) => {
+  try {
+    res.status(200).json({ ok: true, message: 'Webhook endpoint ativo', method: 'GET', echo: req.query || null });
+  } catch (e) {
+    res.status(500).json({ error: 'Webhook GET error' });
   }
 });
 
