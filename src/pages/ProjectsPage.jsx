@@ -267,11 +267,11 @@ const ProjectsPage = () => {
         .chips { display:flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
         .chip { display:inline-block; padding: 6px 10px; border-radius: 999px; font-size: 0.8rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); color: var(--texto-branco); }
         .chip.alt { background: rgba(209,43,242,0.12); border-color: rgba(209,43,242,0.35); }
-        .role { color: var(--texto-gelo); font-size: 0.95rem; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .name { font-weight: 700; color: var(--texto-branco); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .role { color: var(--texto-gelo); font-size: 0.95rem; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; }
+        .name { font-weight: 700; color: var(--texto-branco); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; }
         .contact { display: flex; flex-wrap: wrap; gap: var(--espaco-sm); margin-top: var(--espaco-xs); color: var(--texto-gelo); }
-        .contact-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 6px 10px; max-width: 100%; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .bio { margin-top: var(--espaco-sm); color: var(--texto-gelo); line-height: 1.5; word-break: break-word; }
+        .contact-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 6px 10px; max-width: 100%; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: anywhere; word-break: break-word; }
+        .bio { margin-top: var(--espaco-sm); color: var(--texto-gelo); line-height: 1.5; word-break: break-word; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
         .stats { display:flex; flex-wrap: wrap; gap: 10px; margin-top: var(--espaco-sm); color: var(--texto-gelo); }
         .stat-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 8px; }
 
@@ -321,6 +321,7 @@ const ProjectsPage = () => {
           }
 
           .section-card { padding: 14px; }
+          .name, .role { white-space: normal; } /* permite quebrar linhas em telas pequenas */
         }
 
         /* ===== MODO ESCURO (CONSISTENTE) ===== */

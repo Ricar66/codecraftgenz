@@ -45,9 +45,11 @@ export async function updateApp(appId, data) {
 }
 
 // Mercado Livre/Mercado Pago – criar preferência de pagamento
-export async function createPaymentPreference(appId) {
-  // Backend deve integrar com Mercado Pago usando credenciais seguras (server-side)
-  return apiRequest(`/api/apps/${appId}/purchase`, { method: 'POST' });
+export async function createPaymentPreference(appId, options = {}) {
+  // Backend integra com Mercado Pago usando credenciais seguras (server-side)
+  // options pode incluir: payment_methods, statement_descriptor, expires, expiration_date_from, expiration_date_to, payer
+  const body = Object.keys(options || {}).length ? JSON.stringify(options) : undefined;
+  return apiRequest(`/api/apps/${appId}/purchase`, { method: 'POST', ...(body ? { body } : {}) });
 }
 
 // Consultar status da compra (retorno/redirect)

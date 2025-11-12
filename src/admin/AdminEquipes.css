@@ -55,7 +55,7 @@
 /* Grid de Mentores */
 .mentores-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
   margin-top: 20px;
 }
@@ -69,6 +69,8 @@
   padding: 20px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  word-break: break-word;
+  overflow: hidden; /* evita que conteúdo interno escape */
 }
 
 .mentor-card:hover {
@@ -126,6 +128,15 @@
   font-size: 12px;
 }
 
+/* Melhorias de encaixe de texto e responsividade no header */
+.mentor-info { min-width: 0; }
+.mentor-info h4,
+.mentor-info p,
+.mentor-info small {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .mentor-bio {
   margin-bottom: 15px;
   padding: 10px;
@@ -139,6 +150,12 @@
   color: #555;
   font-size: 14px;
   line-height: 1.4;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4; /* limita a 4 linhas para evitar overflow */
+  overflow: hidden;
 }
 
 .mentor-projects h5 {
@@ -167,6 +184,27 @@
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
+}
+
+/* Responsividade dos cards de mentores (Admin) */
+@media (max-width: 992px) {
+  .mentores-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .mentores-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .mentor-header {
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .mentor-info h4 { font-size: 16px; }
+  .mentor-avatar { width: 56px; height: 56px; }
+  .mentor-bio p { -webkit-line-clamp: 5; }
 }
 
 /* Grid de Crafters Overview */
