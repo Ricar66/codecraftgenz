@@ -111,53 +111,7 @@ const AppPurchasePage = () => {
     } catch (e) { setError(e.message || 'Erro ao iniciar pagamento'); }
   }, [id, checkoutOptions, useWallet]);
 
-  // Realiza download automático quando status aprovado (memoizado por id e app)
-  const autoDownload = useCallback(async () => {
-    try {
-      setDownloadError('');
-      setDownloadStatus('downloading');
-      setProgress(0);
-      let token = null;
-      try {
-        const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('cc_session') : null;
-        if (raw) { const session = JSON.parse(raw); token = session?.token || null; }
-      } catch (e) { if (import.meta.env?.DEV) console.warn('Falha ao ler sessão local (cc_session):', e); token = null; }
-
-      const resp = await fetch(`${API_BASE_URL}/api/apps/${encodeURIComponent(id)}/download`, {
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
-      });
-      if (!resp.ok) throw new Error(`Falha no download (HTTP ${resp.status})`);
-      const total = Number(resp.headers.get('content-length')) || 0;
-      const reader = resp.body?.getReader ? resp.body.getReader() : null;
-      const chunks = [];
-      let received = 0;
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
-          received += value.length;
-          if (total > 0) setProgress(Math.min(100, Math.round((received / total) * 100))); else setProgress(p => Math.min(100, (p || 0) + 3));
-        }
-      }
-      const blob = new Blob(chunks.length ? chunks : [await resp.arrayBuffer()], { type: resp.headers.get('content-type') || 'application/octet-stream' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${(app?.name || 'aplicativo').replace(/[^a-z0-9\-_.]/gi, '_')}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      setProgress(100);
-      setDownloadStatus('done');
-      console.info('[Download] concluído para app', id);
-    } catch (e) {
-      setDownloadError(e.message || 'Erro no download');
-      setDownloadStatus('error');
-      console.error('[Download] erro', e);
-    }
-  }, [id, app]);
+  // Removido: auto-download para evitar qualquer comportamento de download não intencional
 
   useEffect(() => {
     let mounted = true;
@@ -183,15 +137,13 @@ const AppPurchasePage = () => {
           setStatus(resolvedStatus);
           if (resolvedStatus === 'approved') {
             if (s?.download_url) setDownloadUrl(s.download_url);
-            // Dispara download automático
-            autoDownload();
           }
         } catch (e) {
           console.warn('Erro ao consultar status:', e);
         }
       })();
     }
-  }, [id, searchParams, autoDownload]);
+  }, [id, searchParams]);
 
   // Auto-inicia o checkout ao entrar na página quando não é retorno do pagamento
   useEffect(() => {
@@ -348,6 +300,12 @@ const AppPurchasePage = () => {
               </div>
             </details>
             {status && <p className="muted">Status da compra: {status}</p>}
+
+            {status === 'approved' && (
+              <div className="approved-wrap" style={{ marginTop: 10, padding: '10px 12px', border:'1px solid rgba(0,228,242,0.3)', borderRadius:8 }}>
+                <p className="muted" style={{ color:'#00E4F2' }}>✔ Pagamento aprovado. Você pode baixar o executável com segurança.</p>
+              </div>
+            )}
 
             {(downloadStatus === 'downloading' || downloadStatus === 'done') && (
               <div aria-live="polite" className="progress-wrap" style={{ marginTop: 12 }}>
