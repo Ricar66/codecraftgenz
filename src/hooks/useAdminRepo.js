@@ -16,8 +16,10 @@ function useAsyncList(asyncFn, deps = []) {
     setLoading(true);
     setError('');
 
-    if (!import.meta.env.VITE_API_URL && import.meta.env.DEV) {
-      setError("O backend não está configurado. Defina VITE_API_URL no seu arquivo .env.development para carregar os dados.");
+    // Em desenvolvimento, permitir carregar usando base local (http://localhost:8080)
+    // Sem bloquear quando VITE_API_URL não está definido, desde que exista baseURL
+    if (import.meta.env.DEV && !apiConfig.baseURL) {
+      setError("Backend não configurado: defina VITE_API_URL ou ajuste a base do servidor.");
       setData([]);
       setLoading(false);
       return;
