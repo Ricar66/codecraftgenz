@@ -228,9 +228,10 @@
 /* ---------------------------------------------
    Mentores (Admin) – Grid e Cards Responsivos
    --------------------------------------------- */
+
 .mentorAdminGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 12px;
 }
 
@@ -269,14 +270,15 @@
 
 .mentorAdminCard .center { display: grid; gap: 6px; min-width: 0; }
 .mentorAdminCard .header { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
-.mentorAdminCard .name { font-weight: 700; color: #fff; }
-.mentorAdminCard .spec { color: #A6A6A6; font-size: 0.95rem; }
-.mentorAdminCard .bio { color: #D0D0D0; font-size: 0.95rem; }
+.mentorAdminCard .header > * { min-width: 0; }
+.mentorAdminCard .name { font-weight: 700; color: #fff; overflow-wrap: anywhere; word-break: break-word; }
+.mentorAdminCard .spec { color: #A6A6A6; font-size: 0.95rem; overflow-wrap: anywhere; word-break: break-word; }
+.mentorAdminCard .bio { color: #D0D0D0; font-size: 0.95rem; overflow-wrap: anywhere; word-break: break-word; }
 .mentorAdminCard .contact { display: flex; gap: 12px; flex-wrap: wrap; color: #A6A6A6; }
 .mentorAdminCard .stats { display: flex; gap: 12px; flex-wrap: wrap; color: #A6A6A6; }
 .mentorAdminCard .stat-item { font-size: 0.9rem; }
 
-.mentorAdminCard .right { display: grid; gap: 8px; justify-items: end; }
+.mentorAdminCard .right { display: grid; gap: 8px; justify-items: end; min-width: 0; }
 .mentorAdminCard .badges { display: flex; gap: 6px; flex-wrap: wrap; }
 .mentorAdminCard .badge { 
   background: rgba(0, 228, 242, 0.22);
@@ -313,4 +315,6 @@
 .mentorAdminCard .bio,
 .mentorAdminCard .contact,
 .mentorAdminCard .stats { word-break: break-word; overflow-wrap: anywhere; }
+.mentorAdminCard .contact span,
+.mentorAdminCard .stats span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .mentorAdminCard .actions { row-gap: 6px; }
