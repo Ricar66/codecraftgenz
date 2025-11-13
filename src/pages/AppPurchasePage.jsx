@@ -31,9 +31,9 @@ const AppPurchasePage = () => {
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
-  const [progress, setProgress] = useState(0);
-  const [downloadStatus, setDownloadStatus] = useState('idle'); // idle | downloading | done | error
-  const [downloadError, setDownloadError] = useState('');
+  const [progress] = useState(0);
+  const [downloadStatus] = useState('idle'); // idle | downloading | done | error
+  const [downloadError] = useState('');
   const [feedback, setFeedback] = useState({ rating: 5, comment: '' });
   const [useWallet, setUseWallet] = useState(Boolean(searchParams.get('wallet')));
   const [mpPrefId, setMpPrefId] = useState(null);

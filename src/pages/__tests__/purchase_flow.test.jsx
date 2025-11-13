@@ -1,7 +1,7 @@
-import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mocks dos serviços usados pela página
 vi.mock('../../services/appsAPI.js', () => ({

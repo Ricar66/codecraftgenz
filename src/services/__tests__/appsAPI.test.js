@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import * as apiCfg from '../../lib/apiConfig.js';
 import { createPaymentPreference } from '../appsAPI.js';
 
