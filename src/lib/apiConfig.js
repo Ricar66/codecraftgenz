@@ -9,12 +9,7 @@ const getApiBaseUrl = () => {
 
   // Em desenvolvimento: respeita VITE_API_URL se definida; caso contrário, usa backend local
   if (isDev) {
-    const candidate = devApiUrl || 'http://localhost:8080';
-    // Evita usar domínio remoto que está falhando em dev (DNS/Network), força localhost
-    if (/azurewebsites\.net/i.test(candidate)) {
-      return 'http://localhost:8080';
-    }
-    return candidate;
+    return devApiUrl || 'http://localhost:8080';
   }
 
   // Em produção: SEMPRE usar URL relativa ao mesmo domínio

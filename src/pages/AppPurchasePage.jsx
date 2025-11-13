@@ -97,13 +97,15 @@ const AppPurchasePage = () => {
       if (ident.type && ident.number) payer.identification = ident;
       if (Object.keys(payer).length) opts.payer = payer;
 
-      const { init_point, preference_id } = await createPaymentPreference(id, opts);
+      const resp = await createPaymentPreference(id, opts);
+      const initPoint = resp?.init_point ?? resp?.data?.init_point;
+      const preferenceId = resp?.preference_id ?? resp?.data?.preference_id;
       if (useWallet) {
-        if (preference_id) setMpPrefId(preference_id);
+        if (preferenceId) setMpPrefId(preferenceId);
         else alert('Não foi possível obter a preferência para Wallet');
       } else {
-        if (init_point) {
-          window.location.href = init_point;
+        if (initPoint) {
+          window.location.href = initPoint;
         } else {
           alert('Não foi possível iniciar o checkout');
         }
