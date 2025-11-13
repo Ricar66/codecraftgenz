@@ -2006,7 +2006,7 @@ app.post('/api/apps/webhook', async (req, res) => {
 app.get('/api/apps/webhook', (req, res) => {
   try {
     res.status(200).json({ ok: true, message: 'Webhook endpoint ativo', method: 'GET', echo: req.query || null });
-  } catch (_e) {
+  } catch {
     res.status(500).json({ error: 'Webhook GET error' });
   }
 });

@@ -154,7 +154,7 @@ export default function AdminCrafters() {
           <select
             id="sort-field"
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
+            onChange={(e) => handleSort(e.target.value)}
             className="sort-select"
             aria-label="Selecionar campo de ordenação"
           >
