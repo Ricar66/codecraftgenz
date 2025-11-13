@@ -148,95 +148,93 @@ export default function AdminCrafters() {
         </div>
       </div>
 
-      <div className="table">
-        <table className="crafters-table">
-          <thead>
-            <tr>
-              <th 
-                onClick={() => handleSort('nome')}
-                className={`sortable ${sortBy === 'nome' ? 'active' : ''}`}
-              >
-                Nome {getSortIcon('nome')}
-              </th>
-              <th 
-                onClick={() => handleSort('email')}
-                className={`sortable ${sortBy === 'email' ? 'active' : ''}`}
-              >
-                Email {getSortIcon('email')}
-              </th>
-              <th 
-                onClick={() => handleSort('points')}
-                className={`sortable ${sortBy === 'points' ? 'active' : ''}`}
-              >
-                Pontos {getSortIcon('points')}
-              </th>
-              <th 
-                onClick={() => handleSort('active')}
-                className={`sortable ${sortBy === 'active' ? 'active' : ''}`}
-              >
-                Status {getSortIcon('active')}
-              </th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {crafters.length === 0 ? (
-              <tr>
-                <td colSpan="5" className="no-data">
-                  {searchTerm || activeFilter !== 'all' 
-                    ? 'Nenhum crafter encontrado com os filtros aplicados.' 
-                    : 'Nenhum crafter cadastrado.'}
-                </td>
-              </tr>
-            ) : (
-              crafters.map((crafter) => (
-                <tr key={crafter.id}>
-                  <td data-label="Nome">
-                    <div className="crafter-name">
-                      {crafter.avatar_url && (
-                        <img 
-                          src={crafter.avatar_url} 
-                          alt={crafter.nome}
-                          className="crafter-avatar"
-                        />
-                      )}
-                      <span>{crafter.nome}</span>
-                    </div>
-                  </td>
-                  <td data-label="Email">{crafter.email || '-'}</td>
-                  <td>
-                    <span className="points-badge">
-                      {crafter.points || 0}
-                    </span>
-                  </td>
-                  <td data-label="Status">
-                    <span className={`status-badge ${crafter.active ? 'active' : 'inactive'}`}>
-                      {crafter.active ? 'Ativo' : 'Inativo'}
-                    </span>
-                  </td>
-                  <td data-label="Ações">
-                    <div className="action-buttons">
-                      <button 
-                        className="btn btn-secondary"
-                        onClick={() => {/* TODO: Implementar edição */}}
-                        title="Editar crafter"
-                      >
-                        ✏️
-                      </button>
-                      <button 
-                        className="btn btn-danger"
-                        onClick={() => handleDeleteCrafter(crafter.id)}
-                        title="Excluir crafter"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      <div className="crafters-toolbar">
+        <div className="toolbar-left">
+          <label htmlFor="sort-field" className="toolbar-label">Ordenar por</label>
+          <select
+            id="sort-field"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="sort-select"
+            aria-label="Selecionar campo de ordenação"
+          >
+            <option value="nome">Nome</option>
+            <option value="email">Email</option>
+            <option value="points">Pontos</option>
+            <option value="active">Status</option>
+          </select>
+          <button
+            type="button"
+            onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+            className="sort-button btn btn-outline"
+            aria-label={`Alternar direção da ordenação (${sortDirection === 'asc' ? 'ascendente' : 'descendente'})`}
+            title={`Direção: ${sortDirection === 'asc' ? 'Ascendente' : 'Descendente'}`}
+          >
+            {getSortIcon(sortBy)} {sortDirection === 'asc' ? 'Asc' : 'Desc'}
+          </button>
+        </div>
+      </div>
+
+      <div className="crafter-grid">
+        {crafters.length === 0 ? (
+          <div className="no-data" style={{ gridColumn: '1 / -1' }}>
+            {searchTerm || activeFilter !== 'all' 
+              ? 'Nenhum crafter encontrado com os filtros aplicados.' 
+              : 'Nenhum crafter cadastrado.'}
+          </div>
+        ) : (
+          crafters.map((crafter) => (
+            <div key={crafter.id} className="crafter-card">
+              <div className="card-header">
+                <div className="crafter-name">
+                  {crafter.avatar_url && (
+                    <img
+                      src={crafter.avatar_url}
+                      alt={crafter.nome}
+                      className="crafter-avatar"
+                    />
+                  )}
+                  <span>{crafter.nome}</span>
+                </div>
+                <span className={`status-badge ${crafter.active ? 'active' : 'inactive'}`}>
+                  {crafter.active ? 'Ativo' : 'Inativo'}
+                </span>
+              </div>
+
+              <div className="card-body">
+                <div className="info-row">
+                  <span className="info-label">Email</span>
+                  <span className="info-value">{crafter.email || '-'}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Pontos</span>
+                  <span className="points-badge">{crafter.points || 0}</span>
+                </div>
+              </div>
+
+              <div className="card-footer">
+                <div className="action-buttons">
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => {/* TODO: Edição */}}
+                    title="Editar crafter"
+                    aria-label="Editar crafter"
+                  >
+                    ✏️ Editar
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => handleDeleteCrafter(crafter.id)}
+                    title="Excluir crafter"
+                    aria-label="Excluir crafter"
+                  >
+                    🗑️ Excluir
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {pagination.totalPages > 1 && (
