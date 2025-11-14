@@ -145,8 +145,18 @@ export default function AdminPagamentos() {
       const apiPaging = data?.paging || { total: clientFiltered.length, limit: Number(limit||30), offset };
       setPaging(apiPaging);
     } catch (e) {
-      setError(e?.message || 'Erro ao buscar pagamentos');
-      setErrorDetails(e?.data?.details || null);
+      // Mensagens amigáveis para casos comuns
+      const msg = String(e?.message || '').toLowerCase();
+      if (e?.status === 503 || msg.includes('no_access_token') || msg.includes('sem access token')) {
+        setError('Credenciais do Mercado Pago ausentes. Configure MERCADO_PAGO_ACCESS_TOKEN ou OAuth e tente novamente.');
+      } else if (e?.status === 401) {
+        setError('Não autenticado. Faça login para acessar pagamentos.');
+      } else if (e?.status === 403) {
+        setError('Acesso restrito. Seu perfil não possui permissão de administrador.');
+      } else {
+        setError(e?.message || 'Erro ao buscar pagamentos');
+      }
+      setErrorDetails(null);
     } finally { setLoading(false); }
   }, [filters, limit, page, query, emailQuery]);
 
@@ -209,10 +219,14 @@ export default function AdminPagamentos() {
         if (payerId && payerId !== prev.payerId) { next.payerId = payerId; changed = true; }
         return changed ? next : prev;
       });
-      if (sp.query && sp.query !== query) setQuery(sp.query);
-      if (sp.email && sp.email !== emailQuery) setEmailQuery(sp.email);
-      if (sp.limit && Number(sp.limit) !== Number(limit)) setLimit(Number(sp.limit));
-      if (sp.page && Math.max(1, Number(sp.page)) !== Math.max(1, Number(page))) setPage(Math.max(1, Number(sp.page)));
+      setQuery(prev => (sp.query && sp.query !== prev ? sp.query : prev));
+      setEmailQuery(prev => (sp.email && sp.email !== prev ? sp.email : prev));
+      setLimit(prev => (sp.limit && Number(sp.limit) !== Number(prev) ? Number(sp.limit) : prev));
+      setPage(prev => {
+        const spPage = sp.page ? Math.max(1, Number(sp.page)) : null;
+        const curPage = Math.max(1, Number(prev));
+        return spPage && spPage !== curPage ? spPage : prev;
+      });
       if (sp.columns) {
         const parts = String(sp.columns).split(',').map(s=>s.trim()).filter(Boolean);
         const nextCols = (prev) => Object.fromEntries(Object.keys(prev).map(k => [k, parts.includes(k)]));
@@ -224,8 +238,12 @@ export default function AdminPagamentos() {
         });
       }
     } catch (err) { void err; }
-    fetchPayments();
   }, [searchParams]);
+
+  // Dispara busca quando filtros/página/consultas mudarem (função memoizada)
+  React.useEffect(() => {
+    fetchPayments();
+  }, [fetchPayments]);
 
   const syncParams = React.useCallback(() => {
     const qp = new URLSearchParams();

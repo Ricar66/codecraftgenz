@@ -1,5 +1,5 @@
 // src/pages/ProjectsPage.jsx
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
