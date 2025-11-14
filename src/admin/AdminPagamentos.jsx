@@ -193,30 +193,39 @@ export default function AdminPagamentos() {
     return () => { cancel = true; };
   }, [singlePayment]);
 
-  // Inicializa estado a partir da URL
+  // Inicializa estado a partir da URL (evita atualizações redundantes e loops)
   React.useEffect(() => {
     try {
       const sp = Object.fromEntries([...searchParams.entries()]);
       setFilters(prev => {
-        const nextFilters = { ...prev };
+        const next = { ...prev };
+        let changed = false;
         for (const key of ['sort','criteria','range','begin_date','end_date','external_reference','status']) {
-          if (sp[key]) nextFilters[key] = sp[key];
+          if (sp[key] && sp[key] !== prev[key]) { next[key] = sp[key]; changed = true; }
         }
-        if (sp['collector.id']) nextFilters.collectorId = sp['collector.id'];
-        if (sp['payer.id']) nextFilters.payerId = sp['payer.id'];
-        return nextFilters;
+        const collectorId = sp['collector.id'];
+        const payerId = sp['payer.id'];
+        if (collectorId && collectorId !== prev.collectorId) { next.collectorId = collectorId; changed = true; }
+        if (payerId && payerId !== prev.payerId) { next.payerId = payerId; changed = true; }
+        return changed ? next : prev;
       });
-      if (sp.query) setQuery(sp.query);
-      if (sp.email) setEmailQuery(sp.email);
-      if (sp.limit) setLimit(Number(sp.limit));
-      if (sp.page) setPage(Math.max(1, Number(sp.page)));
+      if (sp.query && sp.query !== query) setQuery(sp.query);
+      if (sp.email && sp.email !== emailQuery) setEmailQuery(sp.email);
+      if (sp.limit && Number(sp.limit) !== Number(limit)) setLimit(Number(sp.limit));
+      if (sp.page && Math.max(1, Number(sp.page)) !== Math.max(1, Number(page))) setPage(Math.max(1, Number(sp.page)));
       if (sp.columns) {
         const parts = String(sp.columns).split(',').map(s=>s.trim()).filter(Boolean);
-        setColumns(prev => Object.fromEntries(Object.keys(prev).map(k => [k, parts.includes(k)])));
+        const nextCols = (prev) => Object.fromEntries(Object.keys(prev).map(k => [k, parts.includes(k)]));
+        // aplica somente se houver diferença real
+        setColumns(prev => {
+          const proposed = nextCols(prev);
+          const same = Object.keys(prev).every(k => prev[k] === proposed[k]);
+          return same ? prev : proposed;
+        });
       }
     } catch (err) { void err; }
     fetchPayments();
-  }, [searchParams, fetchPayments]);
+  }, [searchParams]);
 
   const syncParams = React.useCallback(() => {
     const qp = new URLSearchParams();

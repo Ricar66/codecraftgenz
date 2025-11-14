@@ -5,6 +5,9 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Expõe também variáveis que começam com 'MERCADO_' para o frontend
+  // Isso permite usar MERCADO_PAGO_PUBLIC_KEY vindo do ambiente de build
+  envPrefix: ['VITE_', 'MERCADO_'],
   plugins: [
     react(),
     legacy({
