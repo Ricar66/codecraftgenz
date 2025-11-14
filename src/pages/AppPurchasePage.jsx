@@ -2,10 +2,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
+import CardDirectPayment from '../components/CardDirectPayment.jsx';
 import MercadoPagoWallet from '../components/MercadoPagoWallet.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { API_BASE_URL } from '../lib/apiConfig.js';
-import { getAppById, createPaymentPreference, getPurchaseStatus, registerDownload, submitFeedback } from '../services/appsAPI.js';
+import { getAppById, createPaymentPreference, getPurchaseStatus, registerDownload, submitFeedback, createDirectPayment } from '../services/appsAPI.js';
 
 const AppPurchasePage = () => {
   const COMMON_TYPES = [
@@ -37,6 +38,9 @@ const AppPurchasePage = () => {
   const [feedback, setFeedback] = useState({ rating: 5, comment: '' });
   const [useWallet, setUseWallet] = useState(Boolean(searchParams.get('wallet')));
   const [mpPrefId, setMpPrefId] = useState(null);
+  // Informações do Pix (pagamento direto)
+  const [pixInfo, setPixInfo] = useState(null);
+  const [showCardForm, setShowCardForm] = useState(false);
   // Expor opções avançadas via UI quando query ?config=1
   const [showOptions, setShowOptions] = useState(Boolean(searchParams.get('config')));
   const [checkoutOptions, setCheckoutOptions] = useState({
@@ -167,6 +171,41 @@ const AppPurchasePage = () => {
     } catch (e) { alert('Erro ao registrar download: ' + e.message); }
   };
 
+  // Pagamento direto via Pix
+  const startDirectPix = async () => {
+    try {
+      setError('');
+      setPixInfo(null);
+      const payload = {
+        payment_method_id: 'pix',
+        ...(checkoutOptions.payer_email?.trim() ? { payer: { email: checkoutOptions.payer_email.trim() } } : {}),
+      };
+      const resp = await createDirectPayment(id, payload);
+      const result = resp?.result || resp?.data?.result || resp;
+      const nextStatus = resp?.status || resp?.data?.status || result?.status || 'pending';
+      setStatus(nextStatus);
+
+      const poi = result?.point_of_interaction || result?.data?.point_of_interaction || {};
+      const tx = poi?.transaction_data || result?.transaction_details || {};
+      const qr = tx?.qr_code || '';
+      const qrBase64 = tx?.qr_code_base64 || '';
+      const ticketUrl = tx?.ticket_url || tx?.external_resource_url || '';
+
+      // Salva informações para exibir QR/copia-e-cola
+      if (qr || qrBase64 || ticketUrl) {
+        setPixInfo({ qr, qrBase64, ticketUrl });
+      } else {
+        setPixInfo(null);
+      }
+
+      if (!qr && !qrBase64 && !ticketUrl) {
+        alert('Pagamento Pix criado. Aguarde confirmação.');
+      }
+    } catch (e) {
+      setError(e.message || 'Erro ao criar pagamento Pix direto');
+    }
+  };
+
   // autoDownload definido acima com useCallback
 
   const sendFeedback = async () => {
@@ -206,6 +245,12 @@ const AppPurchasePage = () => {
               </button>
               <button className="btn btn-outline" onClick={() => { setUseWallet(true); startCheckout(); }} aria-label="Iniciar Wallet do Mercado Pago">
                 Pagar com Mercado Pago (Wallet)
+              </button>
+              <button className="btn btn-outline" onClick={startDirectPix} aria-label="Pagar via Pix (direto, sem redirecionamento)">
+                Pagar via Pix (Direto)
+              </button>
+              <button className="btn btn-outline" onClick={() => setShowCardForm(v=>!v)} aria-label="Pagar com Cartão (Direto)">
+                {showCardForm ? 'Fechar Cartão (Direto)' : 'Pagar com Cartão (Direto)'}
               </button>
               <button className="btn btn-outline" onClick={handleDownload} disabled={!downloadUrl && status!=='approved'}>Baixar executável</button>
             </div>
@@ -313,6 +358,42 @@ const AppPurchasePage = () => {
               </div>
             </details>
             {status && <p className="muted">Status da compra: {status}</p>}
+
+            {pixInfo && (
+              <div className="pix-wrap" style={{ marginTop: 12, padding: '10px 12px', border:'1px solid rgba(255,255,255,0.18)', borderRadius:8 }}>
+                <h3 className="title" style={{ fontSize:'1rem' }}>Pagamento PIX</h3>
+                <p className="muted">Escaneie o QR abaixo ou copie o código Pix.</p>
+                {pixInfo.qrBase64 && (
+                  <div style={{ marginTop: 8 }}>
+                    <img src={`data:image/png;base64,${pixInfo.qrBase64}`} alt="QR Code PIX" style={{ maxWidth: 240, borderRadius: 8 }} />
+                  </div>
+                )}
+                {pixInfo.qr && (
+                  <div style={{ marginTop: 8 }}>
+                    <textarea readOnly value={pixInfo.qr} rows={4} style={{ width:'100%', borderRadius:8 }} />
+                    <div style={{ display:'flex', gap:8, marginTop:8 }}>
+                      <button className="btn btn-outline" onClick={() => navigator.clipboard?.writeText(pixInfo.qr)}>Copiar código Pix</button>
+                      {pixInfo.ticketUrl && (
+                        <a className="btn" href={pixInfo.ticketUrl} target="_blank" rel="noopener noreferrer">Abrir QR/Link</a>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {!pixInfo.qrBase64 && !pixInfo.qr && pixInfo.ticketUrl && (
+                  <div style={{ marginTop: 8 }}>
+                    <a className="btn" href={pixInfo.ticketUrl} target="_blank" rel="noopener noreferrer">Abrir QR/Link PIX</a>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {showCardForm && (
+              <CardDirectPayment
+                appId={id}
+                amount={app?.price || 0}
+                onStatus={(s)=>setStatus(s)}
+              />
+            )}
 
             {status === 'approved' && (
               <div className="approved-wrap" style={{ marginTop: 10, padding: '10px 12px', border:'1px solid rgba(0,228,242,0.3)', borderRadius:8 }}>

@@ -1,4 +1,4 @@
-import { apiRequest, apiConfig } from '../lib/apiConfig.js'; // Importa a função central
+import { apiRequest } from '../lib/apiConfig.js'; // Importa a função central
 import { projectsCache, ProjectDataValidator } from '../utils/dataCache.js';
 
 /**

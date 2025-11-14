@@ -52,6 +52,37 @@ export async function createPaymentPreference(appId, options = {}) {
   return apiRequest(`/api/apps/${appId}/purchase`, { method: 'POST', ...(body ? { body } : {}) });
 }
 
+// Mercado Pago – criar pagamento direto (cartão/pix/boleto)
+export async function createDirectPayment(appId, payload = {}) {
+  // payload pode incluir: token (cartão), payment_method_id, installments, payer, additional_info
+  return apiRequest(`/api/apps/${appId}/payment/direct`, { method: 'POST', body: JSON.stringify(payload) });
+}
+
+// Mercado Pago – buscar pagamentos (últimos 12 meses)
+export async function searchPayments(params = {}) {
+  const qp = new URLSearchParams(params).toString();
+  return apiRequest(`/api/payments/search?${qp}`, { method: 'GET' });
+}
+
+// Mercado Pago – obter pagamento por ID
+export async function getPaymentById(id) {
+  if (id === undefined || id === null || String(id).length === 0) {
+    throw new Error('id é obrigatório');
+  }
+  return apiRequest(`/api/payments/${encodeURIComponent(String(id))}`, { method: 'GET' });
+}
+
+// Mercado Pago – atualizar pagamento por ID (PUT)
+export async function updatePaymentById(id, payload = {}) {
+  if (id === undefined || id === null || String(id).length === 0) {
+    throw new Error('id é obrigatório');
+  }
+  if (!payload || typeof payload !== 'object' || Object.keys(payload).length === 0) {
+    throw new Error('payload JSON é obrigatório');
+  }
+  return apiRequest(`/api/payments/${encodeURIComponent(String(id))}`, { method: 'PUT', body: JSON.stringify(payload) });
+}
+
 // Consultar status da compra (retorno/redirect)
 export async function getPurchaseStatus(appId, params = {}) {
   const qp = new URLSearchParams(params).toString();
@@ -71,4 +102,16 @@ export async function getHistory({ page = 1, pageSize = 20 } = {}) {
 // Feedback do app
 export async function submitFeedback(appId, { rating, comment }) {
   return apiRequest(`/api/apps/${appId}/feedback`, { method: 'POST', body: JSON.stringify({ rating, comment }) });
+}
+
+// Admin – listar pagamentos do banco (app_payments)
+export async function adminListAppPayments(params = {}) {
+  const qp = new URLSearchParams(params).toString();
+  return apiRequest(`/api/admin/app-payments?${qp}`, { method: 'GET' });
+}
+
+// Admin – obter pagamento + auditoria por payment_id
+export async function adminGetAppPayment(paymentId) {
+  if (!paymentId) throw new Error('paymentId é obrigatório');
+  return apiRequest(`/api/admin/app-payments/${encodeURIComponent(String(paymentId))}`, { method: 'GET' });
 }

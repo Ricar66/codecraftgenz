@@ -2131,6 +2131,10 @@ export default function AdminLayout() {
             <span className={styles.menuIcon}>💳</span>
             <span className={styles.menuText}>Finanças</span>
           </NavLink>
+          <NavLink to="/admin/pagamentos" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>💵</span>
+            <span className={styles.menuText}>Pagamentos</span>
+          </NavLink>
           <NavLink to="/admin/ideias" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
             <span className={styles.menuIcon}>💡</span>
             <span className={styles.menuText}>Ideias</span>
