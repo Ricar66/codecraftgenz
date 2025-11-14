@@ -41,6 +41,16 @@ try {
   if (!loadedEnvFile) {
     dotenv.config();
   }
+  // Carrega também .env como fallback base (não sobrescreve variáveis já definidas)
+  try {
+    const defaultEnvPath = path.join(__dirname, '.env');
+    if (loadedEnvFile !== '.env' && fs.existsSync(defaultEnvPath)) {
+      dotenv.config({ path: defaultEnvPath });
+      console.log('ℹ️ Fallback .env carregado como base.');
+    }
+  } catch (fallbackErr) {
+    console.warn('⚠️ Falha ao carregar fallback .env:', fallbackErr?.message || fallbackErr);
+  }
   console.log(`✅ Variáveis de ambiente carregadas: NODE_ENV=${nodeEnv}; arquivo=${loadedEnvFile || 'padrão (.env)'}`);
 } catch (e) {
   console.warn('⚠️ Falha ao carregar variáveis de ambiente via dotenv:', e?.message || e);
@@ -2137,7 +2147,17 @@ app.post('/api/apps/:id/payment/direct', async (req, res) => {
 // Exige autenticação e perfil admin para proteger dados sensíveis
 app.get('/api/payments/search', authenticate, authorizeAdmin, async (req, res) => {
   try {
-    const accessToken = await mercadoLivre.ensureAccessToken();
+    // Garante token de acesso; se não houver, retorna erro claro de configuração (503)
+    let accessToken = null;
+    try {
+      accessToken = await mercadoLivre.ensureAccessToken();
+    } catch (tokErr) {
+      console.warn('Busca de pagamentos: access token ausente/inválido:', tokErr?.message || tokErr);
+      return res.status(503).json({
+        error: 'NO_ACCESS_TOKEN',
+        message: 'Sem access token válido (configure MERCADO_PAGO_ACCESS_TOKEN ou OAuth).'
+      });
+    }
 
     // Monta query string preservando todos os parâmetros enviados
     const qp = new URLSearchParams();
