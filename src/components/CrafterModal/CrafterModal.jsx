@@ -1,5 +1,6 @@
 // src/components/CrafterModal/CrafterModal.jsx
 import React, { useState } from 'react';
+
 import { apiRequest } from '../../lib/apiConfig.js';
 
 const CrafterModal = ({ isOpen, onClose }) => {

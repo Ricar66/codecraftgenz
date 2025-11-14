@@ -11,6 +11,7 @@ import express from 'express';
 import helmet from 'helmet';
 import jwt from 'jsonwebtoken';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
+import sharp from 'sharp';
 
 import { mercadoLivre } from './src/integrations/mercadoLivre.js';
 import { getConnectionPool, dbSql } from './src/lib/db.js';
@@ -67,6 +68,31 @@ app.use(helmet({
 app.use(cors());
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
+
+// --- Geração dinâmica do logo PNG ---
+const logoSvgPath = path.join(__dirname, 'src', 'assets', 'logo-codecraft.svg');
+const logoPngPath = path.join(__dirname, 'public', 'logo-codecraft.png');
+
+async function ensureLogoCodecraftPng() {
+  try {
+    if (!fs.existsSync(logoSvgPath)) {
+      console.warn('⚠️ SVG do logo não encontrado em', logoSvgPath);
+      return;
+    }
+    const needRegen = process.env.REGENERATE_ASSETS === '1' || !fs.existsSync(logoPngPath);
+    if (!needRegen) {
+      return;
+    }
+    await sharp(fs.readFileSync(logoSvgPath), { density: 300 })
+      .png({ quality: 100 })
+      .toFile(logoPngPath);
+    console.log(`🖼️ Logo PNG gerado: ${path.relative(__dirname, logoPngPath)}`);
+  } catch (e) {
+    console.warn('⚠️ Falha ao gerar logo PNG:', e?.message || e);
+  }
+}
+
+await ensureLogoCodecraftPng();
 
 // --- REMOVEMOS OS MOCK DATA ---
 // const mockData = { ... };
@@ -1683,6 +1709,13 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
           const payerEmail = data?.payer?.email || req.user?.email || null;
           const amountVal = Number(appItem.price || data?.transaction_amount || 0);
           const currencyVal = data?.currency_id || 'BRL';
+          const statusDetail = data?.status_detail || null;
+          const paymentTypeId = data?.payment_type_id || null;
+          const issuerId = String(data?.issuer_id || data?.card?.issuer_id || data?.transaction_details?.issuer_id || '') || null;
+          const netReceived = (data?.transaction_details?.net_received_amount !== undefined) ? Number(data.transaction_details.net_received_amount) : null;
+          const installmentAmount = (data?.transaction_details?.installment_amount !== undefined) ? Number(data.transaction_details.installment_amount) : null;
+          const docType = data?.payer?.identification?.type || null;
+          const docNumber = data?.payer?.identification?.number || null;
 
           // 1) Tenta atualizar pelo payment_id
           const updByPid = await pool.request()
@@ -1691,7 +1724,14 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
             .input('amount', dbSql.Decimal(18, 2), amountVal)
             .input('currency', dbSql.NVarChar, currencyVal)
             .input('payer_email', dbSql.NVarChar, payerEmail)
-            .query('UPDATE dbo.app_payments SET status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, updated_at=SYSUTCDATETIME() WHERE payment_id=@pid');
+            .input('status_detail', dbSql.NVarChar, statusDetail)
+            .input('payment_type_id', dbSql.NVarChar, paymentTypeId)
+            .input('issuer_id', dbSql.NVarChar, issuerId)
+            .input('net_received_amount', dbSql.Decimal(18, 2), netReceived)
+            .input('installment_amount', dbSql.Decimal(18, 2), installmentAmount)
+            .input('payer_document_type', dbSql.NVarChar, docType)
+            .input('payer_document_number', dbSql.NVarChar, docNumber)
+            .query('UPDATE dbo.app_payments SET status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, updated_at=SYSUTCDATETIME() WHERE payment_id=@pid');
 
           let affected = updByPid?.rowsAffected?.[0] || 0;
           if (affected === 0) {
@@ -1703,7 +1743,14 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
               .input('amount', dbSql.Decimal(18, 2), amountVal)
               .input('currency', dbSql.NVarChar, currencyVal)
               .input('payer_email', dbSql.NVarChar, payerEmail)
-              .query("UPDATE dbo.app_payments SET payment_id=@pid, status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND status='pending'");
+              .input('status_detail', dbSql.NVarChar, statusDetail)
+              .input('payment_type_id', dbSql.NVarChar, paymentTypeId)
+              .input('issuer_id', dbSql.NVarChar, issuerId)
+              .input('net_received_amount', dbSql.Decimal(18, 2), netReceived)
+              .input('installment_amount', dbSql.Decimal(18, 2), installmentAmount)
+              .input('payer_document_type', dbSql.NVarChar, docType)
+              .input('payer_document_number', dbSql.NVarChar, docNumber)
+              .query("UPDATE dbo.app_payments SET payment_id=@pid, status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND status='pending'");
             affected = updPending?.rowsAffected?.[0] || 0;
             if (affected > 0) {
               // Auditoria de correção de payment_id
@@ -1863,6 +1910,338 @@ app.post('/api/apps/:id/feedback', authenticate, (req, res) => {
   res.status(201).json({ success: true, feedback: fb });
 });
 
+// Pagamento direto via API de pagamentos do Mercado Pago (cartão/pix/boleto)
+// Espera payload com: token (quando cartão), payment_method_id (ex.: 'master', 'pix'), installments (opcional), payer (email/nome/identification)
+// Usa dados do app e do usuário (quando disponível) para compor additional_info e persiste no banco
+app.post('/api/apps/:id/payment/direct', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const appItem = mockApps.find(a => a.id === id);
+    if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
+
+    // Coleta dados do payload
+    const {
+      token,
+      payment_method_id,
+      installments,
+      description,
+      binary_mode,
+      capture,
+      external_reference,
+      payer,
+      additional_info,
+      metadata,
+    } = req.body || {};
+
+    if (!payment_method_id) {
+      return res.status(400).json({ error: 'payment_method_id é obrigatório (ex.: master, visa, pix, ticket)' });
+    }
+
+    // Monta additional_info.items usando dados do app
+    const items = [
+      {
+        id: `APP-${id}`,
+        title: appItem.name,
+        description: appItem.mainFeature || appItem.description || 'Aplicativo CodeCraft',
+        picture_url: appItem.thumbnail || undefined,
+        category_id: 'software',
+        quantity: 1,
+        unit_price: Number(appItem.price || 0),
+        type: 'software',
+      },
+    ];
+
+    // Payer: usa do payload, senão tenta dados básicos do usuário autenticado
+    const safePayer = (() => {
+      const p = typeof payer === 'object' ? payer : {};
+      const email = typeof p.email === 'string' ? p.email : (req.user?.email || undefined);
+      const name = typeof p.name === 'string' ? p.name : (req.user?.name || undefined);
+      const identification = (p.identification && typeof p.identification === 'object') ? {
+        type: typeof p.identification.type === 'string' ? p.identification.type : undefined,
+        number: typeof p.identification.number === 'string' ? p.identification.number : undefined,
+      } : undefined;
+      return {
+        email,
+        name,
+        ...(identification?.type && identification?.number ? { identification } : {}),
+      };
+    })();
+
+    // Corpo da requisição de pagamento
+    const amount = Number(appItem.price || 0);
+    const payload = {
+      description: description || `Pagamento do app ${appItem.name}`,
+      external_reference: String(external_reference || id),
+      transaction_amount: amount,
+      payment_method_id,
+      ...(typeof installments === 'number' && installments > 0 ? { installments } : {}),
+      ...(token ? { token } : {}),
+      payer: {
+        email: safePayer.email,
+        name: safePayer.name,
+        ...(safePayer.identification ? { identification: safePayer.identification } : {}),
+      },
+      additional_info: {
+        ...(additional_info || {}),
+        items,
+        payer: {
+          first_name: safePayer.name ? String(safePayer.name).split(' ')[0] : undefined,
+          last_name: safePayer.name ? String(safePayer.name).split(' ').slice(1).join(' ') || undefined : undefined,
+        },
+      },
+      ...(typeof binary_mode === 'boolean' ? { binary_mode } : { binary_mode: false }),
+      ...(typeof capture === 'boolean' ? { capture } : { capture: true }),
+      metadata: { source: 'codecraft', ...(metadata || {}) },
+    };
+
+    // Obtém token de acesso (OAuth ou access token direto)
+    const accessToken = await mercadoLivre.ensureAccessToken();
+    const idempotencyKey = req.headers['x-idempotency-key']
+      || `app-${id}-user-${req.user?.id || 'anon'}-${Date.now()}`;
+
+    // Chama API de pagamentos
+    const resp = await fetch('https://api.mercadopago.com/v1/payments', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Idempotency-Key': String(idempotencyKey),
+      },
+      body: JSON.stringify(payload),
+    });
+    const text = await resp.text();
+    let json = null;
+    try { json = JSON.parse(text); } catch { json = { raw: text }; }
+    if (!resp.ok) {
+      console.warn('Falha na criação de pagamento direto:', resp.status, json);
+      return res.status(502).json({ error: 'Falha ao criar pagamento direto', details: json });
+    }
+
+    // Extrai dados principais
+    const payment_id = String(json.id || json.payment_id || `pay_${Date.now()}`);
+    const status = json.status || 'pending';
+    const currency = json.currency_id || 'BRL';
+    const payerEmail = json.payer?.email || safePayer.email || null;
+    const statusDetail = json.status_detail || null;
+    const paymentTypeId = json.payment_type_id || null;
+    const issuerId = String(json?.issuer_id || json?.card?.issuer_id || json?.transaction_details?.issuer_id || '') || null;
+    const netReceived = (json?.transaction_details?.net_received_amount !== undefined) ? Number(json.transaction_details.net_received_amount) : null;
+    const installmentAmount = (json?.transaction_details?.installment_amount !== undefined) ? Number(json.transaction_details.installment_amount) : null;
+    const docType = json?.payer?.identification?.type || safePayer?.identification?.type || null;
+    const docNumber = json?.payer?.identification?.number || safePayer?.identification?.number || null;
+
+    // Atualiza cache em memória
+    paymentsByApp.set(id, {
+      payment_id,
+      status,
+      buyer: { id: req.user?.id, email: payerEmail, name: req.user?.name },
+      amount,
+      products: items.map(i => ({ title: i.title, quantity: i.quantity, unit_price: i.unit_price })),
+    });
+
+    // Persistir no banco
+    try {
+      const pool = await getConnectionPool();
+      // Registro principal (se existir pendente, atualiza; senão insere)
+      const updPending = await pool.request()
+        .input('pid', dbSql.NVarChar, payment_id)
+        .input('app_id', dbSql.Int, id)
+        .input('status', dbSql.NVarChar, status)
+        .input('amount', dbSql.Decimal(18, 2), amount)
+        .input('currency', dbSql.NVarChar, currency)
+        .input('payer_email', dbSql.NVarChar, payerEmail)
+        .input('status_detail', dbSql.NVarChar, statusDetail)
+        .input('payment_type_id', dbSql.NVarChar, paymentTypeId)
+        .input('issuer_id', dbSql.NVarChar, issuerId)
+        .input('net_received_amount', dbSql.Decimal(18, 2), netReceived)
+        .input('installment_amount', dbSql.Decimal(18, 2), installmentAmount)
+        .input('payer_document_type', dbSql.NVarChar, docType)
+        .input('payer_document_number', dbSql.NVarChar, docNumber)
+        .query("UPDATE dbo.app_payments SET payment_id=@pid, status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND status='pending'");
+
+      let affected = updPending?.rowsAffected?.[0] || 0;
+      if (affected === 0) {
+        await pool.request()
+          .input('pid', dbSql.NVarChar, payment_id)
+          .input('app_id', dbSql.Int, id)
+          .input('user_id', dbSql.Int, req.user?.id || null)
+          .input('status', dbSql.NVarChar, status)
+          .input('amount', dbSql.Decimal(18, 2), amount)
+          .input('currency', dbSql.NVarChar, currency)
+          .input('payer_email', dbSql.NVarChar, payerEmail)
+          .input('source', dbSql.NVarChar, 'mercado_pago')
+          .input('status_detail', dbSql.NVarChar, statusDetail)
+          .input('payment_type_id', dbSql.NVarChar, paymentTypeId)
+          .input('issuer_id', dbSql.NVarChar, issuerId)
+          .input('net_received_amount', dbSql.Decimal(18, 2), netReceived)
+          .input('installment_amount', dbSql.Decimal(18, 2), installmentAmount)
+          .input('payer_document_type', dbSql.NVarChar, docType)
+          .input('payer_document_number', dbSql.NVarChar, docNumber)
+          .query('INSERT INTO dbo.app_payments (payment_id, app_id, user_id, status, amount, currency, payer_email, source, status_detail, payment_type_id, issuer_id, net_received_amount, installment_amount, payer_document_type, payer_document_number) VALUES (@pid, @app_id, @user_id, @status, @amount, @currency, @payer_email, @source, @status_detail, @payment_type_id, @issuer_id, @net_received_amount, @installment_amount, @payer_document_type, @payer_document_number)');
+      }
+
+      // Auditoria
+      await pool.request()
+        .input('payment_id', dbSql.NVarChar, payment_id)
+        .input('preference_id', dbSql.NVarChar, null)
+        .input('app_id', dbSql.Int, id)
+        .input('user_id', dbSql.Int, req.user?.id || null)
+        .input('action', dbSql.NVarChar, 'create_payment')
+        .input('from_status', dbSql.NVarChar, affected ? 'pending' : null)
+        .input('to_status', dbSql.NVarChar, status)
+        .input('from_payment_id', dbSql.NVarChar, affected ? null : null)
+        .input('to_payment_id', dbSql.NVarChar, payment_id)
+        .input('amount', dbSql.Decimal(18, 2), amount)
+        .input('currency', dbSql.NVarChar, currency)
+        .input('payer_email', dbSql.NVarChar, payerEmail)
+        .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
+    } catch (dbErr) {
+      console.warn('Falha ao persistir pagamento direto no banco:', dbErr?.message || dbErr);
+    }
+
+    // Se aprovado, registra histórico e tenta sincronizar
+    if (status === 'approved') {
+      try {
+        const meta = paymentsByApp.get(id) || {};
+        const tx = {
+          amount,
+          products: meta.products || items.map(i => ({ title: i.title, quantity: i.quantity, unit_price: i.unit_price })),
+          customer: { email: payerEmail, name: req.user?.name },
+        };
+        await mercadoLivre.sendTransaction(tx, { external_reference: String(id), metadata: { payment_id } });
+      } catch (syncErr) {
+        console.warn('Sync Mercado Livre falhou (pagamento direto):', syncErr?.message || syncErr);
+      }
+      try {
+        const pool = await getConnectionPool();
+        await pool.request()
+          .input('type', dbSql.NVarChar, 'purchase')
+          .input('app_id', dbSql.Int, id)
+          .input('app_name', dbSql.NVarChar, appItem.name)
+          .input('status', dbSql.NVarChar, 'approved')
+          .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
+      } catch (histErr) {
+        console.warn('Falha ao registrar histórico aprovado (pagamento direto):', histErr?.message || histErr);
+      }
+    }
+
+    return res.status(201).json({ success: true, payment_id, status, result: json });
+  } catch (err) {
+    console.error('Erro no pagamento direto:', err?.message || err);
+    return res.status(500).json({ error: 'Erro interno ao processar pagamento direto' });
+  }
+});
+
+// Busca de pagamentos no Mercado Pago (proxy seguro)
+// GET /api/payments/search?sort=...&criteria=...&external_reference=...&range=...&begin_date=...&end_date=...&collector.id=...&payer.id=...
+// Exige autenticação e perfil admin para proteger dados sensíveis
+app.get('/api/payments/search', authenticate, authorizeAdmin, async (req, res) => {
+  try {
+    const accessToken = await mercadoLivre.ensureAccessToken();
+
+    // Monta query string preservando todos os parâmetros enviados
+    const qp = new URLSearchParams();
+    const entries = Object.entries(req.query || {});
+    for (const [key, value] of entries) {
+      if (value !== undefined && value !== null && String(value).length) {
+        qp.append(key, String(value));
+      }
+    }
+
+    const url = `https://api.mercadopago.com/v1/payments/search?${qp.toString()}`;
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+
+    const text = await resp.text();
+    let json = null;
+    try { json = JSON.parse(text); } catch { json = { raw: text }; }
+
+    if (!resp.ok) {
+      console.warn('Falha na busca de pagamentos:', resp.status, json);
+      return res.status(resp.status).json({ error: 'Falha na busca de pagamentos', details: json });
+    }
+
+    return res.json({ success: true, data: json });
+  } catch (err) {
+    console.error('Erro na busca de pagamentos:', err?.message || err);
+    return res.status(500).json({ error: 'Erro interno ao buscar pagamentos' });
+  }
+});
+
+// Obter pagamento por ID no Mercado Pago (proxy seguro)
+// GET /api/payments/:id
+// Exige autenticação e perfil admin
+app.get('/api/payments/:id', authenticate, authorizeAdmin, async (req, res) => {
+  try {
+    const accessToken = await mercadoLivre.ensureAccessToken();
+    const { id } = req.params || {};
+    if (!id || !String(id).length) {
+      return res.status(400).json({ error: 'Parâmetro id é obrigatório' });
+    }
+
+    const url = `https://api.mercadopago.com/v1/payments/${encodeURIComponent(String(id))}`;
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }
+    });
+
+    const text = await resp.text();
+    let json = null;
+    try { json = JSON.parse(text); } catch { json = { raw: text }; }
+
+    if (!resp.ok) {
+      console.warn('Falha ao obter pagamento:', id, resp.status, json);
+      return res.status(resp.status).json({ error: 'Falha ao obter pagamento', details: json });
+    }
+
+    return res.json({ success: true, data: json });
+  } catch (err) {
+    console.error('Erro ao obter pagamento:', err?.message || err);
+    return res.status(500).json({ error: 'Erro interno ao obter pagamento' });
+  }
+});
+
+// Atualizar pagamento por ID no Mercado Pago (proxy seguro)
+// PUT /api/payments/:id
+// Exige autenticação e perfil admin
+app.put('/api/payments/:id', authenticate, authorizeAdmin, async (req, res) => {
+  try {
+    const accessToken = await mercadoLivre.ensureAccessToken();
+    const { id } = req.params || {};
+    if (!id || !String(id).length) {
+      return res.status(400).json({ error: 'Parâmetro id é obrigatório' });
+    }
+
+    const payload = req.body || {};
+    if (!payload || typeof payload !== 'object' || Object.keys(payload).length === 0) {
+      return res.status(400).json({ error: 'Body JSON com campos a atualizar é obrigatório' });
+    }
+
+    const url = `https://api.mercadopago.com/v1/payments/${encodeURIComponent(String(id))}`;
+    const resp = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const text = await resp.text();
+    let json = null;
+    try { json = JSON.parse(text); } catch { json = { raw: text }; }
+
+    if (!resp.ok) {
+      console.warn('Falha ao atualizar pagamento:', id, resp.status, json);
+      return res.status(resp.status).json({ error: 'Falha ao atualizar pagamento', details: json });
+    }
+
+    return res.json({ success: true, data: json });
+  } catch (err) {
+    console.error('Erro ao atualizar pagamento:', err?.message || err);
+    return res.status(500).json({ error: 'Erro interno ao atualizar pagamento' });
+  }
+});
+
 // Webhook de pagamento Mercado Pago (mock/real)
 app.post('/api/apps/webhook', async (req, res) => {
   try {
@@ -1901,6 +2280,13 @@ app.post('/api/apps/webhook', async (req, res) => {
               const payerEmail = pay?.payer?.email || null;
               const amountVal = Number(pay?.transaction_amount || appItem.price || 0);
               const currencyVal = pay?.currency_id || 'BRL';
+              const statusDetail = pay?.status_detail || null;
+              const paymentTypeId = pay?.payment_type_id || null;
+              const issuerId = String(pay?.issuer_id || pay?.card?.issuer_id || pay?.transaction_details?.issuer_id || '') || null;
+              const netReceived = (pay?.transaction_details?.net_received_amount !== undefined) ? Number(pay.transaction_details.net_received_amount) : null;
+              const installmentAmount = (pay?.transaction_details?.installment_amount !== undefined) ? Number(pay.transaction_details.installment_amount) : null;
+              const docType = pay?.payer?.identification?.type || null;
+              const docNumber = pay?.payer?.identification?.number || null;
 
               // 1) Atualiza pelo payment_id do webhook
               const updByPid = await pool.request()
@@ -1909,7 +2295,14 @@ app.post('/api/apps/webhook', async (req, res) => {
                 .input('amount', dbSql.Decimal(18, 2), amountVal)
                 .input('currency', dbSql.NVarChar, currencyVal)
                 .input('payer_email', dbSql.NVarChar, payerEmail)
-                .query('UPDATE dbo.app_payments SET status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, updated_at=SYSUTCDATETIME() WHERE payment_id=@pid');
+                .input('status_detail', dbSql.NVarChar, statusDetail)
+                .input('payment_type_id', dbSql.NVarChar, paymentTypeId)
+                .input('issuer_id', dbSql.NVarChar, issuerId)
+                .input('net_received_amount', dbSql.Decimal(18, 2), netReceived)
+                .input('installment_amount', dbSql.Decimal(18, 2), installmentAmount)
+                .input('payer_document_type', dbSql.NVarChar, docType)
+                .input('payer_document_number', dbSql.NVarChar, docNumber)
+                .query('UPDATE dbo.app_payments SET status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, updated_at=SYSUTCDATETIME() WHERE payment_id=@pid');
 
               let affected = updByPid?.rowsAffected?.[0] || 0;
               if (affected === 0) {
@@ -1921,7 +2314,14 @@ app.post('/api/apps/webhook', async (req, res) => {
                   .input('amount', dbSql.Decimal(18, 2), amountVal)
                   .input('currency', dbSql.NVarChar, currencyVal)
                   .input('payer_email', dbSql.NVarChar, payerEmail)
-                  .query("UPDATE dbo.app_payments SET payment_id=@pid, status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND status='pending'");
+                  .input('status_detail', dbSql.NVarChar, statusDetail)
+                  .input('payment_type_id', dbSql.NVarChar, paymentTypeId)
+                  .input('issuer_id', dbSql.NVarChar, issuerId)
+                  .input('net_received_amount', dbSql.Decimal(18, 2), netReceived)
+                  .input('installment_amount', dbSql.Decimal(18, 2), installmentAmount)
+                  .input('payer_document_type', dbSql.NVarChar, docType)
+                  .input('payer_document_number', dbSql.NVarChar, docNumber)
+                  .query("UPDATE dbo.app_payments SET payment_id=@pid, status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND status='pending'");
                 affected = updPending?.rowsAffected?.[0] || 0;
                 if (affected > 0) {
                   // Auditoria de correção de payment_id (webhook)
@@ -2008,6 +2408,55 @@ app.get('/api/apps/webhook', (req, res) => {
     res.status(200).json({ ok: true, message: 'Webhook endpoint ativo', method: 'GET', echo: req.query || null });
   } catch {
     res.status(500).json({ error: 'Webhook GET error' });
+  }
+});
+
+// --- Admin: Pagamentos no Banco ---
+// Lista pagamentos persistidos (filtros opcionais)
+app.get('/api/admin/app-payments', async (req, res) => {
+  try {
+    const pool = await getConnectionPool();
+    const request = pool.request();
+    const conditions = ['1=1'];
+    const { status, app_id, payer_email, preference_id, payment_id } = req.query || {};
+    let limit = parseInt(String(req.query?.limit || '50'), 10);
+    if (!Number.isFinite(limit) || limit <= 0) limit = 50;
+    request.input('limit', dbSql.Int, limit);
+    if (status) { conditions.push('status = @status'); request.input('status', dbSql.NVarChar, String(status)); }
+    if (app_id) { conditions.push('app_id = @app_id'); request.input('app_id', dbSql.Int, parseInt(String(app_id), 10)); }
+    if (payer_email) { conditions.push('payer_email = @payer_email'); request.input('payer_email', dbSql.NVarChar, String(payer_email)); }
+    if (preference_id) { conditions.push('preference_id = @preference_id'); request.input('preference_id', dbSql.NVarChar, String(preference_id)); }
+    if (payment_id) { conditions.push('payment_id = @payment_id'); request.input('payment_id', dbSql.NVarChar, String(payment_id)); }
+    const whereSql = conditions.join(' AND ');
+    const sql = `SELECT TOP(@limit)
+      payment_id, app_id, preference_id, status, amount, currency, payer_email, source, updated_at,
+      status_detail, payment_type_id, issuer_id, net_received_amount, installment_amount, payer_document_type, payer_document_number
+      FROM dbo.app_payments WHERE ${whereSql} ORDER BY updated_at DESC, payment_id DESC`;
+    const rows = await request.query(sql);
+    res.json({ success: true, data: rows?.recordset || [] });
+  } catch (e) {
+    res.status(500).json({ success: false, error: 'DB_LIST_FAILED', message: e?.message || String(e) });
+  }
+});
+
+// Obter pagamento e auditoria por payment_id
+app.get('/api/admin/app-payments/:pid', async (req, res) => {
+  const pid = String(req.params?.pid || '').trim();
+  if (!pid) return res.status(400).json({ success: false, error: 'BAD_REQUEST', message: 'pid é obrigatório' });
+  try {
+    const pool = await getConnectionPool();
+    const req1 = pool.request().input('pid', dbSql.NVarChar, pid);
+    const paymentResp = await req1.query(`SELECT TOP(1)
+      payment_id, app_id, preference_id, status, amount, currency, payer_email, source, updated_at,
+      status_detail, payment_type_id, issuer_id, net_received_amount, installment_amount, payer_document_type, payer_document_number, metadata
+      FROM dbo.app_payments WHERE payment_id=@pid`);
+    const payment = paymentResp?.recordset?.[0] || null;
+    const auditResp = await pool.request().input('pid', dbSql.NVarChar, pid)
+      .query('SELECT TOP(200) payment_id, app_id, event, status, created_at, notes FROM dbo.app_payments_audit WHERE payment_id=@pid ORDER BY created_at DESC');
+    const audit = auditResp?.recordset || [];
+    res.json({ success: true, data: { payment, audit } });
+  } catch (e) {
+    res.status(500).json({ success: false, error: 'DB_GET_FAILED', message: e?.message || String(e) });
   }
 });
 

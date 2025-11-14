@@ -8,6 +8,7 @@ import AdminEquipes from './admin/AdminEquipes.jsx';
 import AdminIdeias from './admin/AdminIdeias.jsx';
 import AdminInscricoes from './admin/AdminInscricoes';
 import AdminLayout, { Dashboard, Usuarios, Mentores, Ranking, Projetos, Desafios, Financas, Config, Apps } from './admin/AdminLayout.jsx';
+import AdminPagamentos from './admin/AdminPagamentos.jsx';
 import ProtectedRoute from './admin/ProtectedRoute.jsx';
 import heroBackground from './assets/hero-background.svg';
 import AppHubPage from './pages/AppHubPage.jsx';
@@ -75,6 +76,11 @@ function App() {
           <Route path="inscricoes" element={<AdminInscricoes />} />
           <Route path="ideias" element={<AdminIdeias />} />
           <Route path="financas" element={<Financas />} />
+          <Route path="pagamentos" element={
+            <ProtectedRoute allowed={["admin"]}>
+              <AdminPagamentos />
+            </ProtectedRoute>
+          } />
           <Route path="config" element={<Config />} />
         </Route>
         {/* Fallback: qualquer rota desconhecida redireciona para /admin */}

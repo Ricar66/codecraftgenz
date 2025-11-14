@@ -523,6 +523,71 @@ GO
 
 ---
 
+## SQL recebido (Parte 4 – colunas analíticas adicionais)
+
+```sql
+-- Colunas analíticas adicionais em dbo.app_payments (idempotente)
+-- Objetivo: facilitar relatórios e auditoria sem depender do JSON
+
+IF COL_LENGTH('dbo.app_payments', 'status_detail') IS NULL
+BEGIN
+  ALTER TABLE dbo.app_payments ADD status_detail NVARCHAR(64) NULL;
+END;
+GO
+
+IF COL_LENGTH('dbo.app_payments', 'payment_type_id') IS NULL
+BEGIN
+  ALTER TABLE dbo.app_payments ADD payment_type_id NVARCHAR(64) NULL;
+END;
+GO
+
+IF COL_LENGTH('dbo.app_payments', 'issuer_id') IS NULL
+BEGIN
+  ALTER TABLE dbo.app_payments ADD issuer_id NVARCHAR(64) NULL;
+END;
+GO
+
+IF COL_LENGTH('dbo.app_payments', 'net_received_amount') IS NULL
+BEGIN
+  ALTER TABLE dbo.app_payments ADD net_received_amount DECIMAL(18,2) NULL;
+END;
+GO
+
+IF COL_LENGTH('dbo.app_payments', 'installment_amount') IS NULL
+BEGIN
+  ALTER TABLE dbo.app_payments ADD installment_amount DECIMAL(18,2) NULL;
+END;
+GO
+
+IF COL_LENGTH('dbo.app_payments', 'payer_document_type') IS NULL
+BEGIN
+  ALTER TABLE dbo.app_payments ADD payer_document_type NVARCHAR(16) NULL;
+END;
+GO
+
+IF COL_LENGTH('dbo.app_payments', 'payer_document_number') IS NULL
+BEGIN
+  ALTER TABLE dbo.app_payments ADD payer_document_number NVARCHAR(32) NULL;
+END;
+GO
+
+IF NOT EXISTS (
+  SELECT 1 FROM sys.indexes WHERE name = 'IX_app_payments_status_updated' AND object_id = OBJECT_ID('dbo.app_payments')
+)
+BEGIN
+  CREATE INDEX IX_app_payments_status_updated ON dbo.app_payments(status, updated_at);
+END;
+GO
+```
+
+## Notas (Parte 4 – colunas analíticas adicionais)
+
+- Campos tipados adicionados: `status_detail`, `payment_type_id`, `issuer_id`, `net_received_amount`, `installment_amount`, `payer_document_type`, `payer_document_number`.
+- São opcionais e nulos por padrão; serão populados quando houver dados na API.
+- Índice `IX_app_payments_status_updated` ajuda a consultar mudanças recentes por status.
+
+---
+
 ## SQL recebido (Parte 5)
 
 ```sql
