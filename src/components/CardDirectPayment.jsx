@@ -99,9 +99,22 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
         onSubmit: (cardFormData) => {
           setLoading(true);
           setError('');
+          const paymentMethodId = (
+            cardFormData?.payment_method_id ??
+            cardFormData?.paymentMethodId ??
+            cardFormData?.paymentMethod?.id ??
+            undefined
+          );
+          const issuerId = (
+            cardFormData?.issuer_id ??
+            cardFormData?.issuerId ??
+            cardFormData?.issuer?.id ??
+            undefined
+          );
           const payload = {
             token: cardFormData.token,
-            payment_method_id: cardFormData.paymentMethodId,
+            payment_method_id: paymentMethodId,
+            ...(issuerId ? { issuer_id: issuerId } : {}),
             installments: Number(cardFormData.installments || 1),
             payer: { email: cardFormData.payer?.email || '' },
           };
