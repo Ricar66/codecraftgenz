@@ -1354,8 +1354,8 @@ export function Projetos() {
           {notice.type==='error' ? '❌ ' : '✔ '} {notice.msg}
         </p>
       )}
-      {visDiag && visDiag.ok === false && (
-        <div className="card" role="alert" style={{ borderColor:'#FF6B6B', color:'#FF6B6B', marginBottom:12 }}>
+      {visDiag && visDiag.ok === false && notice.type !== 'error' && (
+        <div className="card" data-diag="projects-invisible" style={{ borderColor:'#FF6B6B', color:'#FF6B6B', marginBottom:12 }}>
           Elementos carregados mas invisíveis. display={visDiag.display}, visibility={visDiag.visibility}, opacity={visDiag.opacity}, z-index={visDiag.zIndex}. Top element: {visDiag.top ? (visDiag.top.cls || visDiag.top.tag) : '—'}
         </div>
       )}
@@ -2388,7 +2388,7 @@ export function Apps() {
       {loading && <p>🔄 Carregando…</p>}
       {error && <p role="alert" style={{ color:'#FF6B6B' }}>❌ {error}</p>}
       {visDiag && visDiag.ok === false && (
-        <div className="card" role="alert" style={{ borderColor:'#FF6B6B', color:'#FF6B6B', marginBottom:12 }}>
+        <div className="card" data-diag="apps-invisible" style={{ borderColor:'#FF6B6B', color:'#FF6B6B', marginBottom:12 }}>
           Elementos carregados mas invisíveis. display={visDiag.display}, visibility={visDiag.visibility}, opacity={visDiag.opacity}, z-index={visDiag.zIndex}. Top element: {visDiag.top ? (visDiag.top.cls || visDiag.top.tag) : '—'}
         </div>
       )}
