@@ -39,12 +39,11 @@ export const fetchProjects = async (filters = {}) => {
       method: 'GET',
     });
 
-    return {
-      projects: data.data || [],
-      total: data.total || 0,
-      hasMore: data.hasMore || false,
-      ...data
-    };
+    const projects = Array.isArray(data?.data)
+      ? data.data
+      : (Array.isArray(data?.projects) ? data.projects : []);
+
+    return projects;
   } catch (error) {
     console.error('Erro ao buscar projetos:', error);
     throw error;
@@ -63,7 +62,7 @@ export const fetchActiveProjects = async (limit = 10) => {
       limit 
     });
     
-    return response.projects;
+    return response;
   } catch (error) {
     console.error('Erro ao buscar projetos ativos:', error);
     throw error;

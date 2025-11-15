@@ -29,8 +29,9 @@ export async function getAllApps({ page = 1, pageSize = 50, limit, sortBy, sortO
   if (sortBy) qp.set('sortBy', sortBy);
   if (sortOrder) qp.set('sortOrder', sortOrder);
   try {
-    // Tenta rota admin; se 401, faz fallback para rota pública
-    return await apiRequest(`/api/apps?${qp.toString()}`, { method: 'GET' });
+    const resp = await apiRequest(`/api/apps?${qp.toString()}`, { method: 'GET' });
+    const list = Array.isArray(resp?.data) ? resp.data : (Array.isArray(resp) ? resp : []);
+    return list;
   } catch (err) {
     const envFlag = String(import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK || 'off').toLowerCase();
     const fbEnabled = publicFallback !== undefined ? !!publicFallback : !['off','false','0'].includes(envFlag);
@@ -39,7 +40,9 @@ export async function getAllApps({ page = 1, pageSize = 50, limit, sortBy, sortO
     const isNetwork = err && (err.status === 0 || err.type === 'network' || msg.includes('conexão') || msg.includes('network'));
     const isServerError = err && (Number(err.status) >= 500);
     if (fbEnabled && (isUnauthorized || isNetwork || isServerError)) {
-      return apiRequest(`/api/apps/public?${qp.toString()}`, { method: 'GET' });
+      const pubResp = await apiRequest(`/api/apps/public?${qp.toString()}`, { method: 'GET' });
+      const pubList = Array.isArray(pubResp?.data) ? pubResp.data : (Array.isArray(pubResp) ? pubResp : []);
+      return pubList;
     }
     throw err;
   }
