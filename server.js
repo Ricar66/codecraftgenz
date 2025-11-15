@@ -107,7 +107,13 @@ const loginLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Muitas tentativas de login, tente novamente em 15 minutos.' }
+  message: { error: 'Muitas tentativas de login, tente novamente em 15 minutos.' },
+  keyGenerator: (req) => {
+    const raw = req.ip || '';
+    const s = String(raw);
+    const idx = s.indexOf(':');
+    return idx > -1 ? s.slice(0, idx) : s || 'unknown';
+  }
 });
 
 function logEvent(type, details) {
