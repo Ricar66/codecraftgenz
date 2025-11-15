@@ -70,3 +70,11 @@ pids
 test-results/
 playwright-report/
 test-results.xml
+*.pem
+*.key
+*.crt
+*.p12
+.vite/
+backups/
+.env*
+!.env.example

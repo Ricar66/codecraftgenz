@@ -185,7 +185,8 @@ const ProjectsList = ({ useAdminStore = false }) => {
     refetchInterval: 30000,
     timeout: 10000,
     maxRetries: 3,
-    useAdminStore
+    useAdminStore,
+    publicOnly: false
   });
 
   // Como agora tudo vem da API, não precisamos mais do adminStore

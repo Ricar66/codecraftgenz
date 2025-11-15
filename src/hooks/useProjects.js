@@ -127,7 +127,7 @@ const useProjects = (options = {}) => {
       const response = await getProjects({
         ...mergedOptions,
         useCache: true,
-        publicOnly: !optionsRef.current.useAdminStore
+        publicOnly: (optionsRef.current.publicOnly ?? (!optionsRef.current.useAdminStore))
       });
 
       // Limpa o timeout se a requisição foi bem-sucedida

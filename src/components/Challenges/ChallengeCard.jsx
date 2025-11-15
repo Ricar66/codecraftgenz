@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { sanitizeImageUrl } from '../../utils/urlSanitize.js';
 
 import styles from './ChallengeCard.module.css';

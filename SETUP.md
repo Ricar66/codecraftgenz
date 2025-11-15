@@ -52,3 +52,11 @@ npm start      # Backend + Frontend (Produção)
 - Nunca commite arquivos `.env*` (exceto `.env.example`)
 - Nunca commite arquivos de banco de dados (`*.sqlite`, `*.db`)
 - Mantenha suas chaves de API e senhas seguras
+
+## Visibilidade e Permissões de Projetos
+
+- Visibilidade pública segue a mesma lógica dos mentores: itens visíveis aparecem para todos os usuários; itens em rascunho ficam ocultos do público.
+- Administração: em `Admin > Projetos`, há um botão para alternar entre Exibir/Ocultar que altera o `status` do projeto entre `rascunho` e `ongoing`.
+- API: a listagem pública usa o parâmetro `visivel=true`; na camada de serviço, projetos em `rascunho/draft` são filtrados quando o acesso é público.
+- Fallback: quando ocorrer 401/erros de rede/5xx, a listagem do admin faz fallback para os projetos públicos se `VITE_ADMIN_PUBLIC_FALLBACK=true`.
+- Permissões: rotas de admin exigem perfis `admin` ou `editor`; demais perfis acessam apenas listagem pública.
