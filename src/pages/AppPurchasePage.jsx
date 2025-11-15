@@ -54,6 +54,7 @@ const AppPurchasePage = () => {
   const [downloadStatus] = useState('idle'); // idle | downloading | done | error
   const [downloadError] = useState('');
   const [feedback, setFeedback] = useState({ rating: 5, comment: '' });
+  const [buyer, setBuyer] = useState({ name: '', email: '', docType: 'CPF', docNumber: '' });
   // Controla visibilidade do formulário de cartão via flag de ambiente
   const initialShowCard = (
     import.meta.env.VITE_ENABLE_CARD_PAYMENT_UI === 'true' ||
@@ -160,22 +161,32 @@ const AppPurchasePage = () => {
               </button>
               <button className="btn btn-outline" onClick={handleDownload} disabled={!downloadUrl && status!=='approved'}>Baixar executável</button>
             </div>
+            <div style={{ marginTop: 12, display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+              <input placeholder="Nome completo" value={buyer.name} onChange={e=>setBuyer(s=>({ ...s, name:e.target.value }))} />
+              <input placeholder="E-mail" type="email" value={buyer.email} onChange={e=>setBuyer(s=>({ ...s, email:e.target.value }))} />
+              <select value={buyer.docType} onChange={e=>setBuyer(s=>({ ...s, docType:e.target.value }))}>
+                <option value="CPF">CPF</option>
+                <option value="CNPJ">CNPJ</option>
+              </select>
+              <input placeholder="Documento" value={buyer.docNumber} onChange={e=>setBuyer(s=>({ ...s, docNumber:e.target.value }))} />
+            </div>
             {/* Opções avançadas removidas no modo simplificado */}
             {status && <p className="muted">Status da compra: {status}</p>}
 
             {/* Fluxo Pix removido no modo simplificado */}
 
-            {showCardForm && (
-              <div id="card-payment-section" style={{ marginTop: 12 }}>
-                <CardDirectPayment
-                  appId={id}
-                  amount={app?.price || 0}
-                  description={(app?.name || app?.titulo) ? `Compra de ${app?.name || app?.titulo}` : 'Compra de aplicativo'}
-                  showPayButton={false}
-                  onStatus={async (s, resp) => {
-                    setStatus(s);
-                    const det = resp?.status_detail || resp?.data?.status_detail || '';
-                    if (det) setStatusDetail(det);
+              {showCardForm && (
+                <div id="card-payment-section" style={{ marginTop: 12 }}>
+                  <CardDirectPayment
+                    appId={id}
+                    amount={app?.price || 0}
+                    description={(app?.name || app?.titulo) ? `Compra de ${app?.name || app?.titulo}` : 'Compra de aplicativo'}
+                    buyer={buyer}
+                    showPayButton={false}
+                    onStatus={async (s, resp) => {
+                      setStatus(s);
+                      const det = resp?.status_detail || resp?.data?.status_detail || '';
+                      if (det) setStatusDetail(det);
                     if (s === 'approved') {
                       try {
                         const json = await registerDownload(id);
