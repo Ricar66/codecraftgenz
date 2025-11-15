@@ -192,14 +192,19 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
             },
             metadata: {
               cardholder_name: (cardFormData?.cardholder?.name || undefined),
-              cardholder_doc: ((payerIdentification && payerIdentification.number) ? String(payerIdentification.number) : undefined),
+              cardholder_identification_type: ((payerIdentification && payerIdentification.type) ? String(payerIdentification.type) : undefined),
+              cardholder_identification_number: ((payerIdentification && payerIdentification.number) ? String(payerIdentification.number) : undefined),
             }
           };
           return createDirectPayment(appId, payload)
             .then((resp) => {
               try { console.log('Pagamento direto (resp):', resp); } catch (e) { console.debug('Falha ao logar resposta de pagamento', e); }
               const nextStatus = resp?.status || resp?.data?.status || 'pending';
+              const friendly = resp?.friendly_message || resp?.normalized?.mensagem_usuario || '';
               if (typeof onStatus === 'function') onStatus(nextStatus, resp);
+              if (!onStatus && nextStatus !== 'approved' && friendly) {
+                setError(friendly);
+              }
             })
             .catch((err) => {
               const status = err?.status;
