@@ -15,6 +15,7 @@ const AppPurchasePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
+  const [statusDetail, setStatusDetail] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
   const [progress] = useState(0);
   const [downloadStatus] = useState('idle'); // idle | downloading | done | error
@@ -53,6 +54,7 @@ const AppPurchasePage = () => {
           const s = await getPurchaseStatus(id, { preference_id: prefId, payment_id: paymentId, status: statusParam });
           const resolvedStatus = s?.status || statusParam || '';
           setStatus(resolvedStatus);
+          setStatusDetail(s?.status_detail || '');
           if (resolvedStatus === 'approved') {
             if (s?.download_url) setDownloadUrl(s.download_url);
           }
@@ -136,8 +138,10 @@ const AppPurchasePage = () => {
                   appId={id}
                   amount={app?.price || 0}
                   showPayButton={false}
-                  onStatus={async (s) => {
+                  onStatus={async (s, resp) => {
                     setStatus(s);
+                    const det = resp?.status_detail || resp?.data?.status_detail || '';
+                    if (det) setStatusDetail(det);
                     if (s === 'approved') {
                       try {
                         const json = await registerDownload(id);
@@ -167,6 +171,17 @@ const AppPurchasePage = () => {
               <div className="pending-wrap" style={{ marginTop: 10, padding: '10px 12px', border:'1px solid rgba(255, 193, 7, 0.3)', borderRadius:8 }}>
                 <p className="muted" style={{ color:'#FFC107' }}>⏳ Pagamento pendente. Aguarde a compensação ou utilize outro método.</p>
                 <p className="muted">Você poderá baixar o executável assim que o status for atualizado para aprovado.</p>
+              </div>
+            )}
+
+            {status === 'rejected' && (
+              <div className="rejected-wrap" style={{ marginTop: 10, padding: '10px 12px', border:'1px solid rgba(255, 107, 107, 0.3)', borderRadius:8 }}>
+                <p className="muted" style={{ color:'#FF6B6B' }}>❌ Pagamento negado.</p>
+                {statusDetail && <p className="muted">Motivo: {statusDetail}</p>}
+                <ul className="muted" style={{ marginTop: 8, paddingLeft: 20 }}>
+                  <li>Verifique os dados do cartão e tente novamente.</li>
+                  <li>Se persistir, contate seu banco ou use outro método.</li>
+                </ul>
               </div>
             )}
 
