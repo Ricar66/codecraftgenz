@@ -89,8 +89,10 @@ const devOrigin = 'http://localhost:5173';
 app.use(cors({
   origin: (origin, callback) => {
     const list = isProd ? allowedOrigins : [devOrigin, ...allowedOrigins];
-    if (!origin) return callback(null, true);
-    if (list.includes(origin)) return callback(null, true);
+    const normalizedOrigin = origin ? origin.replace(/\/$/, '') : origin;
+    const normalizedList = list.map(o => o.replace(/\/$/, ''));
+    if (!normalizedOrigin) return callback(null, true);
+    if (normalizedList.includes(normalizedOrigin)) return callback(null, true);
     return callback(new Error('CORS origin não permitido'), false);
   },
   methods: ['GET','HEAD','PUT','PATCH','POST','DELETE'],
