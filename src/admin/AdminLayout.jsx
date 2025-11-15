@@ -104,7 +104,6 @@ export function Dashboard() {
     const a = document.createElement('a'); a.href = url; a.download = `dashboard_${periodo}.csv`; a.click(); URL.revokeObjectURL(url);
   };
 
-  const isAdmin = String(user?.role || '').toLowerCase() === 'admin';
   return (
     <div className="admin-content">
       <header className="dashboard-header" style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
@@ -2061,6 +2060,7 @@ export function Config() {
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
+  const isAdmin = String(user?.role || '').toLowerCase() === 'admin';
   const [globalErr, setGlobalErr] = React.useState(null);
   const [sidebarOpen, setSidebarOpen] = React.useState(() => {
     if (typeof window === 'undefined') return true;
