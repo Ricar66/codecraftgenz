@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import CardDirectPayment from '../components/CardDirectPayment.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { API_BASE_URL } from '../lib/apiConfig.js';
+import { getAppById, getPurchaseStatus, registerDownload, submitFeedback } from '../services/appsAPI.js';
 import { getAppPrice } from '../utils/appModel.js';
 
 // Mapeia códigos de status_detail do Mercado Pago para mensagens amigáveis
@@ -38,7 +39,6 @@ function mapStatusDetail(detail) {
   };
   return dict[d] || (detail ? `Motivo: ${detail}` : 'Pagamento negado. Verifique os dados e tente novamente.');
 }
-import { getAppById, getPurchaseStatus, registerDownload, submitFeedback } from '../services/appsAPI.js';
 
 const AppPurchasePage = () => {
   // Fluxo simplificado: apenas Cartão (Brick)
@@ -170,6 +170,7 @@ const AppPurchasePage = () => {
                 <CardDirectPayment
                   appId={id}
                   amount={app?.price || 0}
+                  description={(app?.name || app?.titulo) ? `Compra de ${app?.name || app?.titulo}` : 'Compra de aplicativo'}
                   showPayButton={false}
                   onStatus={async (s, resp) => {
                     setStatus(s);
