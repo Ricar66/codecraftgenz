@@ -244,6 +244,51 @@ app.get('/api/health/mercadopago', async (req, res) => {
   }
 });
 
+// Diagnóstico do banco de dados e schema necessário para pagamentos
+app.get('/api/health/db', async (req, res) => {
+  const out = {
+    status: 'OK',
+    database_url_present: !!process.env.DATABASE_URL,
+    audit_table_present: false,
+    analytic_columns: {
+      status_detail: false,
+      payment_type_id: false,
+      issuer_id: false,
+      net_received_amount: false,
+      installment_amount: false,
+      payer_document_type: false,
+      payer_document_number: false
+    },
+    indexes: {
+      app_payments_status_updated: false,
+      app_payments_audit_app_date: false
+    },
+  };
+  try {
+    const pool = await getConnectionPool();
+    // Tabela de auditoria
+    const auditRes = await pool.request().query("SELECT OBJECT_ID('dbo.app_payments_audit','U') AS objId");
+    out.audit_table_present = !!(auditRes.recordset && auditRes.recordset[0] && auditRes.recordset[0].objId);
+
+    // Colunas analíticas em app_payments
+    const colsRes = await pool.request().query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='dbo' AND TABLE_NAME='app_payments'");
+    const cols = new Set((colsRes.recordset || []).map(r => r.COLUMN_NAME));
+    ['status_detail','payment_type_id','issuer_id','net_received_amount','installment_amount','payer_document_type','payer_document_number']
+      .forEach(name => { out.analytic_columns[name] = cols.has(name); });
+
+    // Índices
+    const idxStatusRes = await pool.request().query("SELECT 1 AS present FROM sys.indexes WHERE name='IX_app_payments_status_updated' AND object_id=OBJECT_ID('dbo.app_payments')");
+    out.indexes.app_payments_status_updated = (idxStatusRes.recordset || []).length > 0;
+    const idxAuditRes = await pool.request().query("SELECT 1 AS present FROM sys.indexes WHERE name='IX_app_payments_audit_app_date' AND object_id=OBJECT_ID('dbo.app_payments_audit')");
+    out.indexes.app_payments_audit_app_date = (idxAuditRes.recordset || []).length > 0;
+
+    return res.json(out);
+  } catch (err) {
+    console.error('Erro em /api/health/db:', err);
+    return res.status(500).json({ status: 'ERROR', message: err?.message || String(err), details: out });
+  }
+});
+
 // Rota de autenticação (JWT)
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
