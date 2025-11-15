@@ -89,6 +89,8 @@ export default function AdminPagamentos() {
     updated: true,
     actions: true,
   });
+  const [collapsed, setCollapsed] = React.useState(true);
+  const maxCollapsed = 10;
 
   // Persistência de colunas (carregar)
   React.useEffect(() => {
@@ -499,7 +501,7 @@ export default function AdminPagamentos() {
           <tbody>
             {results.length === 0 ? (
               <tr><td colSpan={Object.values(columns).filter(Boolean).length || 1}>📭 Nenhum pagamento encontrado</td></tr>
-            ) : results.map(p => (
+            ) : (collapsed ? results.slice(0, maxCollapsed) : results).map(p => (
               <tr key={p.id}>
                 {columns.id && (
                   <td data-label="ID">
@@ -529,6 +531,14 @@ export default function AdminPagamentos() {
           </tbody>
         </table>
       </div>
+
+      {results.length > maxCollapsed && (
+        <div style={{ marginTop: 8, display:'flex', justifyContent:'center' }}>
+          <button className="btn btn-outline" onClick={()=>setCollapsed(c=>!c)}>
+            {collapsed ? `Mostrar todos (${results.length})` : 'Mostrar menos'}
+          </button>
+        </div>
+      )}
 
       {singlePayment && (
         <section className="card" style={{ marginTop:12 }}>
