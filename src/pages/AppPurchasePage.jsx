@@ -21,10 +21,11 @@ const AppPurchasePage = () => {
   const [downloadError] = useState('');
   const [feedback, setFeedback] = useState({ rating: 5, comment: '' });
   // Controla visibilidade do formulário de cartão via flag de ambiente
-  const [showCardForm] = useState(
+  const initialShowCard = (
     import.meta.env.VITE_ENABLE_CARD_PAYMENT_UI === 'true' ||
     (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('showCard') === '1')
   );
+  const [showCardForm, setShowCardForm] = useState(initialShowCard);
 
   // Fluxo simplificado: sem checkout externo
 
@@ -112,6 +113,16 @@ const AppPurchasePage = () => {
             </p>
 
             <div className="btn-group" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setShowCardForm(true);
+                  const el = document.getElementById('card-payment-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+              >
+                Comprar agora
+              </button>
               <button className="btn btn-outline" onClick={handleDownload} disabled={!downloadUrl && status!=='approved'}>Baixar executável</button>
             </div>
             {/* Opções avançadas removidas no modo simplificado */}
@@ -120,22 +131,24 @@ const AppPurchasePage = () => {
             {/* Fluxo Pix removido no modo simplificado */}
 
             {showCardForm && (
-              <CardDirectPayment
-                appId={id}
-                amount={app?.price || 0}
-                onStatus={async (s) => {
-                  setStatus(s);
-                  if (s === 'approved') {
-                    try {
-                      const json = await registerDownload(id);
-                      const url = json?.download_url;
-                      if (url) setDownloadUrl(url);
-                    } catch (e) {
-                      console.warn('Falha ao registrar download após aprovação:', e);
+              <div id="card-payment-section" style={{ marginTop: 12 }}>
+                <CardDirectPayment
+                  appId={id}
+                  amount={app?.price || 0}
+                  onStatus={async (s) => {
+                    setStatus(s);
+                    if (s === 'approved') {
+                      try {
+                        const json = await registerDownload(id);
+                        const url = json?.download_url;
+                        if (url) setDownloadUrl(url);
+                      } catch (e) {
+                        console.warn('Falha ao registrar download após aprovação:', e);
+                      }
                     }
-                  }
-                }}
-              />
+                  }}
+                />
+              </div>
             )}
 
             {status === 'approved' && (

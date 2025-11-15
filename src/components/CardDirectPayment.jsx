@@ -146,7 +146,7 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
       try {
         setLoading(true);
         controllerRef.current.submit();
-      } catch (err) {
+      } catch {
         setLoading(false);
         setError('Falha ao enviar pagamento');
       }
