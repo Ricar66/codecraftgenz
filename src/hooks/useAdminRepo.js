@@ -16,6 +16,9 @@ function useAsyncList(asyncFn, deps = []) {
   const fetchData = async () => {
     setLoading(true);
     setError('');
+    if (import.meta.env.DEV) {
+      console.log('[AdminRepo:fetch:start]');
+    }
 
     // Em desenvolvimento, permitir carregar usando base local (http://localhost:8080)
     // Sem bloquear quando VITE_API_URL não está definido, desde que exista baseURL
@@ -29,11 +32,20 @@ function useAsyncList(asyncFn, deps = []) {
     try {
       const result = await asyncFn();
       setData(result || []);
+      if (import.meta.env.DEV) {
+        console.log('[AdminRepo:fetch:ok]', Array.isArray(result) ? result.length : 0);
+      }
     } catch (err) {
       setError(err.message || 'Erro ao carregar dados');
       setData([]);
+      if (import.meta.env.DEV) {
+        console.error('[AdminRepo:fetch:err]', err?.status || 0, err?.message || err);
+      }
     } finally {
       setLoading(false);
+      if (import.meta.env.DEV) {
+        console.log('[AdminRepo:fetch:end]');
+      }
     }
   };
 
@@ -48,8 +60,12 @@ function useAsyncList(asyncFn, deps = []) {
 // Users
 export function useUsers() {
   const result = useAsyncList(() => userAPI.getUsers());
+  if (import.meta.env.DEV) {
+    console.log('[Admin:Users:init]');
+  }
   useEffect(() => {
     const unsub = realtime.subscribe('users_changed', () => {
+      if (import.meta.env.DEV) console.log('[Admin:Users:realtime]');
       result.refresh();
     });
     return () => unsub();
@@ -175,8 +191,15 @@ export function useProjects() {
     const fbEnabled = !['off','false','0'].includes(String(import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK || 'off').toLowerCase());
     // Primeiro tenta como admin (inclui Authorization via apiRequest)
     try {
+      if (import.meta.env.DEV) {
+        console.log('[Admin:Projects:load] as admin');
+      }
       const adminData = await projectsAPI.getAll({ all: '1' });
-      return Array.isArray(adminData) ? adminData : [];
+      const arr = Array.isArray(adminData) ? adminData : [];
+      if (import.meta.env.DEV) {
+        console.log('[Admin:Projects:adminData]', arr.length);
+      }
+      return arr;
     } catch (err) {
       const msg = String(err?.message || '');
       const isUnauthorized = err && (err.status === 401 || msg.includes('401'));
@@ -185,8 +208,15 @@ export function useProjects() {
       const isNonJson = msg.toLowerCase().includes('não é json');
       // Fallback público também para erros de rede, 5xx e resposta não-JSON quando habilitado
       if (fbEnabled && (isUnauthorized || isNetwork || isServerError || isNonJson)) {
+        if (import.meta.env.DEV) {
+          console.log('[Admin:Projects:fallback] public');
+        }
         const publicData = await projectsAPI.getAll({ visivel: 'true' });
-        return Array.isArray(publicData) ? publicData : [];
+        const arr = Array.isArray(publicData) ? publicData : [];
+        if (import.meta.env.DEV) {
+          console.log('[Admin:Projects:publicData]', arr.length);
+        }
+        return arr;
       }
       throw err;
     }
