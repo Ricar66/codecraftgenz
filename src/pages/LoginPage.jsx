@@ -41,7 +41,7 @@ export default function LoginPage() {
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
             <div className="actions">
-              <a className="link" href="/reset-password">Esqueci minha senha (Admin)</a>
+              <a className="link" href="/forgot-password">Esqueci minha senha</a>
             </div>
           </form>
         </div>
