@@ -633,3 +633,25 @@ img {
 .animacao-glow {
   animation: glowPulse 2s ease-in-out infinite;
 }
+
+/* ===== UTILITÁRIOS RESPONSIVOS ===== */
+.row { display: flex; gap: var(--espaco-md); align-items: center; }
+.wrap { flex-wrap: wrap; }
+.w-full { width: 100%; }
+.gap-sm { gap: var(--espaco-sm); }
+.gap-md { gap: var(--espaco-md); }
+.gap-lg { gap: var(--espaco-lg); }
+.stack-sm { }
+.stack-md { }
+@media (max-width: 992px) {
+  .stack-md { flex-direction: column !important; align-items: stretch !important; }
+}
+@media (max-width: 640px) {
+  .stack-sm { flex-direction: column !important; align-items: stretch !important; }
+}
+
+/* Header do dashboard em telas menores */
+.dashboard-header { gap: var(--espaco-sm); }
+@media (max-width: 640px) {
+  .dashboard-header { flex-direction: column !important; align-items: stretch !important; }
+}
