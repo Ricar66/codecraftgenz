@@ -137,6 +137,29 @@ function validatePasswordStrength(pwd) {
   return hasLen && hasUpper && hasLower && hasDigit && hasSymbol;
 }
 
+function generateResetToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+function hashResetToken(token) {
+  const pepper = process.env.PASSWORD_RESET_PEPPER || '';
+  return crypto.createHash('sha256').update(String(token) + pepper).digest('hex');
+}
+
+async function sendResetEmail(email, resetLink) {
+  const webhook = process.env.RESET_EMAIL_WEBHOOK_URL;
+  if (webhook) {
+    try {
+      await fetch(webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: email, link: resetLink }) });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  console.log('🔗 Link de reset (dev):', { email, resetLink });
+  return true;
+}
+
 app.use((req, res, next) => {
   if (process.env.CSRF_ENABLED === 'true' && ['POST','PUT','DELETE','PATCH'].includes(req.method)) {
     const token = req.headers['x-csrf-token'];
@@ -530,6 +553,68 @@ app.post('/api/auth/login', loginLimiter, (req, res) => {
       return res.status(500).json({ error: 'Erro interno no login' });
     }
   })();
+});
+
+// Solicitar reset de senha por e-mail (gera token único e expirável)
+app.post('/api/auth/password-reset/request', async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email || !validateEmail(email)) {
+      return res.status(200).json({ success: true });
+    }
+    const pool = await getConnectionPool();
+    const userQ = await pool.request().input('email', dbSql.NVarChar, email).query('SELECT id, email, status FROM dbo.users WHERE email=@email');
+    const user = userQ.recordset[0] || null;
+    if (!user || String(user.status || '').toLowerCase() === 'inativo') {
+      return res.status(200).json({ success: true });
+    }
+    const token = generateResetToken();
+    const hash = hashResetToken(token);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    await pool.request()
+      .input('user_id', dbSql.Int, user.id)
+      .input('email', dbSql.NVarChar, user.email)
+      .input('token_hash', dbSql.NVarChar, hash)
+      .input('expires_at', dbSql.DateTime2, expiresAt)
+      .query("INSERT INTO dbo.password_resets (user_id, email, token_hash, expires_at, used, created_at) VALUES (@user_id, @email, @token_hash, @expires_at, 0, SYSUTCDATETIME())");
+    const base = process.env.FRONTEND_BASE_URL || 'http://localhost:5173';
+    const link = `${base}/reset-password?token=${encodeURIComponent(token)}`;
+    await sendResetEmail(user.email, link);
+    logEvent('password_reset_request', { user_id: user.id });
+    if (process.env.NODE_ENV !== 'production') {
+      return res.json({ success: true, reset_link: link });
+    }
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Erro em password-reset/request:', err);
+    return res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
+// Confirmar reset de senha (consome token válido e atualiza senha)
+app.post('/api/auth/password-reset/confirm', async (req, res) => {
+  try {
+    const { token, new_password } = req.body || {};
+    if (!token || !new_password || !validatePasswordStrength(String(new_password))) {
+      return res.status(400).json({ error: 'Token ou senha inválidos' });
+    }
+    const hash = hashResetToken(token);
+    const pool = await getConnectionPool();
+    const nowIso = new Date().toISOString();
+    const prQ = await pool.request().input('token_hash', dbSql.NVarChar, hash).query("SELECT TOP(1) id, user_id, email, expires_at, used FROM dbo.password_resets WHERE token_hash=@token_hash ORDER BY created_at DESC");
+    const pr = prQ.recordset[0] || null;
+    if (!pr || pr.used || (pr.expires_at && new Date(pr.expires_at).toISOString() < nowIso)) {
+      return res.status(400).json({ error: 'Token inválido ou expirado' });
+    }
+    const hashPwd = await bcrypt.hash(String(new_password), 10);
+    await pool.request().input('id', dbSql.Int, pr.user_id).input('pwd', dbSql.NVarChar, hashPwd).query('UPDATE dbo.users SET password_hash=@pwd, updated_at=SYSUTCDATETIME() WHERE id=@id');
+    await pool.request().input('id', dbSql.Int, pr.id).query('UPDATE dbo.password_resets SET used=1, consumed_at=SYSUTCDATETIME() WHERE id=@id');
+    logEvent('password_reset_confirm', { user_id: pr.user_id });
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Erro em password-reset/confirm:', err);
+    return res.status(500).json({ error: 'Erro interno' });
+  }
 });
 
 function base32Encode(buf) {
@@ -3045,6 +3130,7 @@ getConnectionPool().then(async () => {
   await ensureUserTableSchema();
   await ensurePaymentsAuditPatch();
   await ensureAppPaymentsSchema();
+  await ensurePasswordResetsSchema();
   app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
     console.log(`📱 Ambiente: ${process.env.NODE_ENV || 'development'}`);
@@ -3077,6 +3163,31 @@ app.get('/api/mercado-livre/oauth/callback', async (req, res) => {
     res.status(500).json({ error: 'OAuth callback error' });
   }
 });
+async function ensurePasswordResetsSchema() {
+  try {
+    const pool = await getConnectionPool();
+    const existsQ = await pool.request().query("SELECT 1 AS found FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='dbo' AND TABLE_NAME='password_resets'");
+    if ((existsQ.recordset || []).length === 0) {
+      await pool.request().query(`
+        CREATE TABLE dbo.password_resets (
+          id INT IDENTITY(1,1) PRIMARY KEY,
+          user_id INT NOT NULL,
+          email NVARCHAR(256) NOT NULL,
+          token_hash NVARCHAR(256) NOT NULL,
+          expires_at DATETIME2 NOT NULL,
+          used BIT NOT NULL DEFAULT 0,
+          created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+          consumed_at DATETIME2 NULL
+        )
+      `);
+      await pool.request().query("CREATE INDEX IX_password_resets_user ON dbo.password_resets(user_id, used, expires_at)");
+      await pool.request().query("CREATE INDEX IX_password_resets_token ON dbo.password_resets(token_hash)");
+      console.log('✅ Tabela dbo.password_resets criada');
+    }
+  } catch (e) {
+    console.error('Falha ao garantir schema password_resets:', e?.message || e);
+  }
+}
 app.get('/api/admin/projetos', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const pool = await getConnectionPool();
