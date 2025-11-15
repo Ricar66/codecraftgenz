@@ -9,6 +9,7 @@ import compression from 'compression';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import jwt from 'jsonwebtoken';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
@@ -89,6 +90,14 @@ app.use(cors({
 }));
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Muitas tentativas de login, tente novamente em 15 minutos.' }
+});
 
 function logEvent(type, details) {
   try {
@@ -459,7 +468,7 @@ app.get('/api/health/db', async (req, res) => {
 });
 
 // Rota de autenticação (JWT)
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', loginLimiter, (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email e senha são obrigatórios' });
