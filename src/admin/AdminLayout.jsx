@@ -85,15 +85,15 @@ export function Dashboard() {
     .filter(p => withinPeriodo(p.startDate))
     .filter(p => !statusFiltro || statusMap(p.status) === statusFiltro);
 
-  const kpis = resumo?.totais || {};
-  const pieBase = [
+  const kpis = React.useMemo(() => resumo?.totais || {}, [resumo]);
+  const pieBase = React.useMemo(() => ([
     { key: 'paid', label: 'Paid', value: Number(kpis.receita_paga || 0), color: '#00E4F2' },
     { key: 'pending', label: 'Pending', value: Number(kpis.receita_pendente || 0), color: '#D12BF2' },
     { key: 'discount', label: 'Discount', value: Number(kpis.descontos || 0), color: '#68007B' },
-  ];
+  ]), [kpis]);
   const pieData = React.useMemo(() => (
     pagamentoFiltro ? pieBase.filter(s => s.key === pagamentoFiltro) : pieBase
-  ), [pagamentoFiltro, kpis]);
+  ), [pagamentoFiltro, pieBase]);
   const barData = [
     { label: 'Ativos', value: Number(kpis.projetos_ativos || 0), color: '#00E4F2' },
     { label: 'Finalizados', value: Number(kpis.projetos_finalizados || 0), color: '#D12BF2' },

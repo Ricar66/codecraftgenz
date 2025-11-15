@@ -46,13 +46,32 @@ function useAsyncList(asyncFn, deps = []) {
 
 // Users
 export function useUsers() {
-  return useAsyncList(() => userAPI.getUsers());
+  const result = useAsyncList(() => userAPI.getUsers());
+  useEffect(() => {
+    const unsub = realtime.subscribe('users_changed', () => {
+      result.refresh();
+    });
+    return () => unsub();
+  }, [result.refresh]); // eslint-disable-line react-hooks/exhaustive-deps
+  return result;
 }
 
 export const UsersRepo = {
-  create: (u) => userAPI.createUser(u),
-  update: (id, patch) => userAPI.updateUser(id, patch),
-  toggleStatus: (id) => userAPI.toggleUserStatus(id),
+  async create(u) {
+    const res = await userAPI.createUser(u);
+    if (res.ok) realtime.publish('users_changed', { users: null });
+    return res;
+  },
+  async update(id, patch) {
+    const res = await userAPI.updateUser(id, patch);
+    if (res.ok) realtime.publish('users_changed', { users: null });
+    return res;
+  },
+  async toggleStatus(id) {
+    const res = await userAPI.toggleUserStatus(id);
+    if (res.ok) realtime.publish('users_changed', { users: null });
+    return res;
+  },
 };
 
 // Mentores
