@@ -54,7 +54,7 @@ const AppPurchasePage = () => {
   const [downloadStatus] = useState('idle'); // idle | downloading | done | error
   const [downloadError] = useState('');
   const [feedback, setFeedback] = useState({ rating: 5, comment: '' });
-  const [buyer, setBuyer] = useState({ name: '', email: '', docType: 'CPF', docNumber: '' });
+  const [buyer, setBuyer] = useState({ name: '', email: '', docType: 'CPF', docNumber: '', phone: '', zip: '', streetName: '' });
   // Controla visibilidade do formulário de cartão via flag de ambiente
   const initialShowCard = (
     import.meta.env.VITE_ENABLE_CARD_PAYMENT_UI === 'true' ||
@@ -169,6 +169,9 @@ const AppPurchasePage = () => {
                 <option value="CNPJ">CNPJ</option>
               </select>
               <input placeholder="Documento" value={buyer.docNumber} onChange={e=>setBuyer(s=>({ ...s, docNumber:e.target.value }))} />
+              <input placeholder="Telefone" value={buyer.phone} onChange={e=>setBuyer(s=>({ ...s, phone:e.target.value }))} />
+              <input placeholder="CEP" value={buyer.zip} onChange={e=>setBuyer(s=>({ ...s, zip:e.target.value }))} />
+              <input placeholder="Endereço (rua)" value={buyer.streetName} onChange={e=>setBuyer(s=>({ ...s, streetName:e.target.value }))} />
             </div>
             {/* Opções avançadas removidas no modo simplificado */}
             {status && <p className="muted">Status da compra: {status}</p>}
