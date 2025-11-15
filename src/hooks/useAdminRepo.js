@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { apiConfig, apiRequest } from '../lib/apiConfig';
 import { realtime } from '../lib/realtime';
 import * as mentorAPI from '../services/mentorAPI';
+import * as projectsAPI from '../services/projectsAPI';
 import * as rankingAPI from '../services/rankingAPI';
 import * as userAPI from '../services/userAPI';
 
@@ -174,8 +175,8 @@ export function useProjects() {
     const fbEnabled = !['off','false','0'].includes(String(import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK || 'off').toLowerCase());
     // Primeiro tenta como admin (inclui Authorization via apiRequest)
     try {
-      const adminData = await apiRequest(`/api/projetos?all=1`, { method: 'GET' });
-      return Array.isArray(adminData?.data) ? adminData.data : (Array.isArray(adminData?.projects) ? adminData.projects : (Array.isArray(adminData) ? adminData : []));
+      const adminData = await projectsAPI.getAll({ all: '1' });
+      return Array.isArray(adminData) ? adminData : [];
     } catch (err) {
       const msg = String(err?.message || '');
       const isUnauthorized = err && (err.status === 401 || msg.includes('401'));
@@ -184,8 +185,8 @@ export function useProjects() {
       const isNonJson = msg.toLowerCase().includes('não é json');
       // Fallback público também para erros de rede, 5xx e resposta não-JSON quando habilitado
       if (fbEnabled && (isUnauthorized || isNetwork || isServerError || isNonJson)) {
-        const publicData = await apiRequest(`/api/projetos?visivel=true`, { method: 'GET' });
-        return Array.isArray(publicData?.data) ? publicData.data : (Array.isArray(publicData?.projects) ? publicData.projects : (Array.isArray(publicData) ? publicData : []));
+        const publicData = await projectsAPI.getAll({ visivel: 'true' });
+        return Array.isArray(publicData) ? publicData : [];
       }
       throw err;
     }

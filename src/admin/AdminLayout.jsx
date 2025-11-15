@@ -10,6 +10,7 @@ import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo
 import { apiRequest } from '../lib/apiConfig.js';
 import { realtime } from '../lib/realtime';
 import { getAllApps, updateApp } from '../services/appsAPI.js';
+import { getAll as getAllProjects } from '../services/projectsAPI.js';
 import { getAppPrice, getAppImageUrl } from '../utils/appModel.js';
 
 import AdminIdeias from './AdminIdeias.jsx';
@@ -25,6 +26,22 @@ export function Dashboard() {
   const [erro, setErro] = React.useState('');
   const [resumo, setResumo] = React.useState({ totais: {}, evolucao_mensal: [] });
   const [projects, setProjects] = React.useState([]);
+  const playBeep = React.useCallback(() => {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      const ctx = new AC();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      gain.gain.value = 0.05;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      setTimeout(() => { try { osc.stop(); ctx.close(); } catch (e) { void e } }, 120);
+    } catch (e) { void e }
+  }, []);
   const fetchAll = React.useCallback(async () => {
     try {
       setLoading(true);
@@ -32,8 +49,8 @@ export function Dashboard() {
       const jsonResumo = await apiRequest(`/api/dashboard/resumo?periodo=${encodeURIComponent(periodo)}&type=${encodeURIComponent(tipo)}`, { method: 'GET' });
       setResumo(jsonResumo);
 
-      const jsonProj = await apiRequest(`/api/projetos?all=1`, { method: 'GET' }).catch(()=>({ data: [] }));
-      const rawProjects = Array.isArray(jsonProj?.data) ? jsonProj.data : (Array.isArray(jsonProj?.projects) ? jsonProj.projects : []);
+      const jsonProj = await getAllProjects().catch(()=>[]);
+      const rawProjects = Array.isArray(jsonProj) ? jsonProj : [];
       const normalized = rawProjects.map(p => ({
         id: p.id,
         title: p.titulo ?? p.title ?? p.nome ?? '',
@@ -45,10 +62,11 @@ export function Dashboard() {
         tecnologias: Array.isArray(p.tecnologias) ? p.tecnologias : [],
       }));
       setProjects(normalized);
+      playBeep();
     } catch {
       setErro('Erro ao sincronizar com o dashboard');
     } finally { setLoading(false); }
-  }, [periodo, tipo]);
+  }, [periodo, tipo, playBeep]);
 
   // Efeito inicial - executa apenas uma vez ou quando periodo/tipo mudam
   React.useEffect(() => { 

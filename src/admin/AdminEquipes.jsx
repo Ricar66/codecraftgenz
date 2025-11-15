@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
 import { apiRequest } from '../lib/apiConfig.js';
+import { getAll as getAllProjects } from '../services/projectsAPI.js';
 
 import './AdminEquipes.css';
 
@@ -79,7 +80,7 @@ export default function AdminEquipes() {
       setLoading(true);
       const [mentoresData, projetosData, craftersData, equipesData] = await Promise.all([
         apiRequest('/api/mentores', { method: 'GET' }),
-        apiRequest('/api/projetos', { method: 'GET' }),
+        getAllProjects(),
         apiRequest('/api/crafters', { method: 'GET' }),
         apiRequest('/api/equipes', { method: 'GET' })
       ]);
@@ -96,7 +97,7 @@ export default function AdminEquipes() {
       }));
 
       setMentores(mentoresNormalizados);
-      setProjetos(projetosData.data || []);
+      setProjetos(Array.isArray(projetosData) ? projetosData : []);
       setCrafters(craftersData.data || []);
       setEquipes(equipesData.data || []);
     } catch (error) {
