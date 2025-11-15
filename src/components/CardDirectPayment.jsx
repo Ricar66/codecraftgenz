@@ -144,12 +144,15 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
             const n = number || fallbackNumber;
             return (t && n) ? { type: t, number: n } : undefined;
           })();
-          const payerName = (
+          const payerNameRaw = (
             cardFormData?.payer?.first_name ??
             cardFormData?.cardholder?.name ??
             buyer?.name ??
-            undefined
+            ''
           );
+          const nameParts = String(payerNameRaw || '').trim().split(/\s+/);
+          const payerFirstName = nameParts[0] || undefined;
+          const payerLastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : undefined;
           const payload = {
             token: cardFormData.token,
             payment_method_id: paymentMethodId,
@@ -159,7 +162,14 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
             capture: true,
             transaction_amount: txAmount,
             description: String(description || ''),
-            ...(payerEmail || payerIdentification || payerName ? { payer: { ...(payerEmail ? { email: payerEmail } : {}), ...(payerName ? { first_name: payerName } : {}), ...(payerIdentification ? { identification: payerIdentification } : {}) } } : {})
+            ...(payerEmail || payerIdentification || payerFirstName ? { payer: { ...(payerEmail ? { email: payerEmail } : {}), ...(payerFirstName ? { first_name: payerFirstName } : {}), ...(payerLastName ? { last_name: payerLastName } : {}), ...(payerIdentification ? { identification: payerIdentification } : {}) } } : {}),
+            additional_info: {
+              items: [{ id: String(appId || ''), title: String(description || ''), quantity: 1, unit_price: txAmount }],
+              payer: {
+                phone: buyer?.phone ? { number: String(buyer.phone) } : undefined,
+                address: (buyer?.zip || buyer?.streetName) ? { zip_code: String(buyer.zip || ''), street_name: String(buyer.streetName || '') } : undefined,
+              }
+            }
           };
           return createDirectPayment(appId, payload)
             .then((resp) => {
