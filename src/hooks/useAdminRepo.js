@@ -156,13 +156,16 @@ export function useProjects() {
     // Primeiro tenta como admin (inclui Authorization via apiRequest)
     try {
       const adminData = await apiRequest(`/api/projetos?all=1`, { method: 'GET' });
-      return Array.isArray(adminData?.data) ? adminData.data : (Array.isArray(adminData) ? adminData : []);
+      return Array.isArray(adminData?.data) ? adminData.data : (Array.isArray(adminData?.projects) ? adminData.projects : (Array.isArray(adminData) ? adminData : []));
     } catch (err) {
-      // Se não autenticado, faz fallback para listagem pública
-      const isUnauthorized = err && (err.status === 401 || String(err.message || '').includes('401'));
-      if (isUnauthorized && fbEnabled) {
+      const msg = String(err?.message || '');
+      const isUnauthorized = err && (err.status === 401 || msg.includes('401'));
+      const isNetwork = err && (err.status === 0 || err.type === 'network' || msg.toLowerCase().includes('conexão') || msg.toLowerCase().includes('network'));
+      const isServerError = err && (Number(err.status) >= 500);
+      // Fallback público também para erros de rede e 5xx quando habilitado
+      if (fbEnabled && (isUnauthorized || isNetwork || isServerError)) {
         const publicData = await apiRequest(`/api/projetos?visivel=true`, { method: 'GET' });
-        return Array.isArray(publicData?.data) ? publicData.data : (Array.isArray(publicData) ? publicData : []);
+        return Array.isArray(publicData?.data) ? publicData.data : (Array.isArray(publicData?.projects) ? publicData.projects : (Array.isArray(publicData) ? publicData : []));
       }
       throw err;
     }
