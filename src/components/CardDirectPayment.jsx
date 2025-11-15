@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/useAuth.js';
 import { createDirectPayment } from '../services/appsAPI.js';
 
-const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo', onStatus, showPayButton = true, payButtonLabel = 'Pagar agora', buttonStyle }) => {
+const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo', onStatus, showPayButton = true, payButtonLabel = 'Pagar agora', buttonStyle, buyer = {} }) => {
   const containerRef = useRef(null);
   const controllerRef = useRef(null);
   const [ready, setReady] = useState(false);
@@ -130,6 +130,7 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
           const payerEmail = (
             cardFormData?.payer?.email ??
             cardFormData?.cardholderEmail ??
+            buyer?.email ??
             user?.email ??
             undefined
           );
@@ -137,8 +138,18 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
             const idObj = cardFormData?.payer?.identification;
             const type = idObj?.type ?? cardFormData?.identificationType;
             const number = idObj?.number ?? cardFormData?.identificationNumber;
-            return (type && number) ? { type, number } : undefined;
+            const fallbackType = buyer?.docType;
+            const fallbackNumber = buyer?.docNumber;
+            const t = type || fallbackType;
+            const n = number || fallbackNumber;
+            return (t && n) ? { type: t, number: n } : undefined;
           })();
+          const payerName = (
+            cardFormData?.payer?.first_name ??
+            cardFormData?.cardholder?.name ??
+            buyer?.name ??
+            undefined
+          );
           const payload = {
             token: cardFormData.token,
             payment_method_id: paymentMethodId,
@@ -148,7 +159,7 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
             capture: true,
             transaction_amount: txAmount,
             description: String(description || ''),
-            ...(payerEmail ? { payer: { email: payerEmail, ...(payerIdentification ? { identification: payerIdentification } : {}) } } : {})
+            ...(payerEmail || payerIdentification || payerName ? { payer: { ...(payerEmail ? { email: payerEmail } : {}), ...(payerName ? { first_name: payerName } : {}), ...(payerIdentification ? { identification: payerIdentification } : {}) } } : {})
           };
           return createDirectPayment(appId, payload)
             .then((resp) => {
