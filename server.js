@@ -64,6 +64,7 @@ const __dirname = path.dirname(__filename);
 
 // --- Configuração do Servidor Express ---
 const app = express();
+app.disable('x-powered-by');
 app.set('trust proxy', 1);
 const PORT = process.env.PORT_OVERRIDE || process.env.PORT || 8080;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -99,6 +100,9 @@ app.use(cors({
   allowedHeaders: ['Content-Type','Authorization','x-csrf-token','x-admin-reset-token'],
   credentials: false,
 }));
+if (isProd) {
+  app.use(helmet.hsts({ maxAge: 15552000 }));
+}
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 
@@ -114,6 +118,18 @@ const loginLimiter = rateLimit({
     const idx = s.indexOf(':');
     return idx > -1 ? s.slice(0, idx) : s || 'unknown';
   }
+});
+const sensitiveLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const webhookLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 function logEvent(type, details) {
@@ -577,7 +593,7 @@ app.post('/api/auth/login', loginLimiter, (req, res) => {
 });
 
 // Solicitar reset de senha por e-mail (gera token único e expirável)
-app.post('/api/auth/password-reset/request', async (req, res) => {
+app.post('/api/auth/password-reset/request', sensitiveLimiter, async (req, res) => {
   try {
     const { email } = req.body || {};
     if (!email || !validateEmail(email)) {
@@ -613,7 +629,7 @@ app.post('/api/auth/password-reset/request', async (req, res) => {
 });
 
 // Confirmar reset de senha (consome token válido e atualiza senha)
-app.post('/api/auth/password-reset/confirm', async (req, res) => {
+app.post('/api/auth/password-reset/confirm', sensitiveLimiter, async (req, res) => {
   try {
     const { token, new_password } = req.body || {};
     if (!token || !new_password || !validatePasswordStrength(String(new_password))) {
@@ -1747,7 +1763,7 @@ app.get('/api/inscricoes', async (req, res, next) => {
     query += ' ORDER BY data_inscricao DESC';
 
     const result = await request.query(query);
-    res.json(result.recordset); // O frontend espera um array direto
+    res.json({ success: true, data: result.recordset });
   } catch (err) {
     console.error('Erro ao buscar inscrições:', err);
     next(err);
@@ -2153,7 +2169,7 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
 });
 
 // Mercado Livre/Mercado Pago – criar preferência de pagamento (mock)
-  app.post('/api/apps/:id/purchase', async (req, res) => {
+app.post('/api/apps/:id/purchase', sensitiveLimiter, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     // Buscar app no banco
     let appItem = null;
@@ -2326,7 +2342,7 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
 });
 
 // Consultar status da compra (mock)
-  app.get('/api/apps/:id/purchase/status', async (req, res) => {
+app.get('/api/apps/:id/purchase/status', sensitiveLimiter, async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const { status: statusQuery, payment_id } = req.query;
   // Buscar app no banco
@@ -2524,7 +2540,7 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
 });
 
 // Registrar download (mock)
-app.post('/api/apps/:id/download', authenticate, async (req, res) => {
+app.post('/api/apps/:id/download', authenticate, sensitiveLimiter, async (req, res) => {
   const id = parseInt(req.params.id, 10);
   let appItem = null;
   try {
@@ -2632,7 +2648,7 @@ const normalizeMpPaymentResponse = (json) => {
   };
 };
 
-app.post('/api/apps/:id/payment/direct', async (req, res) => {
+app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     // Buscar app no banco
@@ -3040,7 +3056,7 @@ app.put('/api/payments/:id', authenticate, authorizeAdmin, async (req, res) => {
 });
 
 // Webhook de pagamento Mercado Pago (mock/real)
-app.post('/api/apps/webhook', async (req, res) => {
+app.post('/api/apps/webhook', webhookLimiter, async (req, res) => {
   try {
     const { type, data } = req.body || {};
     if (type === 'payment' && data?.id) {

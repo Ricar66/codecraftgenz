@@ -205,7 +205,6 @@ export function useProjects() {
 export const ProjectsRepo = {
   async create(project) {
     try {
-      // Mapear para campos pt-BR esperados pelo backend
       const apiProject = {
         titulo: project.titulo || project.title,
         owner: project.owner,
@@ -218,12 +217,9 @@ export const ProjectsRepo = {
         tecnologias: project.tags || []
       };
 
-      const data = await apiRequest(`/api/projetos`, {
-        method: 'POST',
-        body: JSON.stringify(apiProject)
-      });
+      const saved = await projectsAPI.createProject(apiProject);
       realtime.publish('projects_changed', { projects: null });
-      return { ok: true, project: data.project };
+      return { ok: true, project: saved };
     } catch (err) {
       return { ok: false, error: err.message };
     }
@@ -231,7 +227,6 @@ export const ProjectsRepo = {
 
   async update(id, updates) {
     try {
-      // Mapear para campos pt-BR esperados pelo backend
       const apiUpdates = {
         titulo: updates.titulo || updates.title,
         owner: updates.owner,
@@ -244,12 +239,9 @@ export const ProjectsRepo = {
         tecnologias: updates.tags || []
       };
 
-      const data = await apiRequest(`/api/projetos/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(apiUpdates)
-      });
+      const updated = await projectsAPI.updateProject(id, apiUpdates);
       realtime.publish('projects_changed', { projects: null });
-      return { ok: true, project: data.project };
+      return { ok: true, project: updated };
     } catch (err) {
       return { ok: false, error: err.message };
     }
@@ -257,11 +249,9 @@ export const ProjectsRepo = {
 
   async delete(id) {
     try {
-      const data = await apiRequest(`/api/projetos/${id}`, {
-        method: 'DELETE'
-      });
+      const deleted = await projectsAPI.deleteProject(id);
       realtime.publish('projects_changed', { projects: null });
-      return { ok: true, project: data.project };
+      return { ok: true, project: deleted };
     } catch (err) {
       return { ok: false, error: err.message };
     }
@@ -272,8 +262,6 @@ export const ProjectsRepo = {
   async upsert(project) {
     try {
       const isUpdate = !!project.id;
-      
-      // Mapear para campos pt-BR esperados pelo backend
       const apiProject = {
         titulo: project.titulo || project.title,
         owner: project.owner,
@@ -286,14 +274,9 @@ export const ProjectsRepo = {
         tecnologias: project.tags || []
       };
 
-      const endpoint = isUpdate ? `/api/projetos/${project.id}` : `/api/projetos`;
-      const method = isUpdate ? 'PUT' : 'POST';
-      const data = await apiRequest(endpoint, {
-        method,
-        body: JSON.stringify(apiProject)
-      });
+      const result = isUpdate ? await projectsAPI.updateProject(project.id, apiProject) : await projectsAPI.createProject(apiProject);
       realtime.publish('projects_changed', { projects: null });
-      return { ok: true, project: data.project };
+      return result;
     } catch (err) {
       return { ok: false, error: err.message };
     }
