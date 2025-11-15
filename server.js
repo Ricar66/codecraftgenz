@@ -2232,26 +2232,46 @@ app.post('/api/apps/:id/payment/direct', async (req, res) => {
     };
 
     // Obtém token de acesso (OAuth ou access token direto)
-    const accessToken = await mercadoLivre.ensureAccessToken();
+    let accessToken = null;
+    try {
+      accessToken = await mercadoLivre.ensureAccessToken();
+    } catch (tokErr) {
+      console.warn('Pagamento direto: access token ausente/inválido:', tokErr?.message || tokErr);
+      return res.status(503).json({
+        error: 'NO_ACCESS_TOKEN',
+        message: 'Sem access token válido (configure MERCADO_PAGO_ACCESS_TOKEN ou OAuth).',
+        details: tokErr?.message || String(tokErr)
+      });
+    }
     const idempotencyKey = req.headers['x-idempotency-key']
       || `app-${id}-user-${req.user?.id || 'anon'}-${Date.now()}`;
 
     // Chama API de pagamentos
-    const resp = await fetch('https://api.mercadopago.com/v1/payments', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        'X-Idempotency-Key': String(idempotencyKey),
-      },
-      body: JSON.stringify(payload),
-    });
+    let resp;
+    try {
+      resp = await fetch('https://api.mercadopago.com/v1/payments', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'X-Idempotency-Key': String(idempotencyKey),
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (netErr) {
+      console.warn('Erro de rede ao criar pagamento direto:', netErr?.message || netErr);
+      return res.status(502).json({
+        error: 'NETWORK_ERROR',
+        message: 'Falha de rede ao chamar a API de pagamentos',
+        details: netErr?.message || String(netErr)
+      });
+    }
     const text = await resp.text();
     let json = null;
     try { json = JSON.parse(text); } catch { json = { raw: text }; }
     if (!resp.ok) {
       console.warn('Falha na criação de pagamento direto:', resp.status, json);
-      return res.status(502).json({ error: 'Falha ao criar pagamento direto', details: json });
+      return res.status(502).json({ error: 'Falha ao criar pagamento direto', mp_status: resp.status, details: json });
     }
 
     // Extrai dados principais
