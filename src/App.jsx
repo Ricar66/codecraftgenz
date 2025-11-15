@@ -65,7 +65,11 @@ function App() {
           </ProtectedRoute>
         }>
           <Route index element={<Dashboard />} />
-          <Route path="usuarios" element={<Usuarios />} />
+          <Route path="usuarios" element={
+            <ProtectedRoute allowed={["admin"]}>
+              <Usuarios />
+            </ProtectedRoute>
+          } />
           <Route path="mentores" element={<Mentores />} />
           <Route path="equipes" element={<AdminEquipes />} />
           <Route path="crafters" element={<AdminCrafters />} />

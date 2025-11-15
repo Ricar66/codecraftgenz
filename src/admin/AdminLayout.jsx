@@ -104,6 +104,7 @@ export function Dashboard() {
     const a = document.createElement('a'); a.href = url; a.download = `dashboard_${periodo}.csv`; a.click(); URL.revokeObjectURL(url);
   };
 
+  const isAdmin = String(user?.role || '').toLowerCase() === 'admin';
   return (
     <div className="admin-content">
       <header className="dashboard-header" style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
@@ -1188,7 +1189,7 @@ export function Ranking() {
 }
 
 export function Projetos() {
-  const { data: list, loading, error, refresh } = useProjects();
+  const { data: list, loading, error, refresh } = useProjects({ useAdminStore: true });
   const [form, setForm] = React.useState({ titulo:'', owner:'', descricao:'', data_inicio:'', status:'rascunho', preco:0, progresso:0, thumb_url:'', tags:[] });
   
   const onSave = async () => { 
@@ -2091,10 +2092,12 @@ export default function AdminLayout() {
             <span className={styles.menuIcon}>🏠</span>
             <span className={styles.menuText}>Dashboard</span>
           </NavLink>
-          <NavLink to="/admin/usuarios" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
-            <span className={styles.menuIcon}>👤</span>
-            <span className={styles.menuText}>Usuários</span>
-          </NavLink>
+          {isAdmin && (
+            <NavLink to="/admin/usuarios" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+              <span className={styles.menuIcon}>👤</span>
+              <span className={styles.menuText}>Usuários</span>
+            </NavLink>
+          )}
           <NavLink to="/admin/mentores" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
             <span className={styles.menuIcon}>🧑‍🏫</span>
             <span className={styles.menuText}>Mentores</span>
@@ -2150,7 +2153,7 @@ export default function AdminLayout() {
       </aside>
       <main className={styles.main}>
         <header className={styles.topbar}>
-          <div className={styles.welcome}>Olá, {user?.name}</div>
+          <div className={styles.welcome}>Olá, {user?.name} {user?.role ? `(${user.role})` : ''}</div>
           <button className={`${styles.btn} ${styles.btnDanger}`} onClick={logout}>Sair</button>
         </header>
         <div className={styles.content}>
@@ -2231,7 +2234,7 @@ export function Apps() {
 
   const onSave = async () => {
     try {
-      const payload = { name: form.name, mainFeature: form.mainFeature, price: Number(form.price||0), thumbnail: form.thumbnail, exec_url: form.exec_url };
+      const payload = { name: form.name, mainFeature: form.mainFeature, price: Number(form.price||0), thumbnail: form.thumbnail, executableUrl: form.exec_url };
       await updateApp(form.id, payload);
       setForm({ id:null, name:'', mainFeature:'', price:0, thumbnail:'', exec_url:'' });
       refresh();
@@ -2267,10 +2270,10 @@ export function Apps() {
               <td data-label="Feature" title={a.mainFeature}>{String(a.mainFeature || '').slice(0, 60)}</td>
               <td data-label="Preço">R$ {Number(a.price||0).toLocaleString('pt-BR')}</td>
               <td data-label="Thumb"><a href={a.thumbnail} target="_blank" rel="noopener noreferrer">thumbnail</a></td>
-              <td data-label="Exec URL"><a href={a.exec_url} target="_blank" rel="noopener noreferrer">exec</a></td>
+              <td data-label="Exec URL"><a href={a.executableUrl} target="_blank" rel="noopener noreferrer">exec</a></td>
               <td data-label="Ações">
                 <div className="btn-group">
-                  <button className="btn btn-secondary" onClick={()=>setForm({ id:a.id, name:a.name||'', mainFeature:a.mainFeature||'', price:a.price||0, thumbnail:a.thumbnail||'', exec_url:a.exec_url||'' })}>✏️</button>
+                  <button className="btn btn-secondary" onClick={()=>setForm({ id:a.id, name:a.name||'', mainFeature:a.mainFeature||'', price:a.price||0, thumbnail:a.thumbnail||'', exec_url:a.executableUrl||'' })}>✏️</button>
                 </div>
               </td>
             </tr>
