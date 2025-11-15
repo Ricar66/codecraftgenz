@@ -496,7 +496,7 @@ export function Mentores() {
   const [errors, setErrors] = React.useState({});
   const [busy, setBusy] = React.useState(false);
   const [toast, setToast] = React.useState('');
-  const MAX_PHOTO_BYTES = 256 * 1024; // ~256KB para armazenar com segurança em localStorage
+  const MAX_PHOTO_BYTES = 1024 * 1024;
   const ACCEPT_TYPES = ['image/jpeg','image/png','image/webp'];
   const [query, setQuery] = React.useState('');
   const [filterSpec, setFilterSpec] = React.useState('');
@@ -505,6 +505,7 @@ export function Mentores() {
   const pageSize = 5;
   const [selected, setSelected] = React.useState(new Set());
   const [historyOpen, setHistoryOpen] = React.useState(null);
+  const gridRef = React.useRef(null);
 
   const filtered = list.filter(m =>
     (m.name||'').toLowerCase().includes(query.toLowerCase()) &&
@@ -546,11 +547,11 @@ export function Mentores() {
   const onPhotoFile = async (file) => {
     if (!file) return;
     if (!ACCEPT_TYPES.includes(file.type)) { alert('Formato inválido. Use JPEG, PNG ou WEBP.'); return; }
-    if (file.size > MAX_PHOTO_BYTES) { alert('Imagem muito grande. Máximo de ~256KB.'); return; }
+    if (file.size > MAX_PHOTO_BYTES) { alert('Imagem muito grande. Máximo de ~1MB.'); return; }
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result;
-      setForm(prev => ({ ...prev, photo: String(dataUrl) }));
+      setForm(prev => ({ ...prev, photo: String(dataUrl), avatar_url: String(dataUrl) }));
     };
     reader.readAsDataURL(file);
   };
@@ -633,7 +634,11 @@ export function Mentores() {
         </div>
       </div>
 
-      <div className="mentorAdminGrid" aria-live="polite">
+      <div style={{ display:'flex', justifyContent:'flex-end', gap:8, margin:'8px 0' }}>
+        <button className="btn btn-outline" onClick={()=>{ const el=gridRef.current; if(!el) return; el.scrollBy({left:-360,behavior:'smooth'}); }}>◀</button>
+        <button className="btn btn-outline" onClick={()=>{ const el=gridRef.current; if(!el) return; el.scrollBy({left:360,behavior:'smooth'}); }}>▶</button>
+      </div>
+      <div className="mentorAdminGrid" aria-live="polite" ref={gridRef} style={{ overflowX:'auto' }}>
         {pageItems.length===0 ? (
           <div className="empty">Nenhum mentor</div>
         ) : pageItems.map(m => (
@@ -649,12 +654,7 @@ export function Mentores() {
                 <span className="name">{m.name}</span>
                 <span className="spec">{m.specialty}</span>
               </div>
-              {m.specialty ? (
-                <div className="chips" aria-label="Tags">
-                  <span className="chip">{m.specialty}</span>
-                </div>
-              ) : null}
-              <div className="bio">{m.bio}</div>
+              
               <div className="contact">
                 <span>📱 {m.phone || '(00) 00000-0000'}</span>
                 <span>✉️ {m.email || 'email@exemplo.com'}</span>
@@ -665,9 +665,7 @@ export function Mentores() {
               </div>
             </div>
             <div className="right">
-              <div className="badges">
-                <span className={`badge ${m.status==='published'?'badgeOk':'badgeNeutral'}`}>{m.status || 'draft'}</span>
-              </div>
+              
               <div className="actions btn-group">
                 <button className="btn btn-secondary" onClick={()=>onEdit(m)}>Editar</button>
                 <button className="btn btn-danger" onClick={()=>onDelete(m.id)}>Remover</button>

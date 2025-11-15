@@ -162,8 +162,6 @@ export default function MentoriaPage() {
                     <div className="chips">
                       {m.specialty ? (<span className="chip" aria-label="Especialidade">{m.specialty}</span>) : null}
                       {m.cargo ? (<span className="chip alt" aria-label="Cargo">{m.cargo}</span>) : null}
-                      {m.id ? (<span className="chip" aria-label="ID">ID: {m.id}</span>) : (<span className="chip" aria-label="ID">ID: —</span>)}
-                      <span className={`chip ${m.visible ? 'alt' : ''}`} aria-label="Visibilidade">{m.visible ? 'Visível' : 'Oculto'}</span>
                     </div>
                   </div>
                   <div className="details">

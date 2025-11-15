@@ -11,7 +11,7 @@ const AdminInscricoes = () => {
   const [inscricoes, setInscricoes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filtroStatus, setFiltroStatus] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('pendente');
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroArea, setFiltroArea] = useState('');
   const [filtroData, setFiltroData] = useState('');
