@@ -25,9 +25,10 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
   // Inicializa SDK JS v2 e aguarda disponibilidade de window.MercadoPago
   useEffect(() => {
     const envFlag = String(import.meta.env.VITE_MP_ENV || import.meta.env.MP_ENV || '').toLowerCase();
-    const PK = (envFlag === 'production')
-      ? (import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_PROD || import.meta.env.MERCADO_PAGO_PUBLIC_KEY_PROD || import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || import.meta.env.MERCADO_PAGO_PUBLIC_KEY)
-      : (import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_SANDBOX || import.meta.env.MERCADO_PAGO_PUBLIC_KEY_SANDBOX || import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || import.meta.env.MERCADO_PAGO_PUBLIC_KEY);
+    const PK = (
+      import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY ||
+      (envFlag === 'production' ? import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_PROD : import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_SANDBOX)
+    );
 
     if (import.meta.env.MODE === 'test') {
       setReady(true);
@@ -86,9 +87,10 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
   // Renderiza o Brick cardPayment
   useEffect(() => {
     const envFlag = String(import.meta.env.VITE_MP_ENV || import.meta.env.MP_ENV || '').toLowerCase();
-    const PK = (envFlag === 'production')
-      ? (import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_PROD || import.meta.env.MERCADO_PAGO_PUBLIC_KEY_PROD || import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || import.meta.env.MERCADO_PAGO_PUBLIC_KEY)
-      : (import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_SANDBOX || import.meta.env.MERCADO_PAGO_PUBLIC_KEY_SANDBOX || import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || import.meta.env.MERCADO_PAGO_PUBLIC_KEY);
+    const PK = (
+      import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY ||
+      (envFlag === 'production' ? import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_PROD : import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_SANDBOX)
+    );
     if (!ready || !containerRef.current || !PK) return;
 
     const mp = window.MercadoPago ? new window.MercadoPago(PK, { locale: 'pt-BR' }) : null;
