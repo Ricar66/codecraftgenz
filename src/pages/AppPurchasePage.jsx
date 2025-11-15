@@ -54,7 +54,9 @@ const AppPurchasePage = () => {
   const [downloadStatus] = useState('idle'); // idle | downloading | done | error
   const [downloadError] = useState('');
   const [feedback, setFeedback] = useState({ rating: 5, comment: '' });
-  // buyer removido; CardDirectPayment coleta dados pelo Brick
+  // Checkout em duas etapas: 1 = dados do comprador, 2 = cartão
+  const [step, setStep] = useState(0);
+  const [payerInfo, setPayerInfo] = useState({ name: '', email: '', identification: '' });
   // Controla visibilidade do formulário de cartão via flag de ambiente
   const initialShowCard = (
     import.meta.env.VITE_ENABLE_CARD_PAYMENT_UI === 'true' ||
@@ -169,8 +171,8 @@ const AppPurchasePage = () => {
               <button
                 className="btn btn-primary"
                 onClick={() => {
-                  setShowCardForm(true);
-                  const el = document.getElementById('card-payment-section');
+                  setStep(1);
+                  const el = document.getElementById('buyer-info-section');
                   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }}
               >
@@ -178,17 +180,41 @@ const AppPurchasePage = () => {
               </button>
               <button className="btn btn-outline" onClick={handleDownload} disabled={!downloadUrl && status!=='approved'}>Baixar executável</button>
             </div>
+            {step === 1 && (
+              <div id="buyer-info-section" style={{ marginTop: 12 }}>
+                <h3 className="title" style={{ fontSize:'1rem' }}>Dados do comprador</h3>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
+                  <input placeholder="Nome completo" value={payerInfo.name} onChange={e=>setPayerInfo(s=>({ ...s, name: e.target.value }))} />
+                  <input placeholder="E-mail" type="email" value={payerInfo.email} onChange={e=>setPayerInfo(s=>({ ...s, email: e.target.value }))} />
+                  <input placeholder="CPF" value={payerInfo.identification} onChange={e=>setPayerInfo(s=>({ ...s, identification: String(e.target.value||'').replace(/[^0-9]/g,'').slice(0,11) }))} />
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <button className="btn btn-outline" onClick={(e)=>{
+                    e.preventDefault();
+                    const n = String(payerInfo.name||'').trim();
+                    const em = String(payerInfo.email||'').trim();
+                    const id = String(payerInfo.identification||'').trim();
+                    if (!n || !em || !id) { alert('Por favor, preencha nome, e-mail e CPF.'); return; }
+                    setStep(2);
+                    setShowCardForm(true);
+                    const el = document.getElementById('card-payment-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}>Continuar para Pagamento</button>
+                </div>
+              </div>
+            )}
             {/* Opções avançadas removidas no modo simplificado */}
             {status && <p className="muted">Status da compra: {status}</p>}
 
             {/* Fluxo Pix removido no modo simplificado */}
 
-              {showCardForm && (
+              {showCardForm && step === 2 && (
                 <div id="card-payment-section" style={{ marginTop: 12 }}>
                   <CardDirectPayment
                     appId={id}
                     amount={app?.price || 0}
                     description={(app?.name || app?.titulo) ? `Compra de ${app?.name || app?.titulo}` : 'Compra de aplicativo'}
+                    buyer={{ name: payerInfo.name, email: payerInfo.email, docType: 'CPF', docNumber: payerInfo.identification }}
                     showPayButton={false}
                     onStatus={async (s, resp) => {
                       setStatus(s);
