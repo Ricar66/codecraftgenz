@@ -33,7 +33,11 @@ export async function getAllApps({ page = 1, pageSize = 50, limit, sortBy, sortO
   } catch (err) {
     const envFlag = String(import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK || 'off').toLowerCase();
     const fbEnabled = publicFallback !== undefined ? !!publicFallback : !['off','false','0'].includes(envFlag);
-    if (fbEnabled && err && (err.status === 401 || String(err.message).toLowerCase().includes('não autenticado'))) {
+    const msg = String(err?.message || '').toLowerCase();
+    const isUnauthorized = err && (err.status === 401 || msg.includes('não autenticado') || msg.includes('unauthorized') || msg.includes('401'));
+    const isNetwork = err && (err.status === 0 || err.type === 'network' || msg.includes('conexão') || msg.includes('network'));
+    const isServerError = err && (Number(err.status) >= 500);
+    if (fbEnabled && (isUnauthorized || isNetwork || isServerError)) {
       return apiRequest(`/api/apps/public?${qp.toString()}`, { method: 'GET' });
     }
     throw err;
