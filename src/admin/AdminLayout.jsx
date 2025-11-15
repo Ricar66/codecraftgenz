@@ -341,16 +341,25 @@ export function Usuarios() {
       {error && <p role="alert">{error}</p>}
       <div className="table" aria-busy={loading}>
         <table>
-          <thead><tr><th>Nome</th><th>E-mail</th><th>Role</th><th>Status</th><th>Ações</th></tr></thead>
+          <thead><tr><th>Nome</th><th>E-mail</th><th>Role</th><th>Status</th><th>Controle</th><th>Ações</th></tr></thead>
           <tbody>
-            {pageItems.length === 0 ? (<tr><td colSpan="5">Nenhum usuário</td></tr>) : pageItems.map(u => (
+            {pageItems.length === 0 ? (<tr><td colSpan="6">Nenhum usuário</td></tr>) : pageItems.map(u => (
               <tr key={u.id}>
                 <td data-label="Nome">{u.name}</td>
                 <td data-label="E-mail">{u.email}</td>
                 <td data-label="Perfil">{u.role}</td>
-                <td data-label="Status">{u.status}</td>
+                <td data-label="Status">
+                  <span style={{ 
+                    background: u.status==='active' ? '#00E4F2' : '#666', 
+                    color: '#fff', padding: '4px 8px', borderRadius: '12px', fontSize: '0.8em', fontWeight: 'bold'
+                  }}>
+                    {u.status}
+                  </span>
+                </td>
+                <td data-label="Controle">
+                  <button className="btn btn-outline" onClick={async()=>{ const res = await UsersRepo.toggleStatus(u.id); if(!res.ok){ alert(res.error||'Falha ao alternar status'); } else { refresh(); } }}>{u.status==='active'?'Desativar':'Ativar'}</button>
+                </td>
                 <td data-label="Ações">
-                  <button className="btn btn-secondary" onClick={()=>{UsersRepo.toggleStatus(u.id); refresh();}}>{u.status==='active'?'Desativar':'Ativar'}</button>
                   <select aria-label="Alterar perfil" value={u.role} onChange={async (e)=>{
                     const newRole = e.target.value;
                     if (newRole !== u.role) {
