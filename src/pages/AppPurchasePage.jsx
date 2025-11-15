@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import CardDirectPayment from '../components/CardDirectPayment.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { API_BASE_URL } from '../lib/apiConfig.js';
-import { getAppById, getPurchaseStatus, registerDownload, submitFeedback } from '../services/appsAPI.js';
+import { getAppById, getPurchaseStatus, registerDownload, submitFeedback, createPaymentPreference } from '../services/appsAPI.js';
 import { getAppPrice } from '../utils/appModel.js';
 
 // Mapeia códigos de status_detail do Mercado Pago para mensagens amigáveis
@@ -54,7 +54,7 @@ const AppPurchasePage = () => {
   const [downloadStatus] = useState('idle'); // idle | downloading | done | error
   const [downloadError] = useState('');
   const [feedback, setFeedback] = useState({ rating: 5, comment: '' });
-  const [buyer, setBuyer] = useState({ name: '', email: '', docType: 'CPF', docNumber: '', phone: '', zip: '', streetName: '' });
+  // buyer removido; CardDirectPayment coleta dados pelo Brick
   // Controla visibilidade do formulário de cartão via flag de ambiente
   const initialShowCard = (
     import.meta.env.VITE_ENABLE_CARD_PAYMENT_UI === 'true' ||
@@ -99,9 +99,20 @@ const AppPurchasePage = () => {
     }
   }, [id, searchParams]);
 
-  // Fluxo simplificado: não auto-iniciar checkout externo
-
-  // startCheckout definido acima com useCallback
+  // Fluxo Wallet (Checkout Pro)
+  const startWalletCheckout = async () => {
+    try {
+      const pref = await createPaymentPreference(id);
+      const init = pref?.init_point || pref?.data?.init_point || '';
+      if (init) {
+        window.open(init, '_blank', 'noopener');
+      } else {
+        alert('Não foi possível iniciar o checkout (Wallet)');
+      }
+    } catch (e) {
+      alert(e.message || 'Erro ao iniciar checkout (Wallet)');
+    }
+  };
 
   const handleDownload = async () => {
     try {
@@ -150,6 +161,12 @@ const AppPurchasePage = () => {
 
             <div className="btn-group" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
               <button
+                className="btn btn-outline"
+                onClick={startWalletCheckout}
+              >
+                Pagar com Mercado Pago (Wallet)
+              </button>
+              <button
                 className="btn btn-primary"
                 onClick={() => {
                   setShowCardForm(true);
@@ -157,21 +174,9 @@ const AppPurchasePage = () => {
                   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }}
               >
-                Comprar agora
+                Pagar com Cartão de Crédito
               </button>
               <button className="btn btn-outline" onClick={handleDownload} disabled={!downloadUrl && status!=='approved'}>Baixar executável</button>
-            </div>
-            <div style={{ marginTop: 12, display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-              <input placeholder="Nome completo" value={buyer.name} onChange={e=>{ const v=String(e.target.value||'').replace(/<[^>]*>/g,'').trim(); setBuyer(s=>({ ...s, name:v })); }} />
-              <input placeholder="E-mail" type="email" value={buyer.email} onChange={e=>{ const v=String(e.target.value||'').replace(/<[^>]*>/g,'').trim(); setBuyer(s=>({ ...s, email:v })); }} />
-              <select value={buyer.docType} onChange={e=>setBuyer(s=>({ ...s, docType:e.target.value }))}>
-                <option value="CPF">CPF</option>
-                <option value="CNPJ">CNPJ</option>
-              </select>
-              <input placeholder="Documento" value={buyer.docNumber} onChange={e=>{ const v=String(e.target.value||'').replace(/[^0-9A-Za-z.-]/g,''); setBuyer(s=>({ ...s, docNumber:v })); }} />
-              <input placeholder="Telefone" value={buyer.phone} onChange={e=>{ const v=String(e.target.value||'').replace(/[^0-9+\s-]/g,''); setBuyer(s=>({ ...s, phone:v })); }} />
-              <input placeholder="CEP" value={buyer.zip} onChange={e=>{ const v=String(e.target.value||'').replace(/[^0-9]/g,'').slice(0,8); setBuyer(s=>({ ...s, zip:v })); }} />
-              <input placeholder="Endereço (rua)" value={buyer.streetName} onChange={e=>{ const v=String(e.target.value||'').replace(/<[^>]*>/g,'').trim(); setBuyer(s=>({ ...s, streetName:v })); }} />
             </div>
             {/* Opções avançadas removidas no modo simplificado */}
             {status && <p className="muted">Status da compra: {status}</p>}
@@ -184,7 +189,6 @@ const AppPurchasePage = () => {
                     appId={id}
                     amount={app?.price || 0}
                     description={(app?.name || app?.titulo) ? `Compra de ${app?.name || app?.titulo}` : 'Compra de aplicativo'}
-                    buyer={buyer}
                     showPayButton={false}
                     onStatus={async (s, resp) => {
                       setStatus(s);
