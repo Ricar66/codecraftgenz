@@ -65,25 +65,33 @@ const __dirname = path.dirname(__filename);
 // --- Configuração do Servidor Express ---
 const app = express();
 const PORT = process.env.PORT_OVERRIDE || process.env.PORT || 8080;
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-this';
-const ADMIN_RESET_TOKEN = process.env.ADMIN_RESET_TOKEN || '';
-if (ADMIN_RESET_TOKEN) {
-  console.log('🔐 ADMIN_RESET_TOKEN definido (valor não exibido)');
-} else {
-  console.warn('🚫 ADMIN_RESET_TOKEN ausente; /api/auth/admin/reset-password retornará 403 até configurar.');
+const JWT_SECRET = process.env.JWT_SECRET;
+const ADMIN_RESET_TOKEN = process.env.ADMIN_RESET_TOKEN;
+if (!JWT_SECRET || !ADMIN_RESET_TOKEN) {
+  console.error('ERRO FATAL: JWT_SECRET ou ADMIN_RESET_TOKEN não definidos no .env');
+  process.exit(1);
 }
+console.log('🔐 Segredos essenciais definidos (valores não exibidos)');
 
 // --- Middlewares Essenciais ---
 app.use(helmet({
   contentSecurityPolicy: false,
 }));
-const getAllowedOrigins = () => {
-  const raw = process.env.ALLOWED_ORIGINS || '';
-  const arr = raw.split(',').map(s => s.trim()).filter(Boolean);
-  return arr.length ? arr : undefined;
-};
+const isProd = (process.env.NODE_ENV === 'production');
+const parseOrigins = (raw) => String(raw || '').split(',').map(s => s.trim()).filter(Boolean);
+const allowedOrigins = parseOrigins(process.env.ALLOWED_ORIGINS);
+if (isProd && allowedOrigins.length === 0) {
+  console.error('ERRO FATAL: ALLOWED_ORIGINS não definido em produção');
+  process.exit(1);
+}
+const devOrigin = 'http://localhost:5173';
 app.use(cors({
-  origin: getAllowedOrigins(),
+  origin: (origin, callback) => {
+    const list = isProd ? allowedOrigins : [devOrigin, ...allowedOrigins];
+    if (!origin) return callback(null, true);
+    if (list.includes(origin)) return callback(null, true);
+    return callback(new Error('CORS origin não permitido'), false);
+  },
   methods: ['GET','HEAD','PUT','PATCH','POST','DELETE'],
   allowedHeaders: ['Content-Type','Authorization','x-csrf-token','x-admin-reset-token'],
   credentials: false,
@@ -645,45 +653,49 @@ app.post('/api/auth/mfa/disable', authenticate, async (req, res) => {
 });
 
 // Rota segura para reset de senha do admin via token (para recuperar acesso)
-app.post('/api/auth/admin/reset-password', authenticate, authorizeAdmin, async (req, res) => {
-  try {
-    const token = req.headers['x-admin-reset-token'] || '';
-    if (!ADMIN_RESET_TOKEN || token !== ADMIN_RESET_TOKEN) {
-      return res.status(403).json({ error: 'Token de reset inválido ou não configurado' });
+if (process.env.NODE_ENV !== 'production') {
+  app.post('/api/auth/admin/reset-password', authenticate, authorizeAdmin, async (req, res) => {
+    try {
+      const token = req.headers['x-admin-reset-token'] || '';
+      if (!ADMIN_RESET_TOKEN || token !== ADMIN_RESET_TOKEN) {
+        return res.status(403).json({ error: 'Token de reset inválido ou não configurado' });
+      }
+      const { email, new_password } = req.body || {};
+      if (!email || !new_password) {
+        return res.status(400).json({ error: 'email e new_password são obrigatórios' });
+      }
+      if (!validateEmail(email)) {
+        return res.status(400).json({ error: 'Email inválido' });
+      }
+      if (!validatePasswordStrength(String(new_password))) {
+        return res.status(400).json({ error: 'Senha fraca: mínimo 8 caracteres, com maiúsculas, minúsculas, números e símbolos' });
+      }
+      const pool = await getConnectionPool();
+      const userQ = await pool.request().input('email', dbSql.NVarChar, email)
+        .query('SELECT id, role FROM dbo.users WHERE email = @email');
+      if (userQ.recordset.length === 0) {
+        return res.status(404).json({ error: 'Usuário não encontrado' });
+      }
+      const row = userQ.recordset[0];
+      if (String(row.role || '').toLowerCase() !== 'admin') {
+        return res.status(403).json({ error: 'Apenas usuários admin podem ser resetados por esta rota' });
+      }
+      const hash = await bcrypt.hash(String(new_password), 10);
+      await pool.request()
+        .input('id', dbSql.Int, row.id)
+        .input('pwd', dbSql.NVarChar, hash)
+        .query('UPDATE dbo.users SET password_hash = @pwd, updated_at = SYSUTCDATETIME() WHERE id = @id');
+      logEvent('admin_reset_password', { admin_id: req.user?.id, target_user_id: row.id });
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('Erro no reset de senha admin:', err);
+      logEvent('admin_reset_password_error', { admin_id: req.user?.id, message: err?.message || String(err) });
+      return res.status(500).json({ error: 'Erro interno' });
     }
-    const { email, new_password } = req.body || {};
-    if (!email || !new_password) {
-      return res.status(400).json({ error: 'email e new_password são obrigatórios' });
-    }
-    if (!validateEmail(email)) {
-      return res.status(400).json({ error: 'Email inválido' });
-    }
-    if (!validatePasswordStrength(String(new_password))) {
-      return res.status(400).json({ error: 'Senha fraca: mínimo 8 caracteres, com maiúsculas, minúsculas, números e símbolos' });
-    }
-    const pool = await getConnectionPool();
-    const userQ = await pool.request().input('email', dbSql.NVarChar, email)
-      .query('SELECT id, role FROM dbo.users WHERE email = @email');
-    if (userQ.recordset.length === 0) {
-      return res.status(404).json({ error: 'Usuário não encontrado' });
-    }
-    const row = userQ.recordset[0];
-    if (String(row.role || '').toLowerCase() !== 'admin') {
-      return res.status(403).json({ error: 'Apenas usuários admin podem ser resetados por esta rota' });
-    }
-    const hash = await bcrypt.hash(String(new_password), 10);
-    await pool.request()
-      .input('id', dbSql.Int, row.id)
-      .input('pwd', dbSql.NVarChar, hash)
-      .query('UPDATE dbo.users SET password_hash = @pwd, updated_at = SYSUTCDATETIME() WHERE id = @id');
-    logEvent('admin_reset_password', { admin_id: req.user?.id, target_user_id: row.id });
-    return res.json({ success: true });
-  } catch (err) {
-    console.error('Erro no reset de senha admin:', err);
-    logEvent('admin_reset_password_error', { admin_id: req.user?.id, message: err?.message || String(err) });
-    return res.status(500).json({ error: 'Erro interno' });
-  }
-});
+  });
+} else {
+  console.log('🔒 Rota /api/auth/admin/reset-password desativada em produção');
+}
 
 // --- Rotas de Usuários Admin ---
 app.get('/api/auth/users', authenticate, authorizeAdmin, async (req, res, next) => {
