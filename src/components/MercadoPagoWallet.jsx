@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 const MercadoPagoWallet = ({ preferenceId }) => {
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    const PK = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || import.meta.env.MERCADO_PAGO_PUBLIC_KEY;
+    const PK = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || import.meta.env.APP_USR_57782f61_a250_4abe_a856_ad9c5860a8a9;
     if (PK) {
       try { initMercadoPago(PK); setReady(true); } catch { setReady(false); }
     }
