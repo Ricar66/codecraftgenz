@@ -1,5 +1,6 @@
 // src/components/Projects/ProjectCard.jsx
 import React, { useState } from 'react';
+import { sanitizeImageUrl } from '../../utils/urlSanitize.js';
 
 import styles from './ProjectCard.module.css';
 
@@ -100,7 +101,7 @@ const ProjectCard = ({
       {/* Header do Card */}
       <header className={styles.cardHeader}>
         {project?.thumb_url ? (
-          <img src={project.thumb_url} alt="Thumb do projeto" className={styles.thumb} />
+          <img src={sanitizeImageUrl(project.thumb_url)} alt="Thumb do projeto" className={styles.thumb} />
         ) : null}
         <h3 id={`project-${project.id}-title`} className={styles.projectTitle}>
           {title}

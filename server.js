@@ -447,7 +447,7 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 // Rota segura para reset de senha do admin via token (para recuperar acesso)
-app.post('/api/auth/admin/reset-password', async (req, res) => {
+app.post('/api/auth/admin/reset-password', authenticate, authorizeAdmin, async (req, res) => {
   try {
     const token = req.headers['x-admin-reset-token'] || '';
     if (!ADMIN_RESET_TOKEN || token !== ADMIN_RESET_TOKEN) {
@@ -1448,7 +1448,7 @@ app.post('/api/inscricoes', async (req, res, next) => {
 });
 
 // --- Rotas de Finanças (Lógica 4) ---
-app.get('/api/financas', async (req, res, next) => {
+app.get('/api/financas', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const pool = await getConnectionPool();
     const { project_id } = req.query;
@@ -1470,7 +1470,7 @@ app.get('/api/financas', async (req, res, next) => {
 });
 
 // --- Rota de Dashboard (Lógica 5) ---
-app.get('/api/dashboard/resumo', async (req, res, next) => {
+app.get('/api/dashboard/resumo', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const pool = await getConnectionPool();
     
@@ -1547,7 +1547,7 @@ const mockApps = [
 ];
 const mockHistory = [];
 // Lista apps do usuário (permite acesso sem autenticação no ambiente atual)
-app.get('/api/apps/mine', async (req, res) => {
+app.get('/api/apps/mine', authenticate, async (req, res) => {
   const page = parseInt(req.query.page || '1', 10);
   const pageSize = parseInt(req.query.pageSize || '12', 10);
   const userId = (req.user && req.user.id) ? req.user.id : 2; // default usuário comum
@@ -1744,7 +1744,7 @@ app.post('/api/apps/from-project/:projectId', authenticate, authorizeAdmin, asyn
 
 // Inserção de app no banco em ambiente de desenvolvimento, protegida por ADMIN_RESET_TOKEN
 // Útil para popular dbo.apps sem exigir fluxo de autenticação completo
-app.post('/api/apps/dev/insert', async (req, res) => {
+app.post('/api/apps/dev/insert', authenticate, authorizeAdmin, async (req, res) => {
   try {
     if ((process.env.NODE_ENV || 'development') !== 'development') {
       return res.status(403).json({ error: 'Disponível apenas em development' });
@@ -2365,6 +2365,15 @@ app.post('/api/apps/:id/payment/direct', async (req, res) => {
 
     // Corpo da requisição de pagamento
     const amount = Number(appItem.price || 0);
+    // Define binary_mode: por exigência da conta/fluxo, precisa ser true
+    const finalBinaryMode = (() => {
+      // Se for pagamento com cartão (token presente), força true
+      if (token) return true;
+      // Para outros meios, se vier explícito false, ainda assim definimos true
+      if (typeof binary_mode === 'boolean') return binary_mode !== false;
+      return true;
+    })();
+
     const payload = {
       description: description || `Pagamento do app ${appItem.name}`,
       external_reference: String(external_reference || id),
@@ -2385,7 +2394,7 @@ app.post('/api/apps/:id/payment/direct', async (req, res) => {
           last_name: safePayer.name ? String(safePayer.name).split(' ').slice(1).join(' ') || undefined : undefined,
         },
       },
-      ...(typeof binary_mode === 'boolean' ? { binary_mode } : { binary_mode: false }),
+      binary_mode: finalBinaryMode,
       ...(typeof capture === 'boolean' ? { capture } : { capture: true }),
       metadata: { source: 'codecraft', ...(metadata || {}) },
     };
@@ -2866,7 +2875,7 @@ app.get('/api/apps/webhook', (req, res) => {
 
 // --- Admin: Pagamentos no Banco ---
 // Lista pagamentos persistidos (filtros opcionais)
-app.get('/api/admin/app-payments', async (req, res) => {
+app.get('/api/admin/app-payments', authenticate, authorizeAdmin, async (req, res) => {
   try {
     const pool = await getConnectionPool();
     const request = pool.request();
@@ -2893,7 +2902,7 @@ app.get('/api/admin/app-payments', async (req, res) => {
 });
 
 // Obter pagamento e auditoria por payment_id
-app.get('/api/admin/app-payments/:pid', async (req, res) => {
+app.get('/api/admin/app-payments/:pid', authenticate, authorizeAdmin, async (req, res) => {
   const pid = String(req.params?.pid || '').trim();
   if (!pid) return res.status(400).json({ success: false, error: 'BAD_REQUEST', message: 'pid é obrigatório' });
   try {

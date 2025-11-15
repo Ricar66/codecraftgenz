@@ -5,8 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import AppCard from '../components/AppCard/AppCard';
 import Navbar from '../components/Navbar/Navbar';
 import { API_BASE_URL, apiRequest } from '../lib/apiConfig.js';
-import { getHistory, upsertAppFromProject } from '../services/appsAPI.js';
-import { getPublicApps, getPurchaseStatus } from '../services/appsPublicAPI.js';
+import { getAppPrice } from '../utils/appModel.js';
+import { getHistory, upsertAppFromProject, getPublicApps, getPurchaseStatus } from '../services/appsAPI.js';
 import { getProjects } from '../services/projectsAPI.js';
 import { appsCache } from '../utils/dataCache.js';
 import { globalPerformanceMonitor } from '../utils/performanceMonitor.js';
@@ -339,7 +339,7 @@ const AppsPage = () => {
           <div className="modal">
             <h3 className="title">{payModal.app?.name}</h3>
             <p className="muted">{payModal.app?.mainFeature}</p>
-            <p className="price">Preço: {payModal.app?.price ? `R$ ${Number(payModal.app.price).toLocaleString('pt-BR')}` : 'a definir'}</p>
+            <p className="price">Preço: {(() => { const p = getAppPrice(payModal.app||{}); return p > 0 ? `R$ ${p.toLocaleString('pt-BR')}` : 'a definir'; })()}</p>
             {payModal.error && <p role="alert" style={{ color: '#FF6B6B' }}>❌ {payModal.error}</p>}
             <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
               <button className="btn btn-primary" onClick={startCheckout} disabled={payModal.loading}>

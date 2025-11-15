@@ -11,8 +11,17 @@ export async function getMyApps({ page = 1, pageSize = 12, limit, sortBy, sortOr
   return apiRequest(`/api/apps/mine?${qp.toString()}`, { method: 'GET' });
 }
 
+// Lista aplicativos públicos (sem autenticação)
+export async function getPublicApps({ page = 1, pageSize = 24, sortBy = 'updatedAt' } = {}) {
+  const qp = new URLSearchParams();
+  qp.set('page', page);
+  qp.set('pageSize', pageSize);
+  qp.set('sortBy', sortBy);
+  return apiRequest(`/api/apps/public?${qp.toString()}`, { method: 'GET' });
+}
+
 // Lista todos apps (admin ou público conforme backend)
-export async function getAllApps({ page = 1, pageSize = 50, limit, sortBy, sortOrder = 'desc' } = {}) {
+export async function getAllApps({ page = 1, pageSize = 50, limit, sortBy, sortOrder = 'desc', publicFallback } = {}) {
   const qp = new URLSearchParams();
   qp.set('page', page);
   qp.set('pageSize', pageSize ?? limit ?? 50);
@@ -22,7 +31,9 @@ export async function getAllApps({ page = 1, pageSize = 50, limit, sortBy, sortO
     // Tenta rota admin; se 401, faz fallback para rota pública
     return await apiRequest(`/api/apps?${qp.toString()}`, { method: 'GET' });
   } catch (err) {
-    if (err && (err.status === 401 || String(err.message).toLowerCase().includes('não autenticado'))) {
+    const envFlag = String(import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK || 'off').toLowerCase();
+    const fbEnabled = publicFallback !== undefined ? !!publicFallback : !['off','false','0'].includes(envFlag);
+    if (fbEnabled && err && (err.status === 401 || String(err.message).toLowerCase().includes('não autenticado'))) {
       return apiRequest(`/api/apps/public?${qp.toString()}`, { method: 'GET' });
     }
     throw err;

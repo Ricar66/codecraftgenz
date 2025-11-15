@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import CardDirectPayment from '../components/CardDirectPayment.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { API_BASE_URL } from '../lib/apiConfig.js';
+import { getAppPrice } from '../utils/appModel.js';
 
 // Mapeia códigos de status_detail do Mercado Pago para mensagens amigáveis
 function mapStatusDetail(detail) {
@@ -137,7 +138,7 @@ const AppPurchasePage = () => {
           <>
             <h1 className="title">{app?.name || app?.titulo}</h1>
             <p className="muted">{app?.description || app?.mainFeature}</p>
-            <p className="price">Preço: {app?.price ? `R$ ${Number(app.price).toLocaleString('pt-BR')}` : 'a definir'}</p>
+            <p className="price">Preço: {(() => { const p = getAppPrice(app||{}); return p > 0 ? `R$ ${p.toLocaleString('pt-BR')}` : 'a definir'; })()}</p>
             <p className="muted" title="Informação de preço">
               Preço final do produto. Taxas de processamento do pagamento são absorvidas pela plataforma.
             </p>

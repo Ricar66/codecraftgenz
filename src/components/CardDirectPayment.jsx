@@ -95,6 +95,13 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
         onSubmit: (cardFormData) => {
           setLoading(true);
           setError('');
+          // Validações básicas antes de enviar
+          const txAmount = Number(amount || 0);
+          if (!Number.isFinite(txAmount) || txAmount <= 0) {
+            setLoading(false);
+            setError('Valor de pagamento inválido.');
+            throw new Error('invalid amount');
+          }
           const paymentMethodId = (
             cardFormData?.payment_method_id ??
             cardFormData?.paymentMethodId ??
@@ -112,11 +119,31 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
             setError('Preencha os dados do cartão e use o botão do formulário para enviar');
             throw new Error('missing payment_method_id');
           }
+          if (!cardFormData?.token) {
+            setLoading(false);
+            setError('Token do cartão não foi gerado. Verifique os dados e tente novamente.');
+            throw new Error('missing card token');
+          }
+          // Extrai dados do pagador, se disponíveis no Brick
+          const payerEmail = (
+            cardFormData?.payer?.email ??
+            cardFormData?.cardholderEmail ??
+            undefined
+          );
+          const payerIdentification = (() => {
+            const idObj = cardFormData?.payer?.identification;
+            const type = idObj?.type ?? cardFormData?.identificationType;
+            const number = idObj?.number ?? cardFormData?.identificationNumber;
+            return (type && number) ? { type, number } : undefined;
+          })();
           const payload = {
             token: cardFormData.token,
             payment_method_id: paymentMethodId,
             ...(issuerId ? { issuer_id: issuerId } : {}),
-            installments: Number(cardFormData.installments || 1)
+            installments: Number(cardFormData.installments || 1),
+            binary_mode: true,
+            capture: true,
+            ...(payerEmail ? { payer: { email: payerEmail, ...(payerIdentification ? { identification: payerIdentification } : {}) } } : {})
           };
           return createDirectPayment(appId, payload)
             .then((resp) => {
@@ -125,7 +152,26 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
               if (typeof onStatus === 'function') onStatus(nextStatus, resp);
             })
             .catch((err) => {
-              setError(err?.message || 'Falha ao processar pagamento');
+              const status = err?.status;
+              const details = err?.details || {};
+              if (status === 503 && (details?.error === 'NO_ACCESS_TOKEN')) {
+                setError('Configuração do Mercado Pago ausente. Contate o suporte.');
+              } else if (status === 502 && details?.error === 'NETWORK_ERROR') {
+                setError('Falha de rede ao contatar o Mercado Pago. Tente novamente.');
+              } else if (status === 502 && (details?.mp_status || details?.message)) {
+                setError(`Pagamento não foi criado (${details?.mp_status || 'erro'}). Verifique os dados e tente novamente.`);
+              } else if (status === 400 && Array.isArray(details?.cause)) {
+                const cause2056 = details.cause.find(c => String(c?.code) === '2056');
+                if (cause2056) {
+                  setError('Ajustamos o modo binário. Tente novamente.');
+                } else {
+                  setError('Dados incompletos do cartão. Verifique e reenvie.');
+                }
+              } else if (status === 400) {
+                setError('Dados incompletos do cartão. Verifique e reenvie.');
+              } else {
+                setError(err?.message || 'Falha ao processar pagamento');
+              }
               throw err;
             })
             .finally(() => setLoading(false));
