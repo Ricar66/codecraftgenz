@@ -487,11 +487,11 @@ img {
   }
   
   .section-padding {
-    padding: var(--espaco-2xl) 0;
+    padding: var(--espaco-xl) 0;
   }
   
   .section-padding-lg {
-    padding: 80px 0;
+    padding: 72px 0;
   }
   
   .card-melhorado {
@@ -505,11 +505,11 @@ img {
   }
   
   .section-padding {
-    padding: var(--espaco-xl) 0;
+    padding: var(--espaco-lg) 0;
   }
   
   .section-padding-lg {
-    padding: 60px 0;
+    padding: 48px 0;
   }
   
   .card-melhorado {
