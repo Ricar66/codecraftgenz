@@ -295,6 +295,18 @@ async function ensureUserTableSchema() {
   }
 }
 
+// --- Garantir colunas opcionais em dbo.projetos usadas pelo frontend ---
+async function ensureProjetosOptionalColumns() {
+  try {
+    const pool = await getConnectionPool();
+    await pool.request().query(`IF COL_LENGTH('dbo.projetos', 'preco') IS NULL BEGIN ALTER TABLE dbo.projetos ADD preco DECIMAL(10,2) NOT NULL CONSTRAINT DF_projetos_preco DEFAULT 0; END;`);
+    await pool.request().query(`IF COL_LENGTH('dbo.projetos', 'progresso') IS NULL BEGIN ALTER TABLE dbo.projetos ADD progresso INT NOT NULL CONSTRAINT DF_projetos_progresso DEFAULT 0; END;`);
+    console.log('✅ Esquema de dbo.projetos verificado/ajustado (preco, progresso)');
+  } catch (err) {
+    console.error('Erro ao garantir colunas opcionais de dbo.projetos (preco/progresso):', err);
+  }
+}
+
 function mapUserRow(row) {
   return {
     id: row.id,
@@ -3137,6 +3149,7 @@ app.use((err, req, res, next) => {
 // --- Inicialização do Servidor (aguarda conexão ao banco) ---
 getConnectionPool().then(async () => {
   await ensureUserTableSchema();
+  await ensureProjetosOptionalColumns();
   await ensurePaymentsAuditPatch();
   await ensureAppPaymentsSchema();
   await ensurePasswordResetsSchema();
