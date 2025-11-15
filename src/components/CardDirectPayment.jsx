@@ -91,7 +91,7 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
         },
       },
       callbacks: {
-        onReady: () => {},
+        onReady: () => { console.debug('CardPayment brick pronto'); },
         onSubmit: (cardFormData) => {
           setLoading(true);
           setError('');
@@ -120,7 +120,7 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
           };
           return createDirectPayment(appId, payload)
             .then((resp) => {
-              try { console.log('Pagamento direto (resp):', resp); } catch {}
+              try { console.log('Pagamento direto (resp):', resp); } catch (e) { console.debug('Falha ao logar resposta de pagamento', e); }
               const nextStatus = resp?.status || resp?.data?.status || 'pending';
               if (typeof onStatus === 'function') onStatus(nextStatus, resp);
             })
@@ -141,7 +141,7 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
       .catch(err => setError(err?.message || 'Falha ao criar Brick de cartão'));
 
     return () => {
-      try { controllerRef.current?.destroy(); } catch { /* noop */ }
+      try { controllerRef.current?.destroy(); } catch (e) { console.debug('Falha ao destruir brick de cartão', e); }
     };
   }, [ready, amount, appId, onStatus]);
 
