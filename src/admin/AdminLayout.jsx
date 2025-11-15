@@ -1315,6 +1315,7 @@ export function Projetos() {
           <td data-label="Ações">
             <div className="btn-group">
               <button className="btn btn-secondary" onClick={()=>setForm({ id:p.id, titulo:p.title||p.titulo||'', owner:p.owner||'', descricao:p.description||p.descricao||'', data_inicio:p.startDate||p.data_inicio||'', status:p.status||'rascunho', preco:p.price??0, progresso:p.progress??0, thumb_url:p.thumb_url||'', tags:p.tags||[] })}>✏️</button>
+              <button className="btn btn-outline" onClick={async()=>{ const res = await ProjectsRepo.toggleVisible(p); if(!res.ok){ alert(res.error||'Falha ao alternar visibilidade'); } else { refresh(); } }} aria-label={`Visibilidade ${p.title||p.titulo||p.id}`}>{String(p.status||'').toLowerCase().includes('rascunho')?'Exibir':'Ocultar'}</button>
               <button className="btn btn-danger" onClick={async()=>{ if(!window.confirm('Deletar este projeto?')) return; await apiRequest(`/api/projetos/${p.id}`, { method:'DELETE' }); refresh(); }}>🗑️</button>
             </div>
           </td>
@@ -2231,6 +2232,7 @@ class AdminErrorBoundary extends React.Component {
 }
 
 export function Apps() {
+  const { user } = useAuth();
   const [apps, setApps] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
@@ -2240,13 +2242,14 @@ export function Apps() {
     try {
       setLoading(true);
       setError('');
-      const json = await getAllApps({ page: 1, pageSize: 100, publicFallback: false });
+      const isAdmin = String(user?.role || '').toLowerCase() === 'admin';
+      const json = await getAllApps({ page: 1, pageSize: 100, publicFallback: !isAdmin });
       const list = Array.isArray(json?.data) ? json.data : (Array.isArray(json) ? json : []);
       setApps(list);
     } catch (e) {
       setError(e.message || 'Erro ao carregar apps');
     } finally { setLoading(false); }
-  }, []);
+  }, [user?.role]);
 
   React.useEffect(() => { refresh(); }, [refresh]);
 
