@@ -184,10 +184,16 @@ const AppPurchasePage = () => {
               <div id="buyer-info-section" style={{ marginTop: 12 }}>
                 <h3 className="title" style={{ fontSize:'1rem' }}>Dados do comprador</h3>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
-                  <input placeholder="Nome completo" value={payerInfo.name} onChange={e=>setPayerInfo(s=>({ ...s, name: e.target.value }))} />
-                  <input placeholder="E-mail" type="email" value={payerInfo.email} onChange={e=>setPayerInfo(s=>({ ...s, email: e.target.value }))} />
-                  <input placeholder="CPF" value={payerInfo.identification} onChange={e=>setPayerInfo(s=>({ ...s, identification: String(e.target.value||'').replace(/[^0-9]/g,'').slice(0,11) }))} />
+                  <input aria-label="Nome completo" placeholder="Nome completo" value={payerInfo.name} onChange={e=>setPayerInfo(s=>({ ...s, name: e.target.value }))} />
+                  <input aria-label="E-mail" placeholder="E-mail" type="email" value={payerInfo.email} onChange={e=>setPayerInfo(s=>({ ...s, email: e.target.value }))} />
+                  <input aria-label="CPF" placeholder="CPF" value={payerInfo.identification} onChange={e=>setPayerInfo(s=>({ ...s, identification: String(e.target.value||'').replace(/[^0-9]/g,'').slice(0,11) }))} />
                 </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginTop:8 }}>
+                  <input aria-label="Telefone" placeholder="Telefone (opcional)" value={payerInfo.phone || ''} onChange={e=>setPayerInfo(s=>({ ...s, phone: String(e.target.value||'').replace(/[^0-9+\s-]/g,'') }))} />
+                  <input aria-label="CEP" placeholder="CEP (opcional)" value={payerInfo.zip || ''} onChange={e=>setPayerInfo(s=>({ ...s, zip: String(e.target.value||'').replace(/[^0-9]/g,'').slice(0,8) }))} />
+                  <input aria-label="Endereço" placeholder="Endereço (rua) (opcional)" value={payerInfo.streetName || ''} onChange={e=>setPayerInfo(s=>({ ...s, streetName: String(e.target.value||'').replace(/<[^>]*>/g,'').trim() }))} />
+                </div>
+                <p className="muted" style={{ marginTop: 6 }}>Preencha nome, e-mail e CPF para continuar. Telefone e endereço ajudam a aprovação do pagamento.</p>
                 <div style={{ marginTop: 8 }}>
                   <button className="btn btn-outline" onClick={(e)=>{
                     e.preventDefault();
@@ -199,7 +205,7 @@ const AppPurchasePage = () => {
                     setShowCardForm(true);
                     const el = document.getElementById('card-payment-section');
                     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }}>Continuar para Pagamento</button>
+                  }}>Continuar para pagamento com cartão</button>
                 </div>
               </div>
             )}
@@ -214,7 +220,7 @@ const AppPurchasePage = () => {
                     appId={id}
                     amount={app?.price || 0}
                     description={(app?.name || app?.titulo) ? `Compra de ${app?.name || app?.titulo}` : 'Compra de aplicativo'}
-                    buyer={{ name: payerInfo.name, email: payerInfo.email, docType: 'CPF', docNumber: payerInfo.identification }}
+                    buyer={{ name: payerInfo.name, email: payerInfo.email, docType: 'CPF', docNumber: payerInfo.identification, phone: payerInfo.phone, zip: payerInfo.zip, streetName: payerInfo.streetName }}
                     showPayButton={false}
                     onStatus={async (s, resp) => {
                       setStatus(s);
