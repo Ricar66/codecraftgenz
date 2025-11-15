@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { apiRequest } from '../lib/apiConfig.js';
+import { apiRequest, apiConfig } from '../lib/apiConfig.js';
 
 import './AdminInscricoes.css';
 import './AdminCommon.css';
@@ -38,8 +38,9 @@ const AdminInscricoes = () => {
 
   const fetchInscricoes = useCallback(async () => {
     setLoading(true);
-    if (!import.meta.env.VITE_API_URL && import.meta.env.DEV) {
-      setError("O backend não está configurado. Defina VITE_API_URL no seu arquivo .env.development para carregar os dados.");
+    // Usa configuração central: em dev, apiConfig.baseURL cai para http://localhost:8080
+    if (import.meta.env.DEV && !apiConfig.baseURL) {
+      setError("Backend não configurado: defina VITE_API_URL ou inicie o servidor local em 8080.");
       setInscricoes([]);
       setLoading(false);
       return;
@@ -137,7 +138,8 @@ const AdminInscricoes = () => {
   // Buscar crafters para auditoria
   useEffect(() => {
     const fetchCrafters = async () => {
-      if (!import.meta.env.VITE_API_URL && import.meta.env.DEV) {
+      // Usa configuração central: não bloquear em dev se baseURL default existir
+      if (import.meta.env.DEV && !apiConfig.baseURL) {
         setCrafters([]);
         return;
       }

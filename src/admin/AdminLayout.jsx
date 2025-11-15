@@ -19,7 +19,7 @@ export function Dashboard() {
   const [periodo, setPeriodo] = React.useState('30d');
   const [tipo, setTipo] = React.useState('all');
   const [statusFiltro, setStatusFiltro] = React.useState('');
-  const pagamentoFiltro = '';
+  const [pagamentoFiltro, setPagamentoFiltro] = React.useState('');
   const [loading, setLoading] = React.useState(true);
   const [erro, setErro] = React.useState('');
   const [resumo, setResumo] = React.useState({ totais: {}, evolucao_mensal: [] });
@@ -28,13 +28,22 @@ export function Dashboard() {
     try {
       setLoading(true);
       setErro('');
-      if (import.meta.env.VITE_API_BASE) {
-        const jsonResumo = await apiRequest(`/api/dashboard/resumo?periodo=${encodeURIComponent(periodo)}&type=${encodeURIComponent(tipo)}`, { method: 'GET' });
-        setResumo(jsonResumo);
-      }
+      const jsonResumo = await apiRequest(`/api/dashboard/resumo?periodo=${encodeURIComponent(periodo)}&type=${encodeURIComponent(tipo)}`, { method: 'GET' });
+      setResumo(jsonResumo);
 
       const jsonProj = await apiRequest(`/api/projetos?all=1`, { method: 'GET' }).catch(()=>({ data: [] }));
-      setProjects(Array.isArray(jsonProj?.data) ? jsonProj.data : (Array.isArray(jsonProj?.projects) ? jsonProj.projects : []));
+      const rawProjects = Array.isArray(jsonProj?.data) ? jsonProj.data : (Array.isArray(jsonProj?.projects) ? jsonProj.projects : []);
+      const normalized = rawProjects.map(p => ({
+        id: p.id,
+        title: p.titulo ?? p.title ?? p.nome ?? '',
+        status: p.status ?? '',
+        price: Number(p.preco ?? p.price ?? 0),
+        progress: Number(p.progresso ?? p.progress ?? 0),
+        startDate: p.data_inicio ?? p.created_at ?? '',
+        thumb_url: p.thumb_url ?? '',
+        tecnologias: Array.isArray(p.tecnologias) ? p.tecnologias : [],
+      }));
+      setProjects(normalized);
     } catch {
       setErro('Erro ao sincronizar com o dashboard');
     } finally { setLoading(false); }
@@ -81,13 +90,15 @@ export function Dashboard() {
     { key: 'pending', label: 'Pending', value: Number(kpis.receita_pendente || 0), color: '#D12BF2' },
     { key: 'discount', label: 'Discount', value: Number(kpis.descontos || 0), color: '#68007B' },
   ];
-  const pieData = pagamentoFiltro ? pieBase.filter(s => s.key === pagamentoFiltro) : pieBase;
+  const pieData = React.useMemo(() => (
+    pagamentoFiltro ? pieBase.filter(s => s.key === pagamentoFiltro) : pieBase
+  ), [pagamentoFiltro, kpis]);
   const barData = [
     { label: 'Ativos', value: Number(kpis.projetos_ativos || 0), color: '#00E4F2' },
     { label: 'Finalizados', value: Number(kpis.projetos_finalizados || 0), color: '#D12BF2' },
     { label: 'Rascunhos', value: Number(kpis.projetos_rascunho || 0), color: '#68007B' },
   ];
-  const lineSeries = Array.isArray(resumo?.evolucao_mensal) ? resumo.evolucao_mensal : [];
+  const lineSeries = React.useMemo(() => Array.isArray(resumo?.evolucao_mensal) ? resumo.evolucao_mensal : [], [resumo?.evolucao_mensal]);
 
   const exportCsv = () => {
     const cols = ['Projeto','Status','Valor','Progresso','UltimaAtualizacao'];
@@ -126,6 +137,12 @@ export function Dashboard() {
             <option value="Ativo">Ativo</option>
             <option value="Finalizado">Finalizado</option>
             <option value="Rascunho">Rascunho</option>
+          </select>
+          <select value={pagamentoFiltro} onChange={e=>setPagamentoFiltro(e.target.value)} aria-label="Filtro financeiro">
+            <option value="">Financeiro: Todos</option>
+            <option value="paid">Pago</option>
+            <option value="pending">Pendente</option>
+            <option value="discount">Desconto</option>
           </select>
           <button className="btn btn-outline" onClick={exportCsv}>Exportar CSV</button>
         </div>
