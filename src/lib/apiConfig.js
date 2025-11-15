@@ -6,14 +6,15 @@ import { useState, useEffect } from 'react';
 const getApiBaseUrl = () => {
   const isDev = import.meta.env.DEV;
   const devApiUrl = import.meta.env.VITE_API_URL;
-
-  // Em desenvolvimento: respeita VITE_API_URL se definida; caso contrário, usa backend local
   if (isDev) {
     return devApiUrl || 'http://localhost:8080';
   }
-
-  // Em produção: SEMPRE usar URL relativa ao mesmo domínio
-  // Não respeitar VITE_API_URL para evitar vazar configuração de .env genérico
+  const prodApiUrl = import.meta.env.VITE_API_URL;
+  const allowExternal = String(import.meta.env.VITE_ALLOW_EXTERNAL_API || 'false').toLowerCase();
+  const allow = ['true','1','yes','on'].includes(allowExternal);
+  if (prodApiUrl && allow) {
+    return prodApiUrl;
+  }
   return '';
 };
 
@@ -74,7 +75,12 @@ export async function apiRequest(endpoint, options = {}) {
     }
     const text = await response.text();
     if (!text) return {};
-    // Evita SyntaxError quando backend retorna HTML/erro genérico
+    const ctLower = (response.headers.get('content-type') || '').toLowerCase();
+    if (ctLower.includes('text/html')) {
+      const e = new Error('Resposta da API não é JSON (recebido HTML). Verifique proxy /api ou base da API.');
+      e.status = response.status;
+      throw e;
+    }
     throw new Error('Resposta da API não é JSON');
 
   } catch (error) {

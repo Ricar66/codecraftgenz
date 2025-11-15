@@ -181,8 +181,9 @@ export function useProjects() {
       const isUnauthorized = err && (err.status === 401 || msg.includes('401'));
       const isNetwork = err && (err.status === 0 || err.type === 'network' || msg.toLowerCase().includes('conexão') || msg.toLowerCase().includes('network'));
       const isServerError = err && (Number(err.status) >= 500);
-      // Fallback público também para erros de rede e 5xx quando habilitado
-      if (fbEnabled && (isUnauthorized || isNetwork || isServerError)) {
+      const isNonJson = msg.toLowerCase().includes('não é json');
+      // Fallback público também para erros de rede, 5xx e resposta não-JSON quando habilitado
+      if (fbEnabled && (isUnauthorized || isNetwork || isServerError || isNonJson)) {
         const publicData = await apiRequest(`/api/projetos?visivel=true`, { method: 'GET' });
         return Array.isArray(publicData?.data) ? publicData.data : (Array.isArray(publicData?.projects) ? publicData.projects : (Array.isArray(publicData) ? publicData : []));
       }
