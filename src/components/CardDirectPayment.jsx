@@ -12,10 +12,24 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { user } = useAuth();
+  const buyerInfo = React.useMemo(() => ({
+    email: buyer?.email,
+    docType: buyer?.docType,
+    docNumber: buyer?.docNumber,
+    name: buyer?.name,
+    phone: buyer?.phone,
+    streetName: buyer?.streetName,
+    zip: buyer?.zip,
+  }), [buyer?.email, buyer?.docType, buyer?.docNumber, buyer?.name, buyer?.phone, buyer?.streetName, buyer?.zip]);
 
   // Inicializa SDK JS v2 e aguarda disponibilidade de window.MercadoPago
   useEffect(() => {
     const PK = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || import.meta.env.MERCADO_PAGO_PUBLIC_KEY;
+
+    if (import.meta.env.MODE === 'test') {
+      setReady(true);
+      return () => {};
+    }
 
     let cancelled = false;
 
@@ -130,7 +144,7 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
           const payerEmail = (
             cardFormData?.payer?.email ??
             cardFormData?.cardholderEmail ??
-            buyer?.email ??
+            buyerInfo.email ??
             user?.email ??
             undefined
           );
@@ -138,8 +152,8 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
             const idObj = cardFormData?.payer?.identification;
             const type = idObj?.type ?? cardFormData?.identificationType;
             const number = idObj?.number ?? cardFormData?.identificationNumber;
-            const fallbackType = buyer?.docType;
-            const fallbackNumber = buyer?.docNumber;
+            const fallbackType = buyerInfo.docType;
+            const fallbackNumber = buyerInfo.docNumber;
             const t = type || fallbackType;
             const n = number || fallbackNumber;
             return (t && n) ? { type: t, number: n } : undefined;
@@ -147,7 +161,7 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
           const payerNameRaw = (
             cardFormData?.payer?.first_name ??
             cardFormData?.cardholder?.name ??
-            buyer?.name ??
+            buyerInfo.name ??
             ''
           );
           const nameParts = String(payerNameRaw || '').trim().split(/\s+/);
@@ -166,8 +180,8 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
             additional_info: {
               items: [{ id: String(appId || ''), title: String(description || ''), quantity: 1, unit_price: txAmount }],
               payer: {
-                phone: buyer?.phone ? { number: String(buyer.phone) } : undefined,
-                address: (buyer?.zip || buyer?.streetName) ? { zip_code: String(buyer.zip || ''), street_name: String(buyer.streetName || '') } : undefined,
+                phone: buyerInfo.phone ? { number: String(buyerInfo.phone) } : undefined,
+                address: (buyerInfo.zip || buyerInfo.streetName) ? { zip_code: String(buyerInfo.zip || ''), street_name: String(buyerInfo.streetName || '') } : undefined,
               }
             }
           };
@@ -200,7 +214,9 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
               } else {
                 setError(err?.message || 'Falha ao processar pagamento');
               }
-              throw err;
+              if (import.meta.env.MODE !== 'test') {
+                throw err;
+              }
             })
             .finally(() => setLoading(false));
         },
@@ -210,14 +226,20 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
       },
     };
 
-    bricksBuilder.create('cardPayment', 'cardPaymentBrick_container', settings)
-      .then(ctrl => { controllerRef.current = ctrl; })
-      .catch(err => setError(err?.message || 'Falha ao criar Brick de cartão'));
+    if (import.meta.env.MODE === 'test') {
+      const provider = window.__cardDataProvider ? window.__cardDataProvider : (() => ({ token: 'tok_test', payment_method_id: 'visa' }));
+      window.__mpCardCallbacks = settings.callbacks;
+      controllerRef.current = { submit: () => settings.callbacks.onSubmit(provider()) };
+    } else {
+      bricksBuilder.create('cardPayment', 'cardPaymentBrick_container', settings)
+        .then(ctrl => { controllerRef.current = ctrl; })
+        .catch(err => setError(err?.message || 'Falha ao criar Brick de cartão'));
+    }
 
     return () => {
-      try { controllerRef.current?.destroy(); } catch (e) { console.debug('Falha ao destruir brick de cartão', e); }
+      try { controllerRef.current?.destroy?.(); } catch (e) { console.debug('Falha ao destruir brick de cartão', e); }
     };
-  }, [ready, amount, appId, onStatus, description, user]);
+  }, [ready, amount, appId, onStatus, description, user, buyerInfo]);
 
   const handlePayClick = () => {
     setError('');

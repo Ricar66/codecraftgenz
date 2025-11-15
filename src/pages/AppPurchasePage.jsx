@@ -162,16 +162,16 @@ const AppPurchasePage = () => {
               <button className="btn btn-outline" onClick={handleDownload} disabled={!downloadUrl && status!=='approved'}>Baixar executável</button>
             </div>
             <div style={{ marginTop: 12, display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-              <input placeholder="Nome completo" value={buyer.name} onChange={e=>setBuyer(s=>({ ...s, name:e.target.value }))} />
-              <input placeholder="E-mail" type="email" value={buyer.email} onChange={e=>setBuyer(s=>({ ...s, email:e.target.value }))} />
+              <input placeholder="Nome completo" value={buyer.name} onChange={e=>{ const v=String(e.target.value||'').replace(/<[^>]*>/g,'').trim(); setBuyer(s=>({ ...s, name:v })); }} />
+              <input placeholder="E-mail" type="email" value={buyer.email} onChange={e=>{ const v=String(e.target.value||'').replace(/<[^>]*>/g,'').trim(); setBuyer(s=>({ ...s, email:v })); }} />
               <select value={buyer.docType} onChange={e=>setBuyer(s=>({ ...s, docType:e.target.value }))}>
                 <option value="CPF">CPF</option>
                 <option value="CNPJ">CNPJ</option>
               </select>
-              <input placeholder="Documento" value={buyer.docNumber} onChange={e=>setBuyer(s=>({ ...s, docNumber:e.target.value }))} />
-              <input placeholder="Telefone" value={buyer.phone} onChange={e=>setBuyer(s=>({ ...s, phone:e.target.value }))} />
-              <input placeholder="CEP" value={buyer.zip} onChange={e=>setBuyer(s=>({ ...s, zip:e.target.value }))} />
-              <input placeholder="Endereço (rua)" value={buyer.streetName} onChange={e=>setBuyer(s=>({ ...s, streetName:e.target.value }))} />
+              <input placeholder="Documento" value={buyer.docNumber} onChange={e=>{ const v=String(e.target.value||'').replace(/[^0-9A-Za-z.-]/g,''); setBuyer(s=>({ ...s, docNumber:v })); }} />
+              <input placeholder="Telefone" value={buyer.phone} onChange={e=>{ const v=String(e.target.value||'').replace(/[^0-9+\s-]/g,''); setBuyer(s=>({ ...s, phone:v })); }} />
+              <input placeholder="CEP" value={buyer.zip} onChange={e=>{ const v=String(e.target.value||'').replace(/[^0-9]/g,'').slice(0,8); setBuyer(s=>({ ...s, zip:v })); }} />
+              <input placeholder="Endereço (rua)" value={buyer.streetName} onChange={e=>{ const v=String(e.target.value||'').replace(/<[^>]*>/g,'').trim(); setBuyer(s=>({ ...s, streetName:v })); }} />
             </div>
             {/* Opções avançadas removidas no modo simplificado */}
             {status && <p className="muted">Status da compra: {status}</p>}
@@ -234,6 +234,17 @@ const AppPurchasePage = () => {
                 <ul className="muted" style={{ marginTop: 8, paddingLeft: 20 }}>
                   <li>Verifique os dados do cartão e tente novamente.</li>
                   <li>Se persistir, contate seu banco ou use outro método.</li>
+                </ul>
+              </div>
+            )}
+
+            {status === 'rejected' && String(statusDetail || '').toLowerCase() === 'cc_rejected_high_risk' && (
+              <div style={{ marginTop: 10, padding: '10px 12px', border:'1px solid rgba(255, 193, 7, 0.3)', borderRadius:8 }}>
+                <p className="muted" style={{ color:'#FFC107' }}>⚠ Transação sinalizada como alto risco</p>
+                <ul className="muted" style={{ marginTop: 8, paddingLeft: 20 }}>
+                  <li>Tente outro cartão ou método de pagamento.</li>
+                  <li>Confirme telefone e endereço corretamente preenchidos.</li>
+                  <li>Se necessário, solicite liberação ao seu banco.</li>
                 </ul>
               </div>
             )}

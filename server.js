@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import process from 'process';
@@ -75,9 +76,60 @@ if (ADMIN_RESET_TOKEN) {
 app.use(helmet({
   contentSecurityPolicy: false,
 }));
-app.use(cors());
+const getAllowedOrigins = () => {
+  const raw = process.env.ALLOWED_ORIGINS || '';
+  const arr = raw.split(',').map(s => s.trim()).filter(Boolean);
+  return arr.length ? arr : undefined;
+};
+app.use(cors({
+  origin: getAllowedOrigins(),
+  methods: ['GET','HEAD','PUT','PATCH','POST','DELETE'],
+  allowedHeaders: ['Content-Type','Authorization','x-csrf-token','x-admin-reset-token'],
+  credentials: false,
+}));
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
+
+function logEvent(type, details) {
+  try {
+    const entry = { type, time: new Date().toISOString(), ...details };
+    console.log(JSON.stringify(entry));
+  } catch {
+    console.log(`[LOG] ${type}`, details);
+  }
+}
+
+function sanitizeString(s, maxLen = 2048) {
+  if (typeof s !== 'string') return s;
+  const trimmed = s.trim().slice(0, maxLen);
+  return trimmed.replace(/<[^>]*>/g, '');
+}
+
+function validateEmail(email) {
+  if (typeof email !== 'string') return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function validatePasswordStrength(pwd) {
+  if (typeof pwd !== 'string') return false;
+  const hasLen = pwd.length >= 8;
+  const hasUpper = /[A-Z]/.test(pwd);
+  const hasLower = /[a-z]/.test(pwd);
+  const hasDigit = /[0-9]/.test(pwd);
+  const hasSymbol = /[^A-Za-z0-9]/.test(pwd);
+  return hasLen && hasUpper && hasLower && hasDigit && hasSymbol;
+}
+
+app.use((req, res, next) => {
+  if (process.env.CSRF_ENABLED === 'true' && ['POST','PUT','DELETE','PATCH'].includes(req.method)) {
+    const token = req.headers['x-csrf-token'];
+    const expected = process.env.CSRF_SECRET || '';
+    if (!expected || token !== expected) {
+      return res.status(403).json({ error: 'CSRF token inválido' });
+    }
+  }
+  next();
+});
 
 // --- Geração dinâmica do logo PNG ---
 const logoSvgPath = path.join(__dirname, 'src', 'assets', 'logo-codecraft.svg');
@@ -182,6 +234,8 @@ async function ensureUserTableSchema() {
     await pool.request().query(`IF COL_LENGTH('dbo.users', 'password_hash') IS NULL BEGIN ALTER TABLE dbo.users ADD password_hash NVARCHAR(256) NULL; END;`);
     await pool.request().query(`IF COL_LENGTH('dbo.users', 'role') IS NULL BEGIN ALTER TABLE dbo.users ADD role NVARCHAR(32) NULL; END;`);
     await pool.request().query(`IF COL_LENGTH('dbo.users', 'status') IS NULL BEGIN ALTER TABLE dbo.users ADD status NVARCHAR(16) NOT NULL DEFAULT 'ativo'; END;`);
+    await pool.request().query(`IF COL_LENGTH('dbo.users', 'mfa_enabled') IS NULL BEGIN ALTER TABLE dbo.users ADD mfa_enabled BIT NOT NULL DEFAULT 0; END;`);
+    await pool.request().query(`IF COL_LENGTH('dbo.users', 'mfa_secret') IS NULL BEGIN ALTER TABLE dbo.users ADD mfa_secret NVARCHAR(64) NULL; END;`);
     // Normalizações
     await pool.request().query(`UPDATE dbo.users SET role = ISNULL(role, 'viewer');`);
     await pool.request().query(`UPDATE dbo.users SET status = ISNULL(status, 'ativo');`);
@@ -409,13 +463,16 @@ app.post('/api/auth/login', (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ error: 'Email e senha são obrigatórios' });
   }
+  if (!validateEmail(email)) {
+    return res.status(400).json({ error: 'Email inválido' });
+  }
 
   (async () => {
     try {
       const pool = await getConnectionPool();
       const result = await pool.request()
         .input('email', dbSql.NVarChar, email)
-        .query('SELECT id, name, email, role, status, password_hash FROM dbo.users WHERE email = @email');
+        .query('SELECT id, name, email, role, status, password_hash, mfa_enabled, mfa_secret FROM dbo.users WHERE email = @email');
 
       if (result.recordset.length > 0) {
         const row = result.recordset[0];
@@ -432,18 +489,149 @@ app.post('/api/auth/login', (req, res) => {
           return res.status(401).json({ error: 'Credenciais inválidas' });
         }
 
-        const user = { id: row.id, email: row.email, name: row.name, role: row.role || 'viewer' };
-        const token = jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
-        return res.json({ success: true, token, user });
+        if (process.env.MFA_ENABLED === 'true' && row.mfa_enabled) {
+          const mfaCode = String(req.body?.mfa_code || '').trim();
+          const secret = String(row.mfa_secret || '');
+          const valid = verifyTotp(secret, mfaCode);
+          if (!valid) {
+            return res.status(401).json({ error: 'MFA requerido' });
+          }
+        }
+
+      const user = { id: row.id, email: row.email, name: row.name, role: row.role || 'viewer' };
+      const token = jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
+      logEvent('auth_login_success', { user_id: user.id, role: user.role });
+      return res.json({ success: true, token, user });
       }
 
       // Sem fallback: exige usuário no banco
       return res.status(401).json({ error: 'Credenciais inválidas' });
     } catch (err) {
       console.error('Erro no login:', err);
+      logEvent('auth_login_error', { message: err?.message || String(err) });
       return res.status(500).json({ error: 'Erro interno no login' });
     }
   })();
+});
+
+function base32Encode(buf) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = 0, value = 0, output = '';
+  for (let i = 0; i < buf.length; i++) {
+    value = (value << 8) | buf[i];
+    bits += 8;
+    while (bits >= 5) {
+      output += alphabet[(value >>> (bits - 5)) & 31];
+      bits -= 5;
+    }
+  }
+  if (bits > 0) {
+    output += alphabet[(value << (5 - bits)) & 31];
+  }
+  return output;
+}
+
+function generateMfaSecret() {
+  const bytes = crypto.randomBytes(20);
+  return base32Encode(bytes);
+}
+
+function verifyTotp(base32Secret, token) {
+  if (!base32Secret || !token) return false;
+  const secret = base32ToBuffer(base32Secret);
+  const period = 30;
+  const now = Math.floor(Date.now() / 1000);
+  for (let drift = -1; drift <= 1; drift++) {
+    const counter = Math.floor(now / period) + drift;
+    const code = totpCode(secret, counter);
+    if (code === token) return true;
+  }
+  return false;
+}
+
+function base32ToBuffer(str) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = 0, value = 0;
+  const out = [];
+  for (const ch of String(str).toUpperCase().replace(/=+$/,'')) {
+    const idx = alphabet.indexOf(ch);
+    if (idx === -1) continue;
+    value = (value << 5) | idx;
+    bits += 5;
+    if (bits >= 8) {
+      out.push((value >>> (bits - 8)) & 255);
+      bits -= 8;
+    }
+  }
+  return Buffer.from(out);
+}
+
+function totpCode(secretBuf, counter) {
+  const ctr = Buffer.alloc(8);
+  for (let i = 7; i >= 0; i--) {
+    ctr[i] = counter & 0xff;
+    counter = counter >>> 8;
+  }
+  const hmac = crypto.createHmac('sha1', secretBuf).update(ctr).digest();
+  const offset = hmac[hmac.length - 1] & 0x0f;
+  const binCode = ((hmac[offset] & 0x7f) << 24) | ((hmac[offset + 1] & 0xff) << 16) | ((hmac[offset + 2] & 0xff) << 8) | (hmac[offset + 3] & 0xff);
+  const otp = (binCode % 1e6).toString().padStart(6, '0');
+  return otp;
+}
+
+app.post('/api/auth/mfa/setup', authenticate, async (req, res) => {
+  try {
+    const pool = await getConnectionPool();
+    const secret = generateMfaSecret();
+    await pool.request()
+      .input('id', dbSql.Int, req.user.id)
+      .input('secret', dbSql.NVarChar, secret)
+      .query('UPDATE dbo.users SET mfa_secret = @secret, updated_at = SYSUTCDATETIME() WHERE id = @id');
+    const issuer = encodeURIComponent('CodeCraft');
+    const label = encodeURIComponent(req.user.email || 'user');
+    const otpauth = `otpauth://totp/${issuer}:${label}?secret=${secret}&issuer=${issuer}&period=30&digits=6&algorithm=SHA1`;
+    logEvent('mfa_setup', { user_id: req.user.id });
+    return res.json({ success: true, secret, otpauth });
+  } catch (err) {
+    console.error('Erro em MFA setup:', err);
+    return res.status(500).json({ error: 'Falha em MFA setup' });
+  }
+});
+
+app.post('/api/auth/mfa/enable', authenticate, async (req, res) => {
+  try {
+    const { code } = req.body || {};
+    const pool = await getConnectionPool();
+    const result = await pool.request()
+      .input('id', dbSql.Int, req.user.id)
+      .query('SELECT mfa_secret FROM dbo.users WHERE id = @id');
+    const secret = result.recordset[0]?.mfa_secret || '';
+    if (!secret || !verifyTotp(secret, String(code || ''))) {
+      return res.status(400).json({ error: 'Código 2FA inválido' });
+    }
+    await pool.request()
+      .input('id', dbSql.Int, req.user.id)
+      .query('UPDATE dbo.users SET mfa_enabled = 1, updated_at = SYSUTCDATETIME() WHERE id = @id');
+    logEvent('mfa_enable', { user_id: req.user.id });
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Erro em MFA enable:', err);
+    return res.status(500).json({ error: 'Falha ao habilitar MFA' });
+  }
+});
+
+app.post('/api/auth/mfa/disable', authenticate, async (req, res) => {
+  try {
+    const pool = await getConnectionPool();
+    await pool.request()
+      .input('id', dbSql.Int, req.user.id)
+      .query('UPDATE dbo.users SET mfa_enabled = 0, mfa_secret = NULL, updated_at = SYSUTCDATETIME() WHERE id = @id');
+    logEvent('mfa_disable', { user_id: req.user.id });
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Erro em MFA disable:', err);
+    return res.status(500).json({ error: 'Falha ao desabilitar MFA' });
+  }
 });
 
 // Rota segura para reset de senha do admin via token (para recuperar acesso)
@@ -456,6 +644,12 @@ app.post('/api/auth/admin/reset-password', authenticate, authorizeAdmin, async (
     const { email, new_password } = req.body || {};
     if (!email || !new_password) {
       return res.status(400).json({ error: 'email e new_password são obrigatórios' });
+    }
+    if (!validateEmail(email)) {
+      return res.status(400).json({ error: 'Email inválido' });
+    }
+    if (!validatePasswordStrength(String(new_password))) {
+      return res.status(400).json({ error: 'Senha fraca: mínimo 8 caracteres, com maiúsculas, minúsculas, números e símbolos' });
     }
     const pool = await getConnectionPool();
     const userQ = await pool.request().input('email', dbSql.NVarChar, email)
@@ -472,9 +666,11 @@ app.post('/api/auth/admin/reset-password', authenticate, authorizeAdmin, async (
       .input('id', dbSql.Int, row.id)
       .input('pwd', dbSql.NVarChar, hash)
       .query('UPDATE dbo.users SET password_hash = @pwd, updated_at = SYSUTCDATETIME() WHERE id = @id');
+    logEvent('admin_reset_password', { admin_id: req.user?.id, target_user_id: row.id });
     return res.json({ success: true });
   } catch (err) {
     console.error('Erro no reset de senha admin:', err);
+    logEvent('admin_reset_password_error', { admin_id: req.user?.id, message: err?.message || String(err) });
     return res.status(500).json({ error: 'Erro interno' });
   }
 });
@@ -498,12 +694,20 @@ app.post('/api/auth/users', authenticate, authorizeAdmin, async (req, res, next)
     if (!nome || !email || !senha) {
       return res.status(400).json({ error: 'Campos nome, email e senha são obrigatórios' });
     }
+    if (!validateEmail(email)) {
+      return res.status(400).json({ error: 'Email inválido' });
+    }
+    if (!validatePasswordStrength(String(senha))) {
+      return res.status(400).json({ error: 'Senha fraca: mínimo 8 caracteres, com maiúsculas, minúsculas, números e símbolos' });
+    }
+    const nomeSafe = sanitizeString(String(nome), 128);
+    const emailSafe = sanitizeString(String(email), 128);
     const hash = await bcrypt.hash(String(senha), 10);
 
     const pool = await getConnectionPool();
     const result = await pool.request()
-      .input('name', dbSql.NVarChar, nome)
-      .input('email', dbSql.NVarChar, email)
+      .input('name', dbSql.NVarChar, nomeSafe)
+      .input('email', dbSql.NVarChar, emailSafe)
       .input('role', dbSql.NVarChar, role || 'viewer')
       .input('status', dbSql.NVarChar, 'ativo')
       .input('pwd', dbSql.NVarChar, hash)
@@ -513,12 +717,14 @@ app.post('/api/auth/users', authenticate, authorizeAdmin, async (req, res, next)
         VALUES (@name, @email, @role, @status, @pwd, SYSUTCDATETIME())
       `);
     const user = mapUserRow(result.recordset[0]);
+    logEvent('admin_user_create', { admin_id: req.user?.id, created_user_id: user.id });
     res.status(201).json({ success: true, user });
   } catch (err) {
     if (err && (err.number === 2627 || String(err.message).includes('UNIQUE'))) {
       return res.status(409).json({ error: 'Email já cadastrado.' });
     }
     console.error('Erro ao criar usuário:', err);
+    logEvent('admin_user_create_error', { admin_id: req.user?.id, message: err?.message || String(err) });
     next(err);
   }
 });
@@ -714,6 +920,7 @@ app.get('/api/projetos', async (req, res, next) => {
     });
   } catch (err) {
     console.error('Erro ao buscar projetos (paginado) no banco:', err);
+    logEvent('projects_list_error', { message: err?.message || String(err) });
     next(err);
   }
 });
@@ -766,6 +973,9 @@ app.post('/api/projetos', authenticate, authorizeAdmin, async (req, res, next) =
   }
 
   const tecnologiasString = JSON.stringify(tecnologias || []);
+  const tituloSafe = sanitizeString(String(titulo), 256);
+  const descricaoSafe = descricao ? sanitizeString(String(descricao), 4000) : null;
+  const thumbSafe = thumb_url ? sanitizeString(String(thumb_url), 512) : null;
 
   try {
     const pool = await getConnectionPool();
@@ -775,13 +985,13 @@ app.post('/api/projetos', authenticate, authorizeAdmin, async (req, res, next) =
     `;
 
     const result = await pool.request()
-      .input('titulo', dbSql.NVarChar, titulo)
-      .input('nome', dbSql.NVarChar, titulo) // Salva 'titulo' em 'nome' também
-      .input('descricao', dbSql.NVarChar, descricao)
+      .input('titulo', dbSql.NVarChar, tituloSafe)
+      .input('nome', dbSql.NVarChar, tituloSafe)
+      .input('descricao', dbSql.NVarChar, descricaoSafe)
       .input('tecnologias', dbSql.NVarChar, tecnologiasString)
       .input('status', dbSql.NVarChar, status || 'rascunho')
       .input('data_inicio', dbSql.DateTime2, data_inicio ? new Date(data_inicio) : null)
-      .input('thumb_url', dbSql.NVarChar, thumb_url || null)
+      .input('thumb_url', dbSql.NVarChar, thumbSafe)
       .input('mentor_id', dbSql.Int, null) // 'owner' não é mentor_id, admin associa depois
       .input('progresso', dbSql.Int, Number(progresso || 0))
       .input('preco', dbSql.Decimal(10, 2), Number(preco || 0))
@@ -813,6 +1023,9 @@ app.put('/api/projetos/:id', authenticate, authorizeAdmin, async (req, res, next
   }
   
   const tecnologiasString = JSON.stringify(tecnologias || []);
+  const tituloSafe = sanitizeString(String(titulo), 256);
+  const descricaoSafe = descricao ? sanitizeString(String(descricao), 4000) : null;
+  const thumbSafe = thumb_url ? sanitizeString(String(thumb_url), 512) : null;
 
   try {
     const pool = await getConnectionPool();
@@ -834,13 +1047,13 @@ app.put('/api/projetos/:id', authenticate, authorizeAdmin, async (req, res, next
 
     const result = await pool.request()
       .input('id', dbSql.Int, id)
-      .input('titulo', dbSql.NVarChar, titulo)
-      .input('nome', dbSql.NVarChar, titulo)
-      .input('descricao', dbSql.NVarChar, descricao)
+      .input('titulo', dbSql.NVarChar, tituloSafe)
+      .input('nome', dbSql.NVarChar, tituloSafe)
+      .input('descricao', dbSql.NVarChar, descricaoSafe)
       .input('tecnologias', dbSql.NVarChar, tecnologiasString)
       .input('status', dbSql.NVarChar, status)
       .input('data_inicio', dbSql.DateTime2, data_inicio ? new Date(data_inicio) : null)
-      .input('thumb_url', dbSql.NVarChar, thumb_url || null)
+      .input('thumb_url', dbSql.NVarChar, thumbSafe)
       .input('progresso', dbSql.Int, Number(progresso || 0))
       .input('preco', dbSql.Decimal(10, 2), Number(preco || 0))
       .query(query);
@@ -970,11 +1183,11 @@ app.post('/api/mentores', authenticate, authorizeAdmin, async (req, res, next) =
 
     const pool = await getConnectionPool();
     const request = pool.request()
-      .input('nome', dbSql.NVarChar, nome)
-      .input('email', dbSql.NVarChar, email)
-      .input('telefone', dbSql.NVarChar, telefone || null)
-      .input('bio', dbSql.NVarChar(dbSql.MAX), bio || null)
-      .input('avatar_url', dbSql.NVarChar, avatar_url || null)
+      .input('nome', dbSql.NVarChar, sanitizeString(String(nome), 128))
+      .input('email', dbSql.NVarChar, sanitizeString(String(email), 128))
+      .input('telefone', dbSql.NVarChar, telefone ? sanitizeString(String(telefone), 64) : null)
+      .input('bio', dbSql.NVarChar(dbSql.MAX), bio ? sanitizeString(String(bio), 4000) : null)
+      .input('avatar_url', dbSql.NVarChar, avatar_url ? sanitizeString(String(avatar_url), 512) : null)
       .input('visible', dbSql.Bit, (visible === undefined || visible === null) ? 1 : (visible ? 1 : 0));
 
     const insertQuery = `
@@ -1006,11 +1219,11 @@ app.put('/api/mentores/:id', authenticate, authorizeAdmin, async (req, res, next
     const pool = await getConnectionPool();
     const request = pool.request()
       .input('id', dbSql.Int, id)
-      .input('nome', dbSql.NVarChar, nome || null)
-      .input('email', dbSql.NVarChar, email || null)
-      .input('telefone', dbSql.NVarChar, telefone || null)
-      .input('bio', dbSql.NVarChar(dbSql.MAX), bio || null)
-      .input('avatar_url', dbSql.NVarChar, avatar_url || null)
+      .input('nome', dbSql.NVarChar, nome ? sanitizeString(String(nome), 128) : null)
+      .input('email', dbSql.NVarChar, email ? sanitizeString(String(email), 128) : null)
+      .input('telefone', dbSql.NVarChar, telefone ? sanitizeString(String(telefone), 64) : null)
+      .input('bio', dbSql.NVarChar(dbSql.MAX), bio ? sanitizeString(String(bio), 4000) : null)
+      .input('avatar_url', dbSql.NVarChar, avatar_url ? sanitizeString(String(avatar_url), 512) : null)
       .input('visible', dbSql.Bit, visible === undefined || visible === null ? null : (visible ? 1 : 0));
 
     // Atualização com SET completo (usa COALESCE para manter valores quando null)
@@ -1158,9 +1371,9 @@ app.post('/api/crafters', authenticate, authorizeAdmin, async (req, res, next) =
 
     const pool = await getConnectionPool();
     const request = pool.request()
-      .input('nome', dbSql.NVarChar, nome)
-      .input('email', dbSql.NVarChar, email || null)
-      .input('avatar_url', dbSql.NVarChar, avatar_url || null)
+      .input('nome', dbSql.NVarChar, sanitizeString(String(nome), 128))
+      .input('email', dbSql.NVarChar, email ? sanitizeString(String(email), 128) : null)
+      .input('avatar_url', dbSql.NVarChar, avatar_url ? sanitizeString(String(avatar_url), 512) : null)
       .input('pontos', dbSql.Int, typeof pontos === 'number' ? pontos : 0)
       .input('nivel', dbSql.NVarChar, nivel || null)
       .input('ativo', dbSql.Bit, typeof ativo === 'boolean' ? (ativo ? 1 : 0) : 1);
@@ -1430,13 +1643,13 @@ app.post('/api/inscricoes', async (req, res, next) => {
     `;
     
     const result = await pool.request()
-      .input('nome', dbSql.NVarChar, nome)
-      .input('email', dbSql.NVarChar, email)
-      .input('telefone', dbSql.NVarChar, telefone || null)
-      .input('cidade', dbSql.NVarChar, cidade || null)
-      .input('estado', dbSql.NVarChar, estado || null)
-      .input('area', dbSql.NVarChar, area_interesse || null)
-      .input('obs', dbSql.NVarChar, mensagem || null) // 'mensagem' do form vira 'observacoes'
+      .input('nome', dbSql.NVarChar, sanitizeString(String(nome), 128))
+      .input('email', dbSql.NVarChar, sanitizeString(String(email), 128))
+      .input('telefone', dbSql.NVarChar, telefone ? sanitizeString(String(telefone), 64) : null)
+      .input('cidade', dbSql.NVarChar, cidade ? sanitizeString(String(cidade), 64) : null)
+      .input('estado', dbSql.NVarChar, estado ? sanitizeString(String(estado), 32) : null)
+      .input('area', dbSql.NVarChar, area_interesse ? sanitizeString(String(area_interesse), 64) : null)
+      .input('obs', dbSql.NVarChar, mensagem ? sanitizeString(String(mensagem), 4000) : null)
       .query(query);
 
     res.status(201).json({ success: true, data: result.recordset[0] });
@@ -2992,5 +3205,23 @@ app.get('/api/mercado-livre/oauth/callback', async (req, res) => {
   } catch (err) {
     console.error('Erro no OAuth callback Mercado Livre:', err);
     res.status(500).json({ error: 'OAuth callback error' });
+  }
+});
+app.get('/api/admin/projetos', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const pool = await getConnectionPool();
+    const result = await pool.request().query(`
+      SELECT 
+        p.id, p.titulo, p.nome, p.descricao, p.status, p.tecnologias, p.data_inicio,
+        p.thumb_url, p.mentor_id, p.created_at, p.updated_at, p.preco, COALESCE(p.progresso, 0) AS progresso
+      FROM dbo.projetos p
+      ORDER BY p.created_at DESC
+    `);
+    logEvent('admin_projects_view', { admin_id: req.user?.id, count: (result.recordset || []).length });
+    res.json({ success: true, data: result.recordset });
+  } catch (err) {
+    console.error('Erro em /api/admin/projetos:', err);
+    logEvent('admin_projects_view_error', { admin_id: req.user?.id, message: err?.message || String(err) });
+    next(err);
   }
 });

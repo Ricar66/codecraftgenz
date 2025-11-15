@@ -2241,7 +2241,7 @@ class AdminErrorBoundary extends React.Component {
 }
 
 export function Apps() {
-  const { user, hasRole } = useAuth();
+  const { hasRole } = useAuth();
   const [apps, setApps] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
@@ -2258,7 +2258,7 @@ export function Apps() {
     } catch (e) {
       setError(e.message || 'Erro ao carregar apps');
     } finally { setLoading(false); }
-  }, [user?.role, hasRole]);
+  }, [hasRole]);
 
   React.useEffect(() => { refresh(); }, [refresh]);
 

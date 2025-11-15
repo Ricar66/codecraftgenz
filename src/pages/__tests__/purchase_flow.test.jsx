@@ -53,3 +53,37 @@ describe('Fluxo de compra – regressão sem auto-download', () => {
     expect(openSpy.mock.calls[0][0]).toMatch(/example\.com\/download\/test\.exe/);
   }, 12000);
 });
+
+describe('AppPurchasePage – mensagens de rejeição', () => {
+  it('mapeia número do cartão inválido', async () => {
+    const mods = await import('../../services/appsAPI.js');
+    mods.getPurchaseStatus.mockResolvedValueOnce({ status: 'rejected', status_detail: 'cc_rejected_bad_filled_card_number' });
+    const initialEntries = ['/apps/7/compra?status=rejected&payment_id=abc'];
+    render(
+      <MemoryRouter initialEntries={initialEntries}>
+        <Routes>
+          <Route path="/apps/:id/compra" element={<AppPurchasePage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    const msg = await screen.findByText(/Número do cartão inválido/i);
+    expect(msg).toBeDefined();
+    const code = await screen.findByText(/cc_rejected_bad_filled_card_number/i);
+    expect(code).toBeDefined();
+  });
+
+  it('exibe bloco de alto risco quando status_detail é cc_rejected_high_risk', async () => {
+    const mods = await import('../../services/appsAPI.js');
+    mods.getPurchaseStatus.mockResolvedValueOnce({ status: 'rejected', status_detail: 'cc_rejected_high_risk' });
+    const initialEntries = ['/apps/7/compra?status=rejected'];
+    render(
+      <MemoryRouter initialEntries={initialEntries}>
+        <Routes>
+          <Route path="/apps/:id/compra" element={<AppPurchasePage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    const msg = await screen.findByText(/Transação sinalizada como alto risco/i);
+    expect(msg).toBeDefined();
+  });
+});

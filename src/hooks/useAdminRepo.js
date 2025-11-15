@@ -174,7 +174,7 @@ export function useProjects() {
     const fbEnabled = !['off','false','0'].includes(String(import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK || 'off').toLowerCase());
     // Primeiro tenta como admin (inclui Authorization via apiRequest)
     try {
-      const adminData = await apiRequest(`/api/projetos?all=1`, { method: 'GET' });
+      const adminData = await apiRequest(`/api/admin/projetos`, { method: 'GET' });
       return Array.isArray(adminData?.data) ? adminData.data : (Array.isArray(adminData?.projects) ? adminData.projects : (Array.isArray(adminData) ? adminData : []));
     } catch (err) {
       const msg = String(err?.message || '');
