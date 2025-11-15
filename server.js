@@ -797,7 +797,7 @@ app.get('/api/auth/users', authenticate, authorizeAdmin, async (req, res, next) 
     const pool = await getConnectionPool();
     const result = await pool.request().query('SELECT id, name, email, role, status FROM dbo.users');
     const users = result.recordset.map(mapUserRow);
-    res.json(users);
+    res.json({ success: true, data: users });
   } catch (err) {
     console.error('Erro ao listar usuários:', err);
     next(err);
