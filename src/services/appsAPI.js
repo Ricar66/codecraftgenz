@@ -115,3 +115,9 @@ export async function adminGetAppPayment(paymentId) {
   if (!paymentId) throw new Error('paymentId é obrigatório');
   return apiRequest(`/api/admin/app-payments/${encodeURIComponent(String(paymentId))}`, { method: 'GET' });
 }
+
+// Obter último resultado de pagamento direto (cache em memória do backend)
+export async function getLastDirectPayment(appId) {
+  if (!appId) throw new Error('appId é obrigatório');
+  return apiRequest(`/api/apps/${appId}/payment/last`, { method: 'GET' });
+}

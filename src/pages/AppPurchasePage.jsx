@@ -5,6 +5,38 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import CardDirectPayment from '../components/CardDirectPayment.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { API_BASE_URL } from '../lib/apiConfig.js';
+
+// Mapeia códigos de status_detail do Mercado Pago para mensagens amigáveis
+function mapStatusDetail(detail) {
+  const d = String(detail || '').toLowerCase();
+  const dict = {
+    // Preenchimento incorreto
+    'cc_rejected_bad_filled_card_number': 'Número do cartão inválido. Verifique os dígitos.',
+    'cc_rejected_bad_filled_date': 'Data de validade inválida. Corrija mês/ano.',
+    'cc_rejected_bad_filled_other': 'Dados do cartão incompletos ou inválidos.',
+    'cc_rejected_bad_filled_security_code': 'Código de segurança (CVV) inválido.',
+
+    // Limite / saldo
+    'cc_rejected_insufficient_amount': 'Saldo/limite insuficiente no cartão.',
+
+    // Autorização obrigatória
+    'cc_rejected_call_for_authorize': 'Banco exige autorização prévia. Ligue para autorizar a compra.',
+
+    // Antifraude
+    'cc_rejected_high_risk': 'Transação considerada de alto risco. Tente outro cartão/método.',
+
+    // Método/token
+    'invalid_payment_method': 'Método de pagamento inválido para este cartão.',
+    'invalid_token': 'Token do cartão inválido. Reenvie os dados.',
+
+    // Duplicidade
+    'cc_rejected_duplicated_payment': 'Pagamento duplicado. Aguarde a confirmação do primeiro.',
+
+    // Outros comuns
+    'payment_attempt_failed': 'Tentativa de pagamento falhou. Tente novamente.',
+  };
+  return dict[d] || (detail ? `Motivo: ${detail}` : 'Pagamento negado. Verifique os dados e tente novamente.');
+}
 import { getAppById, getPurchaseStatus, registerDownload, submitFeedback } from '../services/appsAPI.js';
 
 const AppPurchasePage = () => {
@@ -177,7 +209,12 @@ const AppPurchasePage = () => {
             {status === 'rejected' && (
               <div className="rejected-wrap" style={{ marginTop: 10, padding: '10px 12px', border:'1px solid rgba(255, 107, 107, 0.3)', borderRadius:8 }}>
                 <p className="muted" style={{ color:'#FF6B6B' }}>❌ Pagamento negado.</p>
-                {statusDetail && <p className="muted">Motivo: {statusDetail}</p>}
+                {statusDetail && (
+                  <>
+                    <p className="muted">{mapStatusDetail(statusDetail)}</p>
+                    <p className="muted" style={{ fontSize:'0.85em' }}>Código: {statusDetail}</p>
+                  </>
+                )}
                 <ul className="muted" style={{ marginTop: 8, paddingLeft: 20 }}>
                   <li>Verifique os dados do cartão e tente novamente.</li>
                   <li>Se persistir, contate seu banco ou use outro método.</li>
