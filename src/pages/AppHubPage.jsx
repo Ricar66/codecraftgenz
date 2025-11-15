@@ -3,11 +3,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 import AppCard from '../components/AppCard/AppCard.jsx';
-import { sanitizeImageUrl, sanitizeSrcSet } from '../utils/urlSanitize.js';
-import { getAppImageUrl } from '../utils/appModel.js';
 import Navbar from '../components/Navbar/Navbar.jsx';
 import { getAllApps } from '../services/appsAPI.js';
+import { getAppImageUrl } from '../utils/appModel.js';
 import { appsCache } from '../utils/dataCache.js';
+import { sanitizeSrcSet } from '../utils/urlSanitize.js';
 
 import styles from './AppHubPage.module.css';
 

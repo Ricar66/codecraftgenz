@@ -1,10 +1,11 @@
 // src/components/AppCard/AppCard.jsx
 import React from 'react';
-import { getAppImageUrl, getAppPrice } from '../../utils/appModel.js';
 import { Link } from 'react-router-dom';
 
+import { getAppImageUrl, getAppPrice } from '../../utils/appModel.js';
+
 const AppCard = ({ app, onDownload, mode = 'owned' }) => {
-  const { id, name, mainFeature, thumbnail, image, price, status, version, size, category } = app;
+  const { id, name, mainFeature, thumbnail, image, status, version, size, category } = app;
   const finalized = status === 'finalizado' || status === 'available' || status === 'ready';
   const safePrice = getAppPrice(app);
   const displayPrice = safePrice > 0 ? `R$ ${safePrice.toLocaleString('pt-BR')}` : 'Gratuito';
