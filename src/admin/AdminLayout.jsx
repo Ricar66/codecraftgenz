@@ -2284,6 +2284,12 @@ class AdminErrorBoundary extends React.Component {
 
 export function Apps() {
   const { hasRole } = useAuth();
+  const isDebug = (
+    import.meta.env.DEV ||
+    ['on','true','1','yes'].includes(String(import.meta.env.VITE_DEBUG_ADMIN || '').toLowerCase()) ||
+    (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1') ||
+    (typeof localStorage !== 'undefined' && localStorage.getItem('cc_debug') === '1')
+  );
   const [apps, setApps] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
@@ -2294,18 +2300,18 @@ export function Apps() {
       setLoading(true);
       setError('');
       const isAdmin = hasRole(['admin']);
-      if (import.meta.env.DEV) {
+      if (isDebug) {
         console.log('[Admin:Apps:refresh]', { isAdmin });
       }
       const json = await getAllApps({ page: 1, pageSize: 100, publicFallback: !isAdmin });
       const list = Array.isArray(json?.data) ? json.data : (Array.isArray(json) ? json : []);
       setApps(list);
-      if (import.meta.env.DEV) {
+      if (isDebug) {
         console.log('[Admin:Apps:list]', list.length);
       }
     } catch (e) {
       setError(e.message || 'Erro ao carregar apps');
-      if (import.meta.env.DEV) {
+      if (isDebug) {
         console.error('[Admin:Apps:error]', e?.status || 0, e?.message || e);
       }
     } finally { setLoading(false); }

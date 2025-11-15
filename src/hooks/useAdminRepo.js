@@ -9,6 +9,12 @@ import * as rankingAPI from '../services/rankingAPI';
 import * as userAPI from '../services/userAPI';
 
 function useAsyncList(asyncFn, deps = []) {
+  const isDebug = (
+    import.meta.env.DEV ||
+    ['on','true','1','yes'].includes(String(import.meta.env.VITE_DEBUG_ADMIN || '').toLowerCase()) ||
+    (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1') ||
+    (typeof localStorage !== 'undefined' && localStorage.getItem('cc_debug') === '1')
+  );
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -16,7 +22,7 @@ function useAsyncList(asyncFn, deps = []) {
   const fetchData = async () => {
     setLoading(true);
     setError('');
-    if (import.meta.env.DEV) {
+    if (isDebug) {
       console.log('[AdminRepo:fetch:start]');
     }
 
@@ -32,18 +38,18 @@ function useAsyncList(asyncFn, deps = []) {
     try {
       const result = await asyncFn();
       setData(result || []);
-      if (import.meta.env.DEV) {
+      if (isDebug) {
         console.log('[AdminRepo:fetch:ok]', Array.isArray(result) ? result.length : 0);
       }
     } catch (err) {
       setError(err.message || 'Erro ao carregar dados');
       setData([]);
-      if (import.meta.env.DEV) {
+      if (isDebug) {
         console.error('[AdminRepo:fetch:err]', err?.status || 0, err?.message || err);
       }
     } finally {
       setLoading(false);
-      if (import.meta.env.DEV) {
+      if (isDebug) {
         console.log('[AdminRepo:fetch:end]');
       }
     }
@@ -60,12 +66,18 @@ function useAsyncList(asyncFn, deps = []) {
 // Users
 export function useUsers() {
   const result = useAsyncList(() => userAPI.getUsers());
-  if (import.meta.env.DEV) {
+  const isDebug = (
+    import.meta.env.DEV ||
+    ['on','true','1','yes'].includes(String(import.meta.env.VITE_DEBUG_ADMIN || '').toLowerCase()) ||
+    (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1') ||
+    (typeof localStorage !== 'undefined' && localStorage.getItem('cc_debug') === '1')
+  );
+  if (isDebug) {
     console.log('[Admin:Users:init]');
   }
   useEffect(() => {
     const unsub = realtime.subscribe('users_changed', () => {
-      if (import.meta.env.DEV) console.log('[Admin:Users:realtime]');
+      if (isDebug) console.log('[Admin:Users:realtime]');
       result.refresh();
     });
     return () => unsub();
@@ -187,17 +199,31 @@ export const MentorsRepo = {
 
 // Projetos
 export function useProjects() {
+  const isDebug = (
+    import.meta.env.DEV ||
+    ['on','true','1','yes'].includes(String(import.meta.env.VITE_DEBUG_ADMIN || '').toLowerCase()) ||
+    (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1') ||
+    (typeof localStorage !== 'undefined' && localStorage.getItem('cc_debug') === '1')
+  );
   const result = useAsyncList(async () => {
     const fbEnabled = !['off','false','0'].includes(String(import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK || 'off').toLowerCase());
     // Primeiro tenta como admin (inclui Authorization via apiRequest)
     try {
-      if (import.meta.env.DEV) {
+      if (isDebug) {
         console.log('[Admin:Projects:load] as admin');
       }
       const adminData = await projectsAPI.getAll({ all: '1' });
       const arr = Array.isArray(adminData) ? adminData : [];
-      if (import.meta.env.DEV) {
+      if (isDebug) {
         console.log('[Admin:Projects:adminData]', arr.length);
+      }
+      // Fallback público se lista vier vazia, para evitar tela em branco
+      if (arr.length === 0) {
+        if (isDebug) console.log('[Admin:Projects:fallback] admin empty → public');
+        const publicData = await projectsAPI.getAll({ visivel: 'true' });
+        const pubArr = Array.isArray(publicData) ? publicData : [];
+        if (isDebug) console.log('[Admin:Projects:publicData]', pubArr.length);
+        return pubArr;
       }
       return arr;
     } catch (err) {
@@ -208,12 +234,12 @@ export function useProjects() {
       const isNonJson = msg.toLowerCase().includes('não é json');
       // Fallback público também para erros de rede, 5xx e resposta não-JSON quando habilitado
       if (fbEnabled && (isUnauthorized || isNetwork || isServerError || isNonJson)) {
-        if (import.meta.env.DEV) {
+        if (isDebug) {
           console.log('[Admin:Projects:fallback] public');
         }
         const publicData = await projectsAPI.getAll({ visivel: 'true' });
         const arr = Array.isArray(publicData) ? publicData : [];
-        if (import.meta.env.DEV) {
+        if (isDebug) {
           console.log('[Admin:Projects:publicData]', arr.length);
         }
         return arr;
