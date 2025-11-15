@@ -30,8 +30,7 @@ export async function getAllApps({ page = 1, pageSize = 50, limit, sortBy, sortO
   if (sortOrder) qp.set('sortOrder', sortOrder);
   try {
     const resp = await apiRequest(`/api/apps?${qp.toString()}`, { method: 'GET' });
-    const list = Array.isArray(resp?.data) ? resp.data : (Array.isArray(resp) ? resp : []);
-    return list;
+    return resp.data;
   } catch (err) {
     const envFlag = String(import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK || 'off').toLowerCase();
     const fbEnabled = publicFallback !== undefined ? !!publicFallback : !['off','false','0'].includes(envFlag);
@@ -41,8 +40,7 @@ export async function getAllApps({ page = 1, pageSize = 50, limit, sortBy, sortO
     const isServerError = err && (Number(err.status) >= 500);
     if (fbEnabled && (isUnauthorized || isNetwork || isServerError)) {
       const pubResp = await apiRequest(`/api/apps/public?${qp.toString()}`, { method: 'GET' });
-      const pubList = Array.isArray(pubResp?.data) ? pubResp.data : (Array.isArray(pubResp) ? pubResp : []);
-      return pubList;
+      return pubResp.data;
     }
     throw err;
   }
