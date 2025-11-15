@@ -107,6 +107,35 @@ export const getAll = async (params = { all: '1' }) => {
 };
 
 
+export async function createProject(payload) {
+  const data = await apiRequest('/api/projetos', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return data.project || data.data || data;
+}
+
+export async function updateProject(id, payload) {
+  const data = await apiRequest(`/api/projetos/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+  return data.project || data.data || data;
+}
+
+export async function deleteProject(id) {
+  const data = await apiRequest(`/api/projetos/${id}`, {
+    method: 'DELETE',
+  });
+  return data.project || data.data || { ok: true };
+}
+
+export async function upsertProject(project) {
+  const isUpdate = !!project.id;
+  return isUpdate ? updateProject(project.id, project) : createProject(project);
+}
+
+
 /**
  * Busca projetos com cache e validação
  * (Esta é a função principal usada pelo useProjects na página pública)

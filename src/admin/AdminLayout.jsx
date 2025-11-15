@@ -10,7 +10,7 @@ import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo
 import { apiRequest } from '../lib/apiConfig.js';
 import { realtime } from '../lib/realtime';
 import { getAllApps, updateApp } from '../services/appsAPI.js';
-import { getAll as getAllProjects } from '../services/projectsAPI.js';
+import { getAll as getAllProjects, deleteProject as deleteProjectApi } from '../services/projectsAPI.js';
 import { getAppPrice, getAppImageUrl } from '../utils/appModel.js';
 
 import AdminIdeias from './AdminIdeias.jsx';
@@ -1367,7 +1367,7 @@ export function Projetos() {
             <div className="btn-group">
               <button className="btn btn-secondary" onClick={()=>setForm({ id:p.id, titulo:p.title||p.titulo||'', owner:p.owner||'', descricao:p.description||p.descricao||'', data_inicio:p.startDate||p.data_inicio||'', status:p.status||'rascunho', preco:p.price??0, progresso:p.progress??0, thumb_url:p.thumb_url||'', tags:p.tags||[] })}>✏️</button>
               <button className="btn btn-outline" onClick={async()=>{ const res = await ProjectsRepo.toggleVisible(p); if(!res.ok){ setNotice({ type:'error', msg: res.error || 'Falha ao alternar visibilidade' }); } else { setNotice({ type:'success', msg:'Visibilidade atualizada' }); refresh(); } }} aria-label={`Visibilidade ${p.title||p.titulo||p.id}`}>{String(p.status||'').toLowerCase().includes('rascunho')?'Exibir':'Ocultar'}</button>
-              <button className="btn btn-danger" onClick={async()=>{ if(!window.confirm('Deletar este projeto?')) return; try { await apiRequest(`/api/projetos/${p.id}`, { method:'DELETE' }); setNotice({ type:'success', msg:'Projeto deletado com sucesso.' }); refresh(); } catch(e){ setNotice({ type:'error', msg: e.message || 'Falha ao deletar projeto' }); } }}>🗑️</button>
+              <button className="btn btn-danger" onClick={async()=>{ if(!window.confirm('Deletar este projeto?')) return; try { await deleteProjectApi(p.id); setNotice({ type:'success', msg:'Projeto deletado com sucesso.' }); refresh(); } catch(e){ setNotice({ type:'error', msg: e.message || 'Falha ao deletar projeto' }); } }}>🗑️</button>
             </div>
           </td>
         </tr>

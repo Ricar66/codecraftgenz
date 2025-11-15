@@ -53,7 +53,8 @@ const AdminInscricoes = () => {
       }
       
       const data = await apiRequest(`/api/inscricoes?${params.toString()}`, { method: 'GET' });
-      setInscricoes(Array.isArray(data) ? data : []);
+      const arr = Array.isArray(data) ? data : (data?.data || []);
+      setInscricoes(arr);
       setError(null);
     } catch (err) {
       setError(err.message);
