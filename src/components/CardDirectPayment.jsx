@@ -111,6 +111,11 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
             cardFormData?.issuer?.id ??
             undefined
           );
+          if (!paymentMethodId) {
+            setLoading(false);
+            setError('Preencha os dados do cartão e use o botão do formulário para enviar');
+            throw new Error('missing payment_method_id');
+          }
           const payload = {
             token: cardFormData.token,
             payment_method_id: paymentMethodId,
