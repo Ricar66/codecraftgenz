@@ -1237,6 +1237,13 @@ export function Projetos() {
   const { data: list, loading, error, refresh } = useProjects({ useAdminStore: true });
   const [form, setForm] = React.useState({ titulo:'', owner:'', descricao:'', data_inicio:'', status:'rascunho', preco:0, progresso:0, thumb_url:'', tags:[] });
   const [notice, setNotice] = React.useState({ type: '', msg: '' });
+  const [visDiag, setVisDiag] = React.useState(null);
+  const isInvalidUrl = (s) => {
+    const v = String(s || '');
+    const hasDrive = /^[a-zA-Z]:\\/.test(v);
+    const isFile = v.startsWith('file:');
+    return hasDrive || isFile;
+  };
   
   const onSave = async () => { 
     try {
@@ -1246,6 +1253,10 @@ export function Projetos() {
       }
       if (String(form.descricao || '').length < 10) {
         setNotice({ type: 'error', msg: 'Descrição muito curta. Adicione mais detalhes.' });
+        return;
+      }
+      if (isInvalidUrl(form.thumb_url)) {
+        setNotice({ type: 'error', msg: 'URL de imagem inválida. Use http(s) ou carregue um link público.' });
         return;
       }
       const savedProject = await ProjectsRepo.upsert(form);
@@ -1288,6 +1299,18 @@ export function Projetos() {
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageItems = filtered.slice((page-1)*pageSize, page*pageSize);
+
+  React.useEffect(() => {
+    if (pageItems.length > 0 && !loading && !error) {
+      const d = diagnoseVisibility('.admin-content .table');
+      setVisDiag(d);
+      if (d && d.ok === false) {
+        console.warn('[Admin:Projetos:invisible]', d);
+      } else {
+        console.log('[Admin:Projetos:visible]', d);
+      }
+    }
+  }, [pageItems.length, loading, error]);
   return (
     <div className="admin-content">
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -1330,6 +1353,11 @@ export function Projetos() {
         <p role={notice.type==='error'?'alert':'status'} style={{ color: notice.type==='error' ? '#FF6B6B' : '#00E4F2' }}>
           {notice.type==='error' ? '❌ ' : '✔ '} {notice.msg}
         </p>
+      )}
+      {visDiag && visDiag.ok === false && (
+        <div className="card" role="alert" style={{ borderColor:'#FF6B6B', color:'#FF6B6B', marginBottom:12 }}>
+          Elementos carregados mas invisíveis. display={visDiag.display}, visibility={visDiag.visibility}, opacity={visDiag.opacity}, z-index={visDiag.zIndex}. Top element: {visDiag.top ? (visDiag.top.cls || visDiag.top.tag) : '—'}
+        </div>
       )}
       
       <div className="table"><table><thead><tr><th>Título</th><th>Owner</th><th>Status</th><th>Preço</th><th>Progresso</th><th>📝</th><th>Ações</th></tr></thead><tbody>{pageItems.length===0 ? (<tr><td colSpan="7">📭 Nenhum projeto</td></tr>) : pageItems.map(p=> (
@@ -2294,6 +2322,7 @@ export function Apps() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
   const [form, setForm] = React.useState({ id:null, name:'', mainFeature:'', price:0, thumbnail:'', exec_url:'' });
+  const [visDiag, setVisDiag] = React.useState(null);
 
   const refresh = React.useCallback(async () => {
     try {
@@ -2319,9 +2348,25 @@ export function Apps() {
 
   React.useEffect(() => { refresh(); }, [refresh]);
 
+  React.useEffect(() => {
+    if (apps.length > 0 && !loading && !error) {
+      const d = diagnoseVisibility('.admin-content .table');
+      setVisDiag(d);
+      if (d && d.ok === false) console.warn('[Admin:Apps:invisible]', d); else console.log('[Admin:Apps:visible]', d);
+    }
+  }, [apps.length, loading, error]);
+
   const onSave = async () => {
     try {
       const payload = { name: form.name, mainFeature: form.mainFeature, price: Number(form.price||0), thumbnail: form.thumbnail, executableUrl: form.exec_url };
+      const isInvalid = (s) => {
+        const v = String(s || '');
+        const hasDrive = /^[a-zA-Z]:\\/.test(v);
+        const isFile = v.startsWith('file:');
+        return hasDrive || isFile;
+      };
+      if (isInvalid(form.thumbnail)) { setError('Thumbnail URL inválida. Use http(s).'); return; }
+      if (isInvalid(form.exec_url)) { setError('Exec URL inválida. Use http(s).'); return; }
       await updateApp(form.id, payload);
       setForm({ id:null, name:'', mainFeature:'', price:0, thumbnail:'', exec_url:'' });
       refresh();
@@ -2342,6 +2387,11 @@ export function Apps() {
 
       {loading && <p>🔄 Carregando…</p>}
       {error && <p role="alert" style={{ color:'#FF6B6B' }}>❌ {error}</p>}
+      {visDiag && visDiag.ok === false && (
+        <div className="card" role="alert" style={{ borderColor:'#FF6B6B', color:'#FF6B6B', marginBottom:12 }}>
+          Elementos carregados mas invisíveis. display={visDiag.display}, visibility={visDiag.visibility}, opacity={visDiag.opacity}, z-index={visDiag.zIndex}. Top element: {visDiag.top ? (visDiag.top.cls || visDiag.top.tag) : '—'}
+        </div>
+      )}
 
       <div className="table">
         <table>
@@ -2400,4 +2450,26 @@ export function Apps() {
       </section>
     </div>
   );
+}
+function diagnoseVisibility(rootSelector) {
+  try {
+    const root = typeof document !== 'undefined' ? document.querySelector(rootSelector) : null;
+    if (!root) return { ok: false, reason: 'root_not_found' };
+    const cs = getComputedStyle(root);
+    const rect = root.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const topEl = document.elementFromPoint(Math.max(0, centerX), Math.max(0, centerY));
+    const topInfo = topEl ? { tag: topEl.tagName, cls: topEl.className || '', id: topEl.id || '' } : null;
+    const ok = cs.display !== 'none' && cs.visibility !== 'hidden' && Number(cs.opacity || 1) > 0 && rect.height > 0 && rect.width > 0;
+    return {
+      ok,
+      display: cs.display,
+      visibility: cs.visibility,
+      opacity: cs.opacity,
+      zIndex: cs.zIndex,
+      rect: { w: rect.width, h: rect.height },
+      top: topInfo,
+    };
+  } catch { return { ok: false, reason: 'diagnose_error' }; }
 }

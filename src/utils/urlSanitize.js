@@ -6,7 +6,7 @@ export function sanitizeImageUrl(input) {
     if (!input || typeof input !== 'string') return '';
     const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
     const currentProtocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
-    const u = new URL(input, currentOrigin);
+  const u = new URL(input, currentOrigin);
 
     // Bloqueia imagens apontando para localhost em produção HTTPS
     const isHttpsPage = currentProtocol === 'https:';
@@ -17,11 +17,16 @@ export function sanitizeImageUrl(input) {
     }
 
     // Se a página é HTTPS e a imagem é HTTP em host externo, tenta upgrade para HTTPS
-    if (isHttpsPage && u.protocol === 'http:') {
-      u.protocol = 'https:';
-    }
+  if (isHttpsPage && u.protocol === 'http:') {
+    u.protocol = 'https:';
+  }
 
-    return u.href;
+  const allowed = ['https:', 'http:', 'data:'];
+  if (!allowed.includes(u.protocol)) {
+    return '/logo-codecraft.png';
+  }
+
+  return u.href;
   } catch {
     // Em falha de parse, usa fallback seguro
     return '/logo-codecraft.png';
