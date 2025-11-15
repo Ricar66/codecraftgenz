@@ -27,6 +27,11 @@ export async function getUsers() {
   }
 }
 
+export async function getAllUsers() {
+  const json = await apiRequest('/api/auth/users', { method: 'GET' });
+  return json.data;
+}
+
 /**
  * Cria um novo usuário administrativo
  * @param {Object} user - Dados do usuário

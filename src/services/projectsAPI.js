@@ -94,6 +94,19 @@ export const fetchProjectById = async (projectId) => {
 };
 
 
+export const getAll = async (params = { all: '1' }) => {
+  const qp = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      qp.append(key, value);
+    }
+  });
+  const endpoint = `/api/projetos${qp.toString() ? `?${qp.toString()}` : ''}`;
+  const json = await apiRequest(endpoint, { method: 'GET' });
+  return json.data;
+};
+
+
 /**
  * Busca projetos com cache e validação
  * (Esta é a função principal usada pelo useProjects na página pública)
