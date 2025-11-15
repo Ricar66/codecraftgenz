@@ -434,12 +434,11 @@ export const CraftersRepo = {
 export function useDesafios() {
   return useAsyncList(async () => {
     try {
-      const fbEnabled = !['off','false','0'].includes(String(import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK || 'off').toLowerCase());
       const data = await apiRequest('/api/desafios?all=1', { method: 'GET' });
       return data?.data || (Array.isArray(data) ? data : []);
     } catch (err) {
       const isUnauthorized = err && (err.status === 401 || String(err.message || '').includes('401'));
-      if (isUnauthorized && fbEnabled) {
+      if (isUnauthorized && !['off','false','0'].includes(String(import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK || 'off').toLowerCase())) {
         // Fallback para visíveis publicamente (param nome pode variar; manter "visible=true" por compatibilidade)
         const pub = await apiRequest('/api/desafios?visible=true', { method: 'GET' });
         return pub?.data || (Array.isArray(pub) ? pub : []);

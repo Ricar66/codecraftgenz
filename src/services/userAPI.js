@@ -8,18 +8,18 @@ import { apiRequest } from '../lib/apiConfig.js'; // Importa a função central
  */
 export async function getUsers() {
   try {
-    // CORREÇÃO: Usa apiRequest
-    const data = await apiRequest('/api/auth/users', {
-      method: 'GET'
-    });
-    
-    // Mapear os campos do banco para o formato esperado pelo frontend
-    return data.map(user => ({
-      id: user.id.toString(),
-      name: user.nome,
-      email: user.email,
-      role: user.role,
-      status: user.status === 'ativo' ? 'active' : 'inactive'
+    const res = await apiRequest('/api/auth/users', { method: 'GET' });
+    const list = Array.isArray(res?.data) ? res.data : (
+      Array.isArray(res?.users) ? res.users : (
+        Array.isArray(res) ? res : []
+      )
+    );
+    return list.map(user => ({
+      id: String(user.id ?? user.user_id ?? ''),
+      name: user.nome ?? user.name ?? '',
+      email: user.email ?? '',
+      role: user.role ?? 'viewer',
+      status: (user.status === 'ativo' || user.status === 'active') ? 'active' : 'inactive'
     }));
   } catch (error) {
     console.error('Erro ao buscar usuários:', error);

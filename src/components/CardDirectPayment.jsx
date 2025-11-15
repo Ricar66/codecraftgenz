@@ -2,14 +2,16 @@
 import { initMercadoPago } from '@mercadopago/sdk-react';
 import React, { useEffect, useRef, useState } from 'react';
 
+import { useAuth } from '../context/useAuth.js';
 import { createDirectPayment } from '../services/appsAPI.js';
 
-const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payButtonLabel = 'Pagar agora', buttonStyle }) => {
+const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo', onStatus, showPayButton = true, payButtonLabel = 'Pagar agora', buttonStyle }) => {
   const containerRef = useRef(null);
   const controllerRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { user } = useAuth();
 
   // Inicializa SDK JS v2 e aguarda disponibilidade de window.MercadoPago
   useEffect(() => {
@@ -128,6 +130,7 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
           const payerEmail = (
             cardFormData?.payer?.email ??
             cardFormData?.cardholderEmail ??
+            user?.email ??
             undefined
           );
           const payerIdentification = (() => {
@@ -143,6 +146,8 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
             installments: Number(cardFormData.installments || 1),
             binary_mode: true,
             capture: true,
+            transaction_amount: txAmount,
+            description: String(description || ''),
             ...(payerEmail ? { payer: { email: payerEmail, ...(payerIdentification ? { identification: payerIdentification } : {}) } } : {})
           };
           return createDirectPayment(appId, payload)
@@ -159,7 +164,8 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
               } else if (status === 502 && details?.error === 'NETWORK_ERROR') {
                 setError('Falha de rede ao contatar o Mercado Pago. Tente novamente.');
               } else if (status === 502 && (details?.mp_status || details?.message)) {
-                setError(`Pagamento não foi criado (${details?.mp_status || 'erro'}). Verifique os dados e tente novamente.`);
+                const msg = details?.message ? String(details.message) : 'Verifique os dados e tente novamente.';
+                setError(`Pagamento não foi criado (${details?.mp_status || 'erro'}: ${msg})`);
               } else if (status === 400 && Array.isArray(details?.cause)) {
                 const cause2056 = details.cause.find(c => String(c?.code) === '2056');
                 if (cause2056) {
@@ -168,7 +174,8 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
                   setError('Dados incompletos do cartão. Verifique e reenvie.');
                 }
               } else if (status === 400) {
-                setError('Dados incompletos do cartão. Verifique e reenvie.');
+                const msg = details?.message ? String(details.message) : 'Dados incompletos do cartão. Verifique e reenvie.';
+                setError(msg);
               } else {
                 setError(err?.message || 'Falha ao processar pagamento');
               }
@@ -189,7 +196,7 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
     return () => {
       try { controllerRef.current?.destroy(); } catch (e) { console.debug('Falha ao destruir brick de cartão', e); }
     };
-  }, [ready, amount, appId, onStatus]);
+  }, [ready, amount, appId, onStatus, description, user]);
 
   const handlePayClick = () => {
     setError('');
