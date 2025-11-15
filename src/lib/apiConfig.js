@@ -22,6 +22,12 @@ export const API_BASE_URL = getApiBaseUrl();
 
 // Função para fazer requisições com tratamento de erro melhorado
 export async function apiRequest(endpoint, options = {}) {
+  const isDebug = (
+    import.meta.env.DEV ||
+    ['on','true','1','yes'].includes(String(import.meta.env.VITE_DEBUG_ADMIN || '').toLowerCase()) ||
+    (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1') ||
+    (typeof localStorage !== 'undefined' && localStorage.getItem('cc_debug') === '1')
+  );
   // Agora o endpoint DEVE começar com /api/ (ex: /api/projetos)
   const url = `${API_BASE_URL}${endpoint}`;
   
@@ -40,7 +46,7 @@ export async function apiRequest(endpoint, options = {}) {
   }
   
   try {
-    if (import.meta.env.DEV) {
+    if (isDebug) {
       const m = String(options.method || 'GET').toUpperCase();
       console.log('[API:req]', m, endpoint);
     }
@@ -69,7 +75,7 @@ export async function apiRequest(endpoint, options = {}) {
       const apiError = new Error(errorMessage);
       apiError.status = response.status;
       if (errorDetails) apiError.details = errorDetails;
-      if (import.meta.env.DEV) {
+      if (isDebug) {
         console.error('[API:err]', endpoint, apiError.status, errorMessage, errorDetails || '');
       }
       throw apiError;
@@ -79,7 +85,7 @@ export async function apiRequest(endpoint, options = {}) {
     const contentType = response.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
       const json = await response.json();
-      if (import.meta.env.DEV) {
+      if (isDebug) {
         const size = Array.isArray(json?.data) ? json.data.length : (Array.isArray(json) ? json.length : undefined);
         console.log('[API:ok]', endpoint, response.status, typeof size === 'number' ? `items=${size}` : 'json');
       }
@@ -104,7 +110,7 @@ export async function apiRequest(endpoint, options = {}) {
       throw networkError;
     }
     
-    if (import.meta.env.DEV) {
+    if (isDebug) {
       console.error('[API:catch]', endpoint, error?.status || 0, error?.message || error);
     }
     throw error;
