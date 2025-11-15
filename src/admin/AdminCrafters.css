@@ -657,7 +657,7 @@
 }
 
 /* Oculta a tabela antiga se migrar totalmente para cards */
-.table {
+.admin-crafters .table {
   display: none;
 }
 .crafters-toolbar {
