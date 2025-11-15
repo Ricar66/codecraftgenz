@@ -8,7 +8,8 @@ export async function getMyApps({ page = 1, pageSize = 12, limit, sortBy, sortOr
   qp.set('pageSize', pageSize ?? limit ?? 12);
   if (sortBy) qp.set('sortBy', sortBy);
   if (sortOrder) qp.set('sortOrder', sortOrder);
-  return apiRequest(`/api/apps/mine?${qp.toString()}`, { method: 'GET' });
+  const resp = await apiRequest(`/api/apps/mine?${qp.toString()}`, { method: 'GET' });
+  return resp?.data ?? resp;
 }
 
 // Lista aplicativos públicos (sem autenticação)
@@ -18,7 +19,8 @@ export async function getPublicApps({ page = 1, pageSize = 24, sortBy = 'updated
   qp.set('pageSize', pageSize);
   qp.set('sortBy', sortBy);
   if (sortOrder) qp.set('sortOrder', sortOrder);
-  return apiRequest(`/api/apps/public?${qp.toString()}`, { method: 'GET' });
+  const resp = await apiRequest(`/api/apps/public?${qp.toString()}`, { method: 'GET' });
+  return resp?.data ?? resp;
 }
 
 // Lista todos apps (admin ou público conforme backend)
