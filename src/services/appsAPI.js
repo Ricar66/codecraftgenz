@@ -12,11 +12,12 @@ export async function getMyApps({ page = 1, pageSize = 12, limit, sortBy, sortOr
 }
 
 // Lista aplicativos públicos (sem autenticação)
-export async function getPublicApps({ page = 1, pageSize = 24, sortBy = 'updatedAt' } = {}) {
+export async function getPublicApps({ page = 1, pageSize = 24, sortBy = 'updatedAt', sortOrder } = {}) {
   const qp = new URLSearchParams();
   qp.set('page', page);
   qp.set('pageSize', pageSize);
   qp.set('sortBy', sortBy);
+  if (sortOrder) qp.set('sortOrder', sortOrder);
   return apiRequest(`/api/apps/public?${qp.toString()}`, { method: 'GET' });
 }
 

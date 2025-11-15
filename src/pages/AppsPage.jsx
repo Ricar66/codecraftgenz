@@ -5,9 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import AppCard from '../components/AppCard/AppCard';
 import Navbar from '../components/Navbar/Navbar';
 import { API_BASE_URL, apiRequest } from '../lib/apiConfig.js';
-import { getAppPrice } from '../utils/appModel.js';
 import { getHistory, upsertAppFromProject, getPublicApps, getPurchaseStatus } from '../services/appsAPI.js';
 import { getProjects } from '../services/projectsAPI.js';
+import { getAppPrice } from '../utils/appModel.js';
 import { appsCache } from '../utils/dataCache.js';
 import { globalPerformanceMonitor } from '../utils/performanceMonitor.js';
 

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 import AppCard from '../components/AppCard/AppCard.jsx';
 import Navbar from '../components/Navbar/Navbar.jsx';
-import { getAllApps } from '../services/appsAPI.js';
+import { getPublicApps } from '../services/appsAPI.js';
 import { getAppImageUrl } from '../utils/appModel.js';
 import { appsCache } from '../utils/dataCache.js';
 import { sanitizeSrcSet } from '../utils/urlSanitize.js';
@@ -53,7 +53,7 @@ const AppHubPage = () => {
         return;
       }
 
-      const json = await getAllApps({ page, pageSize, sortBy, sortOrder });
+      const json = await getPublicApps({ page, pageSize, sortBy, sortOrder });
       const list = Array.isArray(json?.data) ? json.data : (Array.isArray(json) ? json : []);
       setApps(list);
       appsCache.set(cacheKey, list);
