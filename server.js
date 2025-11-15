@@ -201,6 +201,88 @@ function mapUserRow(row) {
   };
 }
 
+// --- Garantir coluna mp_response_json em dbo.app_payments ---
+async function ensureAppPaymentsSchema() {
+  try {
+    const pool = await getConnectionPool();
+    await pool.request().query(`IF COL_LENGTH('dbo.app_payments', 'mp_response_json') IS NULL BEGIN ALTER TABLE dbo.app_payments ADD mp_response_json NVARCHAR(MAX) NULL; END;`);
+    console.log('✅ Esquema de dbo.app_payments verificado/ajustado (mp_response_json)');
+  } catch (err) {
+    console.error('Erro ao garantir esquema de dbo.app_payments (mp_response_json):', err);
+  }
+}
+
+// --- Garantir tabela de auditoria, colunas analíticas e índices (replica backups/2025-11-15_app_payments_audit_patch.sql) ---
+async function ensurePaymentsAuditPatch() {
+  const pool = await getConnectionPool();
+
+  // Criação idempotente da tabela dbo.app_payments_audit
+  await pool.request().query(`
+    IF OBJECT_ID('dbo.app_payments_audit','U') IS NULL
+    BEGIN
+      CREATE TABLE dbo.app_payments_audit (
+        id INT IDENTITY(1,1) PRIMARY KEY,
+        payment_id NVARCHAR(64) NULL,
+        preference_id NVARCHAR(64) NULL,
+        app_id INT NOT NULL,
+        user_id INT NULL,
+        action NVARCHAR(64) NOT NULL,
+        from_status NVARCHAR(32) NULL,
+        to_status NVARCHAR(32) NULL,
+        from_payment_id NVARCHAR(64) NULL,
+        to_payment_id NVARCHAR(64) NULL,
+        amount DECIMAL(18,2) NULL,
+        currency NVARCHAR(8) NULL,
+        payer_email NVARCHAR(128) NULL,
+        created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT FK_app_payments_audit_app FOREIGN KEY (app_id) REFERENCES dbo.apps(id),
+        CONSTRAINT FK_app_payments_audit_user FOREIGN KEY (user_id) REFERENCES dbo.users(id)
+      );
+    END;
+  `);
+
+  // Índice de auditoria: (app_id, created_at)
+  await pool.request().query(`
+    IF NOT EXISTS (
+      SELECT 1 FROM sys.indexes WHERE name = 'IX_app_payments_audit_app_date' AND object_id = OBJECT_ID('dbo.app_payments_audit')
+    )
+    BEGIN
+      CREATE INDEX IX_app_payments_audit_app_date ON dbo.app_payments_audit(app_id, created_at);
+    END;
+  `);
+
+  // Adição idempotente de colunas analíticas em dbo.app_payments
+  const addColumnIfMissing = async (name, type) => {
+    await pool.request().query(`
+      IF COL_LENGTH('dbo.app_payments','${name}') IS NULL
+      BEGIN
+        ALTER TABLE dbo.app_payments ADD ${name} ${type} NULL;
+      END;
+    `);
+  };
+
+  await addColumnIfMissing('status_detail', 'NVARCHAR(64)');
+  await addColumnIfMissing('payment_type_id', 'NVARCHAR(32)');
+  await addColumnIfMissing('issuer_id', 'NVARCHAR(32)');
+  await addColumnIfMissing('net_received_amount', 'DECIMAL(18,2)');
+  await addColumnIfMissing('installment_amount', 'DECIMAL(18,2)');
+  await addColumnIfMissing('payer_document_type', 'NVARCHAR(16)');
+  await addColumnIfMissing('payer_document_number', 'NVARCHAR(32)');
+  await addColumnIfMissing('mp_response_json', 'NVARCHAR(MAX)');
+
+  // Índice em dbo.app_payments(status, updated_at)
+  await pool.request().query(`
+    IF NOT EXISTS (
+      SELECT 1 FROM sys.indexes WHERE name = 'IX_app_payments_status_updated' AND object_id = OBJECT_ID('dbo.app_payments')
+    )
+    BEGIN
+      CREATE INDEX IX_app_payments_status_updated ON dbo.app_payments(status, updated_at);
+    END;
+  `);
+
+  console.log('✅ ensurePaymentsAuditPatch: tabela de auditoria, colunas e índices garantidos');
+}
+
 // --- ROTAS DA API (CONECTADAS AO BANCO) ---
 
 // Rota de health check
@@ -288,7 +370,8 @@ app.get('/api/health/db', async (req, res) => {
       net_received_amount: false,
       installment_amount: false,
       payer_document_type: false,
-      payer_document_number: false
+      payer_document_number: false,
+      mp_response_json: false
     },
     indexes: {
       app_payments_status_updated: false,
@@ -304,7 +387,7 @@ app.get('/api/health/db', async (req, res) => {
     // Colunas analíticas em app_payments
     const colsRes = await pool.request().query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='dbo' AND TABLE_NAME='app_payments'");
     const cols = new Set((colsRes.recordset || []).map(r => r.COLUMN_NAME));
-    ['status_detail','payment_type_id','issuer_id','net_received_amount','installment_amount','payer_document_type','payer_document_number']
+    ['status_detail','payment_type_id','issuer_id','net_received_amount','installment_amount','payer_document_type','payer_document_number','mp_response_json']
       .forEach(name => { out.analytic_columns[name] = cols.has(name); });
 
     // Índices
@@ -2392,7 +2475,8 @@ app.post('/api/apps/:id/payment/direct', async (req, res) => {
         .input('installment_amount', dbSql.Decimal(18, 2), installmentAmount)
         .input('payer_document_type', dbSql.NVarChar, docType)
         .input('payer_document_number', dbSql.NVarChar, docNumber)
-        .query("UPDATE dbo.app_payments SET payment_id=@pid, status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND status='pending'");
+        .input('mp_response_json', dbSql.NVarChar(dbSql.MAX), JSON.stringify(json))
+        .query("UPDATE dbo.app_payments SET payment_id=@pid, status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, mp_response_json=@mp_response_json, updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND status='pending'");
 
       let affected = updPending?.rowsAffected?.[0] || 0;
       if (affected === 0) {
@@ -2412,7 +2496,8 @@ app.post('/api/apps/:id/payment/direct', async (req, res) => {
           .input('installment_amount', dbSql.Decimal(18, 2), installmentAmount)
           .input('payer_document_type', dbSql.NVarChar, docType)
           .input('payer_document_number', dbSql.NVarChar, docNumber)
-          .query('INSERT INTO dbo.app_payments (payment_id, app_id, user_id, status, amount, currency, payer_email, source, status_detail, payment_type_id, issuer_id, net_received_amount, installment_amount, payer_document_type, payer_document_number) VALUES (@pid, @app_id, @user_id, @status, @amount, @currency, @payer_email, @source, @status_detail, @payment_type_id, @issuer_id, @net_received_amount, @installment_amount, @payer_document_type, @payer_document_number)');
+          .input('mp_response_json', dbSql.NVarChar(dbSql.MAX), JSON.stringify(json))
+          .query('INSERT INTO dbo.app_payments (payment_id, app_id, user_id, status, amount, currency, payer_email, source, status_detail, payment_type_id, issuer_id, net_received_amount, installment_amount, payer_document_type, payer_document_number, mp_response_json) VALUES (@pid, @app_id, @user_id, @status, @amount, @currency, @payer_email, @source, @status_detail, @payment_type_id, @issuer_id, @net_received_amount, @installment_amount, @payer_document_type, @payer_document_number, @mp_response_json)');
       }
 
       // Auditoria
@@ -2667,7 +2752,8 @@ app.post('/api/apps/webhook', async (req, res) => {
                 .input('installment_amount', dbSql.Decimal(18, 2), installmentAmount)
                 .input('payer_document_type', dbSql.NVarChar, docType)
                 .input('payer_document_number', dbSql.NVarChar, docNumber)
-                .query('UPDATE dbo.app_payments SET status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, updated_at=SYSUTCDATETIME() WHERE payment_id=@pid');
+                .input('mp_response_json', dbSql.NVarChar(dbSql.MAX), JSON.stringify(pay))
+                .query('UPDATE dbo.app_payments SET status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, mp_response_json=@mp_response_json, updated_at=SYSUTCDATETIME() WHERE payment_id=@pid');
 
               let affected = updByPid?.rowsAffected?.[0] || 0;
               if (affected === 0) {
@@ -2686,7 +2772,8 @@ app.post('/api/apps/webhook', async (req, res) => {
                   .input('installment_amount', dbSql.Decimal(18, 2), installmentAmount)
                   .input('payer_document_type', dbSql.NVarChar, docType)
                   .input('payer_document_number', dbSql.NVarChar, docNumber)
-                  .query("UPDATE dbo.app_payments SET payment_id=@pid, status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND status='pending'");
+                  .input('mp_response_json', dbSql.NVarChar(dbSql.MAX), JSON.stringify(pay))
+                  .query("UPDATE dbo.app_payments SET payment_id=@pid, status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, mp_response_json=@mp_response_json, updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND status='pending'");
                 affected = updPending?.rowsAffected?.[0] || 0;
                 if (affected > 0) {
                   // Auditoria de correção de payment_id (webhook)
@@ -2717,7 +2804,8 @@ app.post('/api/apps/webhook', async (req, res) => {
                   .input('currency', dbSql.NVarChar, currencyVal)
                   .input('payer_email', dbSql.NVarChar, payerEmail)
                   .input('source', dbSql.NVarChar, 'mercado_pago')
-                  .query('INSERT INTO dbo.app_payments (payment_id, app_id, user_id, status, amount, currency, payer_email, source) VALUES (@pid, @app_id, @user_id, @status, @amount, @currency, @payer_email, @source)');
+                  .input('mp_response_json', dbSql.NVarChar(dbSql.MAX), JSON.stringify(pay))
+                  .query('INSERT INTO dbo.app_payments (payment_id, app_id, user_id, status, amount, currency, payer_email, source, mp_response_json) VALUES (@pid, @app_id, @user_id, @status, @amount, @currency, @payer_email, @source, @mp_response_json)');
                 // Auditoria de inserção faltante (webhook)
                 await pool.request()
                   .input('payment_id', dbSql.NVarChar, String(data.id))
@@ -2813,11 +2901,28 @@ app.get('/api/admin/app-payments/:pid', async (req, res) => {
     const req1 = pool.request().input('pid', dbSql.NVarChar, pid);
     const paymentResp = await req1.query(`SELECT TOP(1)
       payment_id, app_id, preference_id, status, amount, currency, payer_email, source, updated_at,
-      status_detail, payment_type_id, issuer_id, net_received_amount, installment_amount, payer_document_type, payer_document_number, metadata
+      status_detail, payment_type_id, issuer_id, net_received_amount, installment_amount, payer_document_type, payer_document_number, metadata, mp_response_json
       FROM dbo.app_payments WHERE payment_id=@pid`);
     const payment = paymentResp?.recordset?.[0] || null;
     const auditResp = await pool.request().input('pid', dbSql.NVarChar, pid)
-      .query('SELECT TOP(200) payment_id, app_id, event, status, created_at, notes FROM dbo.app_payments_audit WHERE payment_id=@pid ORDER BY created_at DESC');
+      .query(`SELECT TOP(200)
+        payment_id,
+        app_id,
+        action AS event,
+        to_status AS status,
+        created_at,
+        CAST(NULL AS NVARCHAR(255)) AS notes,
+        action,
+        from_status,
+        to_status,
+        from_payment_id,
+        to_payment_id,
+        amount,
+        currency,
+        payer_email
+      FROM dbo.app_payments_audit
+      WHERE payment_id=@pid
+      ORDER BY created_at DESC`);
     const audit = auditResp?.recordset || [];
     res.json({ success: true, data: { payment, audit } });
   } catch (e) {
@@ -2846,6 +2951,8 @@ app.use((err, req, res, next) => {
 // --- Inicialização do Servidor (aguarda conexão ao banco) ---
 getConnectionPool().then(async () => {
   await ensureUserTableSchema();
+  await ensurePaymentsAuditPatch();
+  await ensureAppPaymentsSchema();
   app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
     console.log(`📱 Ambiente: ${process.env.NODE_ENV || 'development'}`);

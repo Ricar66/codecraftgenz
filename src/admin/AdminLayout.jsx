@@ -2060,7 +2060,6 @@ export function Config() {
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
-  const isAdmin = String(user?.role || '').toLowerCase() === 'admin';
   const [globalErr, setGlobalErr] = React.useState(null);
   const [sidebarOpen, setSidebarOpen] = React.useState(() => {
     if (typeof window === 'undefined') return true;
@@ -2092,7 +2091,7 @@ export default function AdminLayout() {
             <span className={styles.menuIcon}>🏠</span>
             <span className={styles.menuText}>Dashboard</span>
           </NavLink>
-          {isAdmin && (
+          {String(user?.role || '').toLowerCase() === 'admin' && (
             <NavLink to="/admin/usuarios" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
               <span className={styles.menuIcon}>👤</span>
               <span className={styles.menuText}>Usuários</span>

@@ -701,6 +701,28 @@ export default function AdminPagamentos() {
                 </table>
               </div>
             )}
+            {dbSummary?.payment?.mp_response_json && (
+              <div style={{ marginTop:12 }}>
+                <div className="muted">Resposta MP (persistida)</div>
+                <div className="btn-group" style={{ marginBottom:8 }}>
+                  <button className="btn btn-outline" onClick={()=>{ try { navigator.clipboard?.writeText(String(dbSummary.payment.mp_response_json||'')); } catch (err) { void err; } }}>Copiar JSON</button>
+                </div>
+                <pre style={{ whiteSpace:'pre-wrap', fontSize:12 }}>
+                  {(() => { try { return JSON.stringify(JSON.parse(dbSummary.payment.mp_response_json), null, 2); } catch { return String(dbSummary.payment.mp_response_json); } })()}
+                </pre>
+              </div>
+            )}
+            {!dbSummary?.payment?.mp_response_json && dbSummary?.payment?.response_json && (
+              <div style={{ marginTop:12 }}>
+                <div className="muted">Resposta MP (persistida)</div>
+                <div className="btn-group" style={{ marginBottom:8 }}>
+                  <button className="btn btn-outline" onClick={()=>{ try { navigator.clipboard?.writeText(String(dbSummary.payment.response_json||'')); } catch (err) { void err; } }}>Copiar JSON</button>
+                </div>
+                <pre style={{ whiteSpace:'pre-wrap', fontSize:12 }}>
+                  {(() => { try { return JSON.stringify(JSON.parse(dbSummary.payment.response_json), null, 2); } catch { return String(dbSummary.payment.response_json); } })()}
+                </pre>
+              </div>
+            )}
           </details>
         </section>
       )}

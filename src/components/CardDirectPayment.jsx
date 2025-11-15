@@ -37,7 +37,7 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
 
     const waitForSDK = () => new Promise((resolve, reject) => {
       const start = Date.now();
-      const maxWaitMs = 15000; // aguarda até 15s (fallback manual pode demorar mais)
+      const maxWaitMs = 15000;
       const tick = () => {
         if (cancelled) return;
         if (window.MercadoPago) return resolve();
@@ -71,15 +71,13 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
 
     const mp = window.MercadoPago ? new window.MercadoPago(PK, { locale: 'pt-BR' }) : null;
     if (!mp) {
-      // Se ainda não disponível aqui, deixa o efeito inicial cuidar do erro
       return;
     }
 
     const bricksBuilder = mp.bricks();
     const settings = {
       initialization: {
-        amount: Number(amount || 0),
-        payer: { email: '' },
+        amount: Number(amount || 0)
       },
       customization: {
         visual: {
@@ -93,9 +91,7 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
         },
       },
       callbacks: {
-        onReady: () => {
-          // Brick pronto
-        },
+        onReady: () => {},
         onSubmit: (cardFormData) => {
           setLoading(true);
           setError('');
@@ -120,12 +116,10 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
             token: cardFormData.token,
             payment_method_id: paymentMethodId,
             ...(issuerId ? { issuer_id: issuerId } : {}),
-            installments: Number(cardFormData.installments || 1),
-            payer: { email: cardFormData.payer?.email || '' },
+            installments: Number(cardFormData.installments || 1)
           };
           return createDirectPayment(appId, payload)
             .then((resp) => {
-              // Exibe no console o JSON completo da resposta
               try { console.log('Pagamento direto (resp):', resp); } catch {}
               const nextStatus = resp?.status || resp?.data?.status || 'pending';
               if (typeof onStatus === 'function') onStatus(nextStatus, resp);
@@ -161,7 +155,6 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
       setError('Brick de pagamento não inicializado');
       return;
     }
-    // Alguns Bricks expõem submit(); se não existir, mostramos instrução ao usuário
     if (typeof controllerRef.current.submit === 'function') {
       try {
         setLoading(true);
