@@ -124,7 +124,7 @@ export function Dashboard() {
           <h1 className="title">Painel CodeCraft Gen-Z – Visão Geral</h1>
           <p className="muted">{loading ? '🔄 Carregando informações do período…' : (erro ? '❌ Erro ao sincronizar com as finanças.' : '✅ Dados atualizados com sucesso.')}</p>
         </div>
-        <div style={{ display:'flex', gap:8 }}>
+        <div className="row wrap stack-sm" style={{ display:'flex', gap:8 }}>
           <select value={periodo} onChange={e=>setPeriodo(e.target.value)} aria-label="Período">
             <option value="7d">7 dias</option>
             <option value="30d">30 dias</option>
@@ -150,7 +150,7 @@ export function Dashboard() {
         </div>
       </header>
 
-      <section className="kpis" style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:12 }}>
+      <section className="kpis content-container" style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:12 }}>
         <div className="card"><h3>🧩 Projetos Ativos</h3><p>{kpis.projetos_ativos || 0}</p></div>
         <div className="card"><h3>🏁 Projetos Finalizados</h3><p>{kpis.projetos_finalizados || 0}</p></div>
         <div className="card"><h3>💰 Receita Total</h3><p>R$ {(kpis.receita_total || 0).toLocaleString('pt-BR')}</p></div>
@@ -159,7 +159,7 @@ export function Dashboard() {
         <div className="card"><h3>💳 Receita Paga</h3><p>R$ {(kpis.receita_paga || 0).toLocaleString('pt-BR')}</p></div>
       </section>
 
-      <section className="graficos" style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:12, marginTop:16 }}>
+      <section className="graficos content-container" style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:12, marginTop:16 }}>
         {/* Linha – evolução mensal */}
         <div className="chart card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', borderRadius:12, padding:12 }}>
           <h3 style={{ marginBottom:8 }}>Evolução de Receita</h3>
@@ -224,7 +224,7 @@ export function Dashboard() {
       </section>
 
       {/* Barras – status projeto + Termômetro progresso */}
-      <section className="barras" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginTop:16 }}>
+      <section className="barras content-container" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginTop:16 }}>
         <div className="chart card" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.16)', borderRadius:12, padding:12 }}>
           <h3>Distribuição de Projetos</h3>
           <div style={{ display:'grid', gap:8, marginTop:8 }}>
@@ -251,7 +251,7 @@ export function Dashboard() {
       {/* Tabela Resumo */}
       <section style={{ marginTop:16 }}>
         <h3>Tabela Resumo</h3>
-        <div className="table">
+        <div className="table content-container">
           <table>
             <thead><tr><th>Projeto</th><th>Status</th><th>Valor</th><th>Progresso</th><th>Última Atualização</th></tr></thead>
             <tbody>

@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('../../lib/apiConfig.js', () => ({
   apiRequest: vi.fn(async (endpoint) => {
-    if (endpoint.startsWith('/api/admin/projetos')) {
+    if (endpoint.startsWith('/api/projetos?all=1')) {
       throw Object.assign(new Error('Resposta da API não é JSON'), { status: 200 });
     }
     if (endpoint.startsWith('/api/projetos')) {
