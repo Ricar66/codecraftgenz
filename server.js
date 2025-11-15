@@ -64,6 +64,7 @@ const __dirname = path.dirname(__filename);
 
 // --- Configuração do Servidor Express ---
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT_OVERRIDE || process.env.PORT || 8080;
 const JWT_SECRET = process.env.JWT_SECRET;
 const ADMIN_RESET_TOKEN = process.env.ADMIN_RESET_TOKEN;
