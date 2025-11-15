@@ -152,13 +152,19 @@ export const MentorsRepo = {
 // Projetos
 export function useProjects() {
   const result = useAsyncList(async () => {
-    // Para admin, usar chamada direta com all=1 para garantir que todos os projetos sejam carregados
-    const response = await fetch(`${apiConfig.baseURL}/api/projetos?all=1`);
-    if (!response.ok) {
-      throw new Error(`Erro HTTP: ${response.status}`);
+    // Primeiro tenta como admin (inclui Authorization via apiRequest)
+    try {
+      const adminData = await apiRequest(`/api/projetos?all=1`, { method: 'GET' });
+      return Array.isArray(adminData?.data) ? adminData.data : (Array.isArray(adminData) ? adminData : []);
+    } catch (err) {
+      // Se não autenticado, faz fallback para listagem pública
+      const isUnauthorized = err && (err.status === 401 || String(err.message || '').includes('401'));
+      if (isUnauthorized) {
+        const publicData = await apiRequest(`/api/projetos?visivel=true`, { method: 'GET' });
+        return Array.isArray(publicData?.data) ? publicData.data : (Array.isArray(publicData) ? publicData : []);
+      }
+      throw err;
     }
-    const data = await response.json();
-    return Array.isArray(data?.data) ? data.data : [];
   });
 
   useEffect(() => {
@@ -426,12 +432,18 @@ export const CraftersRepo = {
 // Desafios
 export function useDesafios() {
   return useAsyncList(async () => {
-    const response = await fetch('/api/desafios?all=1');
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar desafios: ${response.status}`);
+    try {
+      const data = await apiRequest('/api/desafios?all=1', { method: 'GET' });
+      return data?.data || (Array.isArray(data) ? data : []);
+    } catch (err) {
+      const isUnauthorized = err && (err.status === 401 || String(err.message || '').includes('401'));
+      if (isUnauthorized) {
+        // Fallback para visíveis publicamente (param nome pode variar; manter "visible=true" por compatibilidade)
+        const pub = await apiRequest('/api/desafios?visible=true', { method: 'GET' });
+        return pub?.data || (Array.isArray(pub) ? pub : []);
+      }
+      throw err;
     }
-    const data = await response.json();
-    return data.data || [];
   });
 }
 
@@ -565,12 +577,8 @@ export const DesafiosRepo = {
 // Finanças
 export function useFinance() {
   return useAsyncList(async () => {
-    const response = await fetch('/api/financas');
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar finanças: ${response.status}`);
-    }
-    const data = await response.json();
-    return data.data || [];
+    const data = await apiRequest('/api/financas', { method: 'GET' });
+    return data?.data || (Array.isArray(data) ? data : []);
   });
 }
 
