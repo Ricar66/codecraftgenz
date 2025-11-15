@@ -160,7 +160,7 @@ export const getProjects = async (options = {}) => {
     const projects = Array.isArray(data?.data) ? data.data : (Array.isArray(data?.projects) ? data.projects : []);
     console.log('🔍 Dados originais do banco:', projects);
     
-    const mappedProjects = projects.map(project => ({
+    let mappedProjects = projects.map(project => ({
       ...project,
       title: project.titulo || project.title || project.nome, // Adiciona 'nome'
       description: project.descricao || project.description,
@@ -174,6 +174,12 @@ export const getProjects = async (options = {}) => {
       price: project.preco || project.price, // Adiciona 'preco'
       progress: project.progresso || project.progress // Adiciona 'progresso'
     }));
+    if (options.publicOnly) {
+      mappedProjects = mappedProjects.filter(p => {
+        const s = String(p.status || '').toLowerCase();
+        return s !== 'rascunho' && s !== 'draft';
+      });
+    }
     
     console.log('🔄 Dados mapeados:', mappedProjects);
     
