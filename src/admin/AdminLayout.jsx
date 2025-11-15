@@ -2280,7 +2280,7 @@ export function Apps() {
       <div className="table">
         <table>
           <thead>
-            <tr><th>Nome</th><th>Feature</th><th>Preço</th><th>Thumb</th><th>Exec URL</th><th>Ações</th></tr>
+            <tr><th>Nome</th><th>Feature</th><th>Status</th><th>Preço</th><th>Thumb</th><th>Exec URL</th><th>Ações</th></tr>
           </thead>
           <tbody>
           {apps.length === 0 ? (
@@ -2289,12 +2289,25 @@ export function Apps() {
             <tr key={a.id}>
               <td data-label="Nome">{a.name}</td>
               <td data-label="Feature" title={a.mainFeature}>{String(a.mainFeature || '').slice(0, 60)}</td>
+              <td data-label="Status">
+                <span style={{ 
+                  background: String(a.status||'').toLowerCase()==='available' ? '#00E4F2' : '#666', 
+                  color: '#fff', padding: '4px 8px', borderRadius: '12px', fontSize: '0.8em', fontWeight: 'bold'
+                }}>
+                  {a.status || '—'}
+                </span>
+              </td>
                 <td data-label="Preço">R$ {getAppPrice(a).toLocaleString('pt-BR')}</td>
                 <td data-label="Thumb"><a href={getAppImageUrl(a)} target="_blank" rel="noopener noreferrer">thumbnail</a></td>
               <td data-label="Exec URL"><a href={a.executableUrl} target="_blank" rel="noopener noreferrer">exec</a></td>
               <td data-label="Ações">
                 <div className="btn-group">
                   <button className="btn btn-secondary" onClick={()=>setForm({ id:a.id, name:a.name||'', mainFeature:a.mainFeature||'', price:a.price||0, thumbnail:a.thumbnail||'', exec_url:a.executableUrl||'' })}>✏️</button>
+                  <button className="btn btn-outline" onClick={async()=>{
+                    const curr = String(a.status||'').toLowerCase();
+                    const next = curr==='available' ? 'draft' : 'available';
+                    try { await updateApp(a.id, { status: next }); refresh(); } catch(e){ alert(e.message||'Falha ao alternar visibilidade'); }
+                  }} aria-label={`Visibilidade ${a.name||a.id}`}>{String(a.status||'').toLowerCase()==='available'?'Ocultar':'Exibir'}</button>
                 </div>
               </td>
             </tr>
