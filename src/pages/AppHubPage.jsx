@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 import AppCard from '../components/AppCard/AppCard.jsx';
+import { sanitizeImageUrl, sanitizeSrcSet } from '../utils/urlSanitize.js';
+import { getAppImageUrl } from '../utils/appModel.js';
 import Navbar from '../components/Navbar/Navbar.jsx';
 import { getAllApps } from '../services/appsAPI.js';
 import { appsCache } from '../utils/dataCache.js';
@@ -304,7 +306,7 @@ const AppHubPage = () => {
                 <div key={app.id} className={styles.highlightCard}>
                   <img
                     className={styles.highlightMedia}
-                    src={app.image || app.thumbnail || '/vite.svg'}
+                    src={getAppImageUrl(app)}
                     alt={app.name ? `Destaque: ${app.name}` : 'Destaque do Hub'}
                     loading="lazy"
                     decoding="async"
@@ -312,8 +314,8 @@ const AppHubPage = () => {
                     fetchpriority={i === 0 ? 'high' : 'low'}
                     sizes="(max-width: 640px) 80vw, (max-width: 1024px) 50vw, 360px"
                     srcSet={(app.thumbnail && app.image)
-                      ? `${app.thumbnail} 480w, ${app.image} 800w, ${app.image} 1200w`
-                      : (app.image ? `${app.image} 800w, ${app.image} 1200w` : undefined)}
+                      ? sanitizeSrcSet(`${app.thumbnail} 480w, ${app.image} 800w, ${app.image} 1200w`)
+                      : (app.image ? sanitizeSrcSet(`${app.image} 800w, ${app.image} 1200w`) : undefined)}
                   />
                   <div className={styles.highlightOverlay}>
                     <div className={styles.highlightInfo}>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { sanitizeImageUrl } from '../../utils/urlSanitize.js';
 
 import styles from './ChallengeCard.module.css';
 
@@ -38,7 +39,7 @@ export default function ChallengeCard({ challenge }) {
   return (
     <article className={styles.card}>
       <div className={styles.header}>
-        {c.thumb_url ? (<img className={styles.thumb} src={c.thumb_url} alt="Thumb" />) : null}
+        {c.thumb_url ? (<img className={styles.thumb} src={sanitizeImageUrl(c.thumb_url)} alt="Thumb" />) : null}
         <h3 className={styles.name}>{c.name}</h3>
         <span className={styles.pill}>{diffLabel(c.difficulty)}</span>
       </div>

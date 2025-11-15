@@ -152,6 +152,7 @@ export const MentorsRepo = {
 // Projetos
 export function useProjects() {
   const result = useAsyncList(async () => {
+    const fbEnabled = !['off','false','0'].includes(String(import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK || 'off').toLowerCase());
     // Primeiro tenta como admin (inclui Authorization via apiRequest)
     try {
       const adminData = await apiRequest(`/api/projetos?all=1`, { method: 'GET' });
@@ -159,7 +160,7 @@ export function useProjects() {
     } catch (err) {
       // Se não autenticado, faz fallback para listagem pública
       const isUnauthorized = err && (err.status === 401 || String(err.message || '').includes('401'));
-      if (isUnauthorized) {
+      if (isUnauthorized && fbEnabled) {
         const publicData = await apiRequest(`/api/projetos?visivel=true`, { method: 'GET' });
         return Array.isArray(publicData?.data) ? publicData.data : (Array.isArray(publicData) ? publicData : []);
       }
@@ -433,11 +434,12 @@ export const CraftersRepo = {
 export function useDesafios() {
   return useAsyncList(async () => {
     try {
+      const fbEnabled = !['off','false','0'].includes(String(import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK || 'off').toLowerCase());
       const data = await apiRequest('/api/desafios?all=1', { method: 'GET' });
       return data?.data || (Array.isArray(data) ? data : []);
     } catch (err) {
       const isUnauthorized = err && (err.status === 401 || String(err.message || '').includes('401'));
-      if (isUnauthorized) {
+      if (isUnauthorized && fbEnabled) {
         // Fallback para visíveis publicamente (param nome pode variar; manter "visible=true" por compatibilidade)
         const pub = await apiRequest('/api/desafios?visible=true', { method: 'GET' });
         return pub?.data || (Array.isArray(pub) ? pub : []);

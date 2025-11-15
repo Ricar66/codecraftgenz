@@ -10,6 +10,7 @@ import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo
 import { apiRequest } from '../lib/apiConfig.js';
 import { realtime } from '../lib/realtime';
 import { getAllApps, updateApp } from '../services/appsAPI.js';
+import { getAppPrice, getAppImageUrl } from '../utils/appModel.js';
 
 import AdminIdeias from './AdminIdeias.jsx';
 import styles from './AdminLayout.module.css';
@@ -101,11 +102,12 @@ export function Dashboard() {
   const lineSeries = React.useMemo(() => Array.isArray(resumo?.evolucao_mensal) ? resumo.evolucao_mensal : [], [resumo?.evolucao_mensal]);
 
   const exportCsv = () => {
-    const cols = ['Projeto','Status','Valor','Progresso','UltimaAtualizacao'];
+    const cols = ['Projeto','Status','ValorBRL','ValorNum','Progresso','UltimaAtualizacao'];
     const rows = filteredProjects.map(p => [
       p.title,
       statusMap(p.status),
-      Number(p.price || 0),
+      `R$ ${getAppPrice(p).toLocaleString('pt-BR')}`,
+      getAppPrice(p),
       Number(p.progress || 0),
       p.startDate || ''
     ]);
@@ -259,7 +261,7 @@ export function Dashboard() {
                 <tr key={p.id}>
                   <td data-label="Projeto">{p.title}</td>
                   <td data-label="Status">{statusMap(p.status)}</td>
-                  <td data-label="Valor">R$ {Number(p.price||0).toLocaleString('pt-BR')}</td>
+                <td data-label="Valor">R$ {getAppPrice(p).toLocaleString('pt-BR')}</td>
                   <td data-label="Progresso">{Number(p.progress||0)}%</td>
                   <td data-label="Última Atualização">{p.startDate ? new Date(p.startDate).toLocaleDateString('pt-BR') : '—'}</td>
                 </tr>
@@ -1295,7 +1297,7 @@ export function Projetos() {
               {p.status}
             </span>
           </td>
-          <td data-label="Preço" style={{ fontWeight: 'bold', color: '#00E4F2' }}>R$ {(p.price ?? p.preco ?? 0).toLocaleString('pt-BR')}</td>
+                  <td data-label="Preço" style={{ fontWeight: 'bold', color: '#00E4F2' }}>R$ {getAppPrice(p).toLocaleString('pt-BR')}</td>
           <td data-label="Progresso">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 60, height: 6, background: '#E0E0E0', borderRadius: 3 }}>
@@ -2238,7 +2240,7 @@ export function Apps() {
     try {
       setLoading(true);
       setError('');
-      const json = await getAllApps({ page: 1, pageSize: 100 });
+      const json = await getAllApps({ page: 1, pageSize: 100, publicFallback: false });
       const list = Array.isArray(json?.data) ? json.data : (Array.isArray(json) ? json : []);
       setApps(list);
     } catch (e) {
@@ -2284,8 +2286,8 @@ export function Apps() {
             <tr key={a.id}>
               <td data-label="Nome">{a.name}</td>
               <td data-label="Feature" title={a.mainFeature}>{String(a.mainFeature || '').slice(0, 60)}</td>
-              <td data-label="Preço">R$ {Number(a.price||0).toLocaleString('pt-BR')}</td>
-              <td data-label="Thumb"><a href={a.thumbnail} target="_blank" rel="noopener noreferrer">thumbnail</a></td>
+                <td data-label="Preço">R$ {getAppPrice(a).toLocaleString('pt-BR')}</td>
+                <td data-label="Thumb"><a href={getAppImageUrl(a)} target="_blank" rel="noopener noreferrer">thumbnail</a></td>
               <td data-label="Exec URL"><a href={a.executableUrl} target="_blank" rel="noopener noreferrer">exec</a></td>
               <td data-label="Ações">
                 <div className="btn-group">

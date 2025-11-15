@@ -49,17 +49,20 @@ export async function apiRequest(endpoint, options = {}) {
     });
 
     if (!response.ok) {
-      // Tenta extrair mensagem de erro do servidor
+      // Tenta extrair mensagem de erro do servidor e propaga detalhes
       let errorMessage = `HTTP ${response.status}`;
+      let errorDetails = null;
       try {
         const errorData = await response.json();
         errorMessage = errorData.error || errorData.message || errorMessage;
+        errorDetails = errorData;
       } catch {
         // Se não conseguir parsear JSON, usa mensagem padrão
       }
-      
+
       const apiError = new Error(errorMessage);
       apiError.status = response.status;
+      if (errorDetails) apiError.details = errorDetails;
       throw apiError;
     }
 

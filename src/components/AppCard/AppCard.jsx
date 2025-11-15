@@ -1,11 +1,13 @@
 // src/components/AppCard/AppCard.jsx
 import React from 'react';
+import { getAppImageUrl, getAppPrice } from '../../utils/appModel.js';
 import { Link } from 'react-router-dom';
 
 const AppCard = ({ app, onDownload, mode = 'owned' }) => {
   const { id, name, mainFeature, thumbnail, image, price, status, version, size, category } = app;
   const finalized = status === 'finalizado' || status === 'available' || status === 'ready';
-  const displayPrice = price ? `R$ ${Number(price).toLocaleString('pt-BR')}` : 'Gratuito';
+  const safePrice = getAppPrice(app);
+  const displayPrice = safePrice > 0 ? `R$ ${safePrice.toLocaleString('pt-BR')}` : 'Gratuito';
   const displayVersion = version ? `v${version}` : 'v1.0';
   const displaySize = size ? `${size}` : '—';
 
@@ -14,7 +16,7 @@ const AppCard = ({ app, onDownload, mode = 'owned' }) => {
       <div className="app-media">
         {(thumbnail || image) ? (
           <img
-            src={thumbnail || image}
+            src={getAppImageUrl(app)}
             alt={name}
             className="app-thumb"
             loading="lazy"
