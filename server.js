@@ -158,11 +158,12 @@ await ensureLogoCodecraftPng();
 
 // --- REMOVEMOS OS MOCK DATA ---
 // const mockData = { ... };
-// const mockApps = [ ... ];
-// const mockHistory = [];
 
-// --- Configuração Mercado Pago (Mantido) ---
-const MP_ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN || '';
+const MP_ENV = String(process.env.MP_ENV || process.env.MERCADO_PAGO_ENV || '').toLowerCase();
+const MP_USE_PROD = MP_ENV === 'production' || MP_ENV === 'prod' || MP_ENV === 'live' || (!MP_ENV && (process.env.NODE_ENV || 'development') === 'production');
+const MP_ACCESS_TOKEN = MP_USE_PROD
+  ? (process.env.MERCADO_PAGO_ACCESS_TOKEN_PROD || process.env.MP_ACCESS_TOKEN_PROD || process.env.MERCADO_PAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN || '')
+  : (process.env.MERCADO_PAGO_ACCESS_TOKEN_SANDBOX || process.env.MP_ACCESS_TOKEN_SANDBOX || process.env.MERCADO_PAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN || '');
 const MP_SUCCESS_URL = process.env.MERCADO_PAGO_SUCCESS_URL || 'http://localhost:5173/apps/:id/compra';
 const MP_FAILURE_URL = process.env.MERCADO_PAGO_FAILURE_URL || 'http://localhost:5173/apps/:id/compra';
 const MP_PENDING_URL = process.env.MERCADO_PAGO_PENDING_URL || 'http://localhost:5173/apps/:id/compra';
@@ -1726,41 +1727,9 @@ app.get('/api/dashboard/resumo', authenticate, authorizeAdmin, async (req, res, 
 });
 
 
-// --- Rotas de Aplicativos (Mock mantido por enquanto, pois é complexo) ---
-// (As rotas /api/apps/... e Mercado Pago continuam aqui como mock)
-// ... (Copie e cole todas as rotas de /api/apps/... do seu server.js original aqui) ...
-// --- Mock de Aplicativos, Histórico e Feedbacks ---
-const mockApps = [
-  {
-    id: 101,
-    ownerId: 1,
-    name: 'CodeCraft CLI',
-    mainFeature: 'Automatiza tarefas de projeto',
-    description: 'Ferramenta de linha de comando para produtividade',
-    status: 'finalizado',
-    price: 49.9,
-    thumbnail: null,
-    executableUrl: 'https://example.com/downloads/codecraft-cli.exe',
-    created_at: new Date().toISOString(),
-    feedbacks: []
-  },
-  {
-    id: 102,
-    ownerId: 1,
-    name: 'Craft Studio',
-    mainFeature: 'IDE leve com plugins',
-    description: 'Editor com integrações CodeCraft',
-    status: 'ready',
-    price: 129.0,
-    thumbnail: null,
-    executableUrl: 'https://example.com/downloads/craft-studio.exe',
-    created_at: new Date().toISOString(),
-    feedbacks: []
-  }
-];
-const mockHistory = [];
+// --- Rotas de Aplicativos (Conectadas ao Banco) ---
 // Lista apps do usuário (permite acesso sem autenticação no ambiente atual)
-app.get('/api/apps/mine', authenticate, async (req, res) => {
+app.get('/api/apps/mine', authenticate, async (req, res, next) => {
   const page = parseInt(req.query.page || '1', 10);
   const pageSize = parseInt(req.query.pageSize || '12', 10);
   const userId = (req.user && req.user.id) ? req.user.id : 2; // default usuário comum
@@ -1782,11 +1751,8 @@ app.get('/api/apps/mine', authenticate, async (req, res) => {
     const rows = dataRes.recordset || [];
     return res.json({ success: true, data: rows, pagination: { total, page, pageSize } });
   } catch (err) {
-    console.warn('Erro ao listar apps do usuário, usando mock:', err);
-    // Fallback ao mock em caso de erro de banco
-    const list = mockApps.filter(a => a.ownerId === userId);
-    const paged = list.slice(start, start + pageSize);
-    return res.json({ success: true, data: paged, pagination: { total: list.length, page, pageSize } });
+    console.error('Erro ao listar apps do usuário:', err);
+    next(err);
   }
 });
 
@@ -1853,7 +1819,7 @@ app.get('/api/apps', authenticate, authorizeAdmin, async (req, res, next) => {
 });
 
 // Lista todos apps (público) – sem autenticação
-app.get('/api/apps/public', async (req, res) => {
+app.get('/api/apps/public', async (req, res, next) => {
   const page = parseInt(req.query.page || '1', 10);
   const pageSize = parseInt(req.query.pageSize || '50', 10);
   const sortBy = String(req.query.sortBy || '').toLowerCase();
@@ -1885,32 +1851,13 @@ app.get('/api/apps/public', async (req, res) => {
     const rows = dataRes.recordset || [];
     return res.json({ success: true, data: rows, pagination: { total, page, pageSize } });
   } catch (err) {
-    console.warn('Erro ao listar apps públicos, usando mock:', err);
-    // Fallback para mockApps caso banco indisponível
-    let list = [...mockApps];
-    if (sortBy) {
-      const dir = sortOrder === 'asc' ? 1 : -1;
-      list.sort((a, b) => {
-        switch (sortBy) {
-          case 'name':
-            return String(a.name || '').localeCompare(String(b.name || '')) * dir;
-          case 'price':
-            return ((a.price || 0) - (b.price || 0)) * dir;
-          case 'update':
-          case 'created_at':
-            return (new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) * dir;
-          default:
-            return 0;
-        }
-      });
-    }
-    const paged = list.slice(start, start + pageSize);
-    return res.json({ success: true, data: paged, pagination: { total: list.length, page, pageSize } });
+    console.error('Erro ao listar apps públicos:', err);
+    next(err);
   }
 });
 
 // Detalhes de um app (público para exibição na página de compra)
-app.get('/api/apps/:id', async (req, res) => {
+app.get('/api/apps/:id', async (req, res, next) => {
   const id = parseInt(req.params.id, 10);
   try {
     const pool = await getConnectionPool();
@@ -1921,20 +1868,15 @@ app.get('/api/apps/:id', async (req, res) => {
     if (dataRes.recordset.length) {
       return res.json({ success: true, data: dataRes.recordset[0] });
     }
-    // Fallback: tentar mockApps se não houver no banco
-    const mockItem = mockApps.find(a => a.id === id);
-    if (mockItem) return res.json({ success: true, data: mockItem });
     return res.status(404).json({ error: 'Aplicativo não encontrado' });
   } catch (err) {
-    console.warn('Erro ao buscar app por id, usando mock:', err);
-    const appItem = mockApps.find(a => a.id === id);
-    if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
-    return res.json({ success: true, data: appItem });
+    console.error('Erro ao buscar app por id:', err);
+    next(err);
   }
 });
 
 // Criar/atualizar card de app a partir de um projeto (admin)
-app.post('/api/apps/from-project/:projectId', authenticate, authorizeAdmin, async (req, res) => {
+app.post('/api/apps/from-project/:projectId', authenticate, authorizeAdmin, async (req, res, next) => {
   const projectId = parseInt(req.params.projectId, 10);
   const { name, mainFeature, price, thumbnail, executableUrl, status, ownerId } = req.body || {};
   const payload = {
@@ -1979,16 +1921,8 @@ app.post('/api/apps/from-project/:projectId', authenticate, authorizeAdmin, asyn
     const row = rowRes.recordset[0];
     return res.status(201).json({ success: true, data: row });
   } catch (err) {
-    console.warn('Erro ao criar/atualizar app a partir de projeto, usando mock:', err);
-    // Fallback para mock
-    let appItem = mockApps.find(a => a.id === projectId);
-    if (!appItem) {
-      appItem = { ...payload, created_at: new Date().toISOString(), feedbacks: [] };
-      mockApps.push(appItem);
-    } else {
-      Object.assign(appItem, payload);
-    }
-    return res.status(201).json({ success: true, data: appItem });
+    console.error('Erro ao criar/atualizar app a partir de projeto:', err);
+    next(err);
   }
 });
 
@@ -2086,28 +2020,27 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
     const outRes = await pool.request().input('id', dbSql.Int, id).query(`SELECT id, owner_id AS ownerId, name, main_feature AS mainFeature, description, status, price, thumbnail, executable_url AS executableUrl, created_at FROM dbo.apps WHERE id=@id`);
     return res.json({ success: true, data: outRes.recordset[0] });
   } catch (err) {
-    console.warn('Erro ao editar app, usando mock:', err);
-    const idx = mockApps.findIndex(a => a.id === id);
-    if (idx < 0) return res.status(404).json({ error: 'Aplicativo não encontrado' });
-    mockApps[idx] = {
-      ...mockApps[idx],
-      ...(name !== undefined ? { name } : {}),
-      ...(mainFeature !== undefined ? { mainFeature } : {}),
-      ...(price !== undefined ? { price } : {}),
-      ...(thumbnail !== undefined ? { thumbnail } : {}),
-      ...(executableUrl !== undefined ? { executableUrl } : {}),
-      ...(status !== undefined ? { status } : {}),
-      ...(ownerId !== undefined ? { ownerId } : {}),
-    };
-    return res.json({ success: true, data: mockApps[idx] });
+    console.error('Erro ao editar app:', err);
+    return res.status(500).json({ error: 'Erro ao editar aplicativo' });
   }
 });
 
 // Mercado Livre/Mercado Pago – criar preferência de pagamento (mock)
   app.post('/api/apps/:id/purchase', async (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const appItem = mockApps.find(a => a.id === id);
-  if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
+    const id = parseInt(req.params.id, 10);
+    // Buscar app no banco
+    let appItem = null;
+    try {
+      const pool = await getConnectionPool();
+      const dataRes = await pool.request()
+        .input('id', dbSql.Int, id)
+        .query(`SELECT id, owner_id AS ownerId, name, main_feature AS mainFeature, description, status, price, thumbnail, executable_url AS executableUrl, created_at FROM dbo.apps WHERE id = @id`);
+      appItem = dataRes.recordset[0] || null;
+    } catch (dbErr) {
+      console.error('Erro ao buscar app para preferência:', dbErr?.message || dbErr);
+      return res.status(500).json({ error: 'Erro interno ao buscar aplicativo' });
+    }
+    if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
 
   if (mpClient) {
     try {
@@ -2211,7 +2144,7 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
         amount: Number(appItem.price || 0),
         products: [{ title: appItem.name, quantity: 1, unit_price: Number(appItem.price || 0) }],
       });
-      mockHistory.push({ type: 'purchase', appId: id, app_name: appItem.name, status: 'pending', date: new Date().toISOString() });
+      // Histórico será persistido no banco abaixo
       // Persistir no banco: app_history (pending) e app_payments (pending) com novas colunas
       try {
         const pool = await getConnectionPool();
@@ -2261,74 +2194,26 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
     }
   }
 
-  // Fallback mock
-  const preference_id = `pref_${Date.now()}`;
-  // Detecta a origem da requisição em dev para construir URL de retorno coerente
-  const requestOrigin = req.headers.origin || req.headers.referer || '';
-  const baseAppUrl = (process.env.MERCADO_PAGO_SUCCESS_URL || '').includes('/apps/:id/compra')
-    ? null
-    : process.env.MERCADO_PAGO_SUCCESS_URL;
-  const computedSuccess = baseAppUrl
-    ? baseAppUrl
-    : (requestOrigin ? `${requestOrigin.replace(/\/$/, '')}/apps/:id/compra` : MP_SUCCESS_URL);
-  const successUrl = computedSuccess.replace(':id', String(id));
-  const init_point = `${successUrl}?preference_id=${preference_id}&status=pending&mock=1`;
-  paymentsByApp.set(id, {
-    payment_id: preference_id,
-    status: 'pending',
-    buyer: { id: req.user?.id, email: req.user?.email, name: req.user?.name },
-    amount: Number(appItem.price || 0),
-    products: [{ title: appItem.name, quantity: 1, unit_price: Number(appItem.price || 0) }],
-  });
-  mockHistory.push({ type: 'purchase', appId: id, app_name: appItem.name, status: 'pending', date: new Date().toISOString() });
-  // Persistir no banco: app_history (pending) e app_payments (pending) com novas colunas
-  try {
-    const pool = await getConnectionPool();
-    await pool.request()
-      .input('type', dbSql.NVarChar, 'purchase')
-      .input('app_id', dbSql.Int, id)
-      .input('app_name', dbSql.NVarChar, appItem.name)
-      .input('status', dbSql.NVarChar, 'pending')
-      .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
-    const metadataJson = JSON.stringify({ external_reference: String(id), source: 'mock' });
-    await pool.request()
-      .input('payment_id', dbSql.NVarChar, String(preference_id))
-      .input('preference_id', dbSql.NVarChar, String(preference_id))
-      .input('app_id', dbSql.Int, id)
-      .input('user_id', dbSql.Int, req.user?.id || null)
-      .input('status', dbSql.NVarChar, 'pending')
-      .input('amount', dbSql.Decimal(18, 2), Number(appItem.price || 0))
-      .input('currency', dbSql.NVarChar, 'BRL')
-      .input('payer_email', dbSql.NVarChar, req.user?.email || null)
-      .input('source', dbSql.NVarChar, 'mercado_pago')
-      .input('metadata', dbSql.NVarChar(dbSql.MAX), metadataJson)
-      .query('INSERT INTO dbo.app_payments (payment_id, preference_id, app_id, user_id, status, amount, currency, payer_email, source, metadata) VALUES (@payment_id, @preference_id, @app_id, @user_id, @status, @amount, @currency, @payer_email, @source, @metadata)');
-    // Auditoria
-    await pool.request()
-      .input('payment_id', dbSql.NVarChar, String(preference_id))
-      .input('preference_id', dbSql.NVarChar, String(preference_id))
-      .input('app_id', dbSql.Int, id)
-      .input('user_id', dbSql.Int, req.user?.id || null)
-      .input('action', dbSql.NVarChar, 'create_preference')
-      .input('from_status', dbSql.NVarChar, null)
-      .input('to_status', dbSql.NVarChar, 'pending')
-      .input('from_payment_id', dbSql.NVarChar, null)
-      .input('to_payment_id', dbSql.NVarChar, String(preference_id))
-      .input('amount', dbSql.Decimal(18, 2), Number(appItem.price || 0))
-      .input('currency', dbSql.NVarChar, 'BRL')
-      .input('payer_email', dbSql.NVarChar, req.user?.email || null)
-      .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
-  } catch (dbErr) {
-    console.warn('Falha ao persistir compra pendente (mock) no banco:', dbErr?.message || dbErr);
-  }
-  res.status(201).json({ success: true, preference_id, init_point });
+  // Sem fallback: requer mpClient configurado
+  return res.status(503).json({ error: 'Mercado Pago não configurado' });
 });
 
 // Consultar status da compra (mock)
   app.get('/api/apps/:id/purchase/status', async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const { status: statusQuery, payment_id } = req.query;
-  const appItem = mockApps.find(a => a.id === id);
+  // Buscar app no banco
+  let appItem = null;
+  try {
+    const pool = await getConnectionPool();
+    const dataRes = await pool.request()
+      .input('id', dbSql.Int, id)
+      .query(`SELECT id, name, price, executable_url AS executableUrl FROM dbo.apps WHERE id = @id`);
+    appItem = dataRes.recordset[0] || null;
+  } catch (dbErr) {
+    console.error('Erro ao buscar app para status de compra:', dbErr?.message || dbErr);
+    return res.status(500).json({ error: 'Erro interno ao buscar aplicativo' });
+  }
   if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
 
   if (mpClient && payment_id) {
@@ -2336,7 +2221,7 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
       const payment = new Payment(mpClient);
       const data = await payment.get({ id: payment_id });
       const status = data?.status || statusQuery || 'pending';
-      const download_url = status === 'approved' ? (appItem.executableUrl || 'https://example.com/downloads/dev-placeholder.exe') : null;
+      const download_url = status === 'approved' ? (appItem.executableUrl || null) : null;
       paymentsByApp.set(id, { payment_id, status });
       if (status === 'approved') {
         try {
@@ -2348,7 +2233,7 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
           };
           await mercadoLivre.sendTransaction(tx, { external_reference: String(id), metadata: { payment_id } });
         } catch (syncErr) {
-          console.warn('Sync Mercado Livre falhou (fallback mantido):', syncErr?.message || syncErr);
+          console.warn('Sync Mercado Livre falhou:', syncErr?.message || syncErr);
         }
         // Persistir no banco: atualizar/registrar pagamento e histórico aprovado (novas colunas)
         try {
@@ -2512,49 +2397,78 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
 });
 
 // Registrar download (mock)
-app.post('/api/apps/:id/download', authenticate, (req, res) => {
+app.post('/api/apps/:id/download', authenticate, async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const appItem = mockApps.find(a => a.id === id);
+  let appItem = null;
+  try {
+    const pool = await getConnectionPool();
+    const dataRes = await pool.request()
+      .input('id', dbSql.Int, id)
+      .query(`SELECT id, name, executable_url AS executableUrl FROM dbo.apps WHERE id=@id`);
+    appItem = dataRes.recordset[0] || null;
+  } catch (dbErr) {
+    console.error('Erro ao buscar app para download:', dbErr?.message || dbErr);
+    return res.status(500).json({ error: 'Erro interno ao buscar aplicativo' });
+  }
   if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
-  const statusOk = paymentsByApp.get(id)?.status === 'approved' || !mpClient; // permite mock
+  const statusOk = paymentsByApp.get(id)?.status === 'approved';
   if (!statusOk) return res.status(403).json({ error: 'Download não liberado. Pagamento não aprovado.' });
-  const url = appItem.executableUrl || 'https://example.com/downloads/dev-placeholder.exe';
-  mockHistory.push({ type: 'download', appId: id, app_name: appItem.name, status: 'done', date: new Date().toISOString() });
-  // Persistir no banco: app_history (download)
-  (async () => {
-    try {
-      const pool = await getConnectionPool();
-      await pool.request()
-        .input('type', dbSql.NVarChar, 'download')
-        .input('app_id', dbSql.Int, id)
-        .input('app_name', dbSql.NVarChar, appItem.name)
-        .input('status', dbSql.NVarChar, 'done')
-        .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
-    } catch (dbErr) {
-      console.warn('Falha ao persistir download no banco:', dbErr?.message || dbErr);
-    }
-  })();
-  res.json({ success: true, download_url: url });
+  const url = appItem.executableUrl || null;
+  if (!url) return res.status(400).json({ error: 'Aplicativo sem URL de executável configurada' });
+  try {
+    const pool = await getConnectionPool();
+    await pool.request()
+      .input('type', dbSql.NVarChar, 'download')
+      .input('app_id', dbSql.Int, id)
+      .input('app_name', dbSql.NVarChar, appItem.name)
+      .input('status', dbSql.NVarChar, 'done')
+      .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
+  } catch (dbErr) {
+    console.warn('Falha ao persistir download no banco:', dbErr?.message || dbErr);
+  }
+  return res.json({ success: true, download_url: url });
 });
 
 // Histórico de compras e downloads (mock, sem autenticação para usuário comum)
-app.get('/api/apps/history', (req, res) => {
+app.get('/api/apps/history', async (req, res, next) => {
   const page = parseInt(req.query.page || '1', 10);
   const pageSize = parseInt(req.query.pageSize || '20', 10);
-  const start = (page - 1) * pageSize;
-  const paged = mockHistory.slice(start, start + pageSize);
-  res.json({ success: true, data: paged, pagination: { total: mockHistory.length, page, pageSize } });
+  const offset = (page - 1) * pageSize;
+  try {
+    const pool = await getConnectionPool();
+    const totalRes = await pool.request().query('SELECT COUNT(*) AS total FROM dbo.app_history');
+    const total = totalRes.recordset[0]?.total || 0;
+    const dataRes = await pool.request()
+      .input('offset', dbSql.Int, offset)
+      .input('limit', dbSql.Int, pageSize)
+      .query('SELECT id, type, app_id AS appId, app_name AS app_name, status, created_at FROM dbo.app_history ORDER BY id DESC OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY');
+    return res.json({ success: true, data: dataRes.recordset || [], pagination: { total, page, pageSize } });
+  } catch (err) {
+    console.error('Erro ao listar histórico de apps:', err);
+    next(err);
+  }
 });
 
 // Feedback do app (mock)
-app.post('/api/apps/:id/feedback', authenticate, (req, res) => {
+app.post('/api/apps/:id/feedback', authenticate, async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const { rating = 5, comment = '' } = req.body || {};
-  const appItem = mockApps.find(a => a.id === id);
-  if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
-  const fb = { rating, comment, date: new Date().toISOString() };
-  appItem.feedbacks.push(fb);
-  res.status(201).json({ success: true, feedback: fb });
+  try {
+    const pool = await getConnectionPool();
+    // Garante que app existe
+    const appRes = await pool.request().input('id', dbSql.Int, id).query('SELECT id, name FROM dbo.apps WHERE id=@id');
+    if (!appRes.recordset[0]) return res.status(404).json({ error: 'Aplicativo não encontrado' });
+    await pool.request()
+      .input('app_id', dbSql.Int, id)
+      .input('user_id', dbSql.Int, req.user?.id || null)
+      .input('rating', dbSql.Int, Number(rating))
+      .input('comment', dbSql.NVarChar, String(comment || ''))
+      .query('INSERT INTO dbo.app_feedbacks (app_id, user_id, rating, comment) VALUES (@app_id, @user_id, @rating, @comment)');
+    return res.status(201).json({ success: true });
+  } catch (err) {
+    console.error('Erro ao registrar feedback:', err);
+    return res.status(500).json({ error: 'Erro ao registrar feedback' });
+  }
 });
 
 const mpFriendlyMessage = (status, detail) => {
@@ -2594,7 +2508,18 @@ const normalizeMpPaymentResponse = (json) => {
 app.post('/api/apps/:id/payment/direct', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const appItem = mockApps.find(a => a.id === id);
+    // Buscar app no banco
+    let appItem = null;
+    try {
+      const pool = await getConnectionPool();
+      const dataRes = await pool.request()
+        .input('id', dbSql.Int, id)
+        .query(`SELECT id, owner_id AS ownerId, name, main_feature AS mainFeature, description, status, price, thumbnail, executable_url AS executableUrl, created_at FROM dbo.apps WHERE id = @id`);
+      appItem = dataRes.recordset[0] || null;
+    } catch (dbErr) {
+      console.error('Erro ao buscar app para pagamento direto:', dbErr?.message || dbErr);
+      return res.status(500).json({ error: 'Erro interno ao buscar aplicativo' });
+    }
     if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
 
     // Coleta dados do payload
@@ -2991,161 +2916,12 @@ app.put('/api/payments/:id', authenticate, authorizeAdmin, async (req, res) => {
 app.post('/api/apps/webhook', async (req, res) => {
   try {
     const { type, data } = req.body || {};
-    if (mpClient && type === 'payment' && data?.id) {
-      const payment = new Payment(mpClient);
-      const pay = await payment.get({ id: data.id });
-      const appId = parseInt(pay?.external_reference || '0', 10);
-      if (appId) {
-        paymentsByApp.set(appId, { payment_id: String(data.id), status: pay?.status || 'pending' });
-        if (pay?.status === 'approved') {
-          const appItem = mockApps.find(a => a.id === appId);
-          if (appItem) {
-            mockHistory.push({ type: 'purchase', appId, app_name: appItem.name, status: 'approved', date: new Date().toISOString() });
-            // Sincronizar transação com Mercado Livre (não bloqueia o webhook)
-            try {
-              const tx = {
-                amount: Number(pay?.transaction_amount || appItem.price || 0),
-                products: [{ title: appItem.name, quantity: 1, unit_price: Number(appItem.price || 0) }],
-                customer: { email: pay?.payer?.email || undefined, name: undefined },
-              };
-              await mercadoLivre.sendTransaction(tx, { external_reference: String(appId), metadata: { payment_id: String(data.id), source: 'webhook' } });
-            } catch (syncErr) {
-              console.warn('Webhook: falha ao sincronizar com Mercado Livre:', syncErr?.message || syncErr);
-            }
-            // Persistir no banco: app_history aprovado e app_payments atualizado (novas colunas)
-            try {
-              const pool = await getConnectionPool();
-              await pool.request()
-                .input('type', dbSql.NVarChar, 'purchase')
-                .input('app_id', dbSql.Int, appId)
-                .input('app_name', dbSql.NVarChar, appItem.name)
-                .input('status', dbSql.NVarChar, 'approved')
-                .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
-
-              const payerEmail = pay?.payer?.email || null;
-              const amountVal = Number(pay?.transaction_amount || appItem.price || 0);
-              const currencyVal = pay?.currency_id || 'BRL';
-              const statusDetail = pay?.status_detail || null;
-              const paymentTypeId = pay?.payment_type_id || null;
-              const issuerId = String(pay?.issuer_id || pay?.card?.issuer_id || pay?.transaction_details?.issuer_id || '') || null;
-              const netReceived = (pay?.transaction_details?.net_received_amount !== undefined) ? Number(pay.transaction_details.net_received_amount) : null;
-              const installmentAmount = (pay?.transaction_details?.installment_amount !== undefined) ? Number(pay.transaction_details.installment_amount) : null;
-              const docType = pay?.payer?.identification?.type || null;
-              const docNumber = pay?.payer?.identification?.number || null;
-
-              // 1) Atualiza pelo payment_id do webhook
-              const updByPid = await pool.request()
-                .input('pid', dbSql.NVarChar, String(data.id))
-                .input('status', dbSql.NVarChar, 'approved')
-                .input('amount', dbSql.Decimal(18, 2), amountVal)
-                .input('currency', dbSql.NVarChar, currencyVal)
-                .input('payer_email', dbSql.NVarChar, payerEmail)
-                .input('status_detail', dbSql.NVarChar, statusDetail)
-                .input('payment_type_id', dbSql.NVarChar, paymentTypeId)
-                .input('issuer_id', dbSql.NVarChar, issuerId)
-                .input('net_received_amount', dbSql.Decimal(18, 2), netReceived)
-                .input('installment_amount', dbSql.Decimal(18, 2), installmentAmount)
-                .input('payer_document_type', dbSql.NVarChar, docType)
-                .input('payer_document_number', dbSql.NVarChar, docNumber)
-                .input('mp_response_json', dbSql.NVarChar(dbSql.MAX), JSON.stringify(pay))
-                .query('UPDATE dbo.app_payments SET status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, mp_response_json=@mp_response_json, updated_at=SYSUTCDATETIME() WHERE payment_id=@pid');
-
-              let affected = updByPid?.rowsAffected?.[0] || 0;
-              if (affected === 0) {
-                // 2) Atualiza o pendente pelo app_id
-                const updPending = await pool.request()
-                  .input('pid', dbSql.NVarChar, String(data.id))
-                  .input('app_id', dbSql.Int, appId)
-                  .input('status', dbSql.NVarChar, 'approved')
-                  .input('amount', dbSql.Decimal(18, 2), amountVal)
-                  .input('currency', dbSql.NVarChar, currencyVal)
-                  .input('payer_email', dbSql.NVarChar, payerEmail)
-                  .input('status_detail', dbSql.NVarChar, statusDetail)
-                  .input('payment_type_id', dbSql.NVarChar, paymentTypeId)
-                  .input('issuer_id', dbSql.NVarChar, issuerId)
-                  .input('net_received_amount', dbSql.Decimal(18, 2), netReceived)
-                  .input('installment_amount', dbSql.Decimal(18, 2), installmentAmount)
-                  .input('payer_document_type', dbSql.NVarChar, docType)
-                  .input('payer_document_number', dbSql.NVarChar, docNumber)
-                  .input('mp_response_json', dbSql.NVarChar(dbSql.MAX), JSON.stringify(pay))
-                  .query("UPDATE dbo.app_payments SET payment_id=@pid, status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, mp_response_json=@mp_response_json, updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND status='pending'");
-                affected = updPending?.rowsAffected?.[0] || 0;
-                if (affected > 0) {
-                  // Auditoria de correção de payment_id (webhook)
-                  await pool.request()
-                    .input('payment_id', dbSql.NVarChar, String(data.id))
-                    .input('preference_id', dbSql.NVarChar, null)
-                    .input('app_id', dbSql.Int, appId)
-                    .input('user_id', dbSql.Int, null)
-                    .input('action', dbSql.NVarChar, 'pid_correction')
-                    .input('from_status', dbSql.NVarChar, 'pending')
-                    .input('to_status', dbSql.NVarChar, 'approved')
-                    .input('from_payment_id', dbSql.NVarChar, null)
-                    .input('to_payment_id', dbSql.NVarChar, String(data.id))
-                    .input('amount', dbSql.Decimal(18, 2), amountVal)
-                    .input('currency', dbSql.NVarChar, currencyVal)
-                    .input('payer_email', dbSql.NVarChar, payerEmail)
-                    .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
-                }
-              }
-              if (affected === 0) {
-                // 3) Insere um novo se não achar
-                await pool.request()
-                  .input('pid', dbSql.NVarChar, String(data.id))
-                  .input('app_id', dbSql.Int, appId)
-                  .input('user_id', dbSql.Int, null)
-                  .input('status', dbSql.NVarChar, 'approved')
-                  .input('amount', dbSql.Decimal(18, 2), amountVal)
-                  .input('currency', dbSql.NVarChar, currencyVal)
-                  .input('payer_email', dbSql.NVarChar, payerEmail)
-                  .input('source', dbSql.NVarChar, 'mercado_pago')
-                  .input('mp_response_json', dbSql.NVarChar(dbSql.MAX), JSON.stringify(pay))
-                  .query('INSERT INTO dbo.app_payments (payment_id, app_id, user_id, status, amount, currency, payer_email, source, mp_response_json) VALUES (@pid, @app_id, @user_id, @status, @amount, @currency, @payer_email, @source, @mp_response_json)');
-                // Auditoria de inserção faltante (webhook)
-                await pool.request()
-                  .input('payment_id', dbSql.NVarChar, String(data.id))
-                  .input('preference_id', dbSql.NVarChar, null)
-                  .input('app_id', dbSql.Int, appId)
-                  .input('user_id', dbSql.Int, null)
-                  .input('action', dbSql.NVarChar, 'insert_missing')
-                  .input('from_status', dbSql.NVarChar, null)
-                  .input('to_status', dbSql.NVarChar, 'approved')
-                  .input('from_payment_id', dbSql.NVarChar, null)
-                  .input('to_payment_id', dbSql.NVarChar, String(data.id))
-                  .input('amount', dbSql.Decimal(18, 2), amountVal)
-                  .input('currency', dbSql.NVarChar, currencyVal)
-                  .input('payer_email', dbSql.NVarChar, payerEmail)
-                  .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
-              }
-
-              // Auditoria de status update (caso 1: atualização por payment_id)
-              if ((updByPid?.rowsAffected?.[0] || 0) > 0) {
-                await pool.request()
-                  .input('payment_id', dbSql.NVarChar, String(data.id))
-                  .input('preference_id', dbSql.NVarChar, null)
-                  .input('app_id', dbSql.Int, appId)
-                  .input('user_id', dbSql.Int, null)
-                  .input('action', dbSql.NVarChar, 'webhook_update')
-                  .input('from_status', dbSql.NVarChar, 'pending')
-                  .input('to_status', dbSql.NVarChar, 'approved')
-                  .input('from_payment_id', dbSql.NVarChar, null)
-                  .input('to_payment_id', dbSql.NVarChar, String(data.id))
-                  .input('amount', dbSql.Decimal(18, 2), amountVal)
-                  .input('currency', dbSql.NVarChar, currencyVal)
-                  .input('payer_email', dbSql.NVarChar, payerEmail)
-                  .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
-              }
-            } catch (dbErr) {
-              console.warn('Webhook: falha ao persistir atualização de pagamento no banco:', dbErr?.message || dbErr);
-            }
-          }
-        }
-      }
+    if (type === 'payment' && data?.id) {
+      await handlePaymentWebhook(data.id);
     }
     res.status(200).json({ received: true });
-  } catch (e) {
-    console.error('Erro no webhook:', e);
-    res.status(500).json({ error: 'Webhook error' });
+  } catch {
+    res.status(500).json({ error: 'Webhook POST error' });
   }
 });
 
@@ -3298,3 +3074,138 @@ app.get('/api/admin/projetos', authenticate, authorizeAdmin, async (req, res, ne
     next(err);
   }
 });
+async function handlePaymentWebhook(paymentId) {
+  if (!mpClient) return;
+  const payment = new Payment(mpClient);
+  let pay = null;
+  try {
+    pay = await payment.get({ id: paymentId });
+  } catch (e) {
+    console.warn('Webhook: falha ao obter pagamento:', e?.message || e);
+    return;
+  }
+  const appId = parseInt(pay?.external_reference || '0', 10);
+  if (!appId) return;
+  paymentsByApp.set(appId, { payment_id: String(paymentId), status: pay?.status || 'pending' });
+  if (pay?.status !== 'approved') return;
+  let appItem = null;
+  try {
+    const pool = await getConnectionPool();
+    const dataRes = await pool.request().input('id', dbSql.Int, appId).query('SELECT id, name, price FROM dbo.apps WHERE id=@id');
+    appItem = dataRes.recordset[0] || null;
+  } catch (dbErr) {
+    console.warn('Webhook: erro ao buscar app no banco:', dbErr?.message || dbErr);
+  }
+  try {
+    const tx = {
+      amount: Number(pay?.transaction_amount || appItem?.price || 0),
+      products: [{ title: appItem?.name || String(appId), quantity: 1, unit_price: Number(appItem?.price || 0) }],
+      customer: { email: pay?.payer?.email || undefined, name: undefined },
+    };
+    await mercadoLivre.sendTransaction(tx, { external_reference: String(appId), metadata: { payment_id: String(paymentId), source: 'webhook' } });
+  } catch (syncErr) {
+    console.warn('Webhook: falha ao sincronizar com Mercado Livre:', syncErr?.message || syncErr);
+  }
+  try {
+    const pool = await getConnectionPool();
+    await pool.request()
+      .input('type', dbSql.NVarChar, 'purchase')
+      .input('app_id', dbSql.Int, appId)
+      .input('app_name', dbSql.NVarChar, appItem?.name || String(appId))
+      .input('status', dbSql.NVarChar, 'approved')
+      .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
+
+    const payerEmail = pay?.payer?.email || null;
+    const amountVal = Number(pay?.transaction_amount || appItem?.price || 0);
+    const currencyVal = pay?.currency_id || 'BRL';
+    const statusDetail = pay?.status_detail || null;
+    const paymentTypeId = pay?.payment_type_id || null;
+    const issuerId = String(pay?.issuer_id || pay?.card?.issuer_id || pay?.transaction_details?.issuer_id || '') || null;
+    const netReceived = (pay?.transaction_details?.net_received_amount !== undefined) ? Number(pay.transaction_details.net_received_amount) : null;
+    const installmentAmount = (pay?.transaction_details?.installment_amount !== undefined) ? Number(pay.transaction_details.installment_amount) : null;
+    const docType = pay?.payer?.identification?.type || null;
+    const docNumber = pay?.payer?.identification?.number || null;
+
+    const updByPid = await pool.request()
+      .input('pid', dbSql.NVarChar, String(paymentId))
+      .input('status', dbSql.NVarChar, 'approved')
+      .input('amount', dbSql.Decimal(18, 2), amountVal)
+      .input('currency', dbSql.NVarChar, currencyVal)
+      .input('payer_email', dbSql.NVarChar, payerEmail)
+      .input('status_detail', dbSql.NVarChar, statusDetail)
+      .input('payment_type_id', dbSql.NVarChar, paymentTypeId)
+      .input('issuer_id', dbSql.NVarChar, issuerId)
+      .input('net_received_amount', dbSql.Decimal(18, 2), netReceived)
+      .input('installment_amount', dbSql.Decimal(18, 2), installmentAmount)
+      .input('payer_document_type', dbSql.NVarChar, docType)
+      .input('payer_document_number', dbSql.NVarChar, docNumber)
+      .input('mp_response_json', dbSql.NVarChar(dbSql.MAX), JSON.stringify(pay))
+      .query('UPDATE dbo.app_payments SET status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, mp_response_json=@mp_response_json, updated_at=SYSUTCDATETIME() WHERE payment_id=@pid');
+
+    let affected = updByPid?.rowsAffected?.[0] || 0;
+    if (affected === 0) {
+      const updPending = await pool.request()
+        .input('pid', dbSql.NVarChar, String(paymentId))
+        .input('app_id', dbSql.Int, appId)
+        .input('status', dbSql.NVarChar, 'approved')
+        .input('amount', dbSql.Decimal(18, 2), amountVal)
+        .input('currency', dbSql.NVarChar, currencyVal)
+        .input('payer_email', dbSql.NVarChar, payerEmail)
+        .input('status_detail', dbSql.NVarChar, statusDetail)
+        .input('payment_type_id', dbSql.NVarChar, paymentTypeId)
+        .input('issuer_id', dbSql.NVarChar, issuerId)
+        .input('net_received_amount', dbSql.Decimal(18, 2), netReceived)
+        .input('installment_amount', dbSql.Decimal(18, 2), installmentAmount)
+        .input('payer_document_type', dbSql.NVarChar, docType)
+        .input('payer_document_number', dbSql.NVarChar, docNumber)
+        .input('mp_response_json', dbSql.NVarChar(dbSql.MAX), JSON.stringify(pay))
+        .query("UPDATE dbo.app_payments SET payment_id=@pid, status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, mp_response_json=@mp_response_json, updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND status='pending'");
+      affected = updPending?.rowsAffected?.[0] || 0;
+      if (affected > 0) {
+        await pool.request()
+          .input('payment_id', dbSql.NVarChar, String(paymentId))
+          .input('preference_id', dbSql.NVarChar, null)
+          .input('app_id', dbSql.Int, appId)
+          .input('user_id', dbSql.Int, null)
+          .input('action', dbSql.NVarChar, 'pid_correction')
+          .input('from_status', dbSql.NVarChar, 'pending')
+          .input('to_status', dbSql.NVarChar, 'approved')
+          .input('from_payment_id', dbSql.NVarChar, null)
+          .input('to_payment_id', dbSql.NVarChar, String(paymentId))
+          .input('amount', dbSql.Decimal(18, 2), amountVal)
+          .input('currency', dbSql.NVarChar, currencyVal)
+          .input('payer_email', dbSql.NVarChar, payerEmail)
+          .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
+      }
+    }
+    if (affected === 0) {
+      await pool.request()
+        .input('pid', dbSql.NVarChar, String(paymentId))
+        .input('app_id', dbSql.Int, appId)
+        .input('user_id', dbSql.Int, null)
+        .input('status', dbSql.NVarChar, 'approved')
+        .input('amount', dbSql.Decimal(18, 2), amountVal)
+        .input('currency', dbSql.NVarChar, currencyVal)
+        .input('payer_email', dbSql.NVarChar, payerEmail)
+        .input('source', dbSql.NVarChar, 'mercado_pago')
+        .input('mp_response_json', dbSql.NVarChar(dbSql.MAX), JSON.stringify(pay))
+        .query('INSERT INTO dbo.app_payments (payment_id, app_id, user_id, status, amount, currency, payer_email, source, mp_response_json) VALUES (@pid, @app_id, @user_id, @status, @amount, @currency, @payer_email, @source, @mp_response_json)');
+      await pool.request()
+        .input('payment_id', dbSql.NVarChar, String(paymentId))
+        .input('preference_id', dbSql.NVarChar, null)
+        .input('app_id', dbSql.Int, appId)
+        .input('user_id', dbSql.Int, null)
+        .input('action', dbSql.NVarChar, 'insert_missing')
+        .input('from_status', dbSql.NVarChar, null)
+        .input('to_status', dbSql.NVarChar, 'approved')
+        .input('from_payment_id', dbSql.NVarChar, null)
+        .input('to_payment_id', dbSql.NVarChar, String(paymentId))
+        .input('amount', dbSql.Decimal(18, 2), amountVal)
+        .input('currency', dbSql.NVarChar, currencyVal)
+        .input('payer_email', dbSql.NVarChar, payerEmail)
+        .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
+    }
+  } catch (dbErr) {
+    console.warn('Webhook: falha ao persistir atualização de pagamento no banco:', dbErr?.message || dbErr);
+  }
+}
