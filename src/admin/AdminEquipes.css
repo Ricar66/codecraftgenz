@@ -61,22 +61,17 @@
 }
 
 .mentor-card {
-  background: rgba(255,255,255,0.9);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(104,0,123,0.12);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: none;
+  transition: transform 0.2s ease;
   word-break: break-word;
-  overflow: hidden; /* evita que conteúdo interno escape */
+  overflow: hidden;
 }
 
-.mentor-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(104, 0, 123, 0.18);
-}
+.mentor-card:hover { transform: translateY(-2px); }
 
 .mentor-header {
   display: flex;
@@ -216,14 +211,12 @@
 }
 
 .crafter-overview-card {
-  background: rgba(255,255,255,0.9);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(104,0,123,0.12);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: none;
+  transition: transform 0.2s ease;
 }
 
 .crafter-overview-card:hover {
@@ -364,9 +357,9 @@
 .empty-state {
   text-align: center;
   padding: 40px 20px;
-  background: #f8f9fa;
+  background: transparent;
   border-radius: 12px;
-  border: 2px dashed #dee2e6;
+  border: 1px dashed rgba(255,255,255,0.22);
   margin: 20px 0;
 }
 

@@ -4,6 +4,7 @@ import { apiRequest } from '../lib/apiConfig.js';
 import { getAll as getAllProjects } from '../services/projectsAPI.js';
 
 import './AdminEquipes.css';
+import './AdminCommon.css';
 
 export default function AdminEquipes() {
   const [mentores, setMentores] = useState([]);
@@ -357,7 +358,7 @@ export default function AdminEquipes() {
 
   if (loading) {
     return (
-      <div className="admin-equipes">
+      <div className="admin-equipes admin-content">
         <h1 className="title">Gerenciamento de Equipes</h1>
         <div className="loading-container">
           <div className="loading-spinner"></div>
@@ -368,7 +369,7 @@ export default function AdminEquipes() {
   }
 
   return (
-    <div className="admin-equipes">
+    <div className="admin-equipes admin-content">
       <h1 className="title">Gerenciamento de Equipes</h1>
       
       {/* Mensagem de feedback */}

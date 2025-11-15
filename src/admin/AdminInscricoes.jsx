@@ -352,6 +352,14 @@ const AdminInscricoes = () => {
                 </option>
               ))}
             </select>
+            <button
+              className={"btn btn-outline"}
+              style={{ marginLeft: 8 }}
+              onClick={() => setFiltroStatus(prev => prev === '' ? 'pendente' : '')}
+              aria-label="Alternar entre pendentes e todos"
+            >
+              {filtroStatus === '' ? 'Mostrar pendentes' : 'Mostrar todos'}
+            </button>
           </div>
 
           <div className={"areaFilter"}>
