@@ -71,6 +71,12 @@ IF COL_LENGTH('dbo.app_payments', 'payer_document_type') IS NULL
 
 IF COL_LENGTH('dbo.app_payments', 'payer_document_number') IS NULL
   ALTER TABLE dbo.app_payments ADD payer_document_number NVARCHAR(32) NULL;
+
+-- ==============================================
+-- Persistência do JSON bruto da resposta (mp_response)
+-- ==============================================
+IF COL_LENGTH('dbo.app_payments', 'mp_response_json') IS NULL
+  ALTER TABLE dbo.app_payments ADD mp_response_json NVARCHAR(MAX) NULL;
 GO
 
 -- ==========================

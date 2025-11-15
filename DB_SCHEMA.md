@@ -571,6 +571,13 @@ BEGIN
 END;
 GO
 
+-- Persistência do JSON bruto da resposta do Mercado Pago
+IF COL_LENGTH('dbo.app_payments', 'mp_response_json') IS NULL
+BEGIN
+  ALTER TABLE dbo.app_payments ADD mp_response_json NVARCHAR(MAX) NULL;
+END;
+GO
+
 IF NOT EXISTS (
   SELECT 1 FROM sys.indexes WHERE name = 'IX_app_payments_status_updated' AND object_id = OBJECT_ID('dbo.app_payments')
 )
