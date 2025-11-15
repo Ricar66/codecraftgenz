@@ -1791,27 +1791,64 @@ app.get('/api/apps/mine', authenticate, async (req, res) => {
 });
 
 // Lista todos apps (admin)
-app.get('/api/apps', authenticate, authorizeAdmin, async (req, res) => {
-  const page = parseInt(req.query.page || '1', 10);
-  const pageSize = parseInt(req.query.pageSize || '50', 10);
-  const start = (page - 1) * pageSize;
+app.get('/api/apps', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
+    const { page = 1, pageSize, limit, sortBy = 'created_at', sortOrder = 'desc' } = req.query;
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt((pageSize ?? limit ?? 50), 10) || 50;
+    const offset = (pageNum - 1) * limitNum;
+
+    const allowedSortColumns = {
+      'created_at': 'created_at',
+      'name': 'name',
+      'status': 'status',
+      'id': 'id',
+      'price': 'price',
+    };
+    const sortColumn = allowedSortColumns[String(sortBy).toLowerCase()] || 'created_at';
+    const sortDirection = String(sortOrder).toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
     const pool = await getConnectionPool();
-    const totalRes = await pool.request().query('SELECT COUNT(*) AS total FROM dbo.apps');
-    const total = totalRes.recordset[0]?.total || 0;
-    const dataRes = await pool.request()
-      .input('start', dbSql.Int, start)
-      .input('pageSize', dbSql.Int, pageSize)
-      .query(`SELECT id, owner_id AS ownerId, name, main_feature AS mainFeature, description, status, price, thumbnail, executable_url AS executableUrl, created_at
-              FROM dbo.apps
-              ORDER BY created_at DESC
-              OFFSET @start ROWS FETCH NEXT @pageSize ROWS ONLY`);
-    const rows = dataRes.recordset || [];
-    return res.json({ success: true, data: rows, pagination: { total, page, pageSize } });
+    const request = pool.request();
+    const totalResult = await request.query('SELECT COUNT(*) as total FROM dbo.apps');
+    const total = totalResult.recordset[0]?.total || 0;
+    const totalPages = Math.ceil(total / Math.max(1, limitNum));
+
+    const dataQuery = `
+      SELECT 
+        id,
+        owner_id AS ownerId,
+        name,
+        main_feature AS mainFeature,
+        description,
+        status,
+        price,
+        thumbnail,
+        executable_url AS executableUrl,
+        created_at
+      FROM dbo.apps
+      ORDER BY ${sortColumn} ${sortDirection}
+      OFFSET @offset ROWS 
+      FETCH NEXT @limit ROWS ONLY
+    `;
+    request.input('offset', dbSql.Int, offset);
+    request.input('limit', dbSql.Int, limitNum);
+    const dataResult = await request.query(dataQuery);
+
+    return res.json({
+      success: true,
+      data: dataResult.recordset || [],
+      pagination: {
+        total,
+        page: pageNum,
+        totalPages,
+        hasNext: pageNum < totalPages,
+        hasPrev: pageNum > 1,
+      }
+    });
   } catch (err) {
-    console.warn('Erro ao listar apps (admin), usando mock:', err);
-    const paged = mockApps.slice(start, start + pageSize);
-    return res.json({ success: true, data: paged, pagination: { total: mockApps.length, page, pageSize } });
+    console.error('Erro ao buscar aplicativos (do banco):', err);
+    next(err);
   }
 });
 
@@ -2165,6 +2202,7 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
       const prefResult = await pref.create({ body: prefBody });
       const preference_id = prefResult?.id || `pref_${Date.now()}`;
       const init_point = prefResult?.init_point || prefResult?.sandbox_init_point;
+      console.info('Preferência Mercado Pago', { preference_id, external_reference: String(id), amount: Number(appItem.price || 0) });
       // Persistir metadados básicos da compra para sincronização pós-aprovação
       paymentsByApp.set(id, {
         payment_id: preference_id,
@@ -2519,9 +2557,40 @@ app.post('/api/apps/:id/feedback', authenticate, (req, res) => {
   res.status(201).json({ success: true, feedback: fb });
 });
 
-// Pagamento direto via API de pagamentos do Mercado Pago (cartão/pix/boleto)
-// Espera payload com: token (quando cartão), payment_method_id (ex.: 'master', 'pix'), installments (opcional), payer (email/nome/identification)
-// Usa dados do app e do usuário (quando disponível) para compor additional_info e persiste no banco
+const mpFriendlyMessage = (status, detail) => {
+  const d = String(detail || '').toLowerCase();
+  if (d === 'cc_rejected_high_risk') return 'Pagamento recusado por segurança. Tente outro cartão ou entre em contato com o banco.';
+  if (d === 'cc_rejected_insufficient_amount') return 'Pagamento recusado por saldo insuficiente.';
+  if (d === 'cc_rejected_bad_filled_card_number') return 'Número do cartão inválido.';
+  if (d === 'cc_rejected_bad_filled_date') return 'Data de validade inválida.';
+  if (d === 'cc_rejected_bad_filled_other') return 'Dados do cartão incompletos.';
+  if (d === 'cc_rejected_blacklist') return 'Pagamento recusado por segurança.';
+  if (d === 'cc_rejected_call_for_authorize') return 'Autorização necessária junto ao banco.';
+  if (d === 'cc_rejected_card_disabled') return 'Cartão desativado.';
+  if (d === 'cc_rejected_duplicated_payment') return 'Pagamento duplicado.';
+  if (d === 'cc_rejected_invalid_installments') return 'Parcelamento inválido.';
+  if (d === 'cc_rejected_max_attempts') return 'Número de tentativas excedido.';
+  if (d === 'cc_rejected_other_reason') return 'Pagamento recusado.';
+  if (d === 'pending_contingency') return 'Pagamento pendente por contingência.';
+  if (d === 'pending_review_manual') return 'Pagamento em análise.';
+  const s = String(status || '').toLowerCase();
+  if (s === 'approved') return 'Pagamento aprovado.';
+  if (s === 'pending') return 'Pagamento pendente.';
+  return 'Pagamento não aprovado. Verifique os dados e tente novamente.';
+};
+
+const normalizeMpPaymentResponse = (json) => {
+  const status = json?.status || 'pending';
+  const detail = json?.status_detail || null;
+  const message = mpFriendlyMessage(status, detail);
+  return {
+    sucesso: status === 'approved',
+    status,
+    status_detail: detail,
+    mensagem_usuario: message,
+  };
+};
+
 app.post('/api/apps/:id/payment/direct', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -2564,28 +2633,22 @@ app.post('/api/apps/:id/payment/direct', async (req, res) => {
     const safePayer = (() => {
       const p = typeof payer === 'object' ? payer : {};
       const email = typeof p.email === 'string' ? p.email : (req.user?.email || undefined);
-      const name = typeof p.name === 'string' ? p.name : (req.user?.name || undefined);
-      const identification = (p.identification && typeof p.identification === 'object') ? {
-        type: typeof p.identification.type === 'string' ? p.identification.type : undefined,
-        number: typeof p.identification.number === 'string' ? p.identification.number : undefined,
-      } : undefined;
-      return {
-        email,
-        name,
-        ...(identification?.type && identification?.number ? { identification } : {}),
-      };
+      const baseName = (typeof p.name === 'string' && p.name) || [p.first_name, p.last_name].filter(Boolean).join(' ') || (req.user?.name || undefined);
+      const name = baseName || undefined;
+      const first_name = typeof p.first_name === 'string' ? p.first_name : (name ? String(name).trim().split(' ')[0] : undefined);
+      const last_name = typeof p.last_name === 'string' ? p.last_name : (name ? String(name).trim().split(' ').slice(1).join(' ') || undefined : undefined);
+      const idObj = (p.identification && typeof p.identification === 'object') ? p.identification : {};
+      const idNumber = typeof idObj.number === 'string' ? idObj.number : undefined;
+      const idType = typeof idObj.type === 'string' ? idObj.type : (idNumber ? (idNumber.replace(/\D/g,'').length > 11 ? 'CNPJ' : 'CPF') : undefined);
+      const identification = (idType && idNumber) ? { type: idType, number: idNumber } : undefined;
+      return { email, name, first_name, last_name, ...(identification ? { identification } : {}) };
     })();
 
     // Corpo da requisição de pagamento
     const amount = Number(appItem.price || 0);
-    // Define binary_mode: por exigência da conta/fluxo, precisa ser true
-    const finalBinaryMode = (() => {
-      // Se for pagamento com cartão (token presente), força true
-      if (token) return true;
-      // Para outros meios, se vier explícito false, ainda assim definimos true
-      if (typeof binary_mode === 'boolean') return binary_mode !== false;
-      return true;
-    })();
+    const envProcessingMode = String(process.env.MERCADO_PAGO_PROCESSING_MODE || process.env.MP_PROCESSING_MODE || 'aggregator').toLowerCase();
+    const finalProcessingMode = ['aggregator','gateway'].includes(envProcessingMode) ? envProcessingMode : 'aggregator';
+    const finalBinaryMode = (typeof binary_mode === 'boolean') ? binary_mode : false;
 
     const payload = {
       description: description || `Pagamento do app ${appItem.name}`,
@@ -2597,17 +2660,21 @@ app.post('/api/apps/:id/payment/direct', async (req, res) => {
       payer: {
         email: safePayer.email,
         name: safePayer.name,
+        ...(safePayer.first_name ? { first_name: safePayer.first_name } : {}),
+        ...(safePayer.last_name ? { last_name: safePayer.last_name } : {}),
         ...(safePayer.identification ? { identification: safePayer.identification } : {}),
       },
       additional_info: {
         ...(additional_info || {}),
         items,
         payer: {
-          first_name: safePayer.name ? String(safePayer.name).split(' ')[0] : undefined,
-          last_name: safePayer.name ? String(safePayer.name).split(' ').slice(1).join(' ') || undefined : undefined,
+          first_name: safePayer.first_name,
+          last_name: safePayer.last_name,
         },
+        ip_address: String((req.headers['x-forwarded-for'] || '').split(',')[0] || req.ip || ''),
       },
       binary_mode: finalBinaryMode,
+      processing_mode: finalProcessingMode,
       ...(typeof capture === 'boolean' ? { capture } : { capture: true }),
       metadata: { source: 'codecraft', ...(metadata || {}) },
     };
@@ -2636,6 +2703,9 @@ app.post('/api/apps/:id/payment/direct', async (req, res) => {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
           'X-Idempotency-Key': String(idempotencyKey),
+          ...(req.headers['x-device-id'] ? { 'X-Device-Id': String(req.headers['x-device-id']) } : {}),
+          ...(req.headers['x-mp-device-id'] ? { 'X-Device-Id': String(req.headers['x-mp-device-id']) } : {}),
+          ...(req.headers['x-tracking-id'] ? { 'X-Tracking-Id': String(req.headers['x-tracking-id']) } : {}),
         },
         body: JSON.stringify(payload),
       });
@@ -2651,8 +2721,9 @@ app.post('/api/apps/:id/payment/direct', async (req, res) => {
     let json = null;
     try { json = JSON.parse(text); } catch { json = { raw: text }; }
     if (!resp.ok) {
-      console.warn('Falha na criação de pagamento direto:', resp.status, json);
-      return res.status(502).json({ error: 'Falha ao criar pagamento direto', mp_status: resp.status, details: json });
+      console.warn('Falha na criação de pagamento direto', resp.status, { message: json?.message, error: json?.error, cause: json?.cause });
+      const normalized = json && typeof json === 'object' ? normalizeMpPaymentResponse(json) : null;
+      return res.status(502).json({ error: 'Falha ao criar pagamento direto', mp_status: resp.status, details: json, ...(normalized ? { normalized } : {}) });
     }
 
     // Extrai dados principais
@@ -2668,6 +2739,7 @@ app.post('/api/apps/:id/payment/direct', async (req, res) => {
     const docType = json?.payer?.identification?.type || safePayer?.identification?.type || null;
     const docNumber = json?.payer?.identification?.number || safePayer?.identification?.number || null;
 
+    console.info('Pagamento Mercado Pago', { payment_id, status, status_detail: statusDetail, external_reference: String(payload.external_reference || id), amount });
     // Atualiza cache em memória
     paymentsByApp.set(id, {
       payment_id,
@@ -2767,7 +2839,8 @@ app.post('/api/apps/:id/payment/direct', async (req, res) => {
       }
     }
 
-    return res.status(201).json({ success: true, payment_id, status, result: json });
+    const normalized = normalizeMpPaymentResponse(json);
+    return res.status(201).json({ success: true, payment_id, status, friendly_message: normalized.mensagem_usuario, normalized, result: json });
   } catch (err) {
     console.error('Erro no pagamento direto:', err?.message || err);
     return res.status(500).json({ error: 'Erro interno ao processar pagamento direto' });

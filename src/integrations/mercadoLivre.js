@@ -130,10 +130,13 @@ export async function ensureAccessToken() {
       state.log.warn('Falha no refresh OAuth, tentando fallback com MERCADO_PAGO_ACCESS_TOKEN');
     }
   }
-  // 3) Fallback: usar MERCADO_PAGO_ACCESS_TOKEN diretamente para chamar endpoints do Mercado Pago
-  const mpAccess = process.env.MERCADO_PAGO_ACCESS_TOKEN || '';
+  const envRaw = String(process.env.MP_ENV || process.env.MERCADO_PAGO_ENV || '').toLowerCase();
+  const isProd = ['prod','production','live'].includes(envRaw);
+  const mpAccess = isProd
+    ? (process.env.MERCADO_PAGO_ACCESS_TOKEN_PROD || process.env.MP_ACCESS_TOKEN_PROD || process.env.MERCADO_PAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN || '')
+    : (process.env.MERCADO_PAGO_ACCESS_TOKEN_SANDBOX || process.env.MP_ACCESS_TOKEN_SANDBOX || process.env.MERCADO_PAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN || '');
   if (mpAccess) {
-    state.log.info('Usando MERCADO_PAGO_ACCESS_TOKEN como fallback para sincronização.');
+    state.log.info('Usando access token do ambiente', { env: isProd ? 'production' : 'sandbox' });
     return mpAccess;
   }
   // 4) Sem opções válidas

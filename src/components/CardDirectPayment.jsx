@@ -24,7 +24,10 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
 
   // Inicializa SDK JS v2 e aguarda disponibilidade de window.MercadoPago
   useEffect(() => {
-    const PK = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || import.meta.env.MERCADO_PAGO_PUBLIC_KEY;
+    const envFlag = String(import.meta.env.VITE_MP_ENV || import.meta.env.MP_ENV || '').toLowerCase();
+    const PK = (envFlag === 'production')
+      ? (import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_PROD || import.meta.env.MERCADO_PAGO_PUBLIC_KEY_PROD || import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || import.meta.env.MERCADO_PAGO_PUBLIC_KEY)
+      : (import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_SANDBOX || import.meta.env.MERCADO_PAGO_PUBLIC_KEY_SANDBOX || import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || import.meta.env.MERCADO_PAGO_PUBLIC_KEY);
 
     if (import.meta.env.MODE === 'test') {
       setReady(true);
@@ -82,7 +85,10 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
 
   // Renderiza o Brick cardPayment
   useEffect(() => {
-    const PK = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || import.meta.env.MERCADO_PAGO_PUBLIC_KEY;
+    const envFlag = String(import.meta.env.VITE_MP_ENV || import.meta.env.MP_ENV || '').toLowerCase();
+    const PK = (envFlag === 'production')
+      ? (import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_PROD || import.meta.env.MERCADO_PAGO_PUBLIC_KEY_PROD || import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || import.meta.env.MERCADO_PAGO_PUBLIC_KEY)
+      : (import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_SANDBOX || import.meta.env.MERCADO_PAGO_PUBLIC_KEY_SANDBOX || import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || import.meta.env.MERCADO_PAGO_PUBLIC_KEY);
     if (!ready || !containerRef.current || !PK) return;
 
     const mp = window.MercadoPago ? new window.MercadoPago(PK, { locale: 'pt-BR' }) : null;
@@ -172,7 +178,7 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
             payment_method_id: paymentMethodId,
             ...(issuerId ? { issuer_id: issuerId } : {}),
             installments: Number(cardFormData.installments || 1),
-            binary_mode: true,
+            binary_mode: false,
             capture: true,
             transaction_amount: txAmount,
             description: String(description || ''),
@@ -183,6 +189,10 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
                 phone: buyerInfo.phone ? { number: String(buyerInfo.phone) } : undefined,
                 address: (buyerInfo.zip || buyerInfo.streetName) ? { zip_code: String(buyerInfo.zip || ''), street_name: String(buyerInfo.streetName || '') } : undefined,
               }
+            },
+            metadata: {
+              cardholder_name: (cardFormData?.cardholder?.name || undefined),
+              cardholder_doc: ((payerIdentification && payerIdentification.number) ? String(payerIdentification.number) : undefined),
             }
           };
           return createDirectPayment(appId, payload)
