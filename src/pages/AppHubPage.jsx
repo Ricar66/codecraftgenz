@@ -351,7 +351,8 @@ const AppHubPage = () => {
         </section>
       )}
 
-      {/* Apps Grid */}
+      {/* Apps Grid – ocultado: apenas destaques visíveis no Hub */}
+      {false && (
       <section className={styles.appsSection}>
         <div className={styles.container}>
           {filteredApps.length === 0 ? (
@@ -432,6 +433,7 @@ const AppHubPage = () => {
           )}
         </div>
       </section>
+      )}
 
       {/* CTA Section */}
       <section className={styles.ctaSection}>
