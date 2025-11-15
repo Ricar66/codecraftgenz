@@ -164,3 +164,27 @@ export async function resetAdminPassword({ email, newPassword, token }) {
     return { ok: false, error: error.message };
   }
 }
+
+export async function requestPasswordReset(email) {
+  try {
+    const data = await apiRequest('/api/auth/password-reset/request', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    });
+    return { ok: true, resetLink: data?.reset_link || null };
+  } catch (error) {
+    return { ok: false, error: error.message };
+  }
+}
+
+export async function confirmPasswordReset({ token, newPassword }) {
+  try {
+    const data = await apiRequest('/api/auth/password-reset/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ token, new_password: newPassword })
+    });
+    return { ok: true, message: data?.message || 'Senha redefinida com sucesso' };
+  } catch (error) {
+    return { ok: false, error: error.message };
+  }
+}

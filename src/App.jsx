@@ -17,6 +17,7 @@ import AppsPage from './pages/AppsPage.jsx';
 import CacheMaintenancePage from './pages/CacheMaintenancePage.jsx';
 import DesafiosPage from './pages/DesafiosPage.jsx';
 import FeedbacksPage from './pages/FeedbacksPage.jsx';
+import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import HomePage from './pages/HomePage/HomePage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import MentoriaPage from './pages/MentoriaPage.jsx';
@@ -51,6 +52,7 @@ function App() {
         <Route path="/desafios" element={<DesafiosPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/reset-password" element={<PasswordResetPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/aplicativos" element={<AppHubPage />} />
         <Route path="/cache/clear" element={<CacheMaintenancePage />} />
         <Route path="/apps" element={
