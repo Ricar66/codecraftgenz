@@ -135,6 +135,7 @@ const AppPurchasePage = () => {
                 <CardDirectPayment
                   appId={id}
                   amount={app?.price || 0}
+                  showPayButton={false}
                   onStatus={async (s) => {
                     setStatus(s);
                     if (s === 'approved') {
