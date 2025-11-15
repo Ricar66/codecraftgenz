@@ -2294,11 +2294,20 @@ export function Apps() {
       setLoading(true);
       setError('');
       const isAdmin = hasRole(['admin']);
+      if (import.meta.env.DEV) {
+        console.log('[Admin:Apps:refresh]', { isAdmin });
+      }
       const json = await getAllApps({ page: 1, pageSize: 100, publicFallback: !isAdmin });
       const list = Array.isArray(json?.data) ? json.data : (Array.isArray(json) ? json : []);
       setApps(list);
+      if (import.meta.env.DEV) {
+        console.log('[Admin:Apps:list]', list.length);
+      }
     } catch (e) {
       setError(e.message || 'Erro ao carregar apps');
+      if (import.meta.env.DEV) {
+        console.error('[Admin:Apps:error]', e?.status || 0, e?.message || e);
+      }
     } finally { setLoading(false); }
   }, [hasRole]);
 

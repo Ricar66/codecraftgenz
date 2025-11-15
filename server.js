@@ -87,12 +87,15 @@ if (isProd && allowedOrigins.length === 0) {
   process.exit(1);
 }
 const devOrigin = 'http://localhost:5173';
+const devOriginAlt = 'http://127.0.0.1:5173';
 app.use(cors({
   origin: (origin, callback) => {
-    const list = isProd ? allowedOrigins : [devOrigin, ...allowedOrigins];
+    const list = isProd ? allowedOrigins : [devOrigin, devOriginAlt, ...allowedOrigins];
     const normalizedOrigin = origin ? origin.replace(/\/$/, '') : origin;
     const normalizedList = list.map(o => o.replace(/\/$/, ''));
     if (!normalizedOrigin) return callback(null, true);
+    const devRegex = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+    if (!isProd && devRegex.test(normalizedOrigin)) return callback(null, true);
     if (normalizedList.includes(normalizedOrigin)) return callback(null, true);
     return callback(new Error('CORS origin não permitido'), false);
   },
