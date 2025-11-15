@@ -20,7 +20,11 @@ const AppPurchasePage = () => {
   const [downloadStatus] = useState('idle'); // idle | downloading | done | error
   const [downloadError] = useState('');
   const [feedback, setFeedback] = useState({ rating: 5, comment: '' });
-  const [showCardForm] = useState(true);
+  // Controla visibilidade do formulário de cartão via flag de ambiente
+  const [showCardForm] = useState(
+    import.meta.env.VITE_ENABLE_CARD_PAYMENT_UI === 'true' ||
+    (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('showCard') === '1')
+  );
 
   // Fluxo simplificado: sem checkout externo
 

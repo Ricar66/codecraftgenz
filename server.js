@@ -213,6 +213,37 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Diagnóstico da integração Mercado Pago/Mercado Livre
+app.get('/api/health/mercadopago', async (req, res) => {
+  try {
+    const mpPublic = process.env.VITE_MERCADO_PAGO_PUBLIC_KEY || process.env.MERCADO_PAGO_PUBLIC_KEY || '';
+    const mpAccess = process.env.MERCADO_PAGO_ACCESS_TOKEN || '';
+    const oauthCfg = {
+      clientId: process.env.MELI_CLIENT_ID || '',
+      clientSecret: process.env.MELI_CLIENT_SECRET || '',
+      redirectUri: process.env.MELI_REDIRECT_URI || ''
+    };
+    let ensured = false;
+    let ensuredError = null;
+    try {
+      const token = await mercadoLivre.ensureAccessToken();
+      ensured = !!token;
+    } catch (e) {
+      ensuredError = e?.message || String(e);
+    }
+    return res.json({
+      status: 'OK',
+      mp_public_key_present: !!mpPublic,
+      mp_access_token_present: !!mpAccess,
+      oauth_configured: !!(oauthCfg.clientId && oauthCfg.clientSecret && oauthCfg.redirectUri),
+      can_ensure_access_token: ensured,
+      ensure_error: ensuredError,
+    });
+  } catch (err) {
+    return res.status(500).json({ status: 'ERROR', message: err?.message || String(err) });
+  }
+});
+
 // Rota de autenticação (JWT)
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
@@ -1357,114 +1388,310 @@ const mockApps = [
 ];
 const mockHistory = [];
 // Lista apps do usuário (permite acesso sem autenticação no ambiente atual)
-app.get('/api/apps/mine', (req, res) => {
+app.get('/api/apps/mine', async (req, res) => {
   const page = parseInt(req.query.page || '1', 10);
   const pageSize = parseInt(req.query.pageSize || '12', 10);
   const userId = (req.user && req.user.id) ? req.user.id : 2; // default usuário comum
-  const list = mockApps.filter(a => a.ownerId === userId);
   const start = (page - 1) * pageSize;
-  const paged = list.slice(start, start + pageSize);
-  res.json({ success: true, data: paged, pagination: { total: list.length, page, pageSize } });
+  try {
+    const pool = await getConnectionPool();
+    const totalRes = await pool.request()
+      .input('owner_id', dbSql.Int, userId)
+      .query('SELECT COUNT(*) AS total FROM dbo.apps WHERE owner_id = @owner_id');
+    const total = totalRes.recordset[0]?.total || 0;
+    const dataRes = await pool.request()
+      .input('owner_id', dbSql.Int, userId)
+      .input('start', dbSql.Int, start)
+      .input('pageSize', dbSql.Int, pageSize)
+      .query(`SELECT id, owner_id AS ownerId, name, main_feature AS mainFeature, description, status, price, thumbnail, executable_url AS executableUrl, created_at
+              FROM dbo.apps WHERE owner_id = @owner_id
+              ORDER BY created_at DESC
+              OFFSET @start ROWS FETCH NEXT @pageSize ROWS ONLY`);
+    const rows = dataRes.recordset || [];
+    return res.json({ success: true, data: rows, pagination: { total, page, pageSize } });
+  } catch (err) {
+    console.warn('Erro ao listar apps do usuário, usando mock:', err);
+    // Fallback ao mock em caso de erro de banco
+    const list = mockApps.filter(a => a.ownerId === userId);
+    const paged = list.slice(start, start + pageSize);
+    return res.json({ success: true, data: paged, pagination: { total: list.length, page, pageSize } });
+  }
 });
 
 // Lista todos apps (admin)
-app.get('/api/apps', authenticate, authorizeAdmin, (req, res) => {
+app.get('/api/apps', authenticate, authorizeAdmin, async (req, res) => {
   const page = parseInt(req.query.page || '1', 10);
   const pageSize = parseInt(req.query.pageSize || '50', 10);
   const start = (page - 1) * pageSize;
-  const paged = mockApps.slice(start, start + pageSize);
-  res.json({ success: true, data: paged, pagination: { total: mockApps.length, page, pageSize } });
+  try {
+    const pool = await getConnectionPool();
+    const totalRes = await pool.request().query('SELECT COUNT(*) AS total FROM dbo.apps');
+    const total = totalRes.recordset[0]?.total || 0;
+    const dataRes = await pool.request()
+      .input('start', dbSql.Int, start)
+      .input('pageSize', dbSql.Int, pageSize)
+      .query(`SELECT id, owner_id AS ownerId, name, main_feature AS mainFeature, description, status, price, thumbnail, executable_url AS executableUrl, created_at
+              FROM dbo.apps
+              ORDER BY created_at DESC
+              OFFSET @start ROWS FETCH NEXT @pageSize ROWS ONLY`);
+    const rows = dataRes.recordset || [];
+    return res.json({ success: true, data: rows, pagination: { total, page, pageSize } });
+  } catch (err) {
+    console.warn('Erro ao listar apps (admin), usando mock:', err);
+    const paged = mockApps.slice(start, start + pageSize);
+    return res.json({ success: true, data: paged, pagination: { total: mockApps.length, page, pageSize } });
+  }
 });
 
 // Lista todos apps (público) – sem autenticação
-app.get('/api/apps/public', (req, res) => {
+app.get('/api/apps/public', async (req, res) => {
   const page = parseInt(req.query.page || '1', 10);
   const pageSize = parseInt(req.query.pageSize || '50', 10);
   const sortBy = String(req.query.sortBy || '').toLowerCase();
   const sortOrder = String(req.query.sortOrder || 'desc').toLowerCase();
-
   const start = (page - 1) * pageSize;
 
-  // Ordenação básica
-  let list = [...mockApps];
-  if (sortBy) {
-    list.sort((a, b) => {
-      const dir = sortOrder === 'asc' ? 1 : -1;
-      switch (sortBy) {
-        case 'name':
-          return String(a.name || '').localeCompare(String(b.name || '')) * dir;
-        case 'price':
-          return ((a.price || 0) - (b.price || 0)) * dir;
-        case 'update':
-        case 'created_at':
-          return (new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) * dir;
-        default:
-          return 0;
-      }
-    });
-  }
+  const allowedSort = ['name', 'price', 'created_at'];
+  const sortKey = allowedSort.includes(sortBy) ? sortBy : 'created_at';
+  const sortDir = sortOrder === 'asc' ? 'ASC' : 'DESC';
+  const orderClause = (() => {
+    switch (sortKey) {
+      case 'name': return `name ${sortDir}`;
+      case 'price': return `price ${sortDir}`;
+      default: return `created_at ${sortDir}`;
+    }
+  })();
 
-  const paged = list.slice(start, start + pageSize);
-  res.json({ success: true, data: paged, pagination: { total: list.length, page, pageSize } });
+  try {
+    const pool = await getConnectionPool();
+    const totalRes = await pool.request().query('SELECT COUNT(*) AS total FROM dbo.apps');
+    const total = totalRes.recordset[0]?.total || 0;
+    const dataRes = await pool.request()
+      .input('start', dbSql.Int, start)
+      .input('pageSize', dbSql.Int, pageSize)
+      .query(`SELECT id, owner_id AS ownerId, name, main_feature AS mainFeature, description, status, price, thumbnail, executable_url AS executableUrl, created_at
+              FROM dbo.apps
+              ORDER BY ${orderClause}
+              OFFSET @start ROWS FETCH NEXT @pageSize ROWS ONLY`);
+    const rows = dataRes.recordset || [];
+    return res.json({ success: true, data: rows, pagination: { total, page, pageSize } });
+  } catch (err) {
+    console.warn('Erro ao listar apps públicos, usando mock:', err);
+    // Fallback para mockApps caso banco indisponível
+    let list = [...mockApps];
+    if (sortBy) {
+      const dir = sortOrder === 'asc' ? 1 : -1;
+      list.sort((a, b) => {
+        switch (sortBy) {
+          case 'name':
+            return String(a.name || '').localeCompare(String(b.name || '')) * dir;
+          case 'price':
+            return ((a.price || 0) - (b.price || 0)) * dir;
+          case 'update':
+          case 'created_at':
+            return (new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) * dir;
+          default:
+            return 0;
+        }
+      });
+    }
+    const paged = list.slice(start, start + pageSize);
+    return res.json({ success: true, data: paged, pagination: { total: list.length, page, pageSize } });
+  }
 });
 
 // Detalhes de um app (público para exibição na página de compra)
-app.get('/api/apps/:id', (req, res) => {
+app.get('/api/apps/:id', async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const appItem = mockApps.find(a => a.id === id);
-  if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
-  res.json({ success: true, data: appItem });
+  try {
+    const pool = await getConnectionPool();
+    const dataRes = await pool.request()
+      .input('id', dbSql.Int, id)
+      .query(`SELECT id, owner_id AS ownerId, name, main_feature AS mainFeature, description, status, price, thumbnail, executable_url AS executableUrl, created_at
+              FROM dbo.apps WHERE id = @id`);
+    if (dataRes.recordset.length) {
+      return res.json({ success: true, data: dataRes.recordset[0] });
+    }
+    // Fallback: tentar mockApps se não houver no banco
+    const mockItem = mockApps.find(a => a.id === id);
+    if (mockItem) return res.json({ success: true, data: mockItem });
+    return res.status(404).json({ error: 'Aplicativo não encontrado' });
+  } catch (err) {
+    console.warn('Erro ao buscar app por id, usando mock:', err);
+    const appItem = mockApps.find(a => a.id === id);
+    if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
+    return res.json({ success: true, data: appItem });
+  }
 });
 
 // Criar/atualizar card de app a partir de um projeto (admin)
-app.post('/api/apps/from-project/:projectId', authenticate, authorizeAdmin, (req, res) => {
+app.post('/api/apps/from-project/:projectId', authenticate, authorizeAdmin, async (req, res) => {
   const projectId = parseInt(req.params.projectId, 10);
   const { name, mainFeature, price, thumbnail, executableUrl, status, ownerId } = req.body || {};
-  let appItem = mockApps.find(a => a.id === projectId);
-  if (!appItem) {
-    appItem = {
-      id: projectId,
-      ownerId: ownerId ?? req.user?.id ?? 1,
-      name: name || `App do Projeto ${projectId}`,
-      mainFeature: mainFeature || 'Funcionalidade principal',
-      description: mainFeature || '—',
-      status: status || 'finalizado',
-      price: price || 0,
+  const payload = {
+    id: projectId,
+    ownerId: ownerId ?? req.user?.id ?? 1,
+    name: name || `App do Projeto ${projectId}`,
+    mainFeature: mainFeature || 'Funcionalidade principal',
+    description: (mainFeature || '').trim() || '—',
+    status: status || 'finalizado',
+    price: Number(price || 0),
+    thumbnail: thumbnail || null,
+    executableUrl: executableUrl || null,
+  };
+  try {
+    const pool = await getConnectionPool();
+    const upd = await pool.request()
+      .input('id', dbSql.Int, payload.id)
+      .input('owner_id', dbSql.Int, payload.ownerId)
+      .input('name', dbSql.NVarChar, payload.name)
+      .input('main_feature', dbSql.NVarChar, payload.mainFeature)
+      .input('description', dbSql.NVarChar, payload.description)
+      .input('status', dbSql.NVarChar, payload.status)
+      .input('price', dbSql.Decimal(10, 2), payload.price)
+      .input('thumbnail', dbSql.NVarChar, payload.thumbnail)
+      .input('executable_url', dbSql.NVarChar, payload.executableUrl)
+      .query(`UPDATE dbo.apps SET owner_id=@owner_id, name=@name, main_feature=@main_feature, description=@description, status=@status, price=@price, thumbnail=@thumbnail, executable_url=@executable_url WHERE id=@id`);
+    const affected = upd?.rowsAffected?.[0] || 0;
+    if (affected === 0) {
+      await pool.request()
+        .input('id', dbSql.Int, payload.id)
+        .input('owner_id', dbSql.Int, payload.ownerId)
+        .input('name', dbSql.NVarChar, payload.name)
+        .input('main_feature', dbSql.NVarChar, payload.mainFeature)
+        .input('description', dbSql.NVarChar, payload.description)
+        .input('status', dbSql.NVarChar, payload.status)
+        .input('price', dbSql.Decimal(10, 2), payload.price)
+        .input('thumbnail', dbSql.NVarChar, payload.thumbnail)
+        .input('executable_url', dbSql.NVarChar, payload.executableUrl)
+        .query(`INSERT INTO dbo.apps (id, owner_id, name, main_feature, description, status, price, thumbnail, executable_url) VALUES (@id, @owner_id, @name, @main_feature, @description, @status, @price, @thumbnail, @executable_url)`);
+    }
+    const rowRes = await pool.request().input('id', dbSql.Int, payload.id).query(`SELECT id, owner_id AS ownerId, name, main_feature AS mainFeature, description, status, price, thumbnail, executable_url AS executableUrl, created_at FROM dbo.apps WHERE id=@id`);
+    const row = rowRes.recordset[0];
+    return res.status(201).json({ success: true, data: row });
+  } catch (err) {
+    console.warn('Erro ao criar/atualizar app a partir de projeto, usando mock:', err);
+    // Fallback para mock
+    let appItem = mockApps.find(a => a.id === projectId);
+    if (!appItem) {
+      appItem = { ...payload, created_at: new Date().toISOString(), feedbacks: [] };
+      mockApps.push(appItem);
+    } else {
+      Object.assign(appItem, payload);
+    }
+    return res.status(201).json({ success: true, data: appItem });
+  }
+});
+
+// Inserção de app no banco em ambiente de desenvolvimento, protegida por ADMIN_RESET_TOKEN
+// Útil para popular dbo.apps sem exigir fluxo de autenticação completo
+app.post('/api/apps/dev/insert', async (req, res) => {
+  try {
+    if ((process.env.NODE_ENV || 'development') !== 'development') {
+      return res.status(403).json({ error: 'Disponível apenas em development' });
+    }
+    const token = req.headers['x-admin-reset-token'] || '';
+    if (!ADMIN_RESET_TOKEN || token !== ADMIN_RESET_TOKEN) {
+      return res.status(403).json({ error: 'Token inválido' });
+    }
+    const { id, ownerId, name, mainFeature, description, status, price, thumbnail, executableUrl } = req.body || {};
+    const appId = parseInt(id, 10);
+    if (!appId || !name) {
+      return res.status(400).json({ error: 'id (int) e name são obrigatórios' });
+    }
+    const payload = {
+      id: appId,
+      ownerId: ownerId ?? 1,
+      name: String(name),
+      mainFeature: mainFeature ? String(mainFeature) : null,
+      description: description ? String(description) : null,
+      status: status ? String(status) : 'finalizado',
+      price: Number(price || 0),
       thumbnail: thumbnail || null,
       executableUrl: executableUrl || null,
-      created_at: new Date().toISOString(),
-      feedbacks: []
     };
-    mockApps.push(appItem);
-  } else {
-    appItem.name = name ?? appItem.name;
-    appItem.mainFeature = mainFeature ?? appItem.mainFeature;
-    appItem.status = status ?? appItem.status;
-    appItem.price = price ?? appItem.price;
-    appItem.thumbnail = thumbnail ?? appItem.thumbnail;
-    appItem.executableUrl = executableUrl ?? appItem.executableUrl;
-    appItem.ownerId = ownerId ?? appItem.ownerId;
+    const pool = await getConnectionPool();
+    const upd = await pool.request()
+      .input('id', dbSql.Int, payload.id)
+      .input('owner_id', dbSql.Int, payload.ownerId)
+      .input('name', dbSql.NVarChar, payload.name)
+      .input('main_feature', dbSql.NVarChar, payload.mainFeature)
+      .input('description', dbSql.NVarChar, payload.description)
+      .input('status', dbSql.NVarChar, payload.status)
+      .input('price', dbSql.Decimal(10, 2), payload.price)
+      .input('thumbnail', dbSql.NVarChar, payload.thumbnail)
+      .input('executable_url', dbSql.NVarChar, payload.executableUrl)
+      .query(`UPDATE dbo.apps SET owner_id=@owner_id, name=@name, main_feature=@main_feature, description=@description, status=@status, price=@price, thumbnail=@thumbnail, executable_url=@executable_url WHERE id=@id`);
+    const affected = upd?.rowsAffected?.[0] || 0;
+    if (affected === 0) {
+      await pool.request()
+        .input('id', dbSql.Int, payload.id)
+        .input('owner_id', dbSql.Int, payload.ownerId)
+        .input('name', dbSql.NVarChar, payload.name)
+        .input('main_feature', dbSql.NVarChar, payload.mainFeature)
+        .input('description', dbSql.NVarChar, payload.description)
+        .input('status', dbSql.NVarChar, payload.status)
+        .input('price', dbSql.Decimal(10, 2), payload.price)
+        .input('thumbnail', dbSql.NVarChar, payload.thumbnail)
+        .input('executable_url', dbSql.NVarChar, payload.executableUrl)
+        .query(`INSERT INTO dbo.apps (id, owner_id, name, main_feature, description, status, price, thumbnail, executable_url) VALUES (@id, @owner_id, @name, @main_feature, @description, @status, @price, @thumbnail, @executable_url)`);
+    }
+    const rowRes = await pool.request().input('id', dbSql.Int, payload.id).query(`SELECT id, owner_id AS ownerId, name, main_feature AS mainFeature, description, status, price, thumbnail, executable_url AS executableUrl, created_at FROM dbo.apps WHERE id=@id`);
+    const row = rowRes.recordset[0];
+    return res.status(201).json({ success: true, data: row });
+  } catch (err) {
+    console.error('Erro ao inserir app (dev):', err);
+    return res.status(500).json({ error: 'Erro interno' });
   }
-  res.status(201).json({ success: true, data: appItem });
 });
 
 // Editar card de app (admin)
-app.put('/api/apps/:id', authenticate, authorizeAdmin, (req, res) => {
+app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const idx = mockApps.findIndex(a => a.id === id);
-  if (idx < 0) return res.status(404).json({ error: 'Aplicativo não encontrado' });
   const { name, mainFeature, price, thumbnail, executableUrl, status, ownerId } = req.body || {};
-  mockApps[idx] = {
-    ...mockApps[idx],
-    ...(name !== undefined ? { name } : {}),
-    ...(mainFeature !== undefined ? { mainFeature } : {}),
-    ...(price !== undefined ? { price } : {}),
-    ...(thumbnail !== undefined ? { thumbnail } : {}),
-    ...(executableUrl !== undefined ? { executableUrl } : {}),
-    ...(status !== undefined ? { status } : {}),
-    ...(ownerId !== undefined ? { ownerId } : {}),
-  };
-  res.json({ success: true, data: mockApps[idx] });
+  try {
+    const pool = await getConnectionPool();
+    const currentRes = await pool.request().input('id', dbSql.Int, id).query(`SELECT id, owner_id AS ownerId, name, main_feature AS mainFeature, description, status, price, thumbnail, executable_url AS executableUrl FROM dbo.apps WHERE id=@id`);
+    if (!currentRes.recordset.length) return res.status(404).json({ error: 'Aplicativo não encontrado' });
+    const cur = currentRes.recordset[0];
+    const next = {
+      ownerId: ownerId !== undefined ? ownerId : cur.ownerId,
+      name: name !== undefined ? name : cur.name,
+      mainFeature: mainFeature !== undefined ? mainFeature : cur.mainFeature,
+      status: status !== undefined ? status : cur.status,
+      price: price !== undefined ? Number(price) : Number(cur.price || 0),
+      thumbnail: thumbnail !== undefined ? thumbnail : cur.thumbnail,
+      executableUrl: executableUrl !== undefined ? executableUrl : cur.executableUrl,
+      description: cur.description, // mantemos descrição existente
+    };
+    await pool.request()
+      .input('id', dbSql.Int, id)
+      .input('owner_id', dbSql.Int, next.ownerId)
+      .input('name', dbSql.NVarChar, next.name)
+      .input('main_feature', dbSql.NVarChar, next.mainFeature)
+      .input('status', dbSql.NVarChar, next.status)
+      .input('price', dbSql.Decimal(10, 2), next.price)
+      .input('thumbnail', dbSql.NVarChar, next.thumbnail)
+      .input('executable_url', dbSql.NVarChar, next.executableUrl)
+      .query(`UPDATE dbo.apps SET owner_id=@owner_id, name=@name, main_feature=@main_feature, status=@status, price=@price, thumbnail=@thumbnail, executable_url=@executable_url WHERE id=@id`);
+    const outRes = await pool.request().input('id', dbSql.Int, id).query(`SELECT id, owner_id AS ownerId, name, main_feature AS mainFeature, description, status, price, thumbnail, executable_url AS executableUrl, created_at FROM dbo.apps WHERE id=@id`);
+    return res.json({ success: true, data: outRes.recordset[0] });
+  } catch (err) {
+    console.warn('Erro ao editar app, usando mock:', err);
+    const idx = mockApps.findIndex(a => a.id === id);
+    if (idx < 0) return res.status(404).json({ error: 'Aplicativo não encontrado' });
+    mockApps[idx] = {
+      ...mockApps[idx],
+      ...(name !== undefined ? { name } : {}),
+      ...(mainFeature !== undefined ? { mainFeature } : {}),
+      ...(price !== undefined ? { price } : {}),
+      ...(thumbnail !== undefined ? { thumbnail } : {}),
+      ...(executableUrl !== undefined ? { executableUrl } : {}),
+      ...(status !== undefined ? { status } : {}),
+      ...(ownerId !== undefined ? { ownerId } : {}),
+    };
+    return res.json({ success: true, data: mockApps[idx] });
+  }
 });
 
 // Mercado Livre/Mercado Pago – criar preferência de pagamento (mock)
