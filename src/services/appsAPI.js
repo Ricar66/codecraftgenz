@@ -69,9 +69,12 @@ export async function createPaymentPreference(appId, options = {}) {
 }
 
 // Mercado Pago – criar pagamento direto (cartão/pix/boleto)
-export async function createDirectPayment(appId, payload = {}) {
+export async function createDirectPayment(appId, payload = {}, extra = {}) {
   // payload pode incluir: token (cartão), payment_method_id, installments, payer, additional_info
-  return apiRequest(`/api/apps/${appId}/payment/direct`, { method: 'POST', body: JSON.stringify(payload) });
+  const headers = {};
+  if (extra?.deviceId) headers['x-device-id'] = String(extra.deviceId);
+  if (extra?.trackingId) headers['x-tracking-id'] = String(extra.trackingId);
+  return apiRequest(`/api/apps/${appId}/payment/direct`, { method: 'POST', body: JSON.stringify(payload), headers });
 }
 
 // Mercado Pago – buscar pagamentos (últimos 12 meses)
