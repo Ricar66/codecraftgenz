@@ -62,7 +62,7 @@ const __dirname = path.dirname(__filename);
 
 // --- Configuração do Servidor Express ---
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT_OVERRIDE || process.env.PORT || 8080;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-this';
 const ADMIN_RESET_TOKEN = process.env.ADMIN_RESET_TOKEN || '';
 if (ADMIN_RESET_TOKEN) {
@@ -239,6 +239,37 @@ app.get('/api/health/mercadopago', async (req, res) => {
       can_ensure_access_token: ensured,
       ensure_error: ensuredError,
     });
+  } catch (err) {
+    return res.status(500).json({ status: 'ERROR', message: err?.message || String(err) });
+  }
+});
+
+// Diagnóstico do ambiente Mercado Pago (sandbox vs produção)
+app.get('/api/health/mp-env', (req, res) => {
+  try {
+    const publicKey = process.env.VITE_MERCADO_PAGO_PUBLIC_KEY || process.env.MERCADO_PAGO_PUBLIC_KEY || '';
+    const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN || '';
+
+    const detectMode = (tokenLike) => {
+      if (!tokenLike) return 'unknown';
+      const t = String(tokenLike);
+      if (t.startsWith('TEST-')) return 'sandbox';
+      if (t.startsWith('APP_USR-')) return 'production';
+      return 'unknown';
+    };
+
+    const out = {
+      status: 'OK',
+      mp_client_present: !!mpClient,
+      backend_access_token_present: !!accessToken,
+      backend_mode_hint: detectMode(accessToken),
+      backend_access_token_prefix: accessToken ? accessToken.slice(0, 8) : '',
+      frontend_public_key_present: !!publicKey,
+      frontend_mode_hint: detectMode(publicKey),
+      frontend_public_key_prefix: publicKey ? publicKey.slice(0, 8) : ''
+    };
+
+    return res.json(out);
   } catch (err) {
     return res.status(500).json({ status: 'ERROR', message: err?.message || String(err) });
   }
@@ -2336,9 +2367,11 @@ app.post('/api/apps/:id/payment/direct', async (req, res) => {
     paymentsByApp.set(id, {
       payment_id,
       status,
+      status_detail: statusDetail,
       buyer: { id: req.user?.id, email: payerEmail, name: req.user?.name },
       amount,
       products: items.map(i => ({ title: i.title, quantity: i.quantity, unit_price: i.unit_price })),
+      mp_response: json,
     });
 
     // Persistir no banco
@@ -2431,6 +2464,26 @@ app.post('/api/apps/:id/payment/direct', async (req, res) => {
   } catch (err) {
     console.error('Erro no pagamento direto:', err?.message || err);
     return res.status(500).json({ error: 'Erro interno ao processar pagamento direto' });
+  }
+});
+
+// Último resultado de pagamento direto para um app (cache em memória)
+// GET /api/apps/:id/payment/last
+// Retorna o último pagamento registrado via endpoint de pagamento direto
+app.get('/api/apps/:id/payment/last', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) {
+      return res.status(400).json({ error: 'Parâmetro id inválido' });
+    }
+    const cached = paymentsByApp.get(id) || null;
+    if (!cached) {
+      return res.status(404).json({ error: 'Nenhum pagamento direto encontrado para este app nesta instância' });
+    }
+    return res.json({ success: true, data: cached });
+  } catch (err) {
+    console.error('Erro ao obter último pagamento direto:', err?.message || err);
+    return res.status(500).json({ error: 'Erro interno ao obter último pagamento direto' });
   }
 });
 

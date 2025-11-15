@@ -125,6 +125,8 @@ const CardDirectPayment = ({ appId, amount, onStatus, showPayButton = true, payB
           };
           return createDirectPayment(appId, payload)
             .then((resp) => {
+              // Exibe no console o JSON completo da resposta
+              try { console.log('Pagamento direto (resp):', resp); } catch {}
               const nextStatus = resp?.status || resp?.data?.status || 'pending';
               if (typeof onStatus === 'function') onStatus(nextStatus, resp);
             })
