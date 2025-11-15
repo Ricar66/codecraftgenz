@@ -43,6 +43,7 @@ export async function apiRequest(endpoint, options = {}) {
       headers: {
         'Content-Type': 'application/json',
         ...authHeader,
+        ...(import.meta.env.VITE_CSRF_SECRET ? { 'x-csrf-token': String(import.meta.env.VITE_CSRF_SECRET) } : {}),
         ...options.headers,
       },
       ...options,

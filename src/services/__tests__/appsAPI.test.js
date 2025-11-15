@@ -40,4 +40,18 @@ describe('appsAPI.createPaymentPreference', () => {
     expect(parsed.payment_methods.excluded_payment_methods).toEqual([{ id: 'visa' }, { id: 'master' }]);
     expect(parsed.payment_methods.excluded_payment_types).toEqual([{ id: 'ticket' }]);
   });
+
+  it('propaga erro 503 quando backend indica NO_ACCESS_TOKEN', async () => {
+    const err = { status: 503, details: { error: 'NO_ACCESS_TOKEN' } };
+    const spy = vi.spyOn(apiCfg, 'apiRequest').mockRejectedValueOnce(err);
+    await expect(createPaymentPreference(99, { statement_descriptor: 'X' })).rejects.toEqual(err);
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('propaga erro 502 quando há falha de rede', async () => {
+    const err = { status: 502, details: { error: 'NETWORK_ERROR' } };
+    const spy = vi.spyOn(apiCfg, 'apiRequest').mockRejectedValueOnce(err);
+    await expect(createPaymentPreference(88)).rejects.toEqual(err);
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
 });
