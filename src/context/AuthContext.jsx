@@ -114,8 +114,14 @@ function useAuthProvider() {
 
   const hasRole = useCallback((roles) => {
     if (!user) return false;
-    if (!roles || roles.length === 0) return true;
-    return roles.includes(user.role);
+    const ur = String(user.role || '').trim().toLowerCase();
+    const allowed = Array.isArray(roles) ? roles : [roles];
+    const normalized = new Set(allowed.filter(Boolean).map(r => String(r).trim().toLowerCase()));
+    if (normalized.size === 0) return true;
+    if (normalized.has('admin')) {
+      if (['admin','administrator','superadmin','owner'].includes(ur)) return true;
+    }
+    return normalized.has(ur);
   }, [user]);
 
   const value = useMemo(() => ({

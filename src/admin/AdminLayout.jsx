@@ -2088,7 +2088,7 @@ export function Config() {
 }
 
 export default function AdminLayout() {
-  const { user, logout } = useAuth();
+  const { user, logout, hasRole } = useAuth();
   const [globalErr, setGlobalErr] = React.useState(null);
   const [sidebarOpen, setSidebarOpen] = React.useState(() => {
     if (typeof window === 'undefined') return true;
@@ -2120,7 +2120,7 @@ export default function AdminLayout() {
             <span className={styles.menuIcon}>🏠</span>
             <span className={styles.menuText}>Dashboard</span>
           </NavLink>
-          {String(user?.role || '').toLowerCase() === 'admin' && (
+          {hasRole(['admin']) && (
             <NavLink to="/admin/usuarios" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
               <span className={styles.menuIcon}>👤</span>
               <span className={styles.menuText}>Usuários</span>
@@ -2241,7 +2241,7 @@ class AdminErrorBoundary extends React.Component {
 }
 
 export function Apps() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const [apps, setApps] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
@@ -2251,14 +2251,14 @@ export function Apps() {
     try {
       setLoading(true);
       setError('');
-      const isAdmin = String(user?.role || '').toLowerCase() === 'admin';
+      const isAdmin = hasRole(['admin']);
       const json = await getAllApps({ page: 1, pageSize: 100, publicFallback: !isAdmin });
       const list = Array.isArray(json?.data) ? json.data : (Array.isArray(json) ? json : []);
       setApps(list);
     } catch (e) {
       setError(e.message || 'Erro ao carregar apps');
     } finally { setLoading(false); }
-  }, [user?.role]);
+  }, [user?.role, hasRole]);
 
   React.useEffect(() => { refresh(); }, [refresh]);
 
