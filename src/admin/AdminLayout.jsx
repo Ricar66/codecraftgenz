@@ -1218,9 +1218,18 @@ export function Ranking() {
 export function Projetos() {
   const { data: list, loading, error, refresh } = useProjects({ useAdminStore: true });
   const [form, setForm] = React.useState({ titulo:'', owner:'', descricao:'', data_inicio:'', status:'rascunho', preco:0, progresso:0, thumb_url:'', tags:[] });
+  const [notice, setNotice] = React.useState({ type: '', msg: '' });
   
   const onSave = async () => { 
     try {
+      if (!String(form.titulo || '').trim() || !String(form.owner || '').trim() || !String(form.status || '').trim()) {
+        setNotice({ type: 'error', msg: 'Preencha título, owner e status.' });
+        return;
+      }
+      if (String(form.descricao || '').length < 10) {
+        setNotice({ type: 'error', msg: 'Descrição muito curta. Adicione mais detalhes.' });
+        return;
+      }
       const savedProject = await ProjectsRepo.upsert(form);
 
       
@@ -1244,9 +1253,10 @@ export function Projetos() {
       }
 
       setForm({ titulo:'', owner:'', descricao:'', data_inicio:'', status:'rascunho', preco:0, progresso:0, visivel:false, thumb_url:'', tags:[] }); 
+      setNotice({ type: 'success', msg: form.id ? 'Projeto atualizado com sucesso.' : 'Projeto criado com sucesso.' });
       refresh(); 
     } catch (error) {
-      alert('Erro ao salvar projeto: ' + error.message);
+      setNotice({ type: 'error', msg: 'Erro ao salvar projeto: ' + (error.message || 'Falha desconhecida') });
     }
   };
   
@@ -1288,7 +1298,21 @@ export function Projetos() {
       </div>
       
       {loading && <p>🔄 Carregando...</p>}
-      {error && <p role="alert" style={{ color: '#FF6B6B' }}>❌ {error}</p>}
+      {error && (
+        <p role="alert" style={{ color: '#FF6B6B' }}>
+          ❌ {error}
+          {String(error).toLowerCase().includes('não é json') && (
+            <span style={{ display:'block', marginTop:4, fontSize:'0.9em' }}>
+              Verifique se o proxy de /api está configurado; em produção use VITE_ALLOW_EXTERNAL_API e VITE_API_URL ou ajuste o reverse proxy.
+            </span>
+          )}
+        </p>
+      )}
+      {notice.msg && (
+        <p role={notice.type==='error'?'alert':'status'} style={{ color: notice.type==='error' ? '#FF6B6B' : '#00E4F2' }}>
+          {notice.type==='error' ? '❌ ' : '✔ '} {notice.msg}
+        </p>
+      )}
       
       <div className="table"><table><thead><tr><th>Título</th><th>Owner</th><th>Status</th><th>Preço</th><th>Progresso</th><th>📝</th><th>Ações</th></tr></thead><tbody>{pageItems.length===0 ? (<tr><td colSpan="7">📭 Nenhum projeto</td></tr>) : pageItems.map(p=> (
         <tr key={p.id}>
@@ -1324,8 +1348,8 @@ export function Projetos() {
           <td data-label="Ações">
             <div className="btn-group">
               <button className="btn btn-secondary" onClick={()=>setForm({ id:p.id, titulo:p.title||p.titulo||'', owner:p.owner||'', descricao:p.description||p.descricao||'', data_inicio:p.startDate||p.data_inicio||'', status:p.status||'rascunho', preco:p.price??0, progresso:p.progress??0, thumb_url:p.thumb_url||'', tags:p.tags||[] })}>✏️</button>
-              <button className="btn btn-outline" onClick={async()=>{ const res = await ProjectsRepo.toggleVisible(p); if(!res.ok){ alert(res.error||'Falha ao alternar visibilidade'); } else { refresh(); } }} aria-label={`Visibilidade ${p.title||p.titulo||p.id}`}>{String(p.status||'').toLowerCase().includes('rascunho')?'Exibir':'Ocultar'}</button>
-              <button className="btn btn-danger" onClick={async()=>{ if(!window.confirm('Deletar este projeto?')) return; await apiRequest(`/api/projetos/${p.id}`, { method:'DELETE' }); refresh(); }}>🗑️</button>
+              <button className="btn btn-outline" onClick={async()=>{ const res = await ProjectsRepo.toggleVisible(p); if(!res.ok){ setNotice({ type:'error', msg: res.error || 'Falha ao alternar visibilidade' }); } else { setNotice({ type:'success', msg:'Visibilidade atualizada' }); refresh(); } }} aria-label={`Visibilidade ${p.title||p.titulo||p.id}`}>{String(p.status||'').toLowerCase().includes('rascunho')?'Exibir':'Ocultar'}</button>
+              <button className="btn btn-danger" onClick={async()=>{ if(!window.confirm('Deletar este projeto?')) return; try { await apiRequest(`/api/projetos/${p.id}`, { method:'DELETE' }); setNotice({ type:'success', msg:'Projeto deletado com sucesso.' }); refresh(); } catch(e){ setNotice({ type:'error', msg: e.message || 'Falha ao deletar projeto' }); } }}>🗑️</button>
             </div>
           </td>
         </tr>
