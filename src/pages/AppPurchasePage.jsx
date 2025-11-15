@@ -4,7 +4,6 @@ import { useParams, useSearchParams } from 'react-router-dom';
 
 import CardDirectPayment from '../components/CardDirectPayment.jsx';
 import Navbar from '../components/Navbar/Navbar';
-import { API_BASE_URL } from '../lib/apiConfig.js';
 import { getAppById, getPurchaseStatus, registerDownload, submitFeedback, createPaymentPreference } from '../services/appsAPI.js';
 import { getAppPrice } from '../utils/appModel.js';
 
