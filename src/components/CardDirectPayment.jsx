@@ -67,19 +67,33 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
       tick();
     });
 
-    try {
-      if (PK) {
-        initMercadoPago(PK, { locale: 'pt-BR' });
-        ensureMpSdk()
-          .then(() => waitForSDK())
-          .then(() => setReady(true))
-          .catch((err) => setError(err?.message || 'SDK do Mercado Pago indisponível'));
-      } else {
-        setError('Chave pública do Mercado Pago não configurada');
+    const bootstrap = async () => {
+      try {
+        let key = PK;
+        if (!key) {
+          try {
+            const resp = await fetch('/api/config/mp-public-key');
+            if (resp.ok) {
+              const json = await resp.json();
+              key = json?.public_key || '';
+            }
+          } catch (e) {
+            console.warn('Falha ao buscar mp-public-key do servidor:', e);
+          }
+        }
+        if (key) {
+          initMercadoPago(key, { locale: 'pt-BR' });
+          await ensureMpSdk();
+          await waitForSDK();
+          setReady(true);
+        } else {
+          setError('Chave pública do Mercado Pago não configurada');
+        }
+      } catch {
+        setError('Falha ao inicializar Mercado Pago');
       }
-    } catch {
-      setError('Falha ao inicializar Mercado Pago');
-    }
+    };
+    bootstrap();
 
     return () => { cancelled = true; };
   }, []);
