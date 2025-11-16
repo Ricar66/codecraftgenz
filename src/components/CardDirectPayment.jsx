@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/useAuth.js';
 import { createDirectPayment } from '../services/appsAPI.js';
 
-const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo', onStatus, showPayButton = true, payButtonLabel = 'Pagar agora', buttonStyle, buyer = {} }) => {
+const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo', onStatus, showPayButton = true, payButtonLabel = 'Pagar agora', buttonStyle, buyer = {}, cardholderEmail, identificationType, identificationNumber, cardholderName }) => {
   const containerRef = useRef(null);
   const controllerRef = useRef(null);
   const [ready, setReady] = useState(false);
@@ -13,14 +13,14 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
   const [error, setError] = useState('');
   const { user } = useAuth();
   const buyerInfo = React.useMemo(() => ({
-    email: buyer?.email,
-    docType: buyer?.docType,
-    docNumber: buyer?.docNumber,
-    name: buyer?.name,
+    email: buyer?.email || cardholderEmail || user?.email,
+    docType: buyer?.docType || identificationType || 'CPF',
+    docNumber: buyer?.docNumber || identificationNumber,
+    name: buyer?.name || cardholderName,
     phone: buyer?.phone,
     streetName: buyer?.streetName,
     zip: buyer?.zip,
-  }), [buyer?.email, buyer?.docType, buyer?.docNumber, buyer?.name, buyer?.phone, buyer?.streetName, buyer?.zip]);
+  }), [buyer?.email, buyer?.docType, buyer?.docNumber, buyer?.name, buyer?.phone, buyer?.streetName, buyer?.zip, cardholderEmail, identificationType, identificationNumber, cardholderName, user?.email]);
 
   // Inicializa SDK JS v2 e aguarda disponibilidade de window.MercadoPago
   useEffect(() => {
@@ -113,9 +113,17 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
     }
 
     const bricksBuilder = mp.bricks();
+    const payerInit = (() => {
+      const email = buyerInfo.email;
+      const idType = buyerInfo.docType;
+      const idNum = buyerInfo.docNumber;
+      const ident = (idType && idNum) ? { type: idType, number: idNum } : undefined;
+      return (email || ident) ? { email, ...(ident ? { identification: ident } : {}) } : undefined;
+    })();
     const settings = {
       initialization: {
-        amount: Number(amount || 0)
+        amount: Number(amount || 0),
+        ...(payerInit ? { payer: payerInit } : {})
       },
       customization: {
         visual: {

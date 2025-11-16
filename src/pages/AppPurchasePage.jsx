@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 
 import CardDirectPayment from '../components/CardDirectPayment.jsx';
 import Navbar from '../components/Navbar/Navbar';
+import { useAuth } from '../context/useAuth.js';
 import { getAppById, getPurchaseStatus, registerDownload, submitFeedback, createPaymentPreference } from '../services/appsAPI.js';
 import { getAppPrice } from '../utils/appModel.js';
 
@@ -54,8 +55,9 @@ const AppPurchasePage = () => {
   const [downloadError] = useState('');
   const [feedback, setFeedback] = useState({ rating: 5, comment: '' });
   // Checkout em duas etapas: 1 = dados do comprador, 2 = cartão
-  const [step, setStep] = useState(0);
-  const [payerInfo, setPayerInfo] = useState({ name: '', email: '', identification: '' });
+  const [step, setStep] = useState(1);
+  const { user } = useAuth();
+  const [payerInfo, setPayerInfo] = useState({ name: String(user?.name || ''), email: String(user?.email || ''), identification: '' });
   // Controla visibilidade do formulário de cartão via flag de ambiente
   const initialShowCard = (
     import.meta.env.VITE_ENABLE_CARD_PAYMENT_UI === 'true' ||
