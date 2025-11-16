@@ -222,12 +222,13 @@ const AppPurchasePage = () => {
                     amount={app?.price || 0}
                     description={(app?.name || app?.titulo) ? `Compra de ${app?.name || app?.titulo}` : 'Compra de aplicativo'}
                     buyer={{ name: payerInfo.name, email: payerInfo.email, docType: 'CPF', docNumber: payerInfo.identification, phone: payerInfo.phone, zip: payerInfo.zip, streetName: payerInfo.streetName }}
-                    showPayButton={false}
-                    onStatus={async (s, resp) => {
-                      setStatus(s);
+                    cardholderEmail={payerInfo.email}
+                    identificationType="CPF"
+                    identificationNumber={payerInfo.identification}
+                    onPaymentSuccess={async (resp) => {
+                      setStatus('approved');
                       const det = resp?.status_detail || resp?.data?.status_detail || '';
                       if (det) setStatusDetail(det);
-                    if (s === 'approved') {
                       try {
                         const json = await registerDownload(id);
                         const url = json?.download_url;
@@ -235,11 +236,10 @@ const AppPurchasePage = () => {
                       } catch (e) {
                         console.warn('Falha ao registrar download após aprovação:', e);
                       }
-                    }
-                  }}
-                />
-              </div>
-            )}
+                    }}
+                  />
+                </div>
+              )}
 
             {status === 'approved' && (
               <div className="approved-wrap" style={{ marginTop: 10, padding: '10px 12px', border:'1px solid rgba(0,228,242,0.3)', borderRadius:8 }}>
