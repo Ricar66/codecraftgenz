@@ -1,5 +1,5 @@
 // src/components/CardDirectPayment.jsx
-import { CardPayment, initMercadoPago } from '@mercadopago/sdk-react';
+import { CardPayment, initMercadoPago, getPaymentMethods } from '@mercadopago/sdk-react';
 import React, { useEffect, useState } from 'react';
 
 import { useAuth } from '../context/useAuth.js';
@@ -57,6 +57,8 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
 
   const onSubmit = async (formData) => {
     try {
+      const dev = import.meta.env.MODE !== 'production';
+      if (dev) { try { console.log('MP CardPayment formData', formData); } catch { /* noop */ } }
       setError('');
       const txAmount = Number(amount || 0);
       if (!Number.isFinite(txAmount) || txAmount <= 0) throw new Error('Valor de pagamento inválido.');
@@ -68,9 +70,18 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
       const holderParts = holderNameRaw ? holderNameRaw.split(/\s+/) : [];
       const firstName = holderParts[0] || undefined;
       const lastName = holderParts.length > 1 ? holderParts.slice(1).join(' ') : undefined;
+      let paymentMethodId = formData?.payment_method_id || formData?.paymentMethodId || formData?.paymentMethod?.id;
+      if (!paymentMethodId) {
+        const bin = formData?.bin || (formData?.card?.bin);
+        if (bin && String(bin).length >= 6) {
+          const methods = await getPaymentMethods({ bin: String(bin).slice(0, 6) });
+          if (Array.isArray(methods) && methods[0]?.id) paymentMethodId = methods[0].id;
+        }
+      }
+      if (!paymentMethodId) throw { status: 400, details: { message: 'payment_method_id é obrigatório (ex.: master, visa, pix, ticket)' } };
       const payload = {
         token: formData?.token,
-        payment_method_id: formData?.payment_method_id || formData?.paymentMethodId || formData?.paymentMethod?.id,
+        payment_method_id: paymentMethodId,
         ...(formData?.issuer_id ? { issuer_id: formData.issuer_id } : {}),
         installments: Number(formData?.installments || 1),
         binary_mode: false,
@@ -91,6 +102,7 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
           cardholder_identification_number: (number ? String(number) : undefined),
         }
       };
+      if (dev) { try { console.log('Direct payment payload', payload); } catch { /* noop */ } }
       const deviceId = (typeof window !== 'undefined' && (window.MP_DEVICE_SESSION_ID || window.__MP_DEVICE_ID)) ? (window.MP_DEVICE_SESSION_ID || window.__MP_DEVICE_ID) : undefined;
       const resp = await createDirectPayment(appId, payload, deviceId ? { deviceId } : undefined);
       const nextStatus = resp?.status || resp?.data?.status || 'pending';
@@ -100,6 +112,8 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
         if (friendly) setError(friendly);
       }
     } catch (error) {
+      const dev = import.meta.env.MODE !== 'production';
+      if (dev) { try { console.error('Direct payment error', error); } catch { /* noop */ } }
       const status = error?.status;
       const details = error?.details || {};
       if (status === 503 && (details?.error === 'NO_ACCESS_TOKEN')) setError('Configuração do Mercado Pago ausente. Contate o suporte.');
