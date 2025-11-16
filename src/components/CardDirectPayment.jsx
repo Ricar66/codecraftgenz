@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/useAuth.js';
 import { createDirectPayment } from '../services/appsAPI.js';
 
-const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo', onStatus, buyer = {}, cardholderEmail, identificationType, identificationNumber, cardholderName }) => {
+const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo', onStatus, onPaymentSuccess, buyer = {}, cardholderEmail, identificationType, identificationNumber, cardholderName }) => {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const { user } = useAuth();
@@ -178,6 +178,7 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
         const nextStatus = resp?.status || resp?.data?.status || 'pending';
         const friendly = resp?.friendly_message || resp?.normalized?.mensagem_usuario || '';
         if (typeof onStatus === 'function') onStatus(nextStatus, resp);
+        if (nextStatus === 'approved' && typeof onPaymentSuccess === 'function') onPaymentSuccess(resp);
         if (!onStatus && nextStatus !== 'approved' && friendly) {
           setError(friendly);
         }
@@ -215,6 +216,11 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
     texts: {
       formTitle: 'Dados do Cartão',
       installmentsSectionTitle: 'Escolha as parcelas',
+      cardholderName: { label: 'Nome impresso no cartão', placeholder: 'Ex: João M. da Silva' },
+      cardholderIdentification: { label: 'CPF do titular do cartão' },
+      cardNumber: { label: 'Número do cartão' },
+      expirationDate: { label: 'Vencimento (MM/AA)' },
+      securityCode: { label: 'Cód. de segurança (CVV)' },
       formSubmit: 'Pagar Agora',
     },
     visual: { style: { theme: 'dark' } },
