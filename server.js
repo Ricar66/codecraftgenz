@@ -100,7 +100,7 @@ app.use(cors({
     return callback(new Error('CORS origin não permitido'), false);
   },
   methods: ['GET','HEAD','PUT','PATCH','POST','DELETE'],
-  allowedHeaders: ['Content-Type','Authorization','x-csrf-token','x-admin-reset-token'],
+  allowedHeaders: ['Content-Type','Authorization','x-csrf-token','x-admin-reset-token','X-Device-Id','x-device-id','X-Tracking-Id','x-tracking-id'],
   credentials: false,
 }));
 if (isProd) {
@@ -2908,7 +2908,11 @@ app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
     }
     if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
 
-    // Coleta dados do payload
+    const rawBody = req.body;
+    let parsedBody = rawBody;
+    if (typeof rawBody === 'string') {
+      try { parsedBody = JSON.parse(rawBody); } catch { parsedBody = {}; }
+    }
     const {
       token,
       payment_method_id,
@@ -2920,7 +2924,7 @@ app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
       payer,
       additional_info,
       metadata,
-    } = req.body || {};
+    } = parsedBody || {};
 
     if (!payment_method_id) {
       return res.status(400).json({ error: 'payment_method_id é obrigatório (ex.: master, visa, pix, ticket)' });
