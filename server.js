@@ -1960,6 +1960,31 @@ app.put('/api/inscricoes/:id/status', authenticate, authorizeAdmin, async (req, 
   }
 });
 
+// --- Remover uma inscrição ---
+app.delete('/api/inscricoes/:id', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
+
+    const pool = await getConnectionPool();
+
+    const del = await pool.request()
+      .input('id', dbSql.Int, id)
+      .query('DELETE FROM dbo.inscricoes WHERE id = @id');
+
+    if (!del.rowsAffected || del.rowsAffected[0] === 0) {
+      return res.status(404).json({ error: 'Inscrição não encontrada' });
+    }
+
+    res.json({ success: true, removed: true });
+  } catch (err) {
+    console.error('Erro ao excluir inscrição:', err);
+    next(err);
+  }
+});
+
 // --- Rotas de Finanças (Lógica 4) ---
 app.get('/api/financas', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
