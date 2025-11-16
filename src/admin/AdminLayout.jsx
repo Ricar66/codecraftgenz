@@ -2344,7 +2344,22 @@ export function Apps() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
   const [form, setForm] = React.useState({ id:null, name:'', mainFeature:'', description:'', status:'draft', price:0, thumbnail:'', exec_url:'' });
+  const [priceMask, setPriceMask] = React.useState('R$ 0,00');
   const [visDiag, setVisDiag] = React.useState(null);
+
+  const formatBRL = (n) => {
+    try {
+      const v = Number(n || 0);
+      return v.toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+    } catch { return `R$ ${String(n||0)}`; }
+  };
+  React.useEffect(()=>{ setPriceMask(formatBRL(form.price || 0)); }, [form.price]);
+  const handlePriceMaskChange = (e) => {
+    const raw = String(e.target.value || '').replace(/[^0-9]/g, '');
+    const cents = Number(raw || 0);
+    const val = cents / 100;
+    setForm(s => ({ ...s, price: val }));
+  };
 
   const refresh = React.useCallback(async () => {
     try {
@@ -2455,8 +2470,15 @@ export function Apps() {
                   {a.status || '—'}
                 </span>
               </td>
-                <td data-label="Preço">R$ {getAppPrice(a).toLocaleString('pt-BR')}</td>
-                <td data-label="Thumb"><a href={getAppImageUrl(a)} target="_blank" rel="noopener noreferrer">thumbnail</a></td>
+              <td data-label="Preço">{formatBRL(getAppPrice(a))}</td>
+              <td data-label="Thumb">
+                <img
+                  src={sanitizeImageUrl(getAppImageUrl(a))}
+                  alt="thumbnail"
+                  style={{ width:48, height:36, objectFit:'cover', borderRadius:8, border:'1px solid rgba(255,255,255,0.18)' }}
+                  onError={(e)=>{ e.currentTarget.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='; }}
+                />
+              </td>
               <td data-label="Exec URL"><a href={a.executableUrl} target="_blank" rel="noopener noreferrer">exec</a></td>
               <td data-label="Ações">
                 <div className="btn-group">
@@ -2466,6 +2488,7 @@ export function Apps() {
                     const next = curr==='available' ? 'draft' : 'available';
                     try { await updateApp(a.id, { status: next }); refresh(); } catch(e){ alert(e.message||'Falha ao alternar visibilidade'); }
                   }} aria-label={`Visibilidade ${a.name||a.id}`}>{String(a.status||'').toLowerCase()==='available'?'Ocultar':'Exibir'}</button>
+                  <button className="btn" onClick={()=>window.open(`/apps/${a.id}/compra`, '_blank', 'noopener')}>🛒 Comprar</button>
                   <button className="btn btn-danger" onClick={async()=>{ if (confirm('Excluir este aplicativo?')) { try { await deleteApp(a.id); refresh(); } catch(e){ alert(e.message||'Falha ao excluir'); } } }}>🗑️</button>
                 </div>
               </td>
@@ -2480,7 +2503,7 @@ export function Apps() {
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:12 }}>
           <input placeholder="Nome" value={form.name} onChange={e=>setForm({ ...form, name:e.target.value })} />
           <input placeholder="Feature principal" value={form.mainFeature} onChange={e=>setForm({ ...form, mainFeature:e.target.value })} />
-          <input type="number" placeholder="Preço (R$)" value={form.price} onChange={e=>setForm({ ...form, price:Number(e.target.value) })} />
+          <input placeholder="Preço (R$)" value={priceMask} onChange={handlePriceMaskChange} />
         </div>
         <div style={{ marginTop:12 }}>
           <textarea placeholder="Descrição completa" value={form.description} onChange={e=>setForm({ ...form, description:e.target.value })} rows={4} />
@@ -2489,6 +2512,16 @@ export function Apps() {
           <input placeholder="Thumbnail URL" value={form.thumbnail} onChange={e=>setForm({ ...form, thumbnail:e.target.value })} />
           <input placeholder="Exec URL (download)" value={form.exec_url} onChange={e=>setForm({ ...form, exec_url:e.target.value })} />
         </div>
+        {(form.thumbnail) && (
+          <div style={{ marginTop:8 }}>
+            <img
+              src={sanitizeImageUrl(form.thumbnail)}
+              alt="Prévia do thumbnail"
+              style={{ width:120, height:90, objectFit:'cover', borderRadius:12, border:'1px solid rgba(255,255,255,0.18)' }}
+              onError={(e)=>{ e.currentTarget.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='; }}
+            />
+          </div>
+        )}
         <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:12, marginTop:12 }}>
           <select value={form.status} onChange={e=>setForm({ ...form, status:e.target.value })}>
             <option value="draft">Rascunho</option>
@@ -2496,8 +2529,8 @@ export function Apps() {
           </select>
         </div>
         <div className="btn-group" style={{ marginTop:12, display:'flex', gap:8 }}>
-          <button className="btn btn-primary" onClick={onSave} disabled={!form.id}>💾 Salvar</button>
-          <button className="btn btn-success" onClick={onCreate} disabled={!!form.id || !form.name}>➕ Criar</button>
+          <button className="btn btn-primary" onClick={onSave} disabled={!form.id || !form.name}>💾 Salvar</button>
+          <button className="btn btn-success" onClick={onCreate} disabled={!!form.id || !form.name || form.price<=0}>➕ Criar</button>
           <button className="btn btn-outline" onClick={()=>setForm({ id:null, name:'', mainFeature:'', description:'', status:'draft', price:0, thumbnail:'', exec_url:'' })}>❌ Limpar</button>
         </div>
       </section>
