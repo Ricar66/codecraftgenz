@@ -236,6 +236,11 @@ const AdminInscricoes = () => {
   };
 
   const filteredInscricoes = inscricoes.filter(inscricao => {
+    // Filtro por status - quando filtroStatus está vazio, mostra tudo exceto confirmados
+    const matchesStatus = filtroStatus === '' 
+      ? inscricao.status !== 'confirmado'  // Mostra tudo exceto confirmados quando filtro está vazio
+      : !filtroStatus || inscricao.status === filtroStatus;
+    
     const matchesSearch = !searchTerm || 
       inscricao.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       inscricao.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -259,7 +264,7 @@ const AdminInscricoes = () => {
       }
     })();
     
-    return matchesSearch && matchesArea && matchesData;
+    return matchesStatus && matchesSearch && matchesArea && matchesData;
   });
 
   const getStatusInfo = (status) => {
@@ -356,9 +361,9 @@ const AdminInscricoes = () => {
               className={"btn btn-outline"}
               style={{ marginLeft: 8 }}
               onClick={() => setFiltroStatus(prev => prev === '' ? 'pendente' : '')}
-              aria-label="Alternar entre pendentes e todos"
+              aria-label="Alternar entre pendentes e todos exceto confirmados"
             >
-              {filtroStatus === '' ? 'Mostrar pendentes' : 'Mostrar todos'}
+              {filtroStatus === '' ? 'Mostrar pendentes' : 'Mostrar todos (exceto confirmados)'}
             </button>
           </div>
 
