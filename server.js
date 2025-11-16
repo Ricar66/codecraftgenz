@@ -1487,7 +1487,8 @@ app.get('/api/crafters', async (req, res, next) => {
     // Mapeia colunas para o frontend (pontos -> points)
     const craftersMapped = dataResult.recordset.map(c => ({
       ...c,
-      points: c.pontos 
+      points: c.pontos,
+      active: !!c.ativo
     }));
 
     res.json({
@@ -1542,6 +1543,104 @@ app.post('/api/crafters', authenticate, authorizeAdmin, async (req, res, next) =
       return res.status(409).json({ error: 'Email já cadastrado para um crafter.' });
     }
     console.error('Erro ao criar crafter:', err);
+    next(err);
+  }
+});
+
+// Buscar um Crafter por ID
+app.get('/api/crafters/:id', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+
+    const pool = await getConnectionPool();
+    const result = await pool.request()
+      .input('id', dbSql.Int, id)
+      .query('SELECT id, nome, email, avatar_url, pontos, nivel, ativo FROM dbo.crafters WHERE id = @id');
+
+    if (!result.recordset || result.recordset.length === 0) {
+      return res.status(404).json({ error: 'Crafter não encontrado' });
+    }
+
+    const row = result.recordset[0];
+    const crafter = { ...row, points: row.pontos, active: !!row.ativo };
+    return res.json({ success: true, data: crafter });
+  } catch (err) {
+    console.error('Erro ao buscar crafter por id:', err);
+    next(err);
+  }
+});
+
+// Atualizar um Crafter
+app.put('/api/crafters/:id', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+
+    const { nome, email, avatar_url, pontos, nivel, ativo } = req.body || {};
+
+    const pool = await getConnectionPool();
+    const request = pool.request()
+      .input('id', dbSql.Int, id)
+      .input('nome', dbSql.NVarChar, nome != null ? sanitizeString(String(nome), 128) : null)
+      .input('email', dbSql.NVarChar, email != null ? sanitizeString(String(email), 128) : null)
+      .input('avatar_url', dbSql.NVarChar, avatar_url != null ? sanitizeString(String(avatar_url), 512) : null)
+      .input('pontos', dbSql.Int, typeof pontos === 'number' ? pontos : null)
+      .input('nivel', dbSql.NVarChar, nivel != null ? sanitizeString(String(nivel), 64) : null)
+      .input('ativo', dbSql.Bit, typeof ativo === 'boolean' ? (ativo ? 1 : 0) : null);
+
+    const fields = [];
+    if (nome !== undefined) fields.push('nome = @nome');
+    if (email !== undefined) fields.push('email = @email');
+    if (avatar_url !== undefined) fields.push('avatar_url = @avatar_url');
+    if (pontos !== undefined) fields.push('pontos = @pontos');
+    if (nivel !== undefined) fields.push('nivel = @nivel');
+    if (ativo !== undefined) fields.push('ativo = @ativo');
+
+    if (fields.length === 0) {
+      return res.status(400).json({ error: 'Nenhum campo para atualizar' });
+    }
+
+    const updateSql = `UPDATE dbo.crafters SET ${fields.join(', ')}, updated_at = SYSUTCDATETIME() WHERE id = @id`;
+    const upd = await request.query(updateSql);
+    if (!upd.rowsAffected || upd.rowsAffected[0] === 0) {
+      return res.status(404).json({ error: 'Crafter não encontrado' });
+    }
+
+    // Retorna registro atualizado
+    const getRes = await pool.request().input('id', dbSql.Int, id).query('SELECT id, nome, email, avatar_url, pontos, nivel, ativo FROM dbo.crafters WHERE id = @id');
+    const row = getRes.recordset[0];
+    const crafter = { ...row, points: row.pontos, active: !!row.ativo };
+    return res.json({ success: true, data: crafter });
+  } catch (err) {
+    console.error('Erro ao atualizar crafter:', err);
+    next(err);
+  }
+});
+
+// Excluir (remover) um Crafter
+app.delete('/api/crafters/:id', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+
+    const pool = await getConnectionPool();
+
+    // Remover dependências conhecidas
+    await pool.request().input('id', dbSql.Int, id).query('DELETE FROM dbo.equipes WHERE crafter_id = @id');
+    try {
+      await pool.request().input('id', dbSql.Int, id).query('DELETE FROM dbo.ranking_top3 WHERE crafter_id = @id');
+    } catch (e) {
+      // Ignora se tabela não existir
+    }
+
+    const del = await pool.request().input('id', dbSql.Int, id).query('DELETE FROM dbo.crafters WHERE id = @id');
+    if (!del.rowsAffected || del.rowsAffected[0] === 0) {
+      return res.status(404).json({ error: 'Crafter não encontrado' });
+    }
+    return res.json({ success: true, removed: true });
+  } catch (err) {
+    console.error('Erro ao excluir crafter:', err);
     next(err);
   }
 });

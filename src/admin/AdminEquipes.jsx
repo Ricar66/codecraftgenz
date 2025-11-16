@@ -368,6 +368,9 @@ export default function AdminEquipes() {
     );
   }
 
+  const projetoSelecionado = projetos.find(p => p.id === novaEquipe.projeto_id);
+  const mentorSelecionado = mentores.find(m => m.id === novaEquipe.mentor_id);
+
   return (
     <div className="admin-equipes admin-content">
       <h1 className="title">Gerenciamento de Equipes</h1>
@@ -691,18 +694,26 @@ export default function AdminEquipes() {
                   className="filter-input"
                 />
               </div>
-              <div className="filter-group">
-                <label>📊 Status:</label>
-                <select
-                  value={filtroStatusCrafter}
-                  onChange={(e) => setFiltroStatusCrafter(e.target.value)}
-                  className="filter-select"
-                >
-                  <option value="todos">Todos</option>
-                  <option value="disponivel">🟢 Disponíveis</option>
-                  <option value="ocupado">🔵 Em Equipes</option>
-                </select>
-              </div>
+            <div className="filter-group">
+              <label>📊 Status:</label>
+              <select
+                value={filtroStatusCrafter}
+                onChange={(e) => setFiltroStatusCrafter(e.target.value)}
+                className="filter-select"
+              >
+                <option value="todos">Todos</option>
+                <option value="disponivel">🟢 Disponíveis</option>
+                <option value="ocupado">🔵 Em Equipes</option>
+              </select>
+              <button
+                className="btn btn-outline"
+                style={{ marginTop: 8 }}
+                onClick={() => setFiltroStatusCrafter(prev => prev === 'todos' ? 'disponivel' : 'todos')}
+                aria-label="Alternar entre mostrar todos e disponíveis"
+              >
+                {filtroStatusCrafter === 'todos' ? 'Mostrar disponíveis' : 'Mostrar todos'}
+              </button>
+            </div>
             </div>
             
             {crafters.length === 0 ? (
@@ -855,6 +866,21 @@ export default function AdminEquipes() {
                     <span className="selected-count">
                       ✅ {novaEquipe.crafter_ids.length} crafter(s) selecionado(s)
                     </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="section-card" style={{ marginTop: 12 }}>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">🧩 Nome da Equipe</label>
+                    <div className="muted">
+                      {(projetoSelecionado?.titulo || 'Projeto não selecionado')} — {(mentorSelecionado?.nome || 'Mentor não selecionado')}
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">👥 Participantes</label>
+                    <div className="muted">{novaEquipe.crafter_ids.length} selecionado(s)</div>
                   </div>
                 </div>
               </div>
@@ -1171,7 +1197,7 @@ export default function AdminEquipes() {
       
       <style jsx>{`
         .admin-equipes { max-width: 1200px; margin: 0 auto; }
-        .title { font-family: 'Montserrat', sans-serif; font-weight: 700; margin-bottom: 24px; color: #042326; }
+        .title { font-family: 'Montserrat', sans-serif; font-weight: 700; margin-bottom: 24px; color: #fff; }
         
         .tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 2px solid #e0e0e0; }
         .tab { 
@@ -1191,31 +1217,36 @@ export default function AdminEquipes() {
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
         .section { 
-          background: white; 
+          background: transparent; 
+          border: 1px solid rgba(255, 255, 255, 0.22);
           border-radius: 12px; 
           padding: 24px; 
           margin-bottom: 24px; 
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+          box-shadow: none; 
         }
         .section h2 { 
           font-family: 'Montserrat', sans-serif; 
           font-weight: 600; 
           margin-bottom: 16px; 
-          color: #042326; 
+          color: #fff; 
         }
         
         .form { display: flex; flex-direction: column; gap: 16px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         .form input, .form select, .form textarea { 
           padding: 12px; 
-          border: 2px solid #e0e0e0; 
+          border: 1px solid rgba(255, 255, 255, 0.28); 
           border-radius: 8px; 
           font-size: 14px;
-          transition: border-color 0.2s ease;
+          background: transparent;
+          color: #fff;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
         }
         .form input:focus, .form select:focus, .form textarea:focus { 
           border-color: #00E4F2; 
           outline: none; 
+          box-shadow: 0 0 0 3px rgba(0, 228, 242, 0.28);
+          background: rgba(255,255,255,0.06);
         }
         .form textarea { resize: vertical; min-height: 80px; }
         
@@ -1237,22 +1268,22 @@ export default function AdminEquipes() {
           max-height: 200px; 
           overflow-y: auto; 
           padding: 12px; 
-          border: 2px solid #e0e0e0; 
+          border: 1px solid rgba(255, 255, 255, 0.22); 
           border-radius: 8px; 
-          background: #f9f9f9; 
+          background: transparent; 
         }
         .checkbox-item { 
           display: flex; 
           align-items: center; 
           gap: 8px; 
           padding: 8px; 
-          background: white; 
+          background: transparent; 
           border-radius: 6px; 
           cursor: pointer; 
           transition: all 0.2s ease; 
         }
         .checkbox-item:hover { 
-          background: #f0f9ff; 
+          background: rgba(0,228,242,0.08); 
           border-color: #00E4F2; 
         }
         .checkbox-item input[type="checkbox"] { 
@@ -1266,11 +1297,11 @@ export default function AdminEquipes() {
         }
         .crafter-info strong { 
           font-size: 14px; 
-          color: #042326; 
+          color: #fff; 
         }
         .crafter-info small { 
           font-size: 12px; 
-          color: #666; 
+          color: rgba(255,255,255,0.8); 
         }
         .help-text { 
           display: block; 
@@ -1307,14 +1338,14 @@ export default function AdminEquipes() {
         .table th, .table td { 
           padding: 12px; 
           text-align: left; 
-          border-bottom: 1px solid #e0e0e0; 
+          border-bottom: 1px solid rgba(255, 255, 255, 0.16); 
         }
         .table th { 
-          background: #f8f9fa; 
+          background: transparent; 
           font-weight: 600; 
-          color: #042326; 
+          color: #fff; 
         }
-        .table tr:hover { background: #f8f9fa; }
+        .table tr:hover { background: rgba(0,228,242,0.08); }
         
         .status { 
           padding: 4px 8px; 
@@ -1335,7 +1366,7 @@ export default function AdminEquipes() {
           align-items: center; 
           height: 200px; 
           font-size: 18px; 
-          color: #666; 
+          color: rgba(255,255,255,0.75); 
         }
         
         .message {
