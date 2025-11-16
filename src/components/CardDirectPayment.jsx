@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/useAuth.js';
 import { createDirectPayment } from '../services/appsAPI.js';
 
-const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo', onPaymentSuccess, buyer = {}, cardholderEmail, identificationType, identificationNumber, cardholderName }) => {
+const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo', onPaymentSuccess, onStatus, buyer = {}, cardholderEmail, identificationType, identificationNumber, cardholderName }) => {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const { user } = useAuth();
@@ -106,10 +106,14 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
       const deviceId = (typeof window !== 'undefined' && (window.MP_DEVICE_SESSION_ID || window.__MP_DEVICE_ID)) ? (window.MP_DEVICE_SESSION_ID || window.__MP_DEVICE_ID) : undefined;
       const resp = await createDirectPayment(appId, payload, deviceId ? { deviceId } : undefined);
       const nextStatus = resp?.status || resp?.data?.status || 'pending';
+      if (typeof onStatus === 'function') onStatus(resp);
       if (nextStatus === 'approved' && typeof onPaymentSuccess === 'function') onPaymentSuccess(resp);
       else if (nextStatus !== 'approved') {
         const friendly = resp?.friendly_message || resp?.normalized?.mensagem_usuario || '';
-        if (friendly) setError(friendly);
+        const det = resp?.status_detail || resp?.data?.status_detail || '';
+        if (String(nextStatus) === 'rejected') setError(`Pagamento rejeitado${det ? ` (${det})` : ''}`);
+        else if (friendly) setError(friendly);
+        else setError('Dados incompletos do cartão. Verifique e reenvie.');
       }
     } catch (error) {
       const dev = import.meta.env.MODE !== 'production';

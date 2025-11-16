@@ -41,16 +41,17 @@ describe('CardDirectPayment – validações e sucesso', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    try { createDirectPayment.mockReset(); } catch { void 0; }
+    vi.clearAllMocks();
   });
 
   it('exibe erro quando payment_method_id está ausente', async () => {
-    createDirectPayment.mockRejectedValueOnce({ status: 400, details: { message: 'Preencha os dados do cartão e use o botão do formulário para enviar' } });
     cardDataProvider = () => ({ token: 'tok_test' });
     globalThis.__cardDataProvider = () => cardDataProvider();
     render(<CardDirectPayment appId={7} amount={100} />);
     screen.getByTestId('mp-submit').click();
     const alertEl = await screen.findByRole('alert');
-    expect(alertEl.textContent).toMatch(/Preencha os dados do cartão/i);
+    expect(alertEl.textContent).toMatch(/payment_method_id é obrigatório/i);
   });
 
   it('exibe erro quando token do cartão não é gerado', async () => {
