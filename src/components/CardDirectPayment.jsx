@@ -3,8 +3,9 @@ import { CardPayment, initMercadoPago } from '@mercadopago/sdk-react';
 import React, { useEffect, useState } from 'react';
 
 import { useAuth } from '../context/useAuth.js';
+import { createDirectPayment } from '../services/appsAPI.js';
 
-const CardDirectPayment = ({ amount, onPaymentSuccess, buyer = {}, cardholderEmail, identificationType, identificationNumber, cardholderName }) => {
+const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo', onPaymentSuccess, buyer = {}, cardholderEmail, identificationType, identificationNumber, cardholderName }) => {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const { user } = useAuth();
@@ -110,11 +111,43 @@ const CardDirectPayment = ({ amount, onPaymentSuccess, buyer = {}, cardholderEma
       setError('');
       const txAmount = Number(amount || 0);
       if (!Number.isFinite(txAmount) || txAmount <= 0) throw new Error('Valor de pagamento inválido.');
-      console.log('Dados do pagamento a enviar para o backend:', formData);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      if (typeof onPaymentSuccess === 'function') onPaymentSuccess({ status: 'approved', data: { status_detail: 'approved' } });
+      const payerEmail = formData?.payer?.email || formData?.cardholderEmail || buyerInfo.email || cardholderEmail || undefined;
+      const idObj = formData?.payer?.identification || {};
+      const type = idObj?.type || formData?.identificationType || buyerInfo.docType || identificationType || 'CPF';
+      const number = idObj?.number || formData?.identificationNumber || buyerInfo.docNumber || identificationNumber || undefined;
+      const payload = {
+        token: formData?.token,
+        payment_method_id: formData?.payment_method_id || formData?.paymentMethodId || formData?.paymentMethod?.id,
+        ...(formData?.issuer_id ? { issuer_id: formData.issuer_id } : {}),
+        installments: Number(formData?.installments || 1),
+        binary_mode: false,
+        capture: true,
+        transaction_amount: txAmount,
+        description: String(description || ''),
+        ...(payerEmail || (type && number) ? { payer: { ...(payerEmail ? { email: payerEmail } : {}), identification: (type && number) ? { type, number } : undefined } } : {}),
+        additional_info: {
+          items: [{ id: String(appId || ''), title: String(description || ''), quantity: 1, unit_price: txAmount }],
+          payer: {
+            phone: buyerInfo.phone ? { number: String(buyerInfo.phone) } : undefined,
+            address: (buyerInfo.zip || buyerInfo.streetName) ? { zip_code: String(buyerInfo.zip || ''), street_name: String(buyerInfo.streetName || '') } : undefined,
+          }
+        },
+      };
+      const resp = await createDirectPayment(appId, payload);
+      const nextStatus = resp?.status || resp?.data?.status || 'pending';
+      if (nextStatus === 'approved' && typeof onPaymentSuccess === 'function') onPaymentSuccess(resp);
+      else if (nextStatus !== 'approved') {
+        const friendly = resp?.friendly_message || resp?.normalized?.mensagem_usuario || '';
+        if (friendly) setError(friendly);
+      }
     } catch (error) {
-      setError(error?.message || 'Erro ao processar pagamento');
+      const status = error?.status;
+      const details = error?.details || {};
+      if (status === 503 && (details?.error === 'NO_ACCESS_TOKEN')) setError('Configuração do Mercado Pago ausente. Contate o suporte.');
+      else if (status === 502 && details?.error === 'NETWORK_ERROR') setError('Falha de rede ao contatar o Mercado Pago. Tente novamente.');
+      else if (status === 502 && (details?.mp_status || details?.message)) setError(`Pagamento não foi criado (${details?.mp_status || 'erro'}: ${String(details?.message || '')})`);
+      else if (status === 400) setError(String(details?.message || 'Dados incompletos do cartão. Verifique e reenvie.'));
+      else setError(error?.message || 'Falha ao processar pagamento');
     }
   };
 
