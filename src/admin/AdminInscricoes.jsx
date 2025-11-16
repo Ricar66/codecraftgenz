@@ -125,6 +125,17 @@ const AdminInscricoes = () => {
     }
   };
 
+  const deleteInscricao = async (id) => {
+    if (!window.confirm('Confirma excluir esta inscrição?')) return;
+    try {
+      await apiRequest(`/api/inscricoes/${id}`, { method: 'DELETE' });
+      setInscricoes(prev => prev.filter(i => i.id !== id));
+      setToast({ type: 'success', message: 'Inscrição excluída com sucesso.' });
+    } catch (err) {
+      setToast({ type: 'error', message: `Erro ao excluir inscrição: ${err.message}` });
+    }
+  };
+
   // Auto-dismiss do toast após alguns segundos
   useEffect(() => {
     if (!toast) return;
@@ -586,6 +597,14 @@ const AdminInscricoes = () => {
                       </option>
                     ))}
                   </select>
+                  <button
+                    className={"btn btn-danger"}
+                    style={{ marginLeft: 8 }}
+                    onClick={() => deleteInscricao(inscricao.id)}
+                    aria-label={`Excluir inscrição de ${inscricao.nome}`}
+                  >
+                    Excluir inscrição
+                  </button>
                 </div>
               </div>
             );
