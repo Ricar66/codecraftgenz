@@ -1906,6 +1906,60 @@ app.post('/api/inscricoes', async (req, res, next) => {
   }
 });
 
+// --- Rota para atualizar status da inscrição ---
+app.put('/api/inscricoes/:id/status', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { status } = req.body;
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
+    
+    if (!status) {
+      return res.status(400).json({ error: 'Status é obrigatório' });
+    }
+    
+    // Validar status permitidos
+    const statusPermitidos = ['pendente', 'contato_realizado', 'confirmado', 'rejeitado'];
+    if (!statusPermitidos.includes(status)) {
+      return res.status(400).json({ error: 'Status inválido' });
+    }
+    
+    const pool = await getConnectionPool();
+    
+    // Verificar se a inscrição existe
+    const checkResult = await pool.request()
+      .input('id', dbSql.Int, id)
+      .query('SELECT id FROM dbo.inscricoes WHERE id = @id');
+    
+    if (checkResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'Inscrição não encontrada' });
+    }
+    
+    // Atualizar o status
+    const updateResult = await pool.request()
+      .input('id', dbSql.Int, id)
+      .input('status', dbSql.NVarChar, status)
+      .query('UPDATE dbo.inscricoes SET status = @status WHERE id = @id');
+    
+    if (updateResult.rowsAffected[0] === 0) {
+      return res.status(500).json({ error: 'Falha ao atualizar status' });
+    }
+    
+    // Retornar a inscrição atualizada
+    const updatedResult = await pool.request()
+      .input('id', dbSql.Int, id)
+      .query('SELECT * FROM dbo.inscricoes WHERE id = @id');
+    
+    res.json({ success: true, data: updatedResult.recordset[0] });
+    
+  } catch (err) {
+    console.error('Erro ao atualizar status da inscrição:', err);
+    next(err);
+  }
+});
+
 // --- Rotas de Finanças (Lógica 4) ---
 app.get('/api/financas', authenticate, authorizeAdmin, async (req, res, next) => {
   try {

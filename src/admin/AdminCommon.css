@@ -250,7 +250,7 @@
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
   padding: 12px;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   gap: 12px;
   align-items: start;
 }
@@ -278,7 +278,7 @@
 .mentorAdminCard .stats { display: flex; gap: 12px; flex-wrap: wrap; color: #A6A6A6; }
 .mentorAdminCard .stat-item { font-size: 0.9rem; }
 
-.mentorAdminCard .right { display: grid; gap: 8px; justify-items: end; min-width: 0; }
+.mentorAdminCard .right { display: grid; gap: 8px; justify-items: start; min-width: 0; grid-column: 1 / -1; margin-top: 6px; }
 .mentorAdminCard .badges { display: flex; gap: 6px; flex-wrap: wrap; }
 .mentorAdminCard .badge { 
   background: rgba(0, 228, 242, 0.22);
@@ -294,12 +294,9 @@
 
 .mentorAdminCard .actions { display: flex; column-gap: 6px; row-gap: 6px; flex-wrap: wrap; align-items: center; }
 
-/* Stack interno em telas menores: direita abaixo do conteúdo */
+/* Garantir que a coluna de ações sempre fique abaixo do conteúdo */
 @media (max-width: 880px) {
   .mentorAdminCard { grid-template-columns: auto 1fr; }
-  /* Fazer a coluna direita ocupar a largura inteira abaixo do conteúdo */
-  .mentorAdminCard .right { justify-items: start; grid-column: 1 / -1; }
-  /* Evitar quebra feia e garantir que textos não vazem */
   .mentorAdminCard .center, .mentorAdminCard .right { min-width: 0; }
 }
 
