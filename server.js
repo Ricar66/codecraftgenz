@@ -1630,7 +1630,7 @@ app.delete('/api/crafters/:id', authenticate, authorizeAdmin, async (req, res, n
     await pool.request().input('id', dbSql.Int, id).query('DELETE FROM dbo.equipes WHERE crafter_id = @id');
     try {
       await pool.request().input('id', dbSql.Int, id).query('DELETE FROM dbo.ranking_top3 WHERE crafter_id = @id');
-    } catch (e) {
+    } catch {
       // Ignora se tabela não existir
     }
 

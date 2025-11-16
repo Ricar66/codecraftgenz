@@ -87,6 +87,14 @@
 .appPrice { color: #00E4F2; font-weight: 700; }
 .appActions { display:flex; gap:8px; }
 
+.contactSection { padding: 16px; background: rgba(0,0,0,0.25); border-top: 1px solid rgba(255,255,255,0.14); }
+.contactContainer { max-width: 1200px; margin: 0 auto; display:flex; align-items:center; justify-content: space-between; gap: 12px; }
+.contactInfo { display:flex; flex-direction: column; gap: 4px; color: var(--texto-branco); }
+.contactLabel { font-weight: 700; }
+.contactPhone { color: var(--texto-gelo); }
+.contactActions { display:flex; gap: 8px; }
+.whatsButton { padding: 10px 14px; border-radius: 999px; border:1px solid rgba(37,211,102,0.4); background: #25D366; color: #000; font-weight: 700; text-decoration: none; }
+
 @media (max-width: 640px) {
   .heroSection { padding: 32px 12px; }
   .searchContainer { max-width: 100%; }
@@ -94,4 +102,5 @@
   .highlightsHeader { padding: 0 4px; }
   .highlightsTrack { grid-auto-columns: minmax(240px, 80%); }
   .navButton { width: 32px; height: 32px; }
+  .contactContainer { flex-direction: column; align-items: flex-start; }
 }

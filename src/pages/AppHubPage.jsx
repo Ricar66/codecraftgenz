@@ -1,4 +1,5 @@
 // src/pages/AppHubPage.jsx
+/* eslint-disable no-constant-binary-expression */
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -28,6 +29,9 @@ const AppHubPage = () => {
   const [fromCache, setFromCache] = useState(false);
   const [showCacheBadge, setShowCacheBadge] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const showGrid = false;
+  const whatsNumber = (import.meta.env.VITE_WHATSAPP_NUMBER || '559999999999');
+  const whatsLink = `https://wa.me/${whatsNumber}`;
 
   useEffect(() => {
     loadApps();
@@ -67,13 +71,7 @@ const AppHubPage = () => {
     }
   };
 
-  const filteredApps = apps.filter(app => {
-    const matchesFilter = filter === 'all' || app.category === filter;
-    const term = (debouncedSearch || '').toLowerCase();
-    const matchesSearch = app.name.toLowerCase().includes(term) ||
-                         (app.description || '').toLowerCase().includes(term);
-    return matchesFilter && matchesSearch;
-  });
+  const filteredApps = [];
 
   const categories = ['all', ...new Set(apps.map(app => app.category).filter(Boolean))];
   const featuredApps = React.useMemo(() => {
@@ -284,7 +282,7 @@ const AppHubPage = () => {
       </section>
 
       {/* Highlights Section */}
-      {featuredApps.length > 0 && (
+      {featuredApps.length > 0 ? (
         <section className={styles.highlightsSection}>
           <div className={styles.highlightsHeader}>
             <h3>Destaques</h3>
@@ -349,10 +347,10 @@ const AppHubPage = () => {
             ))}
           </div>
         </section>
-      )}
+      ) : null}
 
       {/* Apps Grid – ocultado: apenas destaques visíveis no Hub */}
-      {false && (
+      {showGrid ? (
       <section className={styles.appsSection}>
         <div className={styles.container}>
           {filteredApps.length === 0 ? (
@@ -365,7 +363,7 @@ const AppHubPage = () => {
               <div className={styles.resultsInfo}>
                 <p>
                   {filteredApps.length} aplicativo(s) encontrado(s)
-                  {showCacheBadge && (
+                  {showCacheBadge ? (
                     <span style={{
                       marginLeft: 12,
                       padding: '4px 8px',
@@ -377,7 +375,7 @@ const AppHubPage = () => {
                     }} title={fromCache ? 'Dados carregados do cache em memória' : ''}>
                       carregado do cache
                     </span>
-                  )}
+                  ) : null}
                 </p>
               </div>
               
@@ -433,19 +431,18 @@ const AppHubPage = () => {
           )}
         </div>
       </section>
-      )}
+      ) : null}
 
-      {/* CTA Section */}
-      <section className={styles.ctaSection}>
-        <div className={styles.ctaContainer}>
-          <h2>Precisa de um aplicativo personalizado?</h2>
-          <p>Entre em contato conosco para desenvolver uma solução sob medida para seu negócio</p>
-          <div className={styles.ctaButtons}>
-            <Link to="/login" className={styles.ctaButtonPrimary}>
-              Fazer Login
-            </Link>
-            <a href="mailto:contato@codecraft.com" className={styles.ctaButtonSecondary}>
-              Entrar em Contato
+      {/* Contato – rodapé profissional */}
+      <section className={styles.contactSection}>
+        <div className={styles.contactContainer}>
+          <div className={styles.contactInfo}>
+            <span className={styles.contactLabel}>Fale com a CodeCraft</span>
+            <span className={styles.contactPhone}>WhatsApp: +{whatsNumber}</span>
+          </div>
+          <div className={styles.contactActions}>
+            <a href={whatsLink} target="_blank" rel="noopener noreferrer" className={styles.whatsButton} aria-label="Abrir WhatsApp de contato">
+              WhatsApp
             </a>
           </div>
         </div>
