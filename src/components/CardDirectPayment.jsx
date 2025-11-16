@@ -146,6 +146,7 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
       if (status === 503 && (details?.error === 'NO_ACCESS_TOKEN')) setError('Configuração do Mercado Pago ausente. Contate o suporte.');
       else if (status === 502 && details?.error === 'NETWORK_ERROR') setError('Falha de rede ao contatar o Mercado Pago. Tente novamente.');
       else if (status === 502 && (details?.mp_status || details?.message)) setError(`Pagamento não foi criado (${details?.mp_status || 'erro'}: ${String(details?.message || '')})`);
+      else if (status === 400 && Array.isArray(details?.cause) && details.cause.find(c => String(c?.code) === '2056')) setError('Ajustamos o modo binário. Tente novamente.');
       else if (status === 400) setError(String(details?.message || 'Dados incompletos do cartão. Verifique e reenvie.'));
       else setError(error?.message || 'Falha ao processar pagamento');
     }
