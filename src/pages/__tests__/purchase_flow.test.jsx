@@ -12,7 +12,20 @@ vi.mock('../../services/appsAPI.js', () => ({
   submitFeedback: vi.fn(async () => ({ success: true })),
 }));
 
+import { AuthContext } from '../../context/AuthCore.js';
 import AppPurchasePage from '../AppPurchasePage.jsx';
+
+const renderPage = (initialEntries = ['/apps/7/compra'], mockUser = { name: 'Test User', email: 'test@user.com' }) => {
+  return render(
+    <AuthContext.Provider value={{ user: mockUser }}>
+      <MemoryRouter initialEntries={initialEntries}>
+        <Routes>
+          <Route path="/apps/:id/compra" element={<AppPurchasePage />} />
+        </Routes>
+      </MemoryRouter>
+    </AuthContext.Provider>
+  );
+};
 
 describe('Fluxo de compra – regressão sem auto-download', () => {
   beforeEach(() => {
@@ -23,13 +36,7 @@ describe('Fluxo de compra – regressão sem auto-download', () => {
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => {});
 
     const initialEntries = ['/apps/7/compra?preference_id=pref_123&status=approved'];
-    render(
-      <MemoryRouter initialEntries={initialEntries}>
-        <Routes>
-          <Route path="/apps/:id/compra" element={<AppPurchasePage />} />
-        </Routes>
-      </MemoryRouter>
-    );
+    renderPage(initialEntries);
 
     // Espera renderizar o título e status aprovado
     const titleEl = await screen.findByText('App Teste');
@@ -59,13 +66,7 @@ describe('AppPurchasePage – mensagens de rejeição', () => {
     const mods = await import('../../services/appsAPI.js');
     mods.getPurchaseStatus.mockResolvedValueOnce({ status: 'rejected', status_detail: 'cc_rejected_bad_filled_card_number' });
     const initialEntries = ['/apps/7/compra?status=rejected&payment_id=abc'];
-    render(
-      <MemoryRouter initialEntries={initialEntries}>
-        <Routes>
-          <Route path="/apps/:id/compra" element={<AppPurchasePage />} />
-        </Routes>
-      </MemoryRouter>
-    );
+    renderPage(initialEntries);
     const msg = await screen.findByText(/Número do cartão inválido/i);
     expect(msg).toBeDefined();
     const code = await screen.findByText(/cc_rejected_bad_filled_card_number/i);
@@ -76,13 +77,7 @@ describe('AppPurchasePage – mensagens de rejeição', () => {
     const mods = await import('../../services/appsAPI.js');
     mods.getPurchaseStatus.mockResolvedValueOnce({ status: 'rejected', status_detail: 'cc_rejected_high_risk' });
     const initialEntries = ['/apps/7/compra?status=rejected'];
-    render(
-      <MemoryRouter initialEntries={initialEntries}>
-        <Routes>
-          <Route path="/apps/:id/compra" element={<AppPurchasePage />} />
-        </Routes>
-      </MemoryRouter>
-    );
+    renderPage(initialEntries);
     const msg = await screen.findByText(/Transação sinalizada como alto risco/i);
     expect(msg).toBeDefined();
   });
