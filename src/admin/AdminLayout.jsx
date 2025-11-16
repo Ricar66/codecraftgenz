@@ -9,7 +9,7 @@ import { useAuth } from '../context/useAuth';
 import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo, useDesafios, DesafiosRepo, useFinance, FinanceRepo, useRanking, RankingRepo, useLogs } from '../hooks/useAdminRepo';
 import { apiRequest } from '../lib/apiConfig.js';
 import { realtime } from '../lib/realtime';
-import { getAllApps, updateApp } from '../services/appsAPI.js';
+import { getAllApps, updateApp, createApp, deleteApp } from '../services/appsAPI.js';
 import { getAll as getAllProjects, deleteProject as deleteProjectApi } from '../services/projectsAPI.js';
 import { getAppPrice, getAppImageUrl } from '../utils/appModel.js';
 import { sanitizeImageUrl } from '../utils/urlSanitize.js';
@@ -508,6 +508,7 @@ export function Mentores() {
   const [selected, setSelected] = React.useState(new Set());
   const [historyOpen, setHistoryOpen] = React.useState(null);
   const gridRef = React.useRef(null);
+  const fallbackAvatar = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
   const filtered = list.filter(m =>
     (m.name||'').toLowerCase().includes(query.toLowerCase()) &&
@@ -649,7 +650,13 @@ export function Mentores() {
             <div className="left">
               <input type="checkbox" aria-label={`Selecionar ${m.name}`} checked={selected.has(m.id)} onChange={e=>onToggleSelect(m.id, e.target.checked)} />
               <div className="avatar">
-                {m.photo || m.avatar_url ? (<img src={sanitizeImageUrl(m.photo || m.avatar_url)} alt={`Foto de ${m.name}`} />) : null}
+                {m.photo || m.avatar_url ? (
+                  <img
+                    src={sanitizeImageUrl(m.photo || m.avatar_url)}
+                    alt={`Foto de ${m.name}`}
+                    onError={(e)=>{ e.currentTarget.src = fallbackAvatar; }}
+                  />
+                ) : null}
               </div>
             </div>
             <div className="center">
@@ -709,7 +716,14 @@ export function Mentores() {
             </div>
           </div>
           <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
-            {(form.photo || form.avatar_url) && <img src={sanitizeImageUrl(form.photo || form.avatar_url)} alt="Preview" style={{width: 120, height: 120, objectFit: 'cover', borderRadius: 12, border: '1px solid rgba(255,255,255,0.18)'}}/>}
+            {(form.photo || form.avatar_url) && (
+              <img
+                src={sanitizeImageUrl(form.photo || form.avatar_url)}
+                alt="Preview"
+                style={{width: 120, height: 120, objectFit: 'cover', borderRadius: 12, border: '1px solid rgba(255,255,255,0.18)'}}
+                onError={(e)=>{ e.currentTarget.src = fallbackAvatar; }}
+              />
+            )}
           </div>
         </div>
         <div className="formRow">
@@ -729,7 +743,14 @@ export function Mentores() {
         <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 12, padding: 12, maxWidth: 600 }}>
           <div style={{ display:'grid', gridTemplateColumns:'100px 1fr', gap: 12 }}>
             <div style={{ width: 100, height: 100, borderRadius: 12, background: 'linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))', border: '1px solid rgba(255,255,255,0.18)', overflow: 'hidden' }}>
-              {(form.photo || form.avatar_url) ? (<img src={sanitizeImageUrl(form.photo || form.avatar_url)} alt="Prévia da foto" style={{ width:'100%', height:'100%', objectFit:'cover' }} />) : null}
+              {(form.photo || form.avatar_url) ? (
+                <img
+                  src={sanitizeImageUrl(form.photo || form.avatar_url)}
+                  alt="Prévia da foto"
+                  style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                  onError={(e)=>{ e.currentTarget.src = fallbackAvatar; }}
+                />
+              ) : null}
             </div>
             <div>
               <div style={{ color:'#fff', fontWeight:700 }}>{form.name || 'Nome do mentor'}</div>
@@ -2322,7 +2343,7 @@ export function Apps() {
   const [apps, setApps] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
-  const [form, setForm] = React.useState({ id:null, name:'', mainFeature:'', price:0, thumbnail:'', exec_url:'' });
+  const [form, setForm] = React.useState({ id:null, name:'', mainFeature:'', description:'', status:'draft', price:0, thumbnail:'', exec_url:'' });
   const [visDiag, setVisDiag] = React.useState(null);
 
   const refresh = React.useCallback(async () => {
@@ -2359,7 +2380,7 @@ export function Apps() {
 
   const onSave = async () => {
     try {
-      const payload = { name: form.name, mainFeature: form.mainFeature, price: Number(form.price||0), thumbnail: form.thumbnail, executableUrl: form.exec_url };
+      const payload = { name: form.name, mainFeature: form.mainFeature, description: form.description, status: form.status, price: Number(form.price||0), thumbnail: form.thumbnail, executableUrl: form.exec_url };
       const isInvalid = (s) => {
         const v = String(s || '');
         const hasDrive = /^[a-zA-Z]:\\/.test(v);
@@ -2369,10 +2390,30 @@ export function Apps() {
       if (isInvalid(form.thumbnail)) { setError('Thumbnail URL inválida. Use http(s).'); return; }
       if (isInvalid(form.exec_url)) { setError('Exec URL inválida. Use http(s).'); return; }
       await updateApp(form.id, payload);
-      setForm({ id:null, name:'', mainFeature:'', price:0, thumbnail:'', exec_url:'' });
+      setForm({ id:null, name:'', mainFeature:'', description:'', status:'draft', price:0, thumbnail:'', exec_url:'' });
       refresh();
     } catch (e) {
       alert('Erro ao atualizar app: ' + e.message);
+    }
+  };
+
+  const onCreate = async () => {
+    try {
+      const payload = { name: form.name, mainFeature: form.mainFeature, description: form.description, status: form.status, price: Number(form.price||0), thumbnail: form.thumbnail, executableUrl: form.exec_url };
+      const isInvalid = (s) => {
+        const v = String(s || '');
+        const hasDrive = /^[a-zA-Z]:\\/.test(v);
+        const isFile = v.startsWith('file:');
+        return hasDrive || isFile;
+      };
+      if (!payload.name) { setError('Nome é obrigatório'); return; }
+      if (isInvalid(form.thumbnail)) { setError('Thumbnail URL inválida. Use http(s).'); return; }
+      if (isInvalid(form.exec_url)) { setError('Exec URL inválida. Use http(s).'); return; }
+      await createApp(payload);
+      setForm({ id:null, name:'', mainFeature:'', description:'', status:'draft', price:0, thumbnail:'', exec_url:'' });
+      refresh();
+    } catch (e) {
+      alert('Erro ao criar app: ' + e.message);
     }
   };
 
@@ -2401,7 +2442,7 @@ export function Apps() {
           </thead>
           <tbody>
           {apps.length === 0 ? (
-            <tr><td colSpan="6">📭 Nenhum aplicativo</td></tr>
+            <tr><td colSpan="7">📭 Nenhum aplicativo</td></tr>
           ) : apps.map(a => (
             <tr key={a.id}>
               <td data-label="Nome">{a.name}</td>
@@ -2419,12 +2460,13 @@ export function Apps() {
               <td data-label="Exec URL"><a href={a.executableUrl} target="_blank" rel="noopener noreferrer">exec</a></td>
               <td data-label="Ações">
                 <div className="btn-group">
-                  <button className="btn btn-secondary" onClick={()=>setForm({ id:a.id, name:a.name||'', mainFeature:a.mainFeature||'', price:a.price||0, thumbnail:a.thumbnail||'', exec_url:a.executableUrl||'' })}>✏️</button>
+                  <button className="btn btn-secondary" onClick={()=>setForm({ id:a.id, name:a.name||'', mainFeature:a.mainFeature||'', description:a.description||'', status:a.status||'draft', price:a.price||0, thumbnail:a.thumbnail||'', exec_url:a.executableUrl||'' })}>✏️</button>
                   <button className="btn btn-outline" onClick={async()=>{
                     const curr = String(a.status||'').toLowerCase();
                     const next = curr==='available' ? 'draft' : 'available';
                     try { await updateApp(a.id, { status: next }); refresh(); } catch(e){ alert(e.message||'Falha ao alternar visibilidade'); }
                   }} aria-label={`Visibilidade ${a.name||a.id}`}>{String(a.status||'').toLowerCase()==='available'?'Ocultar':'Exibir'}</button>
+                  <button className="btn btn-danger" onClick={async()=>{ if (confirm('Excluir este aplicativo?')) { try { await deleteApp(a.id); refresh(); } catch(e){ alert(e.message||'Falha ao excluir'); } } }}>🗑️</button>
                 </div>
               </td>
             </tr>
@@ -2434,19 +2476,29 @@ export function Apps() {
       </div>
 
   <section className="card" style={{ padding:16, marginTop:16 }}>
-        <h3>{form.id ? '✏️ Editar App' : 'Selecionar app para editar'}</h3>
+        <h3>{form.id ? '✏️ Editar App' : '➕ Criar novo App'}</h3>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:12 }}>
           <input placeholder="Nome" value={form.name} onChange={e=>setForm({ ...form, name:e.target.value })} />
           <input placeholder="Feature principal" value={form.mainFeature} onChange={e=>setForm({ ...form, mainFeature:e.target.value })} />
           <input type="number" placeholder="Preço (R$)" value={form.price} onChange={e=>setForm({ ...form, price:Number(e.target.value) })} />
         </div>
+        <div style={{ marginTop:12 }}>
+          <textarea placeholder="Descrição completa" value={form.description} onChange={e=>setForm({ ...form, description:e.target.value })} rows={4} />
+        </div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginTop:12 }}>
           <input placeholder="Thumbnail URL" value={form.thumbnail} onChange={e=>setForm({ ...form, thumbnail:e.target.value })} />
           <input placeholder="Exec URL (download)" value={form.exec_url} onChange={e=>setForm({ ...form, exec_url:e.target.value })} />
         </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:12, marginTop:12 }}>
+          <select value={form.status} onChange={e=>setForm({ ...form, status:e.target.value })}>
+            <option value="draft">Rascunho</option>
+            <option value="available">Disponível</option>
+          </select>
+        </div>
         <div className="btn-group" style={{ marginTop:12, display:'flex', gap:8 }}>
           <button className="btn btn-primary" onClick={onSave} disabled={!form.id}>💾 Salvar</button>
-          <button className="btn btn-outline" onClick={()=>setForm({ id:null, name:'', mainFeature:'', price:0, thumbnail:'', exec_url:'' })}>❌ Limpar</button>
+          <button className="btn btn-success" onClick={onCreate} disabled={!!form.id || !form.name}>➕ Criar</button>
+          <button className="btn btn-outline" onClick={()=>setForm({ id:null, name:'', mainFeature:'', description:'', status:'draft', price:0, thumbnail:'', exec_url:'' })}>❌ Limpar</button>
         </div>
       </section>
     </div>

@@ -152,6 +152,7 @@ export default function MentoriaPage() {
                       fetchpriority="low"
                       width="160"
                       height="160"
+                      onError={(e)=>{ e.currentTarget.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='; }}
                     />
                   ) : null}
                 </div>

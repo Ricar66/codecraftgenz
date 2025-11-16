@@ -63,6 +63,14 @@ export async function updateApp(appId, data) {
   return apiRequest(`/api/apps/${appId}`, { method: 'PUT', body: JSON.stringify(data) });
 }
 
+export async function createApp(data) {
+  return apiRequest(`/api/apps`, { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function deleteApp(appId) {
+  return apiRequest(`/api/apps/${appId}`, { method: 'DELETE' });
+}
+
 // Mercado Livre/Mercado Pago – criar preferência de pagamento
 export async function createPaymentPreference(appId, options = {}) {
   // Backend integra com Mercado Pago usando credenciais seguras (server-side)

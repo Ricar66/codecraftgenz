@@ -2209,6 +2209,33 @@ app.get('/api/apps/:id', async (req, res, next) => {
   }
 });
 
+app.post('/api/apps', authenticate, authorizeAdmin, async (req, res) => {
+  const { name, mainFeature, description, status, price, thumbnail, executableUrl, ownerId } = req.body || {};
+  if (!name || String(name).trim().length === 0) {
+    return res.status(400).json({ error: 'Nome é obrigatório' });
+  }
+  try {
+    const pool = await getConnectionPool();
+    const insertRes = await pool.request()
+      .input('owner_id', dbSql.Int, ownerId ?? (req.user?.id || 1))
+      .input('name', dbSql.NVarChar, String(name))
+      .input('main_feature', dbSql.NVarChar, mainFeature ? String(mainFeature) : null)
+      .input('description', dbSql.NVarChar, description ? String(description) : null)
+      .input('status', dbSql.NVarChar, status ? String(status) : 'draft')
+      .input('price', dbSql.Decimal(10, 2), Number(price || 0))
+      .input('thumbnail', dbSql.NVarChar, thumbnail || null)
+      .input('executable_url', dbSql.NVarChar, executableUrl || null)
+      .query(`INSERT INTO dbo.apps (owner_id, name, main_feature, description, status, price, thumbnail, executable_url)
+              VALUES (@owner_id, @name, @main_feature, @description, @status, @price, @thumbnail, @executable_url);
+              SELECT SCOPE_IDENTITY() AS id;`);
+    const newId = insertRes.recordset?.[0]?.id ? parseInt(insertRes.recordset[0].id, 10) : null;
+    const rowRes = await pool.request().input('id', dbSql.Int, newId).query(`SELECT id, owner_id AS ownerId, name, main_feature AS mainFeature, description, status, price, thumbnail, executable_url AS executableUrl, created_at FROM dbo.apps WHERE id=@id`);
+    return res.status(201).json({ success: true, data: rowRes.recordset?.[0] || { id: newId, name } });
+  } catch (err) {
+    return res.status(500).json({ error: err?.message || 'Erro ao criar aplicativo' });
+  }
+});
+
 // Criar/atualizar card de app a partir de um projeto (admin)
 app.post('/api/apps/from-project/:projectId', authenticate, authorizeAdmin, async (req, res, next) => {
   const projectId = parseInt(req.params.projectId, 10);
@@ -2325,7 +2352,7 @@ app.post('/api/apps/dev/insert', authenticate, authorizeAdmin, async (req, res) 
 // Editar card de app (admin)
 app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const { name, mainFeature, price, thumbnail, executableUrl, status, ownerId } = req.body || {};
+  const { name, mainFeature, price, thumbnail, executableUrl, status, ownerId, description } = req.body || {};
   try {
     const pool = await getConnectionPool();
     const currentRes = await pool.request().input('id', dbSql.Int, id).query(`SELECT id, owner_id AS ownerId, name, main_feature AS mainFeature, description, status, price, thumbnail, executable_url AS executableUrl FROM dbo.apps WHERE id=@id`);
@@ -2339,7 +2366,7 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
       price: price !== undefined ? Number(price) : Number(cur.price || 0),
       thumbnail: thumbnail !== undefined ? thumbnail : cur.thumbnail,
       executableUrl: executableUrl !== undefined ? executableUrl : cur.executableUrl,
-      description: cur.description, // mantemos descrição existente
+      description: description !== undefined ? description : cur.description,
     };
     await pool.request()
       .input('id', dbSql.Int, id)
@@ -2350,12 +2377,26 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
       .input('price', dbSql.Decimal(10, 2), next.price)
       .input('thumbnail', dbSql.NVarChar, next.thumbnail)
       .input('executable_url', dbSql.NVarChar, next.executableUrl)
-      .query(`UPDATE dbo.apps SET owner_id=@owner_id, name=@name, main_feature=@main_feature, status=@status, price=@price, thumbnail=@thumbnail, executable_url=@executable_url WHERE id=@id`);
+      .input('description', dbSql.NVarChar, next.description)
+      .query(`UPDATE dbo.apps SET owner_id=@owner_id, name=@name, main_feature=@main_feature, description=@description, status=@status, price=@price, thumbnail=@thumbnail, executable_url=@executable_url WHERE id=@id`);
     const outRes = await pool.request().input('id', dbSql.Int, id).query(`SELECT id, owner_id AS ownerId, name, main_feature AS mainFeature, description, status, price, thumbnail, executable_url AS executableUrl, created_at FROM dbo.apps WHERE id=@id`);
     return res.json({ success: true, data: outRes.recordset[0] });
   } catch (err) {
     console.error('Erro ao editar app:', err);
     return res.status(500).json({ error: 'Erro ao editar aplicativo' });
+  }
+});
+
+app.delete('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  try {
+    const pool = await getConnectionPool();
+    const exists = await pool.request().input('id', dbSql.Int, id).query('SELECT id FROM dbo.apps WHERE id=@id');
+    if (!exists.recordset.length) return res.status(404).json({ error: 'Aplicativo não encontrado' });
+    await pool.request().input('id', dbSql.Int, id).query('DELETE FROM dbo.apps WHERE id=@id');
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: err?.message || 'Erro ao excluir aplicativo' });
   }
 });
 

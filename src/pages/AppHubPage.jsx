@@ -1,5 +1,4 @@
 // src/pages/AppHubPage.jsx
-/* eslint-disable no-constant-binary-expression */
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -28,7 +27,6 @@ const AppHubPage = () => {
   const [sortOrder, setSortOrder] = useState('asc');
   const [fromCache, setFromCache] = useState(false);
   const [showCacheBadge, setShowCacheBadge] = useState(false);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
   const showGrid = false;
   const whatsNumber = (import.meta.env.VITE_WHATSAPP_NUMBER || '559999999999');
   const whatsLink = `https://wa.me/${whatsNumber}`;
@@ -38,11 +36,6 @@ const AppHubPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, sortBy, sortOrder]);
 
-  // Debounce para busca
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(searchTerm), 300);
-    return () => clearTimeout(t);
-  }, [searchTerm]);
 
   const loadApps = async () => {
     try {
