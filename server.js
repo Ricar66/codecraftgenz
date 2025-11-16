@@ -492,6 +492,16 @@ app.get('/api/health/mp-env', (req, res) => {
   }
 });
 
+// Expor chave pública do Mercado Pago para o frontend
+app.get('/api/config/mp-public-key', (req, res) => {
+  try {
+    const publicKey = process.env.VITE_MERCADO_PAGO_PUBLIC_KEY || process.env.MERCADO_PAGO_PUBLIC_KEY || '';
+    return res.json({ public_key: publicKey, present: !!publicKey });
+  } catch (err) {
+    return res.status(500).json({ error: err?.message || String(err) });
+  }
+});
+
 // Diagnóstico do banco de dados e schema necessário para pagamentos
 app.get('/api/health/db', async (req, res) => {
   const out = {

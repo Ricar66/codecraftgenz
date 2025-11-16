@@ -12,10 +12,11 @@ import { realtime } from '../lib/realtime';
 import { getAllApps, updateApp } from '../services/appsAPI.js';
 import { getAll as getAllProjects, deleteProject as deleteProjectApi } from '../services/projectsAPI.js';
 import { getAppPrice, getAppImageUrl } from '../utils/appModel.js';
-
 import { sanitizeImageUrl } from '../utils/urlSanitize.js';
+
 import AdminIdeias from './AdminIdeias.jsx';
 import styles from './AdminLayout.module.css';
+
 import './AdminCommon.css';
 
 export function Dashboard() {
@@ -2344,7 +2345,7 @@ export function Apps() {
         console.error('[Admin:Apps:error]', e?.status || 0, e?.message || e);
       }
     } finally { setLoading(false); }
-  }, [hasRole]);
+  }, [hasRole, isDebug]);
 
   React.useEffect(() => { refresh(); }, [refresh]);
 
