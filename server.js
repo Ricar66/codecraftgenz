@@ -2216,7 +2216,9 @@ app.post('/api/apps', authenticate, authorizeAdmin, async (req, res) => {
   }
   try {
     const pool = await getConnectionPool();
-    const insertRes = await pool.request()
+    const metaRes = await pool.request().query(`SELECT COLUMNPROPERTY(OBJECT_ID('dbo.apps'),'id','IsIdentity') AS isIdentity`);
+    const isIdentity = !!(metaRes.recordset && metaRes.recordset[0] && metaRes.recordset[0].isIdentity === 1);
+    const reqBase = pool.request()
       .input('owner_id', dbSql.Int, ownerId ?? (req.user?.id || 1))
       .input('name', dbSql.NVarChar, String(name))
       .input('main_feature', dbSql.NVarChar, mainFeature ? String(mainFeature) : null)
@@ -2224,11 +2226,20 @@ app.post('/api/apps', authenticate, authorizeAdmin, async (req, res) => {
       .input('status', dbSql.NVarChar, status ? String(status) : 'draft')
       .input('price', dbSql.Decimal(10, 2), Number(price || 0))
       .input('thumbnail', dbSql.NVarChar, thumbnail || null)
-      .input('executable_url', dbSql.NVarChar, executableUrl || null)
-      .query(`INSERT INTO dbo.apps (owner_id, name, main_feature, description, status, price, thumbnail, executable_url)
-              VALUES (@owner_id, @name, @main_feature, @description, @status, @price, @thumbnail, @executable_url);
-              SELECT SCOPE_IDENTITY() AS id;`);
-    const newId = insertRes.recordset?.[0]?.id ? parseInt(insertRes.recordset[0].id, 10) : null;
+      .input('executable_url', dbSql.NVarChar, executableUrl || null);
+
+    let newId = null;
+    if (isIdentity) {
+      const insertRes = await reqBase.query(`INSERT INTO dbo.apps (owner_id, name, main_feature, description, status, price, thumbnail, executable_url)
+                                             VALUES (@owner_id, @name, @main_feature, @description, @status, @price, @thumbnail, @executable_url);
+                                             SELECT SCOPE_IDENTITY() AS id;`);
+      newId = insertRes.recordset?.[0]?.id ? parseInt(insertRes.recordset[0].id, 10) : null;
+    } else {
+      const nextRes = await pool.request().query(`SELECT ISNULL(MAX(id),0)+1 AS nextId FROM dbo.apps`);
+      newId = nextRes.recordset?.[0]?.nextId ? parseInt(nextRes.recordset[0].nextId, 10) : null;
+      await reqBase.input('id', dbSql.Int, newId).query(`INSERT INTO dbo.apps (id, owner_id, name, main_feature, description, status, price, thumbnail, executable_url)
+                                                         VALUES (@id, @owner_id, @name, @main_feature, @description, @status, @price, @thumbnail, @executable_url);`);
+    }
     const rowRes = await pool.request().input('id', dbSql.Int, newId).query(`SELECT id, owner_id AS ownerId, name, main_feature AS mainFeature, description, status, price, thumbnail, executable_url AS executableUrl, created_at FROM dbo.apps WHERE id=@id`);
     return res.status(201).json({ success: true, data: rowRes.recordset?.[0] || { id: newId, name } });
   } catch (err) {
