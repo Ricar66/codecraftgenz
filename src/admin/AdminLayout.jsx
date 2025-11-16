@@ -13,6 +13,7 @@ import { getAllApps, updateApp } from '../services/appsAPI.js';
 import { getAll as getAllProjects, deleteProject as deleteProjectApi } from '../services/projectsAPI.js';
 import { getAppPrice, getAppImageUrl } from '../utils/appModel.js';
 
+import { sanitizeImageUrl } from '../utils/urlSanitize.js';
 import AdminIdeias from './AdminIdeias.jsx';
 import styles from './AdminLayout.module.css';
 import './AdminCommon.css';
@@ -646,7 +647,7 @@ export function Mentores() {
             <div className="left">
               <input type="checkbox" aria-label={`Selecionar ${m.name}`} checked={selected.has(m.id)} onChange={e=>onToggleSelect(m.id, e.target.checked)} />
               <div className="avatar">
-                {m.photo || m.avatar_url ? (<img src={m.photo || m.avatar_url} alt={`Foto de ${m.name}`} />) : null}
+                {m.photo || m.avatar_url ? (<img src={sanitizeImageUrl(m.photo || m.avatar_url)} alt={`Foto de ${m.name}`} />) : null}
               </div>
             </div>
             <div className="center">
@@ -706,7 +707,7 @@ export function Mentores() {
             </div>
           </div>
           <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
-            {(form.photo || form.avatar_url) && <img src={form.photo || form.avatar_url} alt="Preview" style={{maxWidth: '100px', maxHeight: '100px'}}/>}
+            {(form.photo || form.avatar_url) && <img src={sanitizeImageUrl(form.photo || form.avatar_url)} alt="Preview" style={{maxWidth: '100px', maxHeight: '100px'}}/>}
           </div>
         </div>
         <div className="formRow">
@@ -726,7 +727,7 @@ export function Mentores() {
         <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 12, padding: 12, maxWidth: 600 }}>
           <div style={{ display:'grid', gridTemplateColumns:'100px 1fr', gap: 12 }}>
             <div style={{ width: 100, height: 100, borderRadius: 12, background: 'linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))', border: '1px solid rgba(255,255,255,0.18)', overflow: 'hidden' }}>
-              {(form.photo || form.avatar_url) ? (<img src={form.photo || form.avatar_url} alt="Prévia da foto" style={{ width:'100%', height:'100%', objectFit:'cover' }} />) : null}
+              {(form.photo || form.avatar_url) ? (<img src={sanitizeImageUrl(form.photo || form.avatar_url)} alt="Prévia da foto" style={{ width:'100%', height:'100%', objectFit:'cover' }} />) : null}
             </div>
             <div>
               <div style={{ color:'#fff', fontWeight:700 }}>{form.name || 'Nome do mentor'}</div>
