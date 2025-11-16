@@ -19,80 +19,29 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
     zip: buyer?.zip,
   }), [buyer?.email, buyer?.docType, buyer?.docNumber, buyer?.name, buyer?.phone, buyer?.streetName, buyer?.zip, cardholderEmail, identificationType, identificationNumber, cardholderName, user?.email]);
 
-  // Inicializa SDK JS v2 e aguarda disponibilidade de window.MercadoPago
+  // Inicializa SDK React apenas uma vez
   useEffect(() => {
     const envFlag = String(import.meta.env.VITE_MP_ENV || import.meta.env.MP_ENV || '').toLowerCase();
     const PK = (
       import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY ||
       (envFlag === 'production' ? import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_PROD : import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_SANDBOX)
     );
-
-    if (import.meta.env.MODE === 'test') {
-      setReady(true);
-      return () => {};
-    }
-
-    let cancelled = false;
-
-    const ensureMpSdk = () => new Promise((resolve, reject) => {
-      if (cancelled) return;
-      if (window.MercadoPago) return resolve();
-      const existing = document.querySelector('script[src*="sdk.mercadopago.com/js/v2"]');
-      if (existing) {
-        existing.addEventListener('load', () => resolve());
-        existing.addEventListener('error', () => reject(new Error('Falha ao carregar SDK do Mercado Pago')));
-      } else {
-        const s = document.createElement('script');
-        s.src = 'https://sdk.mercadopago.com/js/v2';
-        s.async = true;
-        s.crossOrigin = 'anonymous';
-        s.onload = () => resolve();
-        s.onerror = () => reject(new Error('Falha ao carregar SDK do Mercado Pago'));
-        document.head.appendChild(s);
-      }
-    });
-
-    const waitForSDK = () => new Promise((resolve, reject) => {
-      const start = Date.now();
-      const maxWaitMs = 15000;
-      const tick = () => {
-        if (cancelled) return;
-        if (window.MercadoPago) return resolve();
-        if (Date.now() - start > maxWaitMs) return reject(new Error('SDK do Mercado Pago indisponível'));
-        setTimeout(tick, 150);
-      };
-      tick();
-    });
-
-    const bootstrap = async () => {
+    if (import.meta.env.MODE === 'test') { setReady(true); return; }
+    (async () => {
       try {
         let key = PK;
         if (!key) {
-          try {
-            const resp = await fetch('/api/config/mp-public-key');
-            if (resp.ok) {
-              const json = await resp.json();
-              key = json?.public_key || '';
-            }
-          } catch (e) {
-            console.warn('Falha ao buscar mp-public-key do servidor:', e);
-          }
+          const resp = await fetch('/api/config/mp-public-key');
+          if (resp.ok) { const json = await resp.json(); key = json?.public_key || ''; }
         }
         if (key) {
-          initMercadoPago(key, { locale: 'pt-BR' });
-          await ensureMpSdk();
-          await waitForSDK();
+          if (!window.__MP_INIT_DONE) { initMercadoPago(key, { locale: 'pt-BR' }); window.__MP_INIT_DONE = true; }
           setReady(true);
         } else {
           setError('Chave pública do Mercado Pago não configurada');
         }
-      } catch {
-        setError('Falha ao inicializar Mercado Pago');
-      }
-    };
-    bootstrap();
-
-    return () => { cancelled = true; };
+      } catch { setError('Falha ao inicializar Mercado Pago'); }
+    })();
   }, []);
 
   const initialization = {
@@ -115,6 +64,10 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
       const idObj = formData?.payer?.identification || {};
       const type = idObj?.type || formData?.identificationType || buyerInfo.docType || identificationType || 'CPF';
       const number = idObj?.number || formData?.identificationNumber || buyerInfo.docNumber || identificationNumber || undefined;
+      const holderNameRaw = (formData?.cardholder?.name || buyerInfo.name || '').trim();
+      const holderParts = holderNameRaw ? holderNameRaw.split(/\s+/) : [];
+      const firstName = holderParts[0] || undefined;
+      const lastName = holderParts.length > 1 ? holderParts.slice(1).join(' ') : undefined;
       const payload = {
         token: formData?.token,
         payment_method_id: formData?.payment_method_id || formData?.paymentMethodId || formData?.paymentMethod?.id,
@@ -124,7 +77,7 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
         capture: true,
         transaction_amount: txAmount,
         description: String(description || ''),
-        ...(payerEmail || (type && number) ? { payer: { ...(payerEmail ? { email: payerEmail } : {}), identification: (type && number) ? { type, number } : undefined } } : {}),
+        ...(payerEmail || (type && number) || firstName ? { payer: { ...(payerEmail ? { email: payerEmail } : {}), ...(firstName ? { first_name: firstName } : {}), ...(lastName ? { last_name: lastName } : {}), identification: (type && number) ? { type, number } : undefined } } : {}),
         additional_info: {
           items: [{ id: String(appId || ''), title: String(description || ''), quantity: 1, unit_price: txAmount }],
           payer: {
@@ -132,8 +85,14 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
             address: (buyerInfo.zip || buyerInfo.streetName) ? { zip_code: String(buyerInfo.zip || ''), street_name: String(buyerInfo.streetName || '') } : undefined,
           }
         },
+        metadata: {
+          cardholder_name: holderNameRaw || undefined,
+          cardholder_identification_type: (type ? String(type) : undefined),
+          cardholder_identification_number: (number ? String(number) : undefined),
+        }
       };
-      const resp = await createDirectPayment(appId, payload);
+      const deviceId = (typeof window !== 'undefined' && (window.MP_DEVICE_SESSION_ID || window.__MP_DEVICE_ID)) ? (window.MP_DEVICE_SESSION_ID || window.__MP_DEVICE_ID) : undefined;
+      const resp = await createDirectPayment(appId, payload, deviceId ? { deviceId } : undefined);
       const nextStatus = resp?.status || resp?.data?.status || 'pending';
       if (nextStatus === 'approved' && typeof onPaymentSuccess === 'function') onPaymentSuccess(resp);
       else if (nextStatus !== 'approved') {
@@ -147,7 +106,10 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
       else if (status === 502 && details?.error === 'NETWORK_ERROR') setError('Falha de rede ao contatar o Mercado Pago. Tente novamente.');
       else if (status === 502 && (details?.mp_status || details?.message)) setError(`Pagamento não foi criado (${details?.mp_status || 'erro'}: ${String(details?.message || '')})`);
       else if (status === 400 && Array.isArray(details?.cause) && details.cause.find(c => String(c?.code) === '2056')) setError('Ajustamos o modo binário. Tente novamente.');
-      else if (status === 400) setError(String(details?.message || 'Dados incompletos do cartão. Verifique e reenvie.'));
+      else if (status === 400) {
+        const causeMsg = Array.isArray(details?.cause) ? (details.cause[0]?.message || details.cause[0]?.description) : '';
+        setError(String(details?.message || causeMsg || 'Dados incompletos do cartão. Verifique e reenvie.'));
+      }
       else setError(error?.message || 'Falha ao processar pagamento');
     }
   };
