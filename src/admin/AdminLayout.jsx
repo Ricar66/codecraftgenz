@@ -498,7 +498,7 @@ export function Mentores() {
   const [busy, setBusy] = React.useState(false);
   const [toast, setToast] = React.useState('');
   const MAX_PHOTO_BYTES = 1024 * 1024;
-  const ACCEPT_TYPES = ['image/jpeg','image/png','image/webp'];
+  const ACCEPT_TYPES = ['image/jpeg','image/png','image/webp','image/jpg','image/pjpeg','image/gif'];
   const [query, setQuery] = React.useState('');
   const [filterSpec, setFilterSpec] = React.useState('');
   const [filterStatus, setFilterStatus] = React.useState('');
@@ -547,7 +547,8 @@ export function Mentores() {
   };
   const onPhotoFile = async (file) => {
     if (!file) return;
-    if (!ACCEPT_TYPES.includes(file.type)) { alert('Formato inválido. Use JPEG, PNG ou WEBP.'); return; }
+    const isImage = (file.type && file.type.startsWith('image/')) || ACCEPT_TYPES.includes(file.type);
+    if (!isImage) { alert('Formato inválido. Use imagens (JPEG, PNG, WEBP, GIF).'); return; }
     if (file.size > MAX_PHOTO_BYTES) { alert('Imagem muito grande. Máximo de ~1MB.'); return; }
     const reader = new FileReader();
     reader.onload = () => {
@@ -697,7 +698,7 @@ export function Mentores() {
             </div>
             <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
               <input aria-label="Foto (URL)" placeholder="Foto (URL)" value={form.photo} onChange={e=>setForm({...form,photo:e.target.value})} />
-              <input aria-label="Enviar foto" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>onPhotoFile(e.target.files?.[0])} />
+              <input aria-label="Enviar foto" type="file" accept="image/*" onChange={e=>onPhotoFile(e.target.files?.[0])} />
             </div>
             <div className="formRow">
               <input aria-label="Avatar URL (banco)" placeholder="Avatar URL (banco)" value={form.avatar_url} onChange={e=>setForm({...form,avatar_url:e.target.value})} />
@@ -707,7 +708,7 @@ export function Mentores() {
             </div>
           </div>
           <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
-            {(form.photo || form.avatar_url) && <img src={sanitizeImageUrl(form.photo || form.avatar_url)} alt="Preview" style={{maxWidth: '100px', maxHeight: '100px'}}/>}
+            {(form.photo || form.avatar_url) && <img src={sanitizeImageUrl(form.photo || form.avatar_url)} alt="Preview" style={{width: 120, height: 120, objectFit: 'cover', borderRadius: 12, border: '1px solid rgba(255,255,255,0.18)'}}/>}
           </div>
         </div>
         <div className="formRow">
