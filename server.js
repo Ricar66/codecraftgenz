@@ -107,6 +107,8 @@ if (isProd) {
   app.use(helmet.hsts({ maxAge: 15552000 }));
 }
 app.use(compression());
+// Aceita corpo text/plain para rotas que recebem JSON como string
+app.use(express.text({ limit: '10mb', type: 'text/plain' }));
 app.use(express.json({ limit: '10mb' }));
 
 const loginLimiter = rateLimit({
