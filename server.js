@@ -2928,6 +2928,10 @@ app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
       metadata,
     } = parsedBody || {};
 
+    if (parsedBody && parsedBody.payer && typeof parsedBody.payer === 'object') {
+      try { delete parsedBody.payer.name; } catch { /* noop */ }
+    }
+
     if (!payment_method_id) {
       return res.status(400).json({ error: 'payment_method_id é obrigatório (ex.: master, visa, pix, ticket)' });
     }
