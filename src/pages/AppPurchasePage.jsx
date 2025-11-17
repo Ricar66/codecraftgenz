@@ -170,18 +170,18 @@ const AppPurchasePage = () => {
               >
                 Pagar com Mercado Pago (Wallet)
               </button>
-              <button
-                className="btn btn-primary"
-                disabled={cardDisabled}
-                onClick={() => {
-                  if (cardDisabled) return;
-                  setStep(1);
-                  const el = document.getElementById('buyer-info-section');
-                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }}
-              >
-                Pagar com Cartão de Crédito
-              </button>
+              {!cardDisabled && (
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setStep(1);
+                    const el = document.getElementById('buyer-info-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                >
+                  Pagar com Cartão de Crédito
+                </button>
+              )}
               <button className="btn btn-outline" onClick={handleDownload} disabled={!downloadUrl && status!=='approved'}>Baixar executável</button>
             </div>
             {step === 1 && !cardDisabled && (
