@@ -2966,19 +2966,20 @@ app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
     const finalProcessingMode = ['aggregator','gateway'].includes(envProcessingMode) ? envProcessingMode : 'aggregator';
     const finalBinaryMode = (typeof binary_mode === 'boolean') ? binary_mode : false;
 
-    const payload = {
-      description: description || `Pagamento do app ${appItem.name}`,
-      external_reference: String(external_reference || id),
-      transaction_amount: amount,
-      payment_method_id,
-      ...(typeof installments === 'number' && installments > 0 ? { installments } : {}),
-      ...(token ? { token } : {}),
-      payer: {
-        email: safePayer.email,
-        ...(safePayer.first_name ? { first_name: safePayer.first_name } : {}),
-        ...(safePayer.last_name ? { last_name: safePayer.last_name } : {}),
-        ...(safePayer.identification ? { identification: safePayer.identification } : {}),
-      },
+      const payload = {
+        description: description || `Pagamento do app ${appItem.name}`,
+        external_reference: String(external_reference || id),
+        transaction_amount: amount,
+        payment_method_id,
+        ...(typeof installments === 'number' && installments > 0 ? { installments } : {}),
+        ...(parsedBody && parsedBody.issuer_id ? { issuer_id: parsedBody.issuer_id } : {}),
+        ...(token ? { token } : {}),
+        payer: {
+          email: safePayer.email,
+          ...(safePayer.first_name ? { first_name: safePayer.first_name } : {}),
+          ...(safePayer.last_name ? { last_name: safePayer.last_name } : {}),
+          ...(safePayer.identification ? { identification: safePayer.identification } : {}),
+        },
       additional_info: {
         ...(additional_info || {}),
         items,
@@ -3038,7 +3039,7 @@ app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
     if (!resp.ok) {
       console.warn('Falha na criação de pagamento direto', resp.status, { message: json?.message, error: json?.error, cause: json?.cause });
       const normalized = json && typeof json === 'object' ? normalizeMpPaymentResponse(json) : null;
-      return res.status(502).json({ error: 'Falha ao criar pagamento direto', mp_status: resp.status, details: json, ...(normalized ? { normalized } : {}) });
+      return res.status(resp.status).json({ error: 'Falha ao criar pagamento direto', mp_status: resp.status, details: json, ...(normalized ? { normalized } : {}) });
     }
 
     // Extrai dados principais
