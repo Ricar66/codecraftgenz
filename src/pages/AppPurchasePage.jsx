@@ -63,7 +63,8 @@ const AppPurchasePage = () => {
     import.meta.env.VITE_ENABLE_CARD_PAYMENT_UI === 'true' ||
     (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('showCard') === '1')
   );
-  const [showCardForm, setShowCardForm] = useState(initialShowCard);
+  const cardDisabled = ['true','1','yes','on'].includes(String(import.meta.env.VITE_DISABLE_CARD_PAYMENT || 'false').toLowerCase());
+  const [showCardForm, setShowCardForm] = useState(initialShowCard && !cardDisabled);
 
   // Fluxo simplificado: sem checkout externo
 
@@ -159,7 +160,7 @@ const AppPurchasePage = () => {
             </p>
 
             <p className="muted" style={{ marginTop: 8 }}>
-              Método disponível: Cartão de crédito/débito (via Mercado Pago).
+              Método disponível: Cartão de crédito/débito (via Mercado Pago){cardDisabled ? ' — temporariamente desativado' : ''}.
             </p>
 
             <div className="btn-group" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
@@ -171,7 +172,9 @@ const AppPurchasePage = () => {
               </button>
               <button
                 className="btn btn-primary"
+                disabled={cardDisabled}
                 onClick={() => {
+                  if (cardDisabled) return;
                   setStep(1);
                   const el = document.getElementById('buyer-info-section');
                   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -196,8 +199,9 @@ const AppPurchasePage = () => {
                 </div>
                 <p className="muted" style={{ marginTop: 6 }}>Preencha nome, e-mail e CPF para continuar. Telefone e endereço ajudam a aprovação do pagamento.</p>
                 <div style={{ marginTop: 8 }}>
-                  <button className="btn btn-outline" onClick={(e)=>{
+                  <button className="btn btn-outline" disabled={cardDisabled} onClick={(e)=>{
                     e.preventDefault();
+                    if (cardDisabled) { alert('Pagamento com cartão de crédito está temporariamente desativado. Use outro método.'); return; }
                     const n = String(payerInfo.name||'').trim();
                     const em = String(payerInfo.email||'').trim();
                     const id = String(payerInfo.identification||'').trim();
@@ -215,7 +219,7 @@ const AppPurchasePage = () => {
 
             {/* Fluxo Pix removido no modo simplificado */}
 
-              {showCardForm && step === 2 && (
+              {showCardForm && step === 2 && !cardDisabled && (
                 <div id="card-payment-section" style={{ marginTop: 12 }}>
                   <CardDirectPayment
                     appId={id}
