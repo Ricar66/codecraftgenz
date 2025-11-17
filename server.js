@@ -3075,8 +3075,18 @@ app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
     const issuerId = String(json?.issuer_id || json?.card?.issuer_id || json?.transaction_details?.issuer_id || '') || null;
     const netReceived = (json?.transaction_details?.net_received_amount !== undefined) ? Number(json.transaction_details.net_received_amount) : null;
     const installmentAmount = (json?.transaction_details?.installment_amount !== undefined) ? Number(json.transaction_details.installment_amount) : null;
-    const docType = json?.payer?.identification?.type || safePayer?.identification?.type || null;
-    const docNumber = json?.payer?.identification?.number || safePayer?.identification?.number || null;
+    const docType = (
+      json?.payer?.identification?.type
+      || safePayer?.identification?.type
+      || payload?.metadata?.cardholder_identification_type
+      || null
+    );
+    const docNumber = (
+      json?.payer?.identification?.number
+      || safePayer?.identification?.number
+      || payload?.metadata?.cardholder_identification_number
+      || null
+    );
 
     console.info('Pagamento Mercado Pago', { payment_id, status, status_detail: statusDetail, external_reference: String(payload.external_reference || id), amount });
     // Atualiza cache em memória
@@ -3342,8 +3352,8 @@ app.get('/api/admin/app-payments', authenticate, authorizeAdmin, async (req, res
     const request = pool.request();
     const conditions = ['1=1'];
     const { status, app_id, payer_email, preference_id, payment_id } = req.query || {};
-    let limit = parseInt(String(req.query?.limit || '50'), 10);
-    if (!Number.isFinite(limit) || limit <= 0) limit = 50;
+    let limit = parseInt(String(req.query?.limit || '200'), 10);
+    if (!Number.isFinite(limit) || limit <= 0) limit = 200;
     request.input('limit', dbSql.Int, limit);
     if (status) { conditions.push('status = @status'); request.input('status', dbSql.NVarChar, String(status)); }
     if (app_id) { conditions.push('app_id = @app_id'); request.input('app_id', dbSql.Int, parseInt(String(app_id), 10)); }
