@@ -184,7 +184,7 @@ const AppPurchasePage = () => {
               </button>
               <button className="btn btn-outline" onClick={handleDownload} disabled={!downloadUrl && status!=='approved'}>Baixar executável</button>
             </div>
-            {step === 1 && (
+            {step === 1 && !cardDisabled && (
               <div id="buyer-info-section" style={{ marginTop: 12 }}>
                 <h3 className="title" style={{ fontSize:'1rem' }}>Dados do comprador</h3>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
