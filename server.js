@@ -2951,14 +2951,13 @@ app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
       const p = typeof payer === 'object' ? payer : {};
       const email = typeof p.email === 'string' ? p.email : (req.user?.email || undefined);
       const baseName = (typeof p.name === 'string' && p.name) || [p.first_name, p.last_name].filter(Boolean).join(' ') || (req.user?.name || undefined);
-      const name = baseName || undefined;
-      const first_name = typeof p.first_name === 'string' ? p.first_name : (name ? String(name).trim().split(' ')[0] : undefined);
-      const last_name = typeof p.last_name === 'string' ? p.last_name : (name ? String(name).trim().split(' ').slice(1).join(' ') || undefined : undefined);
+      const first_name = typeof p.first_name === 'string' ? p.first_name : (baseName ? String(baseName).trim().split(' ')[0] : undefined);
+      const last_name = typeof p.last_name === 'string' ? p.last_name : (baseName ? String(baseName).trim().split(' ').slice(1).join(' ') || undefined : undefined);
       const idObj = (p.identification && typeof p.identification === 'object') ? p.identification : {};
       const idNumber = typeof idObj.number === 'string' ? idObj.number : undefined;
       const idType = typeof idObj.type === 'string' ? idObj.type : (idNumber ? (idNumber.replace(/\D/g,'').length > 11 ? 'CNPJ' : 'CPF') : undefined);
       const identification = (idType && idNumber) ? { type: idType, number: idNumber } : undefined;
-      return { email, name, first_name, last_name, ...(identification ? { identification } : {}) };
+      return { email, first_name, last_name, ...(identification ? { identification } : {}) };
     })();
 
     // Corpo da requisição de pagamento
@@ -2976,7 +2975,6 @@ app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
       ...(token ? { token } : {}),
       payer: {
         email: safePayer.email,
-        name: safePayer.name,
         ...(safePayer.first_name ? { first_name: safePayer.first_name } : {}),
         ...(safePayer.last_name ? { last_name: safePayer.last_name } : {}),
         ...(safePayer.identification ? { identification: safePayer.identification } : {}),
