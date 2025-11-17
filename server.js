@@ -3092,8 +3092,10 @@ app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
 
     try {
       const pool = await getConnectionPool();
-      const updByPid = await pool.request()
+      const mergeRes = await pool.request()
         .input('pid', dbSql.NVarChar, payment_id)
+        .input('app_id', dbSql.Int, id)
+        .input('user_id', dbSql.Int, req.user?.id || null)
         .input('status', dbSql.NVarChar, status)
         .input('amount', dbSql.Decimal(18, 2), amount)
         .input('currency', dbSql.NVarChar, currency)
@@ -3106,49 +3108,15 @@ app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
         .input('payer_document_type', dbSql.NVarChar, docType)
         .input('payer_document_number', dbSql.NVarChar, docNumber)
         .input('mp_response_json', dbSql.NVarChar(dbSql.MAX), JSON.stringify(json))
-        .query('UPDATE dbo.app_payments SET status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, mp_response_json=@mp_response_json, updated_at=SYSUTCDATETIME() WHERE payment_id=@pid');
-
-      let affected = updByPid?.rowsAffected?.[0] || 0;
-      if (affected === 0) {
-        const updPending = await pool.request()
-          .input('pid', dbSql.NVarChar, payment_id)
-          .input('app_id', dbSql.Int, id)
-          .input('status', dbSql.NVarChar, status)
-          .input('amount', dbSql.Decimal(18, 2), amount)
-          .input('currency', dbSql.NVarChar, currency)
-          .input('payer_email', dbSql.NVarChar, payerEmail)
-          .input('status_detail', dbSql.NVarChar, statusDetail)
-          .input('payment_type_id', dbSql.NVarChar, paymentTypeId)
-          .input('issuer_id', dbSql.NVarChar, issuerId)
-          .input('net_received_amount', dbSql.Decimal(18, 2), netReceived)
-          .input('installment_amount', dbSql.Decimal(18, 2), installmentAmount)
-          .input('payer_document_type', dbSql.NVarChar, docType)
-          .input('payer_document_number', dbSql.NVarChar, docNumber)
-          .input('mp_response_json', dbSql.NVarChar(dbSql.MAX), JSON.stringify(json))
-          .query("UPDATE dbo.app_payments SET payment_id=@pid, status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, mp_response_json=@mp_response_json, updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND status='pending'");
-
-        affected = updPending?.rowsAffected?.[0] || 0;
-        if (affected === 0) {
-          await pool.request()
-            .input('pid', dbSql.NVarChar, payment_id)
-            .input('app_id', dbSql.Int, id)
-            .input('user_id', dbSql.Int, req.user?.id || null)
-            .input('status', dbSql.NVarChar, status)
-            .input('amount', dbSql.Decimal(18, 2), amount)
-            .input('currency', dbSql.NVarChar, currency)
-            .input('payer_email', dbSql.NVarChar, payerEmail)
-            .input('source', dbSql.NVarChar, 'mercado_pago')
-            .input('status_detail', dbSql.NVarChar, statusDetail)
-            .input('payment_type_id', dbSql.NVarChar, paymentTypeId)
-            .input('issuer_id', dbSql.NVarChar, issuerId)
-            .input('net_received_amount', dbSql.Decimal(18, 2), netReceived)
-            .input('installment_amount', dbSql.Decimal(18, 2), installmentAmount)
-            .input('payer_document_type', dbSql.NVarChar, docType)
-            .input('payer_document_number', dbSql.NVarChar, docNumber)
-            .input('mp_response_json', dbSql.NVarChar(dbSql.MAX), JSON.stringify(json))
-            .query('INSERT INTO dbo.app_payments (payment_id, app_id, user_id, status, amount, currency, payer_email, source, status_detail, payment_type_id, issuer_id, net_received_amount, installment_amount, payer_document_type, payer_document_number, mp_response_json) VALUES (@pid, @app_id, @user_id, @status, @amount, @currency, @payer_email, @source, @status_detail, @payment_type_id, @issuer_id, @net_received_amount, @installment_amount, @payer_document_type, @payer_document_number, @mp_response_json)');
-        }
-      }
+        .query(`MERGE dbo.app_payments AS target
+                USING (SELECT @pid AS payment_id) AS source
+                ON (target.payment_id = source.payment_id)
+                WHEN MATCHED THEN
+                  UPDATE SET status=@status, amount=@amount, currency=@currency, payer_email=@payer_email, status_detail=@status_detail, payment_type_id=@payment_type_id, issuer_id=@issuer_id, net_received_amount=@net_received_amount, installment_amount=@installment_amount, payer_document_type=@payer_document_type, payer_document_number=@payer_document_number, mp_response_json=@mp_response_json, updated_at=SYSUTCDATETIME()
+                WHEN NOT MATCHED THEN
+                  INSERT (payment_id, app_id, user_id, status, amount, currency, payer_email, source, status_detail, payment_type_id, issuer_id, net_received_amount, installment_amount, payer_document_type, payer_document_number, mp_response_json)
+                  VALUES (@pid, @app_id, @user_id, @status, @amount, @currency, @payer_email, 'mercado_pago', @status_detail, @payment_type_id, @issuer_id, @net_received_amount, @installment_amount, @payer_document_type, @payer_document_number, @mp_response_json);`);
+      const affected = mergeRes?.rowsAffected?.reduce((a, b) => a + b, 0) || 0;
 
       // Auditoria
       await pool.request()
@@ -3157,7 +3125,7 @@ app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
         .input('app_id', dbSql.Int, id)
         .input('user_id', dbSql.Int, req.user?.id || null)
         .input('action', dbSql.NVarChar, 'create_payment')
-        .input('from_status', dbSql.NVarChar, affected ? 'pending' : null)
+        .input('from_status', dbSql.NVarChar, null)
         .input('to_status', dbSql.NVarChar, status)
         .input('from_payment_id', dbSql.NVarChar, affected ? null : null)
         .input('to_payment_id', dbSql.NVarChar, payment_id)
