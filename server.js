@@ -130,6 +130,7 @@ const loginLimiter = rateLimit({
     return ip;
   }
 });
+//teste
 const sensitiveLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
