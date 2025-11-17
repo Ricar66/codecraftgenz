@@ -63,8 +63,7 @@ const AppPurchasePage = () => {
     import.meta.env.VITE_ENABLE_CARD_PAYMENT_UI === 'true' ||
     (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('showCard') === '1')
   );
-  const cardDisabled = ['true','1','yes','on'].includes(String(import.meta.env.VITE_DISABLE_CARD_PAYMENT || 'false').toLowerCase());
-  const [showCardForm, setShowCardForm] = useState(initialShowCard && !cardDisabled);
+  const [showCardForm, setShowCardForm] = useState(initialShowCard);
 
   // Fluxo simplificado: sem checkout externo
 
@@ -160,7 +159,7 @@ const AppPurchasePage = () => {
             </p>
 
             <p className="muted" style={{ marginTop: 8 }}>
-              Método disponível: Cartão de crédito/débito (via Mercado Pago){cardDisabled ? ' — temporariamente desativado' : ''}.
+              Método disponível: Cartão de crédito/débito (via Mercado Pago).
             </p>
 
             <div className="btn-group" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
@@ -170,38 +169,53 @@ const AppPurchasePage = () => {
               >
                 Pagar com Mercado Pago (Wallet)
               </button>
-              {!cardDisabled && (
-                <button
-                  className="btn btn-primary"
-                  onClick={() => {
-                    setStep(1);
-                    const el = document.getElementById('buyer-info-section');
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }}
-                >
-                  Pagar com Cartão de Crédito
-                </button>
-              )}
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setStep(1);
+                  const el = document.getElementById('buyer-info-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+              >
+                Pagar com Cartão de Crédito
+              </button>
               <button className="btn btn-outline" onClick={handleDownload} disabled={!downloadUrl && status!=='approved'}>Baixar executável</button>
             </div>
-            {step === 1 && !cardDisabled && (
+            {step === 1 && (
               <div id="buyer-info-section" style={{ marginTop: 12 }}>
                 <h3 className="title" style={{ fontSize:'1rem' }}>Dados do comprador</h3>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
-                  <input aria-label="Nome completo" placeholder="Nome completo" value={payerInfo.name} onChange={e=>setPayerInfo(s=>({ ...s, name: e.target.value }))} />
-                  <input aria-label="E-mail" placeholder="E-mail" type="email" value={payerInfo.email} onChange={e=>setPayerInfo(s=>({ ...s, email: e.target.value }))} />
-                  <input aria-label="CPF" placeholder="CPF" value={payerInfo.identification} onChange={e=>setPayerInfo(s=>({ ...s, identification: String(e.target.value||'').replace(/[^0-9]/g,'').slice(0,11) }))} />
+                <div className="form-grid">
+                  <div className="input-wrap">
+                    <label>Nome completo</label>
+                    <input className="input" aria-label="Nome completo" placeholder="Ex: Ricardo Coradini" value={payerInfo.name} onChange={e=>setPayerInfo(s=>({ ...s, name: e.target.value }))} />
+                  </div>
+                  <div className="input-wrap">
+                    <label>E-mail</label>
+                    <input className="input" aria-label="E-mail" placeholder="seu@email.com" type="email" value={payerInfo.email} onChange={e=>setPayerInfo(s=>({ ...s, email: e.target.value }))} />
+                  </div>
+                  <div className="input-wrap">
+                    <label>CPF</label>
+                    <input className="input" aria-label="CPF" placeholder="000.000.000-00" value={payerInfo.identification} onChange={e=>setPayerInfo(s=>({ ...s, identification: String(e.target.value||'').replace(/[^0-9]/g,'').slice(0,11) }))} />
+                  </div>
                 </div>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginTop:8 }}>
-                  <input aria-label="Telefone" placeholder="Telefone (opcional)" value={payerInfo.phone || ''} onChange={e=>setPayerInfo(s=>({ ...s, phone: String(e.target.value||'').replace(/[^0-9+\s-]/g,'') }))} />
-                  <input aria-label="CEP" placeholder="CEP (opcional)" value={payerInfo.zip || ''} onChange={e=>setPayerInfo(s=>({ ...s, zip: String(e.target.value||'').replace(/[^0-9]/g,'').slice(0,8) }))} />
-                  <input aria-label="Endereço" placeholder="Endereço (rua) (opcional)" value={payerInfo.streetName || ''} onChange={e=>setPayerInfo(s=>({ ...s, streetName: String(e.target.value||'').replace(/<[^>]*>/g,'').trim() }))} />
+                <div className="form-grid" style={{ marginTop:8 }}>
+                  <div className="input-wrap">
+                    <label>Telefone (opcional)</label>
+                    <input className="input" aria-label="Telefone" placeholder="(11) 99999-9999" value={payerInfo.phone || ''} onChange={e=>setPayerInfo(s=>({ ...s, phone: String(e.target.value||'').replace(/[^0-9+\s-]/g,'') }))} />
+                  </div>
+                  <div className="input-wrap">
+                    <label>CEP (opcional)</label>
+                    <input className="input" aria-label="CEP" placeholder="00000-000" value={payerInfo.zip || ''} onChange={e=>setPayerInfo(s=>({ ...s, zip: String(e.target.value||'').replace(/[^0-9]/g,'').slice(0,8) }))} />
+                  </div>
+                  <div className="input-wrap">
+                    <label>Endereço (rua) (opcional)</label>
+                    <input className="input" aria-label="Endereço" placeholder="Rua Exemplo, 123" value={payerInfo.streetName || ''} onChange={e=>setPayerInfo(s=>({ ...s, streetName: String(e.target.value||'').replace(/<[^>]*>/g,'').trim() }))} />
+                  </div>
                 </div>
                 <p className="muted" style={{ marginTop: 6 }}>Preencha nome, e-mail e CPF para continuar. Telefone e endereço ajudam a aprovação do pagamento.</p>
                 <div style={{ marginTop: 8 }}>
-                  <button className="btn btn-outline" disabled={cardDisabled} onClick={(e)=>{
+                  <button className="btn btn-outline" onClick={(e)=>{
                     e.preventDefault();
-                    if (cardDisabled) { alert('Pagamento com cartão de crédito está temporariamente desativado. Use outro método.'); return; }
                     const n = String(payerInfo.name||'').trim();
                     const em = String(payerInfo.email||'').trim();
                     const id = String(payerInfo.identification||'').trim();
@@ -219,7 +233,7 @@ const AppPurchasePage = () => {
 
             {/* Fluxo Pix removido no modo simplificado */}
 
-              {showCardForm && step === 2 && !cardDisabled && (
+              {showCardForm && step === 2 && (
                 <div id="card-payment-section" style={{ marginTop: 12 }}>
                   <CardDirectPayment
                     appId={id}
@@ -336,6 +350,11 @@ const AppPurchasePage = () => {
         .btn-primary { background: #00E4F2; color: #000; }
         .btn-outline { background: transparent; color: var(--texto-branco); }
         .btn:active { transform: translateY(0px) scale(0.98); }
+        .form-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+        .input-wrap { display:flex; flex-direction:column; gap:6px; }
+        .input-wrap label { color: var(--texto-gelo); font-size: .85rem; }
+        .input { padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.25); color: var(--texto-branco); outline:none; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
+        .input:focus { border-color:#00E4F2; box-shadow: 0 0 0 2px rgba(0,228,242,.25); }
         .progress-bar { width: 100%; height: 8px; background: rgba(255,255,255,0.12); border-radius: 999px; overflow: hidden; }
         .progress { height: 100%; background: linear-gradient(90deg, #D12BF2, #00E4F2); }
       `}</style>
