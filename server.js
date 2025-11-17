@@ -118,10 +118,16 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Muitas tentativas de login, tente novamente em 15 minutos.' },
   keyGenerator: (req) => {
-    const raw = req.ip || '';
-    const s = String(raw);
-    const idx = s.indexOf(':');
-    return idx > -1 ? s.slice(0, idx) : s || 'unknown';
+    const ip = req.ip || 'unknown';
+    const portIndex = ip.lastIndexOf(':');
+    if (portIndex > -1 && ip.includes('.')) {
+      return ip.substring(0, portIndex);
+    }
+    if (portIndex > -1 && ip.includes(']:')) {
+      const bracketIndex = ip.lastIndexOf(']');
+      return ip.substring(0, bracketIndex + 1);
+    }
+    return ip;
   }
 });
 const sensitiveLimiter = rateLimit({
@@ -129,6 +135,18 @@ const sensitiveLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => {
+    const ip = req.ip || 'unknown';
+    const portIndex = ip.lastIndexOf(':');
+    if (portIndex > -1 && ip.includes('.')) {
+      return ip.substring(0, portIndex);
+    }
+    if (portIndex > -1 && ip.includes(']:')) {
+      const bracketIndex = ip.lastIndexOf(']');
+      return ip.substring(0, bracketIndex + 1);
+    }
+    return ip;
+  }
 });
 const webhookLimiter = rateLimit({
   windowMs: 60 * 1000,
