@@ -3028,6 +3028,7 @@ app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
         body: JSON.stringify(payload),
       });
     } catch (netErr) {
+      console.error('ERRO DETALHADO DO FETCH (netErr):', netErr);
       console.warn('Erro de rede ao criar pagamento direto:', netErr?.message || netErr);
       return res.status(502).json({
         error: 'NETWORK_ERROR',
