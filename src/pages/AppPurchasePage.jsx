@@ -58,6 +58,7 @@ const AppPurchasePage = () => {
   const [step, setStep] = useState(1);
   const { user } = useAuth();
   const [payerInfo, setPayerInfo] = useState({ name: String(user?.name || ''), email: String(user?.email || ''), identification: '' });
+  const [deviceId, setDeviceId] = useState('');
   // Controla visibilidade do formulário de cartão via flag de ambiente
   const initialShowCard = (
     import.meta.env.VITE_ENABLE_CARD_PAYMENT_UI === 'true' ||
@@ -80,6 +81,27 @@ const AppPurchasePage = () => {
     })();
     return () => { mounted = false; };
   }, [id]);
+
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && window.MercadoPago) {
+        const pk = (
+          import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY ||
+          import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_PROD ||
+          import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_SANDBOX ||
+          ''
+        );
+        if (pk) {
+          const mp = new window.MercadoPago(pk);
+          const id = (typeof mp.getDeviceId === 'function') ? mp.getDeviceId() : (window.MP_DEVICE_SESSION_ID || '');
+          if (id) {
+            setDeviceId(String(id));
+            try { window.__MP_DEVICE_ID = String(id); } catch {}
+          }
+        }
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     const prefId = searchParams.get('preference_id');
@@ -243,6 +265,7 @@ const AppPurchasePage = () => {
                     cardholderEmail={payerInfo.email}
                     identificationType="CPF"
                     identificationNumber={payerInfo.identification}
+                    deviceId={deviceId}
                     onPaymentSuccess={async (resp) => {
                       setStatus('approved');
                       const det = resp?.status_detail || resp?.data?.status_detail || '';
