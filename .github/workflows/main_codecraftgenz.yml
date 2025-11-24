@@ -50,7 +50,7 @@ jobs:
       - name: npm install, build, and test
         run: |
           npm cache clean --force
-          npm ci
+          npm ci --legacy-peer-deps
           echo "=== CONTEÚDO DE src/services ==="
           ls -la src/services/ || echo "Pasta src/services não encontrada"
           echo "=================================="
@@ -97,7 +97,7 @@ jobs:
         working-directory: node-app
         run: |
           echo "=== Instalando dependências de produção no artefato ==="
-          npm ci --omit=dev
+          npm ci --omit=dev --legacy-peer-deps
           ls -la node_modules | head -20 || echo "node_modules não encontrado"
           echo "========================================================"
       
