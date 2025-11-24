@@ -1,7 +1,9 @@
 // src/pages/HomePage/HomePage.jsx
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import styles from './HomePage.module.css';
+import { Helmet } from 'react-helmet-async';
+import logoCodecraft from '../../assets/logo-codecraft.svg';
 import AppCard from '../../components/AppCard/AppCard.jsx';
 import CasesSection from '../../components/CasesSection/CasesSection';
 import CompanySection from '../../components/CompanySection/CompanySection';
@@ -18,9 +20,30 @@ import OSSPSection from '../../components/OSSPSection/OSSPSection.jsx';
  */
 const HomePage = () => {
   const [isCrafterModalOpen, setIsCrafterModalOpen] = useState(false);
+  const { canonical, ogUrl, ogImageUrl, twitterHandle } = useMemo(() => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const imageAbs = typeof window !== 'undefined' ? new URL(logoCodecraft, window.location.href).toString() : logoCodecraft;
+    const handle = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_TWITTER_HANDLE) ? String(import.meta.env.VITE_TWITTER_HANDLE) : '';
+    return { canonical: url, ogUrl: url, ogImageUrl: imageAbs, twitterHandle: handle };
+  }, []);
 
   return (
     <div className={styles.homePage}>
+      <Helmet>
+        <title>CodeCraft Gen-Z | Soluções de Software do Futuro</title>
+        <meta name="description" content="A CodeCraft Gen-Z cria soluções de software modernas, escaláveis e seguras, combinando IA, experiências digitais e engenharia de alto desempenho." />
+        <meta property="og:title" content="CodeCraft Gen-Z | Soluções de Software do Futuro" />
+        <meta property="og:description" content="Soluções de software com foco em performance, segurança e experiência — impulsionadas por design e tecnologia de ponta." />
+        <meta property="og:image" content={ogImageUrl} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={ogUrl} />
+        <link rel="canonical" href={canonical} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="CodeCraft Gen-Z | Soluções de Software do Futuro" />
+        <meta name="twitter:description" content="Soluções de software com foco em performance, segurança e experiência — impulsionadas por design e tecnologia de ponta." />
+        <meta name="twitter:image" content={ogImageUrl} />
+        {twitterHandle && <meta name="twitter:site" content={twitterHandle} />}
+      </Helmet>
       <Navbar />
       <div className={styles.sectionBlock}>
         <Hero onCrafterClick={() => setIsCrafterModalOpen(true)} />
