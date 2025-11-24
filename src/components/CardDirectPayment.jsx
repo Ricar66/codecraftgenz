@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/useAuth.js';
 import { createDirectPayment } from '../services/appsAPI.js';
 
-const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo', onPaymentSuccess, onStatus, buyer = {}, cardholderEmail, identificationType, identificationNumber, cardholderName }) => {
+const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo', onPaymentSuccess, onStatus, buyer = {}, cardholderEmail, identificationType, identificationNumber, cardholderName, deviceId }) => {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const { user } = useAuth();
@@ -79,6 +79,10 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
         }
       }
       if (!paymentMethodId) throw { status: 400, details: { message: 'payment_method_id é obrigatório (ex.: master, visa, pix, ticket)' } };
+      if (!payerEmail) throw { status: 400, details: { message: 'E-mail do pagador é obrigatório' } };
+      if (!firstName) throw { status: 400, details: { message: 'Nome do titular do cartão é obrigatório' } };
+      if (!number) throw { status: 400, details: { message: 'CPF/CNPJ do titular é obrigatório' } };
+
       const payload = {
         token: formData?.token,
         payment_method_id: paymentMethodId,
@@ -88,7 +92,12 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
         capture: true,
         transaction_amount: txAmount,
         description: String(description || ''),
-        ...(payerEmail || (type && number) || firstName ? { payer: { ...(payerEmail ? { email: payerEmail } : {}), ...(firstName ? { first_name: firstName } : {}), ...(lastName ? { last_name: lastName } : {}), identification: (type && number) ? { type, number } : undefined } } : {}),
+        payer: {
+          email: payerEmail,
+          first_name: firstName,
+          ...(lastName ? { last_name: lastName } : {}),
+          identification: { type, number },
+        },
         additional_info: {
           items: [{ id: String(appId || ''), title: String(description || ''), quantity: 1, unit_price: txAmount }],
           payer: {
@@ -103,8 +112,8 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
         }
       };
       if (dev) { try { console.log('Direct payment payload', payload); } catch { /* noop */ } }
-      const deviceId = (typeof window !== 'undefined' && (window.MP_DEVICE_SESSION_ID || window.__MP_DEVICE_ID)) ? (window.MP_DEVICE_SESSION_ID || window.__MP_DEVICE_ID) : undefined;
-      const resp = await createDirectPayment(appId, payload, deviceId ? { deviceId } : undefined);
+      const extra = deviceId ? { deviceId } : (typeof window !== 'undefined' && (window.MP_DEVICE_SESSION_ID || window.__MP_DEVICE_ID)) ? { deviceId: (window.MP_DEVICE_SESSION_ID || window.__MP_DEVICE_ID) } : undefined;
+      const resp = await createDirectPayment(appId, payload, extra);
       const nextStatus = resp?.status || resp?.data?.status || 'pending';
       if (typeof onStatus === 'function') onStatus(resp);
       if (nextStatus === 'approved' && typeof onPaymentSuccess === 'function') onPaymentSuccess(resp);
