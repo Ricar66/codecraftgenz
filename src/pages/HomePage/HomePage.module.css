@@ -7,7 +7,6 @@
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
-  will-change: transform;
 }
 
 /* Fundo fixo também no mobile, conforme solicitado */
