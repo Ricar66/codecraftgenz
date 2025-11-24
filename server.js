@@ -14,6 +14,8 @@ import helmet from 'helmet';
 import jwt from 'jsonwebtoken';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import sharp from 'sharp';
+import { z } from 'zod';
+import cookieParser from 'cookie-parser';
 
 import { mercadoLivre } from './src/integrations/mercadoLivre.js';
 import { getConnectionPool, dbSql } from './src/lib/db.js';
@@ -111,6 +113,7 @@ app.use(compression());
 // Aceita corpo text/plain para rotas que recebem JSON como string
 app.use(express.text({ limit: '10mb', type: 'text/plain' }));
 app.use(express.json({ limit: '10mb' }));
+app.use(cookieParser());
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -131,6 +134,21 @@ const loginLimiter = rateLimit({
     return ip;
   }
 });
+
+function validateBody(schema) {
+  return (req, res, next) => {
+    let payload = req.body;
+    if (typeof payload === 'string') {
+      try { payload = JSON.parse(payload); } catch { payload = {}; }
+    }
+    const parsed = schema.safeParse(payload || {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'VALIDATION_ERROR', details: parsed.error.issues });
+    }
+    req.validated = parsed.data;
+    next();
+  };
+}
 //teste
 const sensitiveLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -176,6 +194,20 @@ function validateEmail(email) {
   if (typeof email !== 'string') return false;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
+
+// --- Schemas Zod para validação antecipada ---
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
+  mfa_code: z.string().optional(),
+});
+
+const userCreateSchema = z.object({
+  nome: z.string().min(1).max(128),
+  email: z.string().email().max(128),
+  senha: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
+  role: z.enum(['admin','editor','viewer']).optional(),
+});
 
 function validatePasswordStrength(pwd) {
   if (typeof pwd !== 'string') return false;
@@ -291,11 +323,11 @@ const paymentsByApp = new Map();
 // --- Middleware de Autenticação (JWT) ---
 function authenticate(req, res, next) {
   try {
-    const auth = req.headers['authorization'] || '';
-    const [type, token] = auth.split(' ');
-    if (type !== 'Bearer' || !token) {
-      return res.status(401).json({ error: 'Não autenticado' });
-    }
+    const header = req.headers['authorization'] || '';
+    const [type, bearerToken] = header.split(' ');
+    const cookieToken = req.cookies?.token || null;
+    const token = (type === 'Bearer' && bearerToken) ? bearerToken : cookieToken;
+    if (!token) return res.status(401).json({ error: 'Não autenticado' });
     const payload = jwt.verify(token, JWT_SECRET);
     req.user = {
       id: payload.id,
@@ -571,14 +603,8 @@ app.get('/api/health/db', async (req, res) => {
 });
 
 // Rota de autenticação (JWT)
-app.post('/api/auth/login', loginLimiter, (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email e senha são obrigatórios' });
-  }
-  if (!validateEmail(email)) {
-    return res.status(400).json({ error: 'Email inválido' });
-  }
+app.post('/api/auth/login', loginLimiter, validateBody(loginSchema), (req, res) => {
+  const { email, password, mfa_code } = req.validated;
 
   (async () => {
     try {
@@ -603,7 +629,7 @@ app.post('/api/auth/login', loginLimiter, (req, res) => {
         }
 
         if (process.env.MFA_ENABLED === 'true' && row.mfa_enabled) {
-          const mfaCode = String(req.body?.mfa_code || '').trim();
+          const mfaCode = String(mfa_code || '').trim();
           const secret = String(row.mfa_secret || '');
           const valid = verifyTotp(secret, mfaCode);
           if (!valid) {
@@ -613,8 +639,15 @@ app.post('/api/auth/login', loginLimiter, (req, res) => {
 
       const user = { id: row.id, email: row.email, name: row.name, role: row.role || 'viewer' };
       const token = jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000,
+        path: '/',
+      });
       logEvent('auth_login_success', { user_id: user.id, role: user.role });
-      return res.json({ success: true, token, user });
+      return res.json({ success: true, user });
       }
 
       // Sem fallback: exige usuário no banco
@@ -625,6 +658,31 @@ app.post('/api/auth/login', loginLimiter, (req, res) => {
       return res.status(500).json({ error: 'Erro interno no login' });
     }
   })();
+});
+
+app.get('/api/auth/me', (req, res) => {
+  try {
+    const token = req.cookies?.token || null;
+    if (!token) return res.status(401).json({ error: 'Não autenticado' });
+    const payload = jwt.verify(token, JWT_SECRET);
+    return res.json({ success: true, user: { id: payload.id, email: payload.email, name: payload.name, role: payload.role || 'viewer' } });
+  } catch {
+    return res.status(401).json({ error: 'Sessão inválida' });
+  }
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  try {
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+    });
+    return res.json({ success: true });
+  } catch {
+    return res.status(200).json({ success: true });
+  }
 });
 
 // Solicitar reset de senha por e-mail (gera token único e expirável)
@@ -867,15 +925,10 @@ app.get('/api/auth/users', authenticate, authorizeAdmin, async (req, res, next) 
   }
 });
 
-app.post('/api/auth/users', authenticate, authorizeAdmin, async (req, res, next) => {
+app.post('/api/auth/users', authenticate, authorizeAdmin, validateBody(userCreateSchema), async (req, res, next) => {
   try {
-    const { nome, email, senha, role } = req.body || {};
-    if (!nome || !email || !senha) {
-      return res.status(400).json({ error: 'Campos nome, email e senha são obrigatórios' });
-    }
-    if (!validateEmail(email)) {
-      return res.status(400).json({ error: 'Email inválido' });
-    }
+    const { nome, email, senha, role } = req.validated;
+    // Validação adicional de força de senha (mantida por segurança)
     if (!validatePasswordStrength(String(senha))) {
       return res.status(400).json({ error: 'Senha fraca: mínimo 8 caracteres, com maiúsculas, minúsculas, números e símbolos' });
     }
