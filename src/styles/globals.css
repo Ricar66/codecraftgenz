@@ -34,7 +34,7 @@
   /* Cores de texto Gen-Z */
   --texto-branco: #ffffff;
   --texto-gelo: #F4F4F4;          /* Branco gelo para textos principais */
-  --texto-cinza-digital: #A6A6A6; /* Cinza digital - Tipografia secundária */
+  --texto-cinza-digital: #C2C2C2; /* Cinza digital - Tipografia secundária (contraste levemente maior) */
   --texto-cinza-escuro: #374151;
   
   /* Tipografia Gen-Z */
@@ -382,6 +382,15 @@ img {
 .card-melhorado:hover {
   transform: translateY(-8px);
   box-shadow: 0 20px 40px rgba(209, 43, 242, 0.15);
+}
+
+@media (max-width: 768px) {
+  .card-melhorado {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: rgba(26, 26, 46, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
 }
 
 /* ===== UTILITÁRIOS DE CONTENÇÃO E SCROLL ===== */
