@@ -22,7 +22,19 @@ vi.mock('@mercadopago/sdk-react', async (importOriginal) => {
     CardPayment: vi.fn(({ onSubmit }) => (
       <div>
         <span>Mocked CardPayment</span>
-        <button data-testid="mp-submit" onClick={() => onSubmit(globalThis.__cardDataProvider ? globalThis.__cardDataProvider() : {})}>Pagar</button>
+        <button
+          data-testid="mp-submit"
+          onClick={() => onSubmit(globalThis.__cardDataProvider ? globalThis.__cardDataProvider() : {
+            token: 'tok_test',
+            payment_method_id: 'visa',
+            issuer_id: '123',
+            installments: 1,
+            payer: {
+              email: 'test@test.com',
+              identification: { type: 'CPF', number: '12345678909' }
+            }
+          })}
+        >Pagar</button>
       </div>
     )),
     initMercadoPago: vi.fn(),
@@ -34,7 +46,13 @@ describe('CardDirectPayment – validações e sucesso', () => {
 
   beforeEach(() => {
     import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY = 'pk_test_123';
-    cardDataProvider = () => ({ token: 'tok_test', payment_method_id: 'visa' });
+    cardDataProvider = () => ({
+      token: 'tok_test',
+      payment_method_id: 'visa',
+      issuer_id: '123',
+      installments: 1,
+      payer: { email: 'test@test.com', identification: { type: 'CPF', number: '12345678909' } }
+    });
     globalThis.__cardDataProvider = () => cardDataProvider();
     vi.spyOn(console, 'debug').mockImplementation(() => {});
   });
@@ -48,7 +66,7 @@ describe('CardDirectPayment – validações e sucesso', () => {
   it('exibe erro quando payment_method_id está ausente', async () => {
     cardDataProvider = () => ({ token: 'tok_test' });
     globalThis.__cardDataProvider = () => cardDataProvider();
-    render(<CardDirectPayment appId={7} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678901" />);
+    render(<CardDirectPayment appId={7} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
     screen.getByTestId('mp-submit').click();
     const alertEl = await screen.findByRole('alert');
     expect(alertEl.textContent).toMatch(/payment_method_id é obrigatório/i);
@@ -58,7 +76,7 @@ describe('CardDirectPayment – validações e sucesso', () => {
     createDirectPayment.mockRejectedValueOnce({ status: 400, details: { message: 'Token do cartão não foi gerado' } });
     cardDataProvider = () => ({ payment_method_id: 'visa' });
     globalThis.__cardDataProvider = () => cardDataProvider();
-    render(<CardDirectPayment appId={7} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678901" />);
+    render(<CardDirectPayment appId={7} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
     screen.getByTestId('mp-submit').click();
     const alertEl = await screen.findByRole('alert');
     expect(alertEl.textContent).toMatch(/Token do cartão não foi gerado/i);
@@ -68,7 +86,7 @@ describe('CardDirectPayment – validações e sucesso', () => {
     const onPaymentSuccess = vi.fn();
     cardDataProvider = () => ({ token: 'tok_test', payment_method_id: 'visa' });
     globalThis.__cardDataProvider = () => cardDataProvider();
-    render(<CardDirectPayment appId={9} amount={199.9} onPaymentSuccess={onPaymentSuccess} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678901" />);
+    render(<CardDirectPayment appId={9} amount={199.9} onPaymentSuccess={onPaymentSuccess} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
     screen.getByTestId('mp-submit').click();
     await waitFor(() => {
       expect(onPaymentSuccess).toHaveBeenCalled();
@@ -80,7 +98,7 @@ describe('CardDirectPayment – validações e sucesso', () => {
     createDirectPayment.mockRejectedValueOnce({ status: 503, details: { error: 'NO_ACCESS_TOKEN' } });
     cardDataProvider = () => ({ token: 'tok_test', payment_method_id: 'visa' });
     globalThis.__cardDataProvider = () => cardDataProvider();
-    render(<CardDirectPayment appId={11} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678901" />);
+    render(<CardDirectPayment appId={11} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
     screen.getByTestId('mp-submit').click();
     const alertEl = await screen.findByRole('alert');
     expect(alertEl.textContent).toMatch(/Configuração do Mercado Pago ausente/i);
@@ -90,7 +108,7 @@ describe('CardDirectPayment – validações e sucesso', () => {
     createDirectPayment.mockRejectedValueOnce({ status: 502, details: { error: 'NETWORK_ERROR' } });
     cardDataProvider = () => ({ token: 'tok_test', payment_method_id: 'visa' });
     globalThis.__cardDataProvider = () => cardDataProvider();
-    render(<CardDirectPayment appId={12} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678901" />);
+    render(<CardDirectPayment appId={12} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
     screen.getByTestId('mp-submit').click();
     const alertEl = await screen.findByRole('alert');
     expect(alertEl.textContent).toMatch(/Falha de rede/i);
@@ -100,7 +118,7 @@ describe('CardDirectPayment – validações e sucesso', () => {
     createDirectPayment.mockRejectedValueOnce({ status: 502, details: { mp_status: 'bad_request', message: 'Dados inválidos' } });
     cardDataProvider = () => ({ token: 'tok_test', payment_method_id: 'visa' });
     globalThis.__cardDataProvider = () => cardDataProvider();
-    render(<CardDirectPayment appId={13} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678901" />);
+    render(<CardDirectPayment appId={13} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
     screen.getByTestId('mp-submit').click();
     const alertEl = await screen.findByRole('alert');
     expect(alertEl.textContent).toMatch(/Pagamento não foi criado/i);
@@ -111,7 +129,7 @@ describe('CardDirectPayment – validações e sucesso', () => {
     createDirectPayment.mockRejectedValueOnce({ status: 400, details: { cause: [{ code: '2056' }] } });
     cardDataProvider = () => ({ token: 'tok_test', payment_method_id: 'visa' });
     globalThis.__cardDataProvider = () => cardDataProvider();
-    render(<CardDirectPayment appId={14} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678901" />);
+    render(<CardDirectPayment appId={14} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
     screen.getByTestId('mp-submit').click();
     const alertEl = await screen.findByRole('alert');
     expect(alertEl.textContent).toMatch(/modo binário/i);
@@ -121,7 +139,7 @@ describe('CardDirectPayment – validações e sucesso', () => {
     createDirectPayment.mockRejectedValueOnce({ status: 400, details: { message: 'Campos obrigatórios ausentes' } });
     cardDataProvider = () => ({ token: 'tok_test', payment_method_id: 'visa' });
     globalThis.__cardDataProvider = () => cardDataProvider();
-    render(<CardDirectPayment appId={15} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678901" />);
+    render(<CardDirectPayment appId={15} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
     screen.getByTestId('mp-submit').click();
     const alertEl = await screen.findByRole('alert');
     expect(alertEl.textContent).toMatch(/Campos obrigatórios ausentes/i);
@@ -137,8 +155,8 @@ describe('CardDirectPayment – buyerInfo no payload', () => {
   });
 
   it('inclui phone e address quando buyer é informado', async () => {
-    const buyer = { phone: '11999999999', zip: '01001000', streetName: 'Praça da Sé', docNumber: '12345678901' };
-    render(<CardDirectPayment appId={21} amount={100} buyer={buyer} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678901" />);
+    const buyer = { phone: '11999999999', zip: '01001000', streetName: 'Praça da Sé', docNumber: '12345678909' };
+    render(<CardDirectPayment appId={21} amount={100} buyer={buyer} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
     screen.getByTestId('mp-submit').click();
     const call = createDirectPayment.mock.calls.at(-1);
     expect(call[0]).toBe(21);
