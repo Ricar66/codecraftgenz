@@ -83,25 +83,41 @@ const AppPurchasePage = () => {
   }, [id]);
 
   useEffect(() => {
-    try {
-      if (typeof window !== 'undefined' && window.MercadoPago) {
-        const pk = (
-          import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY ||
-          import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_PROD ||
-          import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_SANDBOX ||
-          ''
-        );
-        if (pk) {
-          const mp = new window.MercadoPago(pk);
-          const id = (typeof mp.getDeviceId === 'function') ? mp.getDeviceId() : (window.MP_DEVICE_SESSION_ID || '');
-          if (id) {
-            setDeviceId(String(id));
-            try { window.__MP_DEVICE_ID = String(id); } catch {}
-          }
+    let stopped = false;
+    const pk = (
+      import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY ||
+      import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_PROD ||
+      import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_SANDBOX ||
+      ''
+    );
+    const tryGenerateId = () => {
+      if (stopped) return false;
+      if (deviceId) return true;
+      if (typeof window === 'undefined') return false;
+      const mpCtor = window.MercadoPago;
+      if (!mpCtor || !pk) return false;
+      try {
+        const mp = new mpCtor(pk);
+        const id = typeof mp.getDeviceId === 'function' ? mp.getDeviceId() : (window.MP_DEVICE_SESSION_ID || '');
+        if (id) {
+          const val = String(id);
+          setDeviceId(val);
+          try { window.__MP_DEVICE_ID = val; } catch {}
+          return true;
         }
-      }
-    } catch {}
-  }, []);
+      } catch {}
+      return false;
+    };
+    const okNow = tryGenerateId();
+    if (okNow) return () => { stopped = true; };
+    const start = Date.now();
+    const interval = setInterval(() => {
+      const ok = tryGenerateId();
+      if (ok) { clearInterval(interval); stopped = true; }
+      else if (Date.now() - start > 10000) { clearInterval(interval); stopped = true; }
+    }, 500);
+    return () => { stopped = true; try { clearInterval(interval); } catch {} };
+  }, [deviceId]);
 
   useEffect(() => {
     const prefId = searchParams.get('preference_id');
