@@ -13,9 +13,10 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import jwt from 'jsonwebtoken';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
-import sharp from 'sharp';
+const sharp from 'sharp';
 import { z } from 'zod';
 import cookieParser from 'cookie-parser';
+import crypto from 'crypto';
 
 import { mercadoLivre } from './src/integrations/mercadoLivre.js';
 import { getConnectionPool, dbSql } from './src/lib/db.js';
@@ -3457,9 +3458,50 @@ app.get('/api/admin/app-payments/:pid', authenticate, authorizeAdmin, async (req
       WHERE payment_id=@pid
       ORDER BY created_at DESC`);
     const audit = auditResp?.recordset || [];
-    res.json({ success: true, data: { payment, audit } });
+  res.json({ success: true, data: { payment, audit } });
   } catch (e) {
     res.status(500).json({ success: false, error: 'DB_GET_FAILED', message: e?.message || String(e) });
+  }
+});
+
+// Rota de Ativação de Licença
+app.post('/api/licenses/activate', authenticate, async (req, res) => {
+  try {
+    let body = req.body;
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+    const { appId, hardwareId } = body || {};
+    const userId = req.user.id;
+    if (!appId || !hardwareId) return res.status(400).json({ error: 'Dados incompletos.' });
+    const pool = await getConnectionPool();
+    const check = await pool.request()
+      .input('uid', dbSql.Int, userId)
+      .input('aid', dbSql.Int, appId)
+      .query("SELECT id FROM dbo.app_payments WHERE user_id=@uid AND app_id=@aid AND status='approved' UNION SELECT id FROM dbo.apps WHERE id=@aid AND owner_id=@uid");
+    if (check.recordset.length === 0) return res.status(403).json({ error: 'Sem licença válida.' });
+    let signature;
+    const pem = process.env.PRIVATE_KEY_PEM || '';
+    if (pem) {
+      try {
+        const sign = crypto.createSign('RSA-SHA256');
+        sign.update(String(hardwareId));
+        sign.update(String(userId));
+        signature = sign.sign(pem, 'base64');
+      } catch {
+        signature = 'LIC-' + Buffer.from(hardwareId + userId).toString('base64');
+      }
+    } else {
+      signature = 'LIC-' + Buffer.from(hardwareId + userId).toString('base64');
+    }
+    await pool.request()
+      .input('uid', dbSql.Int, userId)
+      .input('aid', dbSql.Int, appId)
+      .input('hwid', dbSql.NVarChar, hardwareId)
+      .input('key', dbSql.NVarChar, signature)
+      .query("MERGE dbo.user_licenses AS T USING (SELECT @uid AS uid, @aid AS aid) AS S ON (T.user_id = S.uid AND T.app_id = S.aid) WHEN MATCHED THEN UPDATE SET hardware_id=@hwid, license_key=@key, updated_at=SYSUTCDATETIME() WHEN NOT MATCHED THEN INSERT (user_id, app_id, hardware_id, license_key) VALUES (@uid, @aid, @hwid, @key);");
+    return res.json({ success: true, license_key: signature });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Erro ao gerar licença.' });
   }
 });
 

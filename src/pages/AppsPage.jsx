@@ -10,6 +10,7 @@ import { getProjects } from '../services/projectsAPI.js';
 import { getAppPrice } from '../utils/appModel.js';
 import { appsCache } from '../utils/dataCache.js';
 import { globalPerformanceMonitor } from '../utils/performanceMonitor.js';
+import LicenseActivator from '../components/LicenseActivator.jsx';
 
 const AppsPage = () => {
   const navigate = useNavigate();
@@ -351,6 +352,9 @@ const AppsPage = () => {
               <button className="btn btn-outline" onClick={()=>window.open(`/apps/${payModal.app?.id}/compra`, '_blank', 'noopener')}>Ir para tela de pagamento</button>
               <button className="btn btn-outline" onClick={closePaymentModal}>Fechar</button>
             </div>
+            {payModal.status === 'approved' && (
+              <LicenseActivator appId={payModal.app?.id} />
+            )}
             {(payModal.status === 'downloading' || payModal.status === 'done') && (
               <div aria-live="polite" className="progress-wrap">
                 <div className="progress-bar"><div className="progress" style={{ width: `${payModal.progress}%` }} /></div>
