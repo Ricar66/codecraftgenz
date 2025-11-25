@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import process from 'process';
@@ -13,10 +12,10 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import jwt from 'jsonwebtoken';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
-const sharp from 'sharp';
+import sharp from 'sharp';
 import { z } from 'zod';
 import cookieParser from 'cookie-parser';
-import crypto from 'crypto';
+import * as nodeCrypto from 'crypto';
 
 import { mercadoLivre } from './src/integrations/mercadoLivre.js';
 import { getConnectionPool, dbSql } from './src/lib/db.js';
@@ -221,12 +220,12 @@ function validatePasswordStrength(pwd) {
 }
 
 function generateResetToken() {
-  return crypto.randomBytes(32).toString('hex');
+  return nodeCrypto.randomBytes(32).toString('hex');
 }
 
 function hashResetToken(token) {
   const pepper = process.env.PASSWORD_RESET_PEPPER || '';
-  return crypto.createHash('sha256').update(String(token) + pepper).digest('hex');
+  return nodeCrypto.createHash('sha256').update(String(token) + pepper).digest('hex');
 }
 
 async function sendResetEmail(email, resetLink) {
@@ -766,7 +765,7 @@ function base32Encode(buf) {
 }
 
 function generateMfaSecret() {
-  const bytes = crypto.randomBytes(20);
+  const bytes = nodeCrypto.randomBytes(20);
   return base32Encode(bytes);
 }
 
@@ -806,7 +805,7 @@ function totpCode(secretBuf, counter) {
     ctr[i] = counter & 0xff;
     counter = counter >>> 8;
   }
-  const hmac = crypto.createHmac('sha1', secretBuf).update(ctr).digest();
+  const hmac = nodeCrypto.createHmac('sha1', secretBuf).update(ctr).digest();
   const offset = hmac[hmac.length - 1] & 0x0f;
   const binCode = ((hmac[offset] & 0x7f) << 24) | ((hmac[offset + 1] & 0xff) << 16) | ((hmac[offset + 2] & 0xff) << 8) | (hmac[offset + 3] & 0xff);
   const otp = (binCode % 1e6).toString().padStart(6, '0');
@@ -3482,7 +3481,7 @@ app.post('/api/licenses/activate', authenticate, async (req, res) => {
     const pem = process.env.PRIVATE_KEY_PEM || '';
     if (pem) {
       try {
-        const sign = crypto.createSign('RSA-SHA256');
+        const sign = nodeCrypto.createSign('RSA-SHA256');
         sign.update(String(hardwareId));
         sign.update(String(userId));
         signature = sign.sign(pem, 'base64');
