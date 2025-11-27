@@ -163,43 +163,31 @@ const AppsPage = () => {
         const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('cc_session') : null;
         if (raw) { const session = JSON.parse(raw); token = session?.token || null; }
       } catch {
-        // Ambiente sem localStorage ou JSON inválido; segue sem token
         token = null;
       }
       const resp = await fetch(`${API_BASE_URL}/api/apps/${encodeURIComponent(app.id)}/download`, {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {})
-        }
+        },
+        body: '{}'
       });
-      if (!resp.ok) throw new Error(`Falha no download (HTTP ${resp.status})`);
-      const total = Number(resp.headers.get('content-length')) || 0;
-      const reader = resp.body?.getReader ? resp.body.getReader() : null;
-      const chunks = [];
-      let received = 0;
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
-          received += value.length;
-          if (total > 0) {
-            const pct = Math.round((received / total) * 100);
-            setPayModal(s => ({ ...s, progress: Math.min(100, pct) }));
-          } else {
-            setPayModal(s => ({ ...s, progress: Math.min(100, s.progress + 3) }));
-          }
-        }
+      if (!resp.ok) {
+        // Fallback: se não autenticado ou erro, tenta obter URL pelo status
+        const statusResp = await fetch(`${API_BASE_URL}/api/apps/${encodeURIComponent(app.id)}/purchase/status?status=approved`);
+        if (!statusResp.ok) throw new Error(`Falha no download (HTTP ${resp.status})`);
+        const js = await statusResp.json().catch(()=>({}));
+        const directUrl = js?.download_url || js?.data?.download_url || null;
+        if (!directUrl) throw new Error('Download não liberado. Pagamento não aprovado.');
+        window.location.href = directUrl;
+        setPayModal(s => ({ ...s, status: 'done', progress: 100 }));
+        return;
       }
-      const blob = new Blob(chunks.length ? chunks : [await resp.arrayBuffer()], { type: resp.headers.get('content-type') || 'application/octet-stream' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const safeName = (app.name || 'aplicativo').replace(/[^a-z0-9\-_.]/gi, '_');
-      a.download = `${safeName}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const js = await resp.json().catch(()=>({}));
+      const directUrl = js?.download_url || null;
+      if (!directUrl) throw new Error('Aplicativo sem URL de executável configurada');
+      window.location.href = directUrl;
       setPayModal(s => ({ ...s, status: 'done', progress: 100 }));
     } catch (e) {
       setPayModal(s => ({ ...s, status: 'error', downloadError: e.message || 'Erro no download' }));
