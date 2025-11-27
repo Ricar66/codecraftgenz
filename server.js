@@ -3496,7 +3496,7 @@ app.post('/api/licenses/activate', authenticate, async (req, res) => {
       .input('aid', dbSql.Int, appId)
       .input('hwid', dbSql.NVarChar, hardwareId)
       .input('key', dbSql.NVarChar, signature)
-      .query("MERGE dbo.user_licenses AS T USING (SELECT @uid AS uid, @aid AS aid) AS S ON (T.user_id = S.uid AND T.app_id = S.aid) WHEN MATCHED THEN UPDATE SET hardware_id=@hwid, license_key=@key, updated_at=SYSUTCDATETIME() WHEN NOT MATCHED THEN INSERT (user_id, app_id, hardware_id, license_key) VALUES (@uid, @aid, @hwid, @key);");
+      .query("MERGE dbo.user_licenses AS T USING (SELECT @uid AS uid, @aid AS aid, @hwid AS hwid) AS S ON (T.user_id = S.uid AND T.app_id = S.aid AND T.hardware_id = S.hwid) WHEN MATCHED THEN UPDATE SET license_key=@key, updated_at=SYSUTCDATETIME() WHEN NOT MATCHED THEN INSERT (user_id, app_id, hardware_id, license_key) VALUES (@uid, @aid, @hwid, @key);");
     return res.json({ success: true, license_key: signature });
   } catch (err) {
     console.error(err);
