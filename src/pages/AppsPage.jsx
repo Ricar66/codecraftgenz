@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import AppCard from '../components/AppCard/AppCard';
+import LicenseActivator from '../components/LicenseActivator.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { API_BASE_URL, apiRequest } from '../lib/apiConfig.js';
 import { getHistory, upsertAppFromProject, getPublicApps, getPurchaseStatus } from '../services/appsAPI.js';
@@ -10,7 +11,6 @@ import { getProjects } from '../services/projectsAPI.js';
 import { getAppPrice } from '../utils/appModel.js';
 import { appsCache } from '../utils/dataCache.js';
 import { globalPerformanceMonitor } from '../utils/performanceMonitor.js';
-import LicenseActivator from '../components/LicenseActivator.jsx';
 
 const AppsPage = () => {
   const navigate = useNavigate();
@@ -26,6 +26,7 @@ const AppsPage = () => {
   const [category, setCategory] = useState('todas');
   const [sortMode, setSortMode] = useState('categoria'); // 'categoria' | 'uso'
   const [payModal, setPayModal] = useState({ open: false, app: null, loading: false, error: '' });
+  const [expandedLicenses, setExpandedLicenses] = useState({});
 
   useEffect(() => {
     let mounted = true;
@@ -205,6 +206,15 @@ const AppsPage = () => {
     }
   };
 
+  const needsLicense = (a) => {
+    const name = String(a.name || '').toLowerCase();
+    return name === 'coincraft' || a.requiresLicense || a.licenseRequired || (a.license && a.license.required);
+  };
+
+  const toggleLicense = (id) => {
+    setExpandedLicenses(s => ({ ...s, [id]: !s[id] }));
+  };
+
   const handlePublish = async (project) => {
     try {
       setPublishing(true);
@@ -255,7 +265,23 @@ const AppsPage = () => {
         {apps.length === 0 && !loading ? (
           <div className="card-empty">Nenhum aplicativo disponível no momento.</div>
         ) : (
-          filteredApps.map(app => <AppCard key={app.id} app={app} onDownload={openPaymentModal} />)
+          filteredApps.map(app => (
+            <div key={app.id}>
+              <AppCard app={app} onDownload={openPaymentModal} />
+              {needsLicense(app) && (
+                <div style={{ marginTop: 12 }}>
+                  <button className="btn btn-outline" onClick={() => toggleLicense(app.id)}>
+                    {expandedLicenses[app.id] ? 'Ocultar Ativação' : 'Ativar Licença'}
+                  </button>
+                  {expandedLicenses[app.id] && (
+                    <div style={{ marginTop: 8 }}>
+                      <LicenseActivator appId={app.id} />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))
         )}
       </section>
 
