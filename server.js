@@ -2682,7 +2682,8 @@ app.get('/api/apps/:id/purchase/status', sensitiveLimiter, async (req, res) => {
       const payment = new Payment(mpClient);
       const data = await payment.get({ id: payment_id });
       const status = data?.status || statusQuery || 'pending';
-      const download_url = status === 'approved' ? (appItem.executableUrl || null) : null;
+      const fallbackUrl = String(appItem.name || '').toLowerCase() === 'coincraft' ? '/downloads/InstalarCoinCraft.exe' : null;
+      const download_url = status === 'approved' ? (appItem.executableUrl || fallbackUrl) : null;
       paymentsByApp.set(id, { payment_id, status });
       if (status === 'approved') {
         try {
@@ -2874,7 +2875,8 @@ app.post('/api/apps/:id/download', authenticate, sensitiveLimiter, async (req, r
   if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
   const statusOk = paymentsByApp.get(id)?.status === 'approved';
   if (!statusOk) return res.status(403).json({ error: 'Download não liberado. Pagamento não aprovado.' });
-  const url = appItem.executableUrl || null;
+  const fallbackUrl = String(appItem.name || '').toLowerCase() === 'coincraft' ? '/downloads/InstalarCoinCraft.exe' : null;
+  const url = appItem.executableUrl || fallbackUrl;
   if (!url) return res.status(400).json({ error: 'Aplicativo sem URL de executável configurada' });
   try {
     const pool = await getConnectionPool();
@@ -3506,6 +3508,7 @@ app.post('/api/licenses/activate', authenticate, async (req, res) => {
 
 // --- Servir Arquivos Estáticos ---
 app.use(express.static(path.join(__dirname, 'dist')));
+app.use('/downloads', express.static(path.join(__dirname, 'public', 'downloads')));
 
 // Rota catch-all para SPA (Single Page Application)
 app.get('*', (req, res) => {
