@@ -1,8 +1,7 @@
 // src/pages/HomePage/HomePage.jsx
 import React, { useMemo, useState } from 'react';
-
-import styles from './HomePage.module.css';
 import { Helmet } from 'react-helmet-async';
+
 import logoCodecraft from '../../assets/logo-codecraft.svg';
 import AppCard from '../../components/AppCard/AppCard.jsx';
 import CasesSection from '../../components/CasesSection/CasesSection';
@@ -13,6 +12,8 @@ import Hero from '../../components/Hero/Hero';
 import MetricsSection from '../../components/MetricsSection/MetricsSection';
 import Navbar from '../../components/Navbar/Navbar';
 import OSSPSection from '../../components/OSSPSection/OSSPSection.jsx';
+
+import styles from './HomePage.module.css';
 
 /**
  * Página Inicial
