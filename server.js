@@ -1,3 +1,4 @@
+import * as nodeCrypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import process from 'process';
@@ -5,6 +6,7 @@ import { fileURLToPath } from 'url';
 
 import bcrypt from 'bcrypt';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -14,8 +16,6 @@ import jwt from 'jsonwebtoken';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import sharp from 'sharp';
 import { z } from 'zod';
-import cookieParser from 'cookie-parser';
-import * as nodeCrypto from 'crypto';
 
 import { mercadoLivre } from './src/integrations/mercadoLivre.js';
 import { getConnectionPool, dbSql } from './src/lib/db.js';
