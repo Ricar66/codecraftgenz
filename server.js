@@ -472,6 +472,17 @@ async function ensurePaymentsAuditPatch() {
   console.log('✅ ensurePaymentsAuditPatch: tabela de auditoria, colunas e índices garantidos');
 }
 
+async function ensureCoinCraftInstallerUrl() {
+  try {
+    const pool = await getConnectionPool();
+    await pool.request()
+      .input('url', dbSql.NVarChar, '/downloads/InstalarCoinCraft.exe')
+      .query("UPDATE dbo.apps SET executable_url=@url, updated_at=SYSUTCDATETIME() WHERE LOWER(name)='coincraft' AND (executable_url IS NULL OR LTRIM(RTRIM(executable_url))='')");
+  } catch (err) {
+    console.warn('Falha ao garantir executable_url do CoinCraft:', err?.message || err);
+  }
+}
+
 // --- ROTAS DA API (CONECTADAS AO BANCO) ---
 
 // Rota de health check
@@ -3532,6 +3543,7 @@ getConnectionPool().then(async () => {
   await ensurePaymentsAuditPatch();
   await ensureAppPaymentsSchema();
   await ensurePasswordResetsSchema();
+  await ensureCoinCraftInstallerUrl();
   app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
     console.log(`📱 Ambiente: ${process.env.NODE_ENV || 'development'}`);
