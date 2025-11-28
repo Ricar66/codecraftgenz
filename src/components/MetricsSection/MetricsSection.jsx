@@ -32,9 +32,9 @@ const MetricsSection = () => {
 
   // Valores demonstrativos; podem ser integrados com API real
   const metrics = [
-    { label: 'Projetos entregues', target: 128 },
-    { label: 'Crafters ativos', target: 56 },
-    { label: 'Parceiros', target: 24 },
+    { label: 'Projetos entregues', target: 2 },
+    { label: 'Crafters ativos', target: 3 },
+    { label: 'Parceiros', target: 0 },
     { label: 'Eventos da sessão', target: stats.totalEvents || 5 },
   ];
 
