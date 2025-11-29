@@ -2512,10 +2512,22 @@ app.post('/api/apps/:id/executable/upload', authenticate, authorizeAdmin, upload
 
     const relUrl = `/downloads/${req.file.filename}`;
     const pool = await getConnectionPool();
-    await pool.request()
-      .input('id', dbSql.Int, id)
-      .input('url', dbSql.NVarChar, relUrl)
-      .query('UPDATE dbo.apps SET executable_url=@url, updated_at=SYSUTCDATETIME() WHERE id=@id');
+    try {
+      await pool.request()
+        .input('id', dbSql.Int, id)
+        .input('url', dbSql.NVarChar, relUrl)
+        .query('UPDATE dbo.apps SET executable_url=@url, updated_at=SYSUTCDATETIME() WHERE id=@id');
+    } catch {
+      try {
+        await pool.request()
+          .input('id', dbSql.Int, id)
+          .input('url', dbSql.NVarChar, relUrl)
+          .query('UPDATE dbo.apps SET executable_url=@url WHERE id=@id');
+      } catch (e2) {
+        console.error('Falha ao atualizar executable_url:', e2?.message || e2);
+        return res.status(500).json({ error: 'Erro ao atualizar aplicativo com URL do executável' });
+      }
+    }
 
     return res.status(201).json({ success: true, download_url: relUrl, filename: req.file.filename, size: req.file.size });
   } catch (err) {
