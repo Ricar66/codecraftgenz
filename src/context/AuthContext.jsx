@@ -49,7 +49,7 @@ function useAuthProvider() {
   }, [navigate]);
 
   const logout = useCallback(async () => {
-    try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch {}
+    try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch (e) { void e }
     setUser(null);
     navigate('/login');
   }, [navigate]);
