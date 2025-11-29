@@ -1,5 +1,6 @@
 // src/services/appsAPI.js
 import { apiRequest } from '../lib/apiConfig.js';
+import { API_BASE_URL } from '../lib/apiConfig.js';
 
 // Lista apps do usuário autenticado
 export async function getMyApps({ page = 1, pageSize = 12, limit, sortBy, sortOrder = 'desc' } = {}) {
@@ -69,6 +70,29 @@ export async function createApp(data) {
 
 export async function deleteApp(appId) {
   return apiRequest(`/api/apps/${appId}`, { method: 'DELETE' });
+}
+
+// Admin – upload de executável
+export async function uploadAppExecutable(appId, file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  let authHeader = {};
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('cc_session') : null;
+    if (raw) { const session = JSON.parse(raw); if (session?.token) authHeader = { Authorization: `Bearer ${session.token}` }; }
+  } catch {}
+  const resp = await fetch(`${API_BASE_URL}/api/apps/${appId}/executable/upload`, {
+    method: 'POST',
+    headers: { ...authHeader },
+    body: fd,
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(()=>({}));
+    const e = new Error(err?.error || `HTTP ${resp.status}`);
+    e.status = resp.status;
+    throw e;
+  }
+  return resp.json();
 }
 
 // Mercado Livre/Mercado Pago – criar preferência de pagamento
