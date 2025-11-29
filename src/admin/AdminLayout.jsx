@@ -9,7 +9,7 @@ import { useAuth } from '../context/useAuth';
 import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo, useDesafios, DesafiosRepo, useFinance, FinanceRepo, useRanking, RankingRepo, useLogs } from '../hooks/useAdminRepo';
 import { apiRequest } from '../lib/apiConfig.js';
 import { realtime } from '../lib/realtime';
-import { getAllApps, updateApp, createApp, deleteApp } from '../services/appsAPI.js';
+import { getAllApps, updateApp, createApp, deleteApp, uploadAppExecutable } from '../services/appsAPI.js';
 import { getAll as getAllProjects, deleteProject as deleteProjectApi } from '../services/projectsAPI.js';
 import { getAppPrice, getAppImageUrl } from '../utils/appModel.js';
 import { sanitizeImageUrl } from '../utils/urlSanitize.js';
@@ -2345,6 +2345,9 @@ export function Apps() {
   const [error, setError] = React.useState('');
   const [form, setForm] = React.useState({ id:null, name:'', mainFeature:'', description:'', status:'draft', price:0, thumbnail:'', exec_url:'' });
   const [priceMask, setPriceMask] = React.useState('R$ 0,00');
+  const [exeFile, setExeFile] = React.useState(null);
+  const [uploadBusy, setUploadBusy] = React.useState(false);
+  const [uploadError, setUploadError] = React.useState('');
   const [visDiag, setVisDiag] = React.useState(null);
 
   const formatBRL = (n) => {
@@ -2512,6 +2515,22 @@ export function Apps() {
           <input placeholder="Thumbnail URL" value={form.thumbnail} onChange={e=>setForm({ ...form, thumbnail:e.target.value })} />
           <input placeholder="Exec URL (download)" value={form.exec_url} onChange={e=>setForm({ ...form, exec_url:e.target.value })} />
         </div>
+        {form.id && (
+          <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:12, marginTop:12 }}>
+            <input type="file" accept=".exe" onChange={e=>{ setExeFile(e.target.files?.[0] || null); setUploadError(''); }} />
+            <button className="btn btn-outline" disabled={uploadBusy || !exeFile} onClick={async()=>{
+              try {
+                setUploadBusy(true); setUploadError('');
+                const r = await uploadAppExecutable(form.id, exeFile);
+                setForm(s=>({ ...s, exec_url: r.download_url || s.exec_url }));
+                setExeFile(null);
+              } catch (e) {
+                setUploadError(e.message || 'Falha no upload');
+              } finally { setUploadBusy(false); }
+            }}>{uploadBusy ? 'Enviando…' : 'Enviar executável'}</button>
+            {uploadError && <span style={{ alignSelf:'center', color:'#FF6B6B' }}>❌ {uploadError}</span>}
+          </div>
+        )}
         {(form.thumbnail) && (
           <div style={{ marginTop:8 }}>
             <img

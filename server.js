@@ -16,6 +16,7 @@ import jwt from 'jsonwebtoken';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import sharp from 'sharp';
 import { z } from 'zod';
+import multer from 'multer';
 
 import { mercadoLivre } from './src/integrations/mercadoLivre.js';
 import { getConnectionPool, dbSql } from './src/lib/db.js';
@@ -2484,6 +2485,27 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
   }
 });
 
+// Upload de executável e atualização do executable_url (admin)
+app.post('/api/apps/:id/executable/upload', authenticate, authorizeAdmin, upload.single('file'), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+    if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado (campo file)' });
+
+    const relUrl = `/downloads/${req.file.filename}`;
+    const pool = await getConnectionPool();
+    await pool.request()
+      .input('id', dbSql.Int, id)
+      .input('url', dbSql.NVarChar, relUrl)
+      .query('UPDATE dbo.apps SET executable_url=@url, updated_at=SYSUTCDATETIME() WHERE id=@id');
+
+    return res.status(201).json({ success: true, download_url: relUrl, filename: req.file.filename, size: req.file.size });
+  } catch (err) {
+    console.error('Erro no upload de executável:', err);
+    return res.status(500).json({ error: err?.message || 'Falha no upload' });
+  }
+});
+
 app.delete('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
   const id = parseInt(req.params.id, 10);
   try {
@@ -3754,3 +3776,20 @@ async function handlePaymentWebhook(paymentId) {
     console.warn('Webhook: falha ao persistir atualização de pagamento no banco:', dbErr?.message || dbErr);
   }
 }
+// --- Upload de executáveis (admin)
+const downloadsDir = path.join(__dirname, 'public', 'downloads');
+if (!fs.existsSync(downloadsDir)) {
+  try { fs.mkdirSync(downloadsDir, { recursive: true }); } catch {}
+}
+const uploadStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, downloadsDir),
+  filename: (req, file, cb) => {
+    const id = parseInt(req.params.id || '0', 10);
+    const original = file.originalname || 'arquivo.exe';
+    const ext = path.extname(original).toLowerCase();
+    const base = path.basename(original, ext).replace(/[^a-z0-9\-_.]/gi, '_').slice(0, 64) || 'instalador';
+    const stamp = Date.now();
+    cb(null, `${base}-${id}-${stamp}${ext || '.exe'}`);
+  }
+});
+const upload = multer({ storage: uploadStorage, limits: { fileSize: 200 * 1024 * 1024 } }); // 200MB
