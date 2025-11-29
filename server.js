@@ -402,6 +402,34 @@ async function ensureAppPaymentsSchema() {
   }
 }
 
+// --- Garantir tabela user_licenses ---
+async function ensureUserLicensesSchema() {
+  try {
+    const pool = await getConnectionPool();
+    await pool.request().query(`
+      IF OBJECT_ID('dbo.user_licenses', 'U') IS NULL
+      BEGIN
+        CREATE TABLE dbo.user_licenses (
+          id INT IDENTITY(1,1) PRIMARY KEY,
+          user_id INT NOT NULL,
+          app_id INT NOT NULL,
+          hardware_id NVARCHAR(256) NOT NULL,
+          license_key NVARCHAR(MAX) NOT NULL,
+          created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+          updated_at DATETIME2 NULL,
+          CONSTRAINT FK_user_licenses_user FOREIGN KEY (user_id) REFERENCES dbo.users(id),
+          CONSTRAINT FK_user_licenses_app FOREIGN KEY (app_id) REFERENCES dbo.apps(id)
+        );
+        CREATE INDEX IX_user_licenses_user_app ON dbo.user_licenses(user_id, app_id);
+        CREATE INDEX IX_user_licenses_hardware ON dbo.user_licenses(hardware_id);
+      END;
+    `);
+    console.log('✅ Esquema de dbo.user_licenses verificado/criado');
+  } catch (err) {
+    console.error('Erro ao garantir esquema de dbo.user_licenses:', err);
+  }
+}
+
 // --- Garantir tabela de auditoria, colunas analíticas e índices (replica backups/2025-11-15_app_payments_audit_patch.sql) ---
 async function ensurePaymentsAuditPatch() {
   const pool = await getConnectionPool();
@@ -3569,6 +3597,75 @@ app.post('/api/licenses/activate', authenticate, async (req, res) => {
   }
 });
 
+// Reivindicar licença por e-mail (modelo híbrido online/offline)
+app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
+  try {
+    let body = req.body;
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+    const { email, hardwareId, appId } = body || {};
+    if (!email || !hardwareId || !appId) return res.status(400).json({ error: 'Dados incompletos.' });
+
+    const pool = await getConnectionPool();
+    const userRes = await pool.request().input('email', dbSql.NVarChar, String(email)).query('SELECT id, email, status FROM dbo.users WHERE email=@email');
+    const userRow = userRes.recordset[0] || null;
+    if (!userRow) return res.status(404).json({ error: 'Usuário não encontrado para este e-mail.' });
+    const userId = userRow.id;
+
+    // Anti-duplicação: hardwareId já ativado para este app
+    const dupRes = await pool.request()
+      .input('aid', dbSql.Int, Number(appId))
+      .input('hwid', dbSql.NVarChar, String(hardwareId))
+      .query('SELECT TOP 1 id FROM dbo.user_licenses WHERE app_id=@aid AND hardware_id=@hwid');
+    if (dupRes.recordset.length > 0) {
+      return res.status(409).json({ error: "Esta máquina já possui uma licença ativa. Use a opção 'Tenho uma Chave'." });
+    }
+
+    // Saldo de licenças: compras aprovadas x licenças já usadas
+    const approvedCntRes = await pool.request()
+      .input('uid', dbSql.Int, userId)
+      .input('aid', dbSql.Int, Number(appId))
+      .query("SELECT COUNT(*) AS cnt FROM dbo.app_payments WHERE user_id=@uid AND app_id=@aid AND status='approved'");
+    const approved = approvedCntRes.recordset[0]?.cnt || 0;
+    const usedCntRes = await pool.request()
+      .input('uid', dbSql.Int, userId)
+      .input('aid', dbSql.Int, Number(appId))
+      .query('SELECT COUNT(*) AS cnt FROM dbo.user_licenses WHERE user_id=@uid AND app_id=@aid AND hardware_id IS NOT NULL');
+    const used = usedCntRes.recordset[0]?.cnt || 0;
+    if (used >= approved) {
+      return res.status(403).json({ error: 'Limite de licenças atingido para este e-mail. Compre mais no site.' });
+    }
+
+    // Geração de chave RSA
+    let signature;
+    const pem = process.env.PRIVATE_KEY_PEM || '';
+    if (pem) {
+      try {
+        const sign = nodeCrypto.createSign('RSA-SHA256');
+        sign.update(String(hardwareId));
+        sign.update(String(userId));
+        signature = sign.sign(pem, 'base64');
+      } catch {
+        signature = 'LIC-' + Buffer.from(String(hardwareId) + String(userId)).toString('base64');
+      }
+    } else {
+      signature = 'LIC-' + Buffer.from(String(hardwareId) + String(userId)).toString('base64');
+    }
+
+    // Inserir licença
+    await pool.request()
+      .input('uid', dbSql.Int, userId)
+      .input('aid', dbSql.Int, Number(appId))
+      .input('hwid', dbSql.NVarChar, String(hardwareId))
+      .input('key', dbSql.NVarChar, String(signature))
+      .query('INSERT INTO dbo.user_licenses (user_id, app_id, hardware_id, license_key) VALUES (@uid, @aid, @hwid, @key)');
+
+    return res.json({ success: true, license_key: signature });
+  } catch (err) {
+    console.error('Erro em claim-by-email:', err);
+    return res.status(500).json({ error: 'Erro ao ativar licença por e-mail.' });
+  }
+});
+
 // --- Servir Arquivos Estáticos ---
 app.use(express.static(path.join(__dirname, 'dist')));
 app.use('/downloads', express.static(path.join(__dirname, 'public', 'downloads')));
@@ -3594,6 +3691,7 @@ getConnectionPool().then(async () => {
   await ensureProjetosOptionalColumns();
   await ensurePaymentsAuditPatch();
   await ensureAppPaymentsSchema();
+  await ensureUserLicensesSchema();
   await ensurePasswordResetsSchema();
   await ensureCoinCraftInstallerUrl();
   app.listen(PORT, () => {
