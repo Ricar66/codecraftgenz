@@ -2949,7 +2949,41 @@ app.get('/api/apps/:id/purchase/status', sensitiveLimiter, async (req, res) => {
   res.json({ success: true, status, download_url });
 });
 
-// Registrar download (mock)
+// Endpoint geral de feedbacks (frontend chama /api/feedbacks)
+app.post('/api/feedbacks', sensitiveLimiter, async (req, res) => {
+  try {
+    const { nome, email, mensagem, origem } = req.body || {};
+    if (!mensagem || String(mensagem).trim().length < 2) {
+      return res.status(400).json({ error: 'Mensagem é obrigatória.' });
+    }
+
+    const pool = await getConnectionPool();
+    let userId = null;
+    
+    // Tenta identificar usuário pelo email se fornecido (se não autenticado)
+    if (req.user && req.user.id) {
+      userId = req.user.id;
+    } else if (email) {
+       const uRes = await pool.request().input('em', dbSql.NVarChar, email).query('SELECT id FROM dbo.users WHERE email = @em');
+       if (uRes.recordset[0]) userId = uRes.recordset[0].id;
+    }
+
+    await pool.request()
+      .input('uid', dbSql.Int, userId)
+      .input('name', dbSql.NVarChar, String(nome || 'Anônimo'))
+      .input('email', dbSql.NVarChar, String(email || ''))
+      .input('msg', dbSql.NVarChar, String(mensagem))
+      .input('origin', dbSql.NVarChar, String(origem || 'web'))
+      .query('INSERT INTO dbo.feedbacks (user_id, name, email, message, origin) VALUES (@uid, @name, @email, @msg, @origin)');
+
+    return res.status(201).json({ success: true });
+  } catch (err) {
+    console.error('Erro ao salvar feedback:', err);
+    return res.status(500).json({ error: 'Erro interno ao salvar feedback.' });
+  }
+});
+
+// Registrar download e validar pagamento
 app.post('/api/apps/:id/download', authenticate, sensitiveLimiter, async (req, res) => {
   const id = parseInt(req.params.id, 10);
   let appItem = null;
@@ -2957,31 +2991,46 @@ app.post('/api/apps/:id/download', authenticate, sensitiveLimiter, async (req, r
     const pool = await getConnectionPool();
     const dataRes = await pool.request()
       .input('id', dbSql.Int, id)
-      .query(`SELECT id, name, executable_url AS executableUrl FROM dbo.apps WHERE id=@id`);
+      .query(`SELECT id, name, price, executable_url AS executableUrl FROM dbo.apps WHERE id=@id`);
     appItem = dataRes.recordset[0] || null;
-  } catch (dbErr) {
-    console.error('Erro ao buscar app para download:', dbErr?.message || dbErr);
-    return res.status(500).json({ error: 'Erro interno ao buscar aplicativo' });
-  }
-  if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
-  const statusOk = paymentsByApp.get(id)?.status === 'approved';
-  if (!statusOk) return res.status(403).json({ error: 'Download não liberado. Pagamento não aprovado.' });
-  const fallbackUrl = String(appItem.name || '').toLowerCase() === 'coincraft' ? '/downloads/InstalarCoinCraft.exe' : null;
-  const url = appItem.executableUrl || fallbackUrl;
-  if (!url) return res.status(400).json({ error: 'Aplicativo sem URL de executável configurada' });
-  try {
-    const pool = await getConnectionPool();
-    await pool.request()
-      .input('type', dbSql.NVarChar, 'download')
-      .input('app_id', dbSql.Int, id)
-      .input('app_name', dbSql.NVarChar, appItem.name)
-      .input('status', dbSql.NVarChar, 'done')
-      .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
-  } catch (dbErr) {
-    console.warn('Falha ao persistir download no banco:', dbErr?.message || dbErr);
-  }
-  return res.json({ success: true, download_url: url });
-});
+    
+    if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
+
+    // Verifica permissão: Gratuito ou Pago Aprovado
+    const isFree = !appItem.price || appItem.price <= 0;
+    let allowed = isFree;
+    
+    if (!allowed) {
+      // Verifica pagamento no banco
+      const payRes = await pool.request()
+        .input('uid', dbSql.Int, req.user.id)
+        .input('aid', dbSql.Int, id)
+        .query("SELECT TOP 1 status FROM dbo.app_payments WHERE user_id = @uid AND app_id = @aid AND status = 'approved'");
+      if (payRes.recordset.length > 0) allowed = true;
+    }
+    
+    // Permite também se for admin
+    if (!allowed && req.user.role === 'admin') allowed = true;
+
+    if (!allowed) return res.status(403).json({ error: 'Download não liberado. Pagamento não aprovado.' });
+
+    const fallbackUrl = String(appItem.name || '').toLowerCase() === 'coincraft' ? '/downloads/InstalarCoinCraft.exe' : null;
+    const url = appItem.executableUrl || fallbackUrl;
+    
+    if (!url) return res.status(400).json({ error: 'Aplicativo sem URL de executável configurada' });
+
+    // Registra histórico
+    try {
+        await pool.request()
+        .input('type', dbSql.NVarChar, 'download')
+        .input('app_id', dbSql.Int, id)
+        .input('app_name', dbSql.NVarChar, appItem.name)
+        .input('status', dbSql.NVarChar, 'done')
+        .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
+    } catch (e) { console.warn('Erro ao registrar historico download', e); }
+
+    return res.json({ success: true, download_url: url });
+  });
 
 // Histórico de compras e downloads (mock, sem autenticação para usuário comum)
 app.get('/api/apps/history', async (req, res, next) => {
@@ -3693,6 +3742,7 @@ getConnectionPool().then(async () => {
   await ensureAppPaymentsSchema();
   await ensureUserLicensesSchema();
   await ensurePasswordResetsSchema();
+  await ensureFeedbacksSchema();
   await ensureCoinCraftInstallerUrl();
   app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
@@ -3749,6 +3799,32 @@ async function ensurePasswordResetsSchema() {
     }
   } catch (e) {
     console.error('Falha ao garantir schema password_resets:', e?.message || e);
+  }
+}
+
+async function ensureFeedbacksSchema() {
+  try {
+    const pool = await getConnectionPool();
+    await pool.request().query(`
+      IF OBJECT_ID('dbo.feedbacks', 'U') IS NULL
+      BEGIN
+        CREATE TABLE dbo.feedbacks (
+          id INT IDENTITY(1,1) PRIMARY KEY,
+          user_id INT NULL,
+          name NVARCHAR(255) NULL,
+          email NVARCHAR(255) NULL,
+          message NVARCHAR(MAX) NOT NULL,
+          type NVARCHAR(50) DEFAULT 'general',
+          origin NVARCHAR(50) DEFAULT 'web',
+          created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+          CONSTRAINT FK_feedbacks_user FOREIGN KEY (user_id) REFERENCES dbo.users(id)
+        );
+        CREATE INDEX IX_feedbacks_user ON dbo.feedbacks(user_id);
+      END;
+    `);
+    console.log('✅ Esquema de dbo.feedbacks verificado/criado');
+  } catch (err) {
+    console.error('Erro ao garantir esquema de dbo.feedbacks:', err);
   }
 }
 app.get('/api/admin/projetos', authenticate, authorizeAdmin, async (req, res, next) => {
