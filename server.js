@@ -3030,7 +3030,11 @@ app.post('/api/apps/:id/download', authenticate, sensitiveLimiter, async (req, r
     } catch (e) { console.warn('Erro ao registrar historico download', e); }
 
     return res.json({ success: true, download_url: url });
-  });
+  } catch (err) {
+    console.error('Erro no download:', err);
+    return res.status(500).json({ error: 'Erro interno ao processar download.' });
+  }
+});
 
 // Histórico de compras e downloads (mock, sem autenticação para usuário comum)
 app.get('/api/apps/history', async (req, res, next) => {
