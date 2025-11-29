@@ -477,7 +477,7 @@ async function ensureCoinCraftInstallerUrl() {
     const pool = await getConnectionPool();
     await pool.request()
       .input('url', dbSql.NVarChar, '/downloads/InstalarCoinCraft.exe')
-      .query("UPDATE dbo.apps SET executable_url=@url, updated_at=SYSUTCDATETIME() WHERE LOWER(name)='coincraft' AND (executable_url IS NULL OR LTRIM(RTRIM(executable_url))='')");
+      .query("UPDATE dbo.apps SET executable_url=@url, updated_at=SYSUTCDATETIME() WHERE LOWER(name)='coincraft'");
   } catch (err) {
     console.warn('Falha ao garantir executable_url do CoinCraft:', err?.message || err);
   }
