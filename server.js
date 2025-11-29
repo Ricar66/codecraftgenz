@@ -14,9 +14,9 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import jwt from 'jsonwebtoken';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
+import multer from 'multer';
 import sharp from 'sharp';
 import { z } from 'zod';
-import multer from 'multer';
 
 import { mercadoLivre } from './src/integrations/mercadoLivre.js';
 import { getConnectionPool, dbSql } from './src/lib/db.js';
@@ -3779,7 +3779,7 @@ async function handlePaymentWebhook(paymentId) {
 // --- Upload de executáveis (admin)
 const downloadsDir = path.join(__dirname, 'public', 'downloads');
 if (!fs.existsSync(downloadsDir)) {
-  try { fs.mkdirSync(downloadsDir, { recursive: true }); } catch {}
+  try { fs.mkdirSync(downloadsDir, { recursive: true }); } catch (err) { void err }
 }
 const uploadStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, downloadsDir),

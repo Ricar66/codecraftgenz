@@ -80,7 +80,7 @@ export async function uploadAppExecutable(appId, file) {
   try {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('cc_session') : null;
     if (raw) { const session = JSON.parse(raw); if (session?.token) authHeader = { Authorization: `Bearer ${session.token}` }; }
-  } catch {}
+  } catch (e) { void e }
   const resp = await fetch(`${API_BASE_URL}/api/apps/${appId}/executable/upload`, {
     method: 'POST',
     headers: { ...authHeader },

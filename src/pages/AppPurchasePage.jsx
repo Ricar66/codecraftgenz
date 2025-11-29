@@ -102,10 +102,10 @@ const AppPurchasePage = () => {
         if (id) {
           const val = String(id);
           setDeviceId(val);
-          try { window.__MP_DEVICE_ID = val; } catch {}
+          try { window.__MP_DEVICE_ID = val; } catch (e) { void e }
           return true;
         }
-      } catch {}
+      } catch (e) { void e }
       return false;
     };
     const okNow = tryGenerateId();
@@ -116,7 +116,7 @@ const AppPurchasePage = () => {
       if (ok) { clearInterval(interval); stopped = true; }
       else if (Date.now() - start > 10000) { clearInterval(interval); stopped = true; }
     }, 500);
-    return () => { stopped = true; try { clearInterval(interval); } catch {} };
+    return () => { stopped = true; try { clearInterval(interval); } catch (e) { void e } };
   }, [deviceId]);
 
   useEffect(() => {
