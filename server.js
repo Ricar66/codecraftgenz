@@ -2485,6 +2485,9 @@ app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
   }
 });
 
+// Upload de executável – configuração de armazenamento (declarado antes da rota)
+// moved earlier above route
+
 // Upload de executável e atualização do executable_url (admin)
 app.post('/api/apps/:id/executable/upload', authenticate, authorizeAdmin, upload.single('file'), async (req, res) => {
   try {
