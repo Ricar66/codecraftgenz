@@ -1,7 +1,7 @@
 // src/hooks/useAdminRepo.js
 import { useEffect, useState, useCallback } from 'react';
 
-import { apiConfig, apiRequest, shouldFallbackPublic } from '../lib/apiConfig.js';
+import { apiConfig, apiRequest } from '../lib/apiConfig.js';
 import { realtime } from '../lib/realtime';
 import * as mentorAPI from '../services/mentorAPI';
 import * as projectsAPI from '../services/projectsAPI';
@@ -56,6 +56,7 @@ function useAsyncList(asyncFn, deps = []) {
     }
   };
 
+  // Chama o carregamento apenas via useEffect para evitar condições de corrida
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -227,33 +228,15 @@ export function useProjects() {
       }
       return arr;
     } catch (err) {
-      const canFallback = (e) => {
-        if (typeof shouldFallbackPublic === 'function') return shouldFallbackPublic(e);
-        const msg = String(e?.message || '').toLowerCase();
-        const status = Number(e?.status || 0);
-        const unauthorized = status === 401 || msg.includes('401') || msg.includes('unauthorized') || msg.includes('não autenticado');
-        const network = status === 0 || e?.type === 'network' || msg.includes('network') || msg.includes('conexão');
-        const serverError = status >= 500;
-        const nonJson = msg.includes('não é json');
-        const envFlag = String(import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK || 'off').toLowerCase();
-        const enabled = !['off','false','0'].includes(envFlag);
-        return enabled && (unauthorized || network || serverError || nonJson);
-      };
-      if (canFallback(err)) {
-        if (isDebug) {
-          console.log('[Admin:Projects:fallback] public');
-        }
-        const publicData = await projectsAPI.getAll({ visivel: 'true' });
-        const arr = Array.isArray(publicData) ? publicData : [];
-        if (arr.length === 0 && typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test') {
-          return [{ id: -1, titulo: 'Público' }];
-        }
-        if (isDebug) {
-          console.log('[Admin:Projects:publicData]', arr.length);
-        }
-        return arr;
+      if (isDebug) {
+        console.log('[Admin:Projects:fallback] public', err?.status || 0, err?.message || err);
       }
-      throw err;
+      const publicData = await projectsAPI.getAll({ visivel: 'true' });
+      const arr = Array.isArray(publicData) ? publicData : [];
+      if (isDebug) {
+        console.log('[Admin:Projects:publicData]', arr.length);
+      }
+      return arr;
     }
   });
 
