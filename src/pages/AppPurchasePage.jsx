@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import CardDirectPayment from '../components/CardDirectPayment.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth.js';
-import { getAppById, getPurchaseStatus, registerDownload, submitFeedback, createPaymentPreference, downloadByEmail } from '../services/appsAPI.js';
+import { getAppById, getPurchaseStatus, registerDownload, submitFeedback, createPaymentPreference, downloadByEmail, activateDeviceLicense } from '../services/appsAPI.js';
 import { getAppPrice } from '../utils/appModel.js';
 
 // Mapeia códigos de status_detail do Mercado Pago para mensagens amigáveis
@@ -70,6 +70,20 @@ const AppPurchasePage = () => {
   const [emailInput, setEmailInput] = useState('');
   const [emailConfirmError, setEmailConfirmError] = useState('');
   const [confirmingDownload, setConfirmingDownload] = useState(false);
+
+  const computeHardwareId = async () => {
+    const src = [
+      navigator.userAgent || '',
+      navigator.language || '',
+      navigator.platform || '',
+      (screen?.width || '') + 'x' + (screen?.height || ''),
+      Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    ].join('|');
+    const enc = new TextEncoder().encode(src);
+    const digest = await crypto.subtle.digest('SHA-256', enc);
+    const arr = Array.from(new Uint8Array(digest));
+    return arr.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+  };
 
   // Fluxo simplificado: sem checkout externo
 
@@ -162,7 +176,8 @@ const AppPurchasePage = () => {
 
   const handleDownload = async () => {
     try {
-      const json = await registerDownload(id);
+      let json = null;
+      try { json = await registerDownload(id); } catch { json = null; }
       const url = json?.download_url || downloadUrl;
       if (url) { window.open(url, '_blank', 'noopener'); return; }
       const existingEmail = String(payerInfo.email || user?.email || '').trim();
@@ -172,11 +187,29 @@ const AppPurchasePage = () => {
         setShowEmailModal(true);
         return;
       }
+      const hwid = await computeHardwareId();
+      const lic = await activateDeviceLicense({ email: existingEmail, appId: Number(id), hardwareId: hwid });
+      if (!lic?.licensed) { alert(lic?.message || 'Licença não validada.'); return; }
       const d = await downloadByEmail(id, existingEmail);
       const u = d?.download_url || '';
       if (u) window.open(u, '_blank', 'noopener');
       else alert('Download ainda não liberado para este e-mail.');
-    } catch (e) { alert('Erro ao processar download: ' + e.message); }
+      const subject = encodeURIComponent(`Ativação de licença - ${app?.name || app?.titulo || 'Aplicativo'}`);
+      const bodyLines = [
+        'Olá,',
+        '',
+        'Concluí o download e estou ativando minha licença.',
+        lic?.license_key ? `Chave: ${lic.license_key}` : undefined,
+        `App: ${app?.name || app?.titulo || ''} (ID ${id})`,
+        'Este e-mail será usado para ativar e validar meu software.',
+        '',
+        'Obrigado.',
+      ].filter(Boolean);
+      const body = encodeURIComponent(bodyLines.join('\n'));
+      window.open(`mailto:${existingEmail}?subject=${subject}&body=${body}`, '_blank');
+    } catch (e) {
+      alert('Erro ao processar download: ' + e.message);
+    }
   };
 
   const confirmEmailAndDownload = async () => {
@@ -186,11 +219,27 @@ const AppPurchasePage = () => {
     try {
       setConfirmingDownload(true);
       setEmailConfirmError('');
+      const hwid = await computeHardwareId();
+      const lic = await activateDeviceLicense({ email: em, appId: Number(id), hardwareId: hwid });
+      if (!lic?.licensed) { setEmailConfirmError(lic?.message || 'Licença não validada.'); setConfirmingDownload(false); return; }
       const d = await downloadByEmail(id, em);
       const u = d?.download_url || '';
       if (u) {
         setShowEmailModal(false);
         window.open(u, '_blank', 'noopener');
+        const subject = encodeURIComponent(`Ativação de licença - ${app?.name || app?.titulo || 'Aplicativo'}`);
+        const bodyLines = [
+          'Olá,',
+          '',
+          'Concluí o download e estou ativando minha licença.',
+          lic?.license_key ? `Chave: ${lic.license_key}` : undefined,
+          `App: ${app?.name || app?.titulo || ''} (ID ${id})`,
+          'Este e-mail será usado para ativar e validar meu software.',
+          '',
+          'Obrigado.',
+        ].filter(Boolean);
+        const body = encodeURIComponent(bodyLines.join('\n'));
+        window.open(`mailto:${em}?subject=${subject}&body=${body}`, '_blank');
       } else {
         setEmailConfirmError('Este e-mail não possui download liberado ainda.');
       }
