@@ -50,13 +50,21 @@ export default defineConfig({
             }
           },
           {
+            // Downloads devem ir direto para a rede (evita cache de .exe grandes)
+            urlPattern: ({ url }) => url.pathname.startsWith('/downloads/'),
+            handler: 'NetworkOnly',
+            options: {
+              cacheName: 'downloads-network-only'
+            }
+          },
+          {
             // Cache mais conservador para páginas HTML
             urlPattern: ({ request }) => request.destination === 'document',
             handler: 'NetworkFirst',
             options: {
               cacheName: 'pages-cache',
-              networkTimeoutSeconds: 3, // Timeout rápido para detectar offline
-              expiration: {
+              networkTimeoutSeconds: 3 // Timeout rápido para detectar offline
+              , expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24 // 24 horas apenas
               }
@@ -65,12 +73,13 @@ export default defineConfig({
         ],
         // Fallback mais restritivo - só funciona se houver cache válido
         navigateFallback: '/index.html',
-        navigateFallbackAllowlist: [/^(?!.*\/api\/).*/],
-        navigateFallbackDenylist: [/^\/api/],
+        // Garante que /downloads não caia no fallback do SPA
+        navigateFallbackAllowlist: [/^(?!.*\/api\/|.*\/downloads\/).*/],
+        navigateFallbackDenylist: [/^\/api/, /^\/downloads/],
         // Configurações menos agressivas
         cleanupOutdatedCaches: true,
-        skipWaiting: false, // Não assume controle imediatamente
-        clientsClaim: false // Não reivindica clientes existentes
+        skipWaiting: false // Não assume controle imediatamente
+        , clientsClaim: false // Não reivindica clientes existentes
       }
     })
   ],
@@ -86,6 +95,11 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false
+      },
+      '/downloads': {
         target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false
