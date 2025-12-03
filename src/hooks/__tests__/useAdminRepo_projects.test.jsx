@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('../../lib/apiConfig.js', () => ({
@@ -21,9 +21,8 @@ describe('useProjects – fallback quando resposta não é JSON', () => {
     const original = import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK;
     import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK = 'true';
     const { result } = renderHook(() => useProjects());
-    await act(async () => {});
-    expect(Array.isArray(result.current.data)).toBe(true);
-    expect(result.current.data[0].titulo).toBe('Público');
+    await waitFor(() => expect(result.current.data.length).toBeGreaterThan(0));
+    expect(result.current.data[0]?.titulo).toBe('Público');
     import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK = original;
   });
 });

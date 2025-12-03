@@ -1,5 +1,5 @@
 // src/services/appsAPI.js
-import { apiRequest } from '../lib/apiConfig.js';
+import { apiRequest, apiRequestMultipart, shouldFallbackPublic } from '../lib/apiConfig.js';
 import { API_BASE_URL } from '../lib/apiConfig.js';
 
 // Lista apps do usuário autenticado
@@ -35,13 +35,7 @@ export async function getAllApps({ page = 1, pageSize = 50, limit, sortBy, sortO
     const resp = await apiRequest(`/api/apps?${qp.toString()}`, { method: 'GET' });
     return resp.data;
   } catch (err) {
-    const envFlag = String(import.meta.env.VITE_ADMIN_PUBLIC_FALLBACK || 'off').toLowerCase();
-    const fbEnabled = publicFallback !== undefined ? !!publicFallback : !['off','false','0'].includes(envFlag);
-    const msg = String(err?.message || '').toLowerCase();
-    const isUnauthorized = err && (err.status === 401 || msg.includes('não autenticado') || msg.includes('unauthorized') || msg.includes('401'));
-    const isNetwork = err && (err.status === 0 || err.type === 'network' || msg.includes('conexão') || msg.includes('network'));
-    const isServerError = err && (Number(err.status) >= 500);
-    if (fbEnabled && (isUnauthorized || isNetwork || isServerError)) {
+    if (shouldFallbackPublic(err, publicFallback)) {
       const pubResp = await apiRequest(`/api/apps/public?${qp.toString()}`, { method: 'GET' });
       return pubResp.data;
     }
@@ -76,23 +70,8 @@ export async function deleteApp(appId) {
 export async function uploadAppExecutable(appId, file) {
   const fd = new FormData();
   fd.append('file', file);
-  let authHeader = {};
-  try {
-    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('cc_session') : null;
-    if (raw) { const session = JSON.parse(raw); if (session?.token) authHeader = { Authorization: `Bearer ${session.token}` }; }
-  } catch (e) { void e }
-  const resp = await fetch(`${API_BASE_URL}/api/apps/${appId}/executable/upload`, {
-    method: 'POST',
-    headers: { ...authHeader },
-    body: fd,
-  });
-  if (!resp.ok) {
-    const err = await resp.json().catch(()=>({}));
-    const e = new Error(err?.error || `HTTP ${resp.status}`);
-    e.status = resp.status;
-    throw e;
-  }
-  return resp.json();
+  const endpoint = `/api/apps/${appId}/executable/upload`;
+  return apiRequestMultipart(endpoint, fd, { method: 'POST' });
 }
 
 // Mercado Livre/Mercado Pago – criar preferência de pagamento

@@ -38,3 +38,8 @@ export const usePrefersReducedMotion = () => {
 
   return prefersReducedMotion;
 };
+
+export const toBoolFlag = (v) => {
+  const s = String(v || '').toLowerCase();
+  return ['on','true','1','yes'].includes(s);
+};

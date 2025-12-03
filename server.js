@@ -185,12 +185,25 @@ function logEvent(type, details) {
   }
 }
 
+/**
+ * Sanitiza uma string removendo tags HTML e limitando o tamanho.
+ *
+ * @param {string} s - String de entrada.
+ * @param {number} [maxLen=2048] - Tamanho máximo permitido.
+ * @returns {string} String sanitizada.
+ */
 function sanitizeString(s, maxLen = 2048) {
   if (typeof s !== 'string') return s;
   const trimmed = s.trim().slice(0, maxLen);
   return trimmed.replace(/<[^>]*>/g, '');
 }
 
+/**
+ * Valida o formato de um endereço de e-mail.
+ *
+ * @param {string} email - O e-mail a ser validado.
+ * @returns {boolean} True se o formato for válido, false caso contrário.
+ */
 function validateEmail(email) {
   if (typeof email !== 'string') return false;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -210,6 +223,18 @@ const userCreateSchema = z.object({
   role: z.enum(['admin','editor','viewer']).optional(),
 });
 
+/**
+ * Valida a força de uma senha.
+ * Requisitos:
+ * - Mínimo 8 caracteres
+ * - Pelo menos uma letra maiúscula
+ * - Pelo menos uma letra minúscula
+ * - Pelo menos um número
+ * - Pelo menos um caractere especial
+ *
+ * @param {string} pwd - A senha a ser validada.
+ * @returns {boolean} True se a senha for forte, false caso contrário.
+ */
 function validatePasswordStrength(pwd) {
   if (typeof pwd !== 'string') return false;
   const hasLen = pwd.length >= 8;
@@ -321,7 +346,16 @@ try {
 
 const paymentsByApp = new Map();
 
-// --- Middleware de Autenticação (JWT) ---
+/**
+ * Middleware de autenticação via JWT.
+ * Verifica a presença e validade do token no header Authorization ou em cookies.
+ * Adiciona o objeto `req.user` com os dados do usuário decodificados.
+ *
+ * @param {import('express').Request} req - Objeto de requisição do Express.
+ * @param {import('express').Response} res - Objeto de resposta do Express.
+ * @param {import('express').NextFunction} next - Função para passar para o próximo middleware.
+ * @returns {void} Retorna 401 se não autenticado ou token inválido.
+ */
 function authenticate(req, res, next) {
   try {
     const header = req.headers['authorization'] || '';
@@ -343,6 +377,16 @@ function authenticate(req, res, next) {
   }
 }
 
+/**
+ * Middleware de autorização para administradores.
+ * Deve ser usado após o middleware `authenticate`.
+ * Verifica se `req.user.role` é 'admin'.
+ *
+ * @param {import('express').Request} req - Objeto de requisição do Express.
+ * @param {import('express').Response} res - Objeto de resposta do Express.
+ * @param {import('express').NextFunction} next - Função para passar para o próximo middleware.
+ * @returns {void} Retorna 403 se não for admin.
+ */
 function authorizeAdmin(req, res, next) {
   if (req.user?.role !== 'admin') {
     return res.status(403).json({ error: 'Acesso negado' });
@@ -350,7 +394,13 @@ function authorizeAdmin(req, res, next) {
   next();
 }
 
-// --- Garantir esquema de dbo.users (password_hash, role, status) ---
+/**
+ * Garante que a tabela `dbo.users` possua as colunas necessárias.
+ * Adiciona colunas como `password_hash`, `role`, `status`, `mfa_enabled`, `mfa_secret` caso não existam.
+ * Aplica normalizações de dados (defaults para role e status).
+ *
+ * @returns {Promise<void>}
+ */
 async function ensureUserTableSchema() {
   try {
     const pool = await getConnectionPool();
@@ -369,7 +419,12 @@ async function ensureUserTableSchema() {
   }
 }
 
-// --- Garantir colunas opcionais em dbo.projetos usadas pelo frontend ---
+/**
+ * Garante que a tabela `dbo.projetos` possua colunas opcionais usadas pelo frontend.
+ * Adiciona colunas `preco` e `progresso` com defaults caso não existam.
+ *
+ * @returns {Promise<void>}
+ */
 async function ensureProjetosOptionalColumns() {
   try {
     const pool = await getConnectionPool();
@@ -381,6 +436,12 @@ async function ensureProjetosOptionalColumns() {
   }
 }
 
+/**
+ * Mapeia uma linha bruta do banco de dados (tabela users) para o objeto de usuário da API.
+ *
+ * @param {Object} row - Linha do banco de dados (recordset).
+ * @returns {Object} Objeto de usuário formatado ({ id, nome, email, role, status }).
+ */
 function mapUserRow(row) {
   return {
     id: row.id,
@@ -391,7 +452,12 @@ function mapUserRow(row) {
   };
 }
 
-// --- Garantir coluna mp_response_json em dbo.app_payments ---
+/**
+ * Garante que a tabela `dbo.app_payments` possua a coluna `mp_response_json`.
+ * Utilizada para armazenar o JSON bruto de resposta do Mercado Pago.
+ *
+ * @returns {Promise<void>}
+ */
 async function ensureAppPaymentsSchema() {
   try {
     const pool = await getConnectionPool();
@@ -514,7 +580,15 @@ async function ensureCoinCraftInstallerUrl() {
 
 // --- ROTAS DA API (CONECTADAS AO BANCO) ---
 
-// Rota de health check
+/**
+ * @api {get} /api/health Health Check
+ * @apiDescription Verifica o status básico de funcionamento do servidor.
+ * @apiGroup System
+ * @apiSuccess {string} status Status da aplicação ("OK").
+ * @apiSuccess {string} timestamp Timestamp da requisição.
+ * @apiSuccess {number} uptime Tempo de atividade do servidor em segundos.
+ * @apiSuccess {string} environment Ambiente de execução.
+ */
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
@@ -524,7 +598,17 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Diagnóstico da integração Mercado Pago/Mercado Livre
+/**
+ * @api {get} /api/health/mercadopago Health Check Mercado Pago
+ * @apiDescription Diagnóstico detalhado da integração com Mercado Pago/Mercado Livre.
+ * @apiGroup System
+ * @apiPermission Admin
+ * @apiSuccess {string} status Status do diagnóstico ("OK" ou "ERROR").
+ * @apiSuccess {boolean} mp_public_key_present Indica presença da chave pública.
+ * @apiSuccess {boolean} mp_access_token_present Indica presença do token de acesso.
+ * @apiSuccess {boolean} oauth_configured Indica configuração completa de OAuth.
+ * @apiSuccess {boolean} can_ensure_access_token Indica se o token pode ser validado/renovado.
+ */
 app.get('/api/health/mercadopago', async (req, res) => {
   try {
     const mpPublic = process.env.VITE_MERCADO_PAGO_PUBLIC_KEY || process.env.MERCADO_PAGO_PUBLIC_KEY || '';
@@ -555,7 +639,14 @@ app.get('/api/health/mercadopago', async (req, res) => {
   }
 });
 
-// Diagnóstico do ambiente Mercado Pago (sandbox vs produção)
+/**
+ * @api {get} /api/health/mp-env Ambiente Mercado Pago
+ * @apiDescription Diagnóstico do ambiente configurado para Mercado Pago (Sandbox vs Produção).
+ * @apiGroup System
+ * @apiSuccess {string} status Status da verificação.
+ * @apiSuccess {string} backend_mode_hint Indicação do ambiente do backend (sandbox/production).
+ * @apiSuccess {string} frontend_mode_hint Indicação do ambiente do frontend.
+ */
 app.get('/api/health/mp-env', (req, res) => {
   try {
     const publicKey = process.env.VITE_MERCADO_PAGO_PUBLIC_KEY || process.env.MERCADO_PAGO_PUBLIC_KEY || '';
@@ -586,7 +677,13 @@ app.get('/api/health/mp-env', (req, res) => {
   }
 });
 
-// Expor chave pública do Mercado Pago para o frontend
+/**
+ * @api {get} /api/config/mp-public-key Configuração Pública MP
+ * @apiDescription Retorna a chave pública do Mercado Pago para uso no frontend.
+ * @apiGroup Config
+ * @apiSuccess {string} public_key Chave pública do Mercado Pago.
+ * @apiSuccess {boolean} present Indica se a chave está configurada.
+ */
 app.get('/api/config/mp-public-key', (req, res) => {
   try {
     const publicKey = process.env.VITE_MERCADO_PAGO_PUBLIC_KEY || process.env.MERCADO_PAGO_PUBLIC_KEY || '';
@@ -596,7 +693,16 @@ app.get('/api/config/mp-public-key', (req, res) => {
   }
 });
 
-// Diagnóstico do banco de dados e schema necessário para pagamentos
+/**
+ * @api {get} /api/health/db Health Check Banco de Dados
+ * @apiDescription Verifica conectividade e integridade do schema do banco de dados.
+ * @apiGroup System
+ * @apiPermission Admin
+ * @apiSuccess {string} status Status da verificação.
+ * @apiSuccess {boolean} database_url_present Indica presença da string de conexão.
+ * @apiSuccess {Object} analytic_columns Status das colunas analíticas necessárias.
+ * @apiSuccess {Object} indexes Status dos índices necessários.
+ */
 app.get('/api/health/db', async (req, res) => {
   const out = {
     status: 'OK',
@@ -642,7 +748,16 @@ app.get('/api/health/db', async (req, res) => {
   }
 });
 
-// Rota de autenticação (JWT)
+/**
+ * @api {post} /api/auth/login Login de usuário
+ * @apiDescription Autentica um usuário com email e senha. Verifica MFA se habilitado.
+ * @apiParam {string} email Email do usuário.
+ * @apiParam {string} password Senha do usuário.
+ * @apiParam {string} [mfa_code] Código MFA (se MFA estiver ativado).
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} user Dados do usuário (id, email, name, role).
+ * @apiError {string} error Mensagem de erro (ex: "Credenciais inválidas").
+ */
 app.post('/api/auth/login', loginLimiter, validateBody(loginSchema), (req, res) => {
   const { email, password, mfa_code } = req.validated;
 
@@ -700,6 +815,13 @@ app.post('/api/auth/login', loginLimiter, validateBody(loginSchema), (req, res) 
   })();
 });
 
+/**
+ * @api {get} /api/auth/me Dados do usuário logado
+ * @apiDescription Retorna as informações do usuário autenticado com base no token JWT.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} user Dados do usuário.
+ * @apiError {string} error Mensagem de erro se não autenticado.
+ */
 app.get('/api/auth/me', (req, res) => {
   try {
     const token = req.cookies?.token || null;
@@ -711,6 +833,11 @@ app.get('/api/auth/me', (req, res) => {
   }
 });
 
+/**
+ * @api {post} /api/auth/logout Logout
+ * @apiDescription Encerra a sessão do usuário removendo o cookie do token.
+ * @apiSuccess {boolean} success Indica sucesso (sempre true).
+ */
 app.post('/api/auth/logout', (req, res) => {
   try {
     res.clearCookie('token', {
@@ -725,7 +852,13 @@ app.post('/api/auth/logout', (req, res) => {
   }
 });
 
-// Solicitar reset de senha por e-mail (gera token único e expirável)
+/**
+ * @api {post} /api/auth/password-reset/request Solicitar reset de senha
+ * @apiDescription Gera um token de recuperação e envia por e-mail (ou retorna em dev).
+ * @apiParam {string} email Email do usuário.
+ * @apiSuccess {boolean} success Indica sucesso (mesmo se email não existir, por segurança).
+ * @apiSuccess {string} [reset_link] Link de reset (apenas em desenvolvimento).
+ */
 app.post('/api/auth/password-reset/request', sensitiveLimiter, async (req, res) => {
   try {
     const { email } = req.body || {};
@@ -761,7 +894,14 @@ app.post('/api/auth/password-reset/request', sensitiveLimiter, async (req, res) 
   }
 });
 
-// Confirmar reset de senha (consome token válido e atualiza senha)
+/**
+ * @api {post} /api/auth/password-reset/confirm Confirmar reset de senha
+ * @apiDescription Define uma nova senha usando um token de recuperação válido.
+ * @apiParam {string} token Token de recuperação recebido por e-mail.
+ * @apiParam {string} new_password Nova senha (deve cumprir requisitos de força).
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiError {string} error Mensagem de erro (token inválido, expirado ou senha fraca).
+ */
 app.post('/api/auth/password-reset/confirm', sensitiveLimiter, async (req, res) => {
   try {
     const { token, new_password } = req.body || {};
@@ -787,6 +927,13 @@ app.post('/api/auth/password-reset/confirm', sensitiveLimiter, async (req, res) 
   }
 });
 
+/**
+ * Codifica um buffer em Base32.
+ * Utilizado para gerar segredos compatíveis com aplicativos autenticadores (Google Authenticator).
+ *
+ * @param {Buffer} buf - O buffer de dados a ser codificado.
+ * @returns {string} A string codificada em Base32.
+ */
 function base32Encode(buf) {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
   let bits = 0, value = 0, output = '';
@@ -804,11 +951,24 @@ function base32Encode(buf) {
   return output;
 }
 
+/**
+ * Gera um segredo aleatório para MFA em formato Base32.
+ *
+ * @returns {string} O segredo gerado (20 bytes de entropia).
+ */
 function generateMfaSecret() {
   const bytes = nodeCrypto.randomBytes(20);
   return base32Encode(bytes);
 }
 
+/**
+ * Verifica um token TOTP contra um segredo Base32.
+ * Aceita uma janela de tempo de +/- 1 período (30s) para compensar desvios de relógio.
+ *
+ * @param {string} base32Secret - O segredo compartilhado em Base32.
+ * @param {string} token - O token de 6 dígitos fornecido pelo usuário.
+ * @returns {boolean} True se o token for válido, False caso contrário.
+ */
 function verifyTotp(base32Secret, token) {
   if (!base32Secret || !token) return false;
   const secret = base32ToBuffer(base32Secret);
@@ -822,6 +982,13 @@ function verifyTotp(base32Secret, token) {
   return false;
 }
 
+/**
+ * Decodifica uma string Base32 para um Buffer.
+ * Remove padding '=' e ignora caracteres inválidos.
+ *
+ * @param {string} str - A string Base32.
+ * @returns {Buffer} O buffer decodificado.
+ */
 function base32ToBuffer(str) {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
   let bits = 0, value = 0;
@@ -839,6 +1006,14 @@ function base32ToBuffer(str) {
   return Buffer.from(out);
 }
 
+/**
+ * Gera um código TOTP de 6 dígitos para um dado contador.
+ * Utiliza HMAC-SHA1 conforme RFC 6238.
+ *
+ * @param {Buffer} secretBuf - O segredo em formato Buffer.
+ * @param {number} counter - O valor do contador de tempo.
+ * @returns {string} O código TOTP de 6 dígitos (com zeros à esquerda).
+ */
 function totpCode(secretBuf, counter) {
   const ctr = Buffer.alloc(8);
   for (let i = 7; i >= 0; i--) {
@@ -852,6 +1027,14 @@ function totpCode(secretBuf, counter) {
   return otp;
 }
 
+/**
+ * @api {post} /api/auth/mfa/setup Iniciar configuração de MFA
+ * @apiDescription Gera um segredo TOTP e retorna a URL otpauth para geração de QR Code.
+ * @apiPermission Autenticado
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {string} secret Segredo em base32.
+ * @apiSuccess {string} otpauth URL para QR Code (compatível com Google Authenticator).
+ */
 app.post('/api/auth/mfa/setup', authenticate, async (req, res) => {
   try {
     const pool = await getConnectionPool();
@@ -871,6 +1054,14 @@ app.post('/api/auth/mfa/setup', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @api {post} /api/auth/mfa/enable Ativar MFA
+ * @apiDescription Confirma o código TOTP e ativa o MFA para o usuário.
+ * @apiPermission Autenticado
+ * @apiParam {string} code Código TOTP de 6 dígitos gerado pelo app autenticador.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiError {string} error "Código 2FA inválido" se incorreto.
+ */
 app.post('/api/auth/mfa/enable', authenticate, async (req, res) => {
   try {
     const { code } = req.body || {};
@@ -893,6 +1084,12 @@ app.post('/api/auth/mfa/enable', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @api {post} /api/auth/mfa/disable Desativar MFA
+ * @apiDescription Remove a proteção MFA da conta do usuário.
+ * @apiPermission Autenticado
+ * @apiSuccess {boolean} success Indica sucesso.
+ */
 app.post('/api/auth/mfa/disable', authenticate, async (req, res) => {
   try {
     const pool = await getConnectionPool();
@@ -953,6 +1150,15 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // --- Rotas de Usuários Admin ---
+
+/**
+ * @api {get} /api/auth/users Listar usuários
+ * @apiDescription Retorna a lista de todos os usuários cadastrados (apenas para administradores).
+ * @apiGroup Admin
+ * @apiPermission Admin
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object[]} data Lista de usuários.
+ */
 app.get('/api/auth/users', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const pool = await getConnectionPool();
@@ -965,6 +1171,19 @@ app.get('/api/auth/users', authenticate, authorizeAdmin, async (req, res, next) 
   }
 });
 
+/**
+ * @api {post} /api/auth/users Criar usuário
+ * @apiDescription Cria um novo usuário manualmente (apenas para administradores).
+ * @apiGroup Admin
+ * @apiPermission Admin
+ * @apiParam {string} nome Nome do usuário.
+ * @apiParam {string} email Email do usuário.
+ * @apiParam {string} senha Senha do usuário.
+ * @apiParam {string} [role='viewer'] Papel do usuário (ex: 'admin', 'viewer').
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} user Dados do usuário criado.
+ * @apiError {string} error Mensagem de erro.
+ */
 app.post('/api/auth/users', authenticate, authorizeAdmin, validateBody(userCreateSchema), async (req, res, next) => {
   try {
     const { nome, email, senha, role } = req.validated;
@@ -1001,6 +1220,20 @@ app.post('/api/auth/users', authenticate, authorizeAdmin, validateBody(userCreat
   }
 });
 
+/**
+ * @api {put} /api/auth/users/:id Atualizar usuário
+ * @apiDescription Atualiza dados de um usuário existente (apenas para administradores).
+ * @apiGroup Admin
+ * @apiPermission Admin
+ * @apiParam {number} id ID do usuário.
+ * @apiParam {string} [nome] Novo nome.
+ * @apiParam {string} [email] Novo email.
+ * @apiParam {string} [role] Novo papel.
+ * @apiParam {string} [status] Novo status.
+ * @apiParam {string} [senha] Nova senha (opcional).
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} user Dados atualizados do usuário.
+ */
 app.put('/api/auth/users/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -1039,6 +1272,15 @@ app.put('/api/auth/users/:id', authenticate, authorizeAdmin, async (req, res, ne
   }
 });
 
+/**
+ * @api {patch} /api/auth/users/:id/toggle-status Alternar status do usuário
+ * @apiDescription Alterna o status do usuário entre 'ativo' e 'inativo' (apenas para administradores).
+ * @apiGroup Admin
+ * @apiPermission Admin
+ * @apiParam {number} id ID do usuário.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} user Dados do usuário com status atualizado.
+ */
 app.patch('/api/auth/users/:id/toggle-status', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -1063,8 +1305,20 @@ app.patch('/api/auth/users/:id/toggle-status', authenticate, authorizeAdmin, asy
 
 // --- LÓGICA DE NEGÓCIOS (FINANÇAS) ---
 
-// Função auxiliar para Lógica 4
-// Sincroniza um projeto com a tabela de finanças
+/**
+ * Sincroniza as informações financeiras de um projeto com a tabela de finanças.
+ * Cria ou atualiza um registro financeiro baseado no status, preço e progresso do projeto.
+ *
+ * @param {number} projectId - ID do projeto.
+ * @param {Object} projeto - Objeto contendo os dados do projeto.
+ * @param {string} [projeto.titulo] - Título do projeto.
+ * @param {string} [projeto.nome] - Nome alternativo do projeto.
+ * @param {number} [projeto.preco] - Preço/Valor do projeto.
+ * @param {string} [projeto.status] - Status do projeto (ex: 'finalizado', 'ativo').
+ * @param {number} [projeto.progresso] - Progresso do projeto em porcentagem (0-100).
+ * @param {string|Date} [projeto.data_inicio] - Data de início do projeto.
+ * @returns {Promise<void>}
+ */
 async function syncProjectToFinance(projectId, projeto) {
   const pool = await getConnectionPool();
   const financeRecord = {
@@ -1109,6 +1363,21 @@ async function syncProjectToFinance(projectId, projeto) {
 }
 
 // --- Rotas de Projetos (Lógica 1, 4) ---
+
+/**
+ * @api {get} /api/projetos Listar projetos
+ * @apiDescription Retorna uma lista paginada de projetos. Suporta filtros e ordenação.
+ * @apiGroup Projetos
+ * @apiParam {number} [page=1] Número da página.
+ * @apiParam {number} [limit=10] Itens por página.
+ * @apiParam {string} [sortBy='created_at'] Coluna para ordenação.
+ * @apiParam {string} [sortOrder='desc'] Direção da ordenação (asc/desc).
+ * @apiParam {string} [visivel] Se 'true', filtra apenas projetos ativos/finalizados (para view pública).
+ * @apiParam {string} [all] Se '1', ignora filtros de status (para admin).
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object[]} data Lista de projetos.
+ * @apiSuccess {Object} pagination Metadados de paginação.
+ */
 app.get('/api/projetos', async (req, res, next) => {
   try {
     const {
@@ -1197,6 +1466,15 @@ app.get('/api/projetos', async (req, res, next) => {
   }
 });
 
+/**
+ * @api {get} /api/projetos/:id Obter projeto por ID
+ * @apiDescription Retorna os detalhes de um projeto específico.
+ * @apiGroup Projetos
+ * @apiParam {number} id ID do projeto.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} data Dados do projeto.
+ * @apiError {string} error Mensagem de erro (ex: "Projeto não encontrado").
+ */
 app.get('/api/projetos/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id);
@@ -1236,6 +1514,23 @@ app.get('/api/projetos/:id', async (req, res, next) => {
 });
 
 // Rota POST (Criar) - Lógica 4
+
+/**
+ * @api {post} /api/projetos Criar projeto
+ * @apiDescription Cria um novo projeto e sincroniza com finanças (apenas para administradores).
+ * @apiGroup Projetos
+ * @apiPermission Admin
+ * @apiParam {string} titulo Título do projeto.
+ * @apiParam {string} [descricao] Descrição detalhada.
+ * @apiParam {string[]} [tecnologias] Array de tecnologias usadas.
+ * @apiParam {string} [status='rascunho'] Status do projeto.
+ * @apiParam {string|Date} [data_inicio] Data de início.
+ * @apiParam {number} [preco=0] Preço do projeto.
+ * @apiParam {number} [progresso=0] Progresso atual (0-100).
+ * @apiParam {string} [thumb_url] URL da imagem de capa.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} project Dados do projeto criado.
+ */
 app.post('/api/projetos', authenticate, authorizeAdmin, async (req, res, next) => {
   // O formulário do admin envia 'titulo', 'descricao', 'preco', etc.
   const { titulo, descricao, tecnologias, data_inicio, status, preco, progresso, thumb_url } = req.body;
@@ -1286,6 +1581,24 @@ app.post('/api/projetos', authenticate, authorizeAdmin, async (req, res, next) =
 });
 
 // Rota PUT (Atualizar) - Lógica 4
+
+/**
+ * @api {put} /api/projetos/:id Atualizar projeto
+ * @apiDescription Atualiza um projeto existente e sincroniza com finanças (apenas para administradores).
+ * @apiGroup Projetos
+ * @apiPermission Admin
+ * @apiParam {number} id ID do projeto.
+ * @apiParam {string} titulo Título do projeto.
+ * @apiParam {string} [descricao] Descrição detalhada.
+ * @apiParam {string[]} [tecnologias] Array de tecnologias.
+ * @apiParam {string} [status] Novo status.
+ * @apiParam {string|Date} [data_inicio] Nova data de início.
+ * @apiParam {number} [preco] Novo preço.
+ * @apiParam {number} [progresso] Novo progresso.
+ * @apiParam {string} [thumb_url] Nova URL da capa.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} project Dados do projeto atualizado.
+ */
 app.put('/api/projetos/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   const { id } = req.params;
   const { titulo, descricao, tecnologias, data_inicio, status, preco, progresso, thumb_url } = req.body;
@@ -1350,6 +1663,16 @@ app.put('/api/projetos/:id', authenticate, authorizeAdmin, async (req, res, next
 });
 
 // Rota DELETE (Excluir) - remove registros financeiros relacionados e o projeto
+
+/**
+ * @api {delete} /api/projetos/:id Excluir projeto
+ * @apiDescription Remove um projeto e seus registros financeiros associados (apenas para administradores).
+ * @apiGroup Projetos
+ * @apiPermission Admin
+ * @apiParam {number} id ID do projeto.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {number} removed ID do projeto removido.
+ */
 app.delete('/api/projetos/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const id = parseInt(req.params.id);
@@ -1383,6 +1706,15 @@ app.delete('/api/projetos/:id', authenticate, authorizeAdmin, async (req, res, n
 });
 
 // Endpoint auxiliar: verificar tipo da coluna "progresso" em dbo.projetos
+
+/**
+ * @api {get} /api/projetos/column/progresso Verificar coluna progresso
+ * @apiDescription Retorna metadados da coluna 'progresso' na tabela 'projetos' (debug/admin).
+ * @apiGroup Projetos
+ * @apiPermission Admin
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} column Metadados da coluna (tipo, tamanho, precisão).
+ */
 app.get('/api/projetos/column/progresso', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const pool = await getConnectionPool();
@@ -1405,6 +1737,15 @@ app.get('/api/projetos/column/progresso', authenticate, authorizeAdmin, async (r
 });
 
 // --- Rotas de Mentores (Lógica 1, 2) ---
+
+/**
+ * @api {get} /api/mentores Listar mentores
+ * @apiDescription Retorna a lista de mentores. Por padrão, retorna apenas os visíveis.
+ * @apiGroup Mentores
+ * @apiParam {string} [all] Se '1', retorna todos os mentores (incluindo ocultos).
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object[]} data Lista de mentores.
+ */
 app.get('/api/mentores', async (req, res, next) => {
   try {
     const pool = await getConnectionPool();
@@ -1424,6 +1765,15 @@ app.get('/api/mentores', async (req, res, next) => {
   }
 });
 
+/**
+ * @api {get} /api/mentores/:id Obter mentor por ID
+ * @apiDescription Retorna os detalhes de um mentor específico.
+ * @apiGroup Mentores
+ * @apiParam {number} id ID do mentor.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} mentor Dados do mentor.
+ * @apiError {string} error Mensagem de erro (ex: "Mentor não encontrado").
+ */
 app.get('/api/mentores/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id);
@@ -1445,6 +1795,21 @@ app.get('/api/mentores/:id', async (req, res, next) => {
 });
 
 // Criar novo mentor
+/**
+ * @api {post} /api/mentores Criar mentor
+ * @apiDescription Cria um novo mentor (apenas para administradores).
+ * @apiGroup Mentores
+ * @apiPermission Admin
+ * @apiParam {string} nome Nome do mentor.
+ * @apiParam {string} email Email do mentor.
+ * @apiParam {string} [telefone] Telefone do mentor.
+ * @apiParam {string} [bio] Biografia.
+ * @apiParam {string} [avatar_url] URL da foto.
+ * @apiParam {boolean} [visible=true] Se o mentor está visível.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} mentor Dados do mentor criado.
+ * @apiError {string} error Mensagem de erro.
+ */
 app.post('/api/mentores', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const { nome, email, telefone, bio, avatar_url, visible } = req.body || {};
@@ -1481,6 +1846,21 @@ app.post('/api/mentores', authenticate, authorizeAdmin, async (req, res, next) =
 });
 
 // Atualizar mentor existente
+/**
+ * @api {put} /api/mentores/:id Atualizar mentor
+ * @apiDescription Atualiza os dados de um mentor existente (apenas para administradores).
+ * @apiGroup Mentores
+ * @apiPermission Admin
+ * @apiParam {number} id ID do mentor.
+ * @apiParam {string} [nome] Nome do mentor.
+ * @apiParam {string} [email] Email do mentor.
+ * @apiParam {string} [telefone] Telefone do mentor.
+ * @apiParam {string} [bio] Biografia.
+ * @apiParam {string} [avatar_url] URL da foto.
+ * @apiParam {boolean} [visible] Se o mentor está visível.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} mentor Dados do mentor atualizado.
+ */
 app.put('/api/mentores/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -1530,6 +1910,15 @@ app.put('/api/mentores/:id', authenticate, authorizeAdmin, async (req, res, next
 });
 
 // Remover mentor
+/**
+ * @api {delete} /api/mentores/:id Remover mentor
+ * @apiDescription Remove um mentor do sistema (apenas para administradores).
+ * @apiGroup Mentores
+ * @apiPermission Admin
+ * @apiParam {number} id ID do mentor.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {boolean} removed Indica que a remoção foi efetuada.
+ */
 app.delete('/api/mentores/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -1551,6 +1940,21 @@ app.delete('/api/mentores/:id', authenticate, authorizeAdmin, async (req, res, n
 });
 
 // --- Rotas de Crafters (Lógica 1, 3) ---
+
+/**
+ * @api {get} /api/crafters Listar crafters
+ * @apiDescription Retorna lista paginada de crafters (alunos).
+ * @apiGroup Crafters
+ * @apiParam {number} [page=1] Número da página.
+ * @apiParam {number} [limit=10] Itens por página.
+ * @apiParam {string} [search] Termo de busca (nome ou email).
+ * @apiParam {boolean} [active_only] Filtrar por status ativo/inativo.
+ * @apiParam {string} [order_by='nome'] Ordenar por (nome, email, points, active).
+ * @apiParam {string} [order_direction='asc'] Direção da ordenação (asc/desc).
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object[]} data Lista de crafters.
+ * @apiSuccess {Object} pagination Metadados de paginação.
+ */
 app.get('/api/crafters', async (req, res, next) => {
   // Rota usada pelo AdminCrafters e Ranking
   try {
@@ -1634,6 +2038,20 @@ app.get('/api/crafters', async (req, res, next) => {
 });
 
 // Criar novo Crafter
+/**
+ * @api {post} /api/crafters Criar crafter
+ * @apiDescription Cria um novo crafter (apenas para administradores).
+ * @apiGroup Crafters
+ * @apiPermission Admin
+ * @apiParam {string} nome Nome do crafter.
+ * @apiParam {string} [email] Email do crafter.
+ * @apiParam {string} [avatar_url] URL do avatar.
+ * @apiParam {number} [pontos=0] Pontuação inicial.
+ * @apiParam {string} [nivel] Nível do crafter.
+ * @apiParam {boolean} [ativo=true] Status do crafter.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} data Dados do crafter criado.
+ */
 app.post('/api/crafters', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const { nome, email, avatar_url, pontos, nivel, ativo } = req.body;
@@ -1673,6 +2091,14 @@ app.post('/api/crafters', authenticate, authorizeAdmin, async (req, res, next) =
 });
 
 // Buscar um Crafter por ID
+/**
+ * @api {get} /api/crafters/:id Obter crafter por ID
+ * @apiDescription Retorna os detalhes de um crafter específico.
+ * @apiGroup Crafters
+ * @apiParam {number} id ID do crafter.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} data Dados do crafter.
+ */
 app.get('/api/crafters/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -1697,6 +2123,21 @@ app.get('/api/crafters/:id', async (req, res, next) => {
 });
 
 // Atualizar um Crafter
+/**
+ * @api {put} /api/crafters/:id Atualizar crafter
+ * @apiDescription Atualiza dados de um crafter (apenas para administradores).
+ * @apiGroup Crafters
+ * @apiPermission Admin
+ * @apiParam {number} id ID do crafter.
+ * @apiParam {string} [nome] Nome do crafter.
+ * @apiParam {string} [email] Email do crafter.
+ * @apiParam {string} [avatar_url] URL do avatar.
+ * @apiParam {number} [pontos] Pontuação.
+ * @apiParam {string} [nivel] Nível.
+ * @apiParam {boolean} [ativo] Status.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} data Dados do crafter atualizado.
+ */
 app.put('/api/crafters/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -1744,6 +2185,15 @@ app.put('/api/crafters/:id', authenticate, authorizeAdmin, async (req, res, next
 });
 
 // Excluir (remover) um Crafter
+/**
+ * @api {delete} /api/crafters/:id Excluir crafter
+ * @apiDescription Remove um crafter e suas associações (equipes, ranking) (apenas para administradores).
+ * @apiGroup Crafters
+ * @apiPermission Admin
+ * @apiParam {number} id ID do crafter.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {boolean} removed Indica que a remoção foi efetuada.
+ */
 app.delete('/api/crafters/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -1771,6 +2221,15 @@ app.delete('/api/crafters/:id', authenticate, authorizeAdmin, async (req, res, n
 });
 
 // --- Rota de Ranking (Lógica 3) ---
+
+/**
+ * @api {get} /api/ranking Obter ranking
+ * @apiDescription Retorna o ranking atual dos crafters e o Top 3.
+ * @apiGroup Ranking
+ * @apiSuccess {Object[]} crafters Lista completa de crafters ordenada por pontos.
+ * @apiSuccess {Object[]} top3 Lista dos 3 primeiros colocados com metadados de pódio.
+ * @apiSuccess {Object[]} all Alias para lista de crafters.
+ */
 app.get('/api/ranking', async (req, res, next) => {
   // RankingPage precisa de crafters e top3
   try {
@@ -1805,6 +2264,18 @@ app.get('/api/ranking', async (req, res, next) => {
 });
 
 // Rota para ATUALIZAR pontos (Lógica 3)
+
+/**
+ * @api {put} /api/ranking/points/:crafterId Atualizar pontos
+ * @apiDescription Atualiza a pontuação de um crafter (apenas para administradores).
+ * @apiGroup Ranking
+ * @apiPermission Admin
+ * @apiParam {number} crafterId ID do crafter.
+ * @apiParam {number} [delta] Valor a adicionar/subtrair (ex: 10, -5).
+ * @apiParam {number} [set] Valor exato para definir.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {string} message Mensagem de feedback.
+ */
 app.put('/api/ranking/points/:crafterId', authenticate, authorizeAdmin, async (req, res, next) => {
   const { crafterId } = req.params;
   const { delta, set } = req.body; // delta: +10, set: 100
@@ -1837,6 +2308,14 @@ app.put('/api/ranking/points/:crafterId', authenticate, authorizeAdmin, async (r
 });
 
 // --- Rotas de Equipes (Lógica 1) ---
+
+/**
+ * @api {get} /api/equipes Listar equipes
+ * @apiDescription Retorna a lista de equipes formadas, com detalhes de projeto, mentor e crafter.
+ * @apiGroup Equipes
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object[]} data Lista de equipes com joins.
+ */
 app.get('/api/equipes', async (req, res, next) => {
   try {
     const pool = await getConnectionPool();
@@ -1860,6 +2339,18 @@ app.get('/api/equipes', async (req, res, next) => {
   }
 });
 
+/**
+ * @api {post} /api/equipes Criar equipe
+ * @apiDescription Associa um crafter a um projeto e mentor (apenas para administradores).
+ * @apiGroup Equipes
+ * @apiPermission Admin
+ * @apiParam {number} projeto_id ID do projeto.
+ * @apiParam {number} mentor_id ID do mentor.
+ * @apiParam {number} crafter_id ID do crafter.
+ * @apiParam {string} [status_inscricao='inscrito'] Status inicial.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} data Dados da equipe criada.
+ */
 app.post('/api/equipes', authenticate, authorizeAdmin, async (req, res, next) => {
   const { projeto_id, mentor_id, crafter_id, status_inscricao } = req.body;
 
@@ -1892,6 +2383,15 @@ app.post('/api/equipes', authenticate, authorizeAdmin, async (req, res, next) =>
 });
 
 // Remover um membro (crafter) da equipe
+
+/**
+ * @api {delete} /api/equipes/:id Remover equipe
+ * @apiDescription Remove uma associação de equipe (apenas para administradores).
+ * @apiGroup Equipes
+ * @apiPermission Admin
+ * @apiParam {number} id ID da equipe.
+ * @apiSuccess {boolean} success Indica sucesso.
+ */
 app.delete('/api/equipes/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -1912,6 +2412,16 @@ app.delete('/api/equipes/:id', authenticate, authorizeAdmin, async (req, res, ne
 });
 
 // Alterar status de inscrição de um membro da equipe
+
+/**
+ * @api {put} /api/equipes/:id/status Atualizar status equipe
+ * @apiDescription Atualiza o status de inscrição de um membro na equipe (apenas para administradores).
+ * @apiGroup Equipes
+ * @apiPermission Admin
+ * @apiParam {number} id ID da equipe.
+ * @apiParam {string} status_inscricao Novo status.
+ * @apiSuccess {boolean} success Indica sucesso.
+ */
 app.put('/api/equipes/:id/status', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -1937,6 +2447,16 @@ app.put('/api/equipes/:id/status', authenticate, authorizeAdmin, async (req, res
 });
 
 // Associar mentor a projeto
+
+/**
+ * @api {post} /api/projetos/:id/mentor Associar mentor a projeto
+ * @apiDescription Vincula um mentor a um projeto específico (apenas para administradores).
+ * @apiGroup Projetos
+ * @apiPermission Admin
+ * @apiParam {number} id ID do projeto.
+ * @apiParam {number} mentor_id ID do mentor.
+ * @apiSuccess {boolean} success Indica sucesso.
+ */
 app.post('/api/projetos/:id/mentor', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const { id } = req.params; // projeto_id
@@ -1975,6 +2495,15 @@ app.post('/api/projetos/:id/mentor', authenticate, authorizeAdmin, async (req, r
 });
 
 // --- Rotas de Inscrições (Lógica 6) ---
+
+/**
+ * @api {get} /api/inscricoes Listar inscrições
+ * @apiDescription Retorna a lista de inscrições recebidas.
+ * @apiGroup Inscrições
+ * @apiParam {string} [status] Filtrar por status (ex: 'pendente').
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object[]} data Lista de inscrições.
+ */
 app.get('/api/inscricoes', async (req, res, next) => {
   try {
     const pool = await getConnectionPool();
@@ -1997,6 +2526,20 @@ app.get('/api/inscricoes', async (req, res, next) => {
   }
 });
 
+/**
+ * @api {post} /api/inscricoes Criar inscrição
+ * @apiDescription Cria uma nova inscrição de interesse (público).
+ * @apiGroup Inscrições
+ * @apiParam {string} nome Nome do interessado.
+ * @apiParam {string} email Email de contato.
+ * @apiParam {string} [telefone] Telefone.
+ * @apiParam {string} [cidade] Cidade.
+ * @apiParam {string} [estado] Estado.
+ * @apiParam {string} [area_interesse] Área de interesse.
+ * @apiParam {string} [mensagem] Mensagem ou observações.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} data Dados da inscrição criada.
+ */
 app.post('/api/inscricoes', async (req, res, next) => {
   // Rota usada pelo CrafterModal (página inicial)
   const { nome, email, telefone, cidade, estado, area_interesse, mensagem } = req.body;
@@ -2032,6 +2575,17 @@ app.post('/api/inscricoes', async (req, res, next) => {
 });
 
 // --- Rota para atualizar status da inscrição ---
+
+/**
+ * @api {put} /api/inscricoes/:id/status Atualizar status inscrição
+ * @apiDescription Atualiza o status de uma inscrição (apenas para administradores).
+ * @apiGroup Inscrições
+ * @apiPermission Admin
+ * @apiParam {number} id ID da inscrição.
+ * @apiParam {string} status Novo status ('pendente', 'contato_realizado', 'confirmado', 'rejeitado').
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} data Dados atualizados da inscrição.
+ */
 app.put('/api/inscricoes/:id/status', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -2086,6 +2640,16 @@ app.put('/api/inscricoes/:id/status', authenticate, authorizeAdmin, async (req, 
 });
 
 // --- Remover uma inscrição ---
+
+/**
+ * @api {delete} /api/inscricoes/:id Remover inscrição
+ * @apiDescription Remove uma inscrição do sistema (apenas para administradores).
+ * @apiGroup Inscrições
+ * @apiPermission Admin
+ * @apiParam {number} id ID da inscrição.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {boolean} removed Indica que a remoção foi efetuada.
+ */
 app.delete('/api/inscricoes/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -2111,6 +2675,16 @@ app.delete('/api/inscricoes/:id', authenticate, authorizeAdmin, async (req, res,
 });
 
 // --- Rotas de Finanças (Lógica 4) ---
+
+/**
+ * @api {get} /api/financas Listar finanças
+ * @apiDescription Retorna registros financeiros. Pode filtrar por projeto.
+ * @apiGroup Finanças
+ * @apiPermission Admin
+ * @apiParam {number} [project_id] Filtrar por ID do projeto.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object[]} data Lista de registros financeiros.
+ */
 app.get('/api/financas', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const pool = await getConnectionPool();
@@ -2133,6 +2707,15 @@ app.get('/api/financas', authenticate, authorizeAdmin, async (req, res, next) =>
 });
 
 // --- Rota de Dashboard (Lógica 5) ---
+
+/**
+ * @api {get} /api/dashboard/resumo Resumo do dashboard
+ * @apiDescription Retorna KPIs e dados de evolução para o dashboard administrativo.
+ * @apiGroup Dashboard
+ * @apiPermission Admin
+ * @apiSuccess {Object} totais KPIs consolidados (projetos ativos, receita, etc).
+ * @apiSuccess {Object[]} evolucao_mensal Dados de receita agrupados por mês.
+ */
 app.get('/api/dashboard/resumo', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const pool = await getConnectionPool();
@@ -2178,6 +2761,18 @@ app.get('/api/dashboard/resumo', authenticate, authorizeAdmin, async (req, res, 
 
 // --- Rotas de Aplicativos (Conectadas ao Banco) ---
 // Lista apps do usuário (permite acesso sem autenticação no ambiente atual)
+
+/**
+ * @api {get} /api/apps/mine Listar meus aplicativos
+ * @apiDescription Retorna os aplicativos do usuário logado (ou usuário default se não logado).
+ * @apiGroup Apps
+ * @apiPermission Authenticated
+ * @apiParam {number} [page=1] Página atual.
+ * @apiParam {number} [pageSize=12] Tamanho da página.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object[]} data Lista de aplicativos.
+ * @apiSuccess {Object} pagination Metadados de paginação.
+ */
 app.get('/api/apps/mine', authenticate, async (req, res, next) => {
   const page = parseInt(req.query.page || '1', 10);
   const pageSize = parseInt(req.query.pageSize || '12', 10);
@@ -2206,6 +2801,20 @@ app.get('/api/apps/mine', authenticate, async (req, res, next) => {
 });
 
 // Lista todos apps (admin)
+
+/**
+ * @api {get} /api/apps Listar todos aplicativos
+ * @apiDescription Retorna lista paginada de todos os aplicativos (apenas para administradores).
+ * @apiGroup Apps
+ * @apiPermission Admin
+ * @apiParam {number} [page=1] Página atual.
+ * @apiParam {number} [pageSize=50] Tamanho da página.
+ * @apiParam {string} [sortBy='created_at'] Coluna de ordenação.
+ * @apiParam {string} [sortOrder='desc'] Direção da ordenação.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object[]} data Lista de aplicativos.
+ * @apiSuccess {Object} pagination Metadados de paginação.
+ */
 app.get('/api/apps', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const { page = 1, pageSize, limit, sortBy = 'created_at', sortOrder = 'desc' } = req.query;
@@ -2475,7 +3084,22 @@ app.post('/api/apps/dev/insert', authenticate, authorizeAdmin, async (req, res) 
   }
 });
 
-// Editar card de app (admin)
+/**
+ * @api {put} /api/apps/:id Editar aplicativo
+ * @apiDescription Atualiza as informações de um aplicativo existente (apenas admin).
+ * @apiGroup Apps
+ * @apiPermission Admin
+ * @apiParam {number} id ID do aplicativo.
+ * @apiBody {string} [name] Nome do aplicativo.
+ * @apiBody {string} [mainFeature] Funcionalidade principal.
+ * @apiBody {number} [price] Preço do aplicativo.
+ * @apiBody {string} [thumbnail] URL da thumbnail.
+ * @apiBody {string} [executableUrl] URL do executável.
+ * @apiBody {string} [status] Status do aplicativo.
+ * @apiBody {number} [ownerId] ID do proprietário.
+ * @apiBody {string} [description] Descrição do aplicativo.
+ * @apiSuccess {Object} data Dados atualizados do aplicativo.
+ */
 app.put('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const { name, mainFeature, price, thumbnail, executableUrl, status, ownerId, description } = req.body || {};
@@ -2531,7 +3155,16 @@ const uploadStorage = multer.diskStorage({
 });
 const upload = multer({ storage: uploadStorage, limits: { fileSize: 200 * 1024 * 1024 } }); // 200MB
 
-// Upload de executável e atualização do executable_url (admin)
+/**
+ * @api {post} /api/apps/:id/executable/upload Upload de executável
+ * @apiDescription Realiza upload do arquivo executável de um aplicativo e atualiza a URL (apenas admin).
+ * @apiGroup Apps
+ * @apiPermission Admin
+ * @apiParam {number} id ID do aplicativo.
+ * @apiBody {File} file Arquivo executável (multipart/form-data).
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {string} download_url URL relativa para download.
+ */
 app.post('/api/apps/:id/executable/upload', authenticate, authorizeAdmin, upload.single('file'), async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -2564,6 +3197,14 @@ app.post('/api/apps/:id/executable/upload', authenticate, authorizeAdmin, upload
   }
 });
 
+/**
+ * @api {delete} /api/apps/:id Excluir aplicativo
+ * @apiDescription Remove um aplicativo do sistema (apenas admin).
+ * @apiGroup Apps
+ * @apiPermission Admin
+ * @apiParam {number} id ID do aplicativo.
+ * @apiSuccess {boolean} success Indica sucesso.
+ */
 app.delete('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
   const id = parseInt(req.params.id, 10);
   try {
@@ -2577,7 +3218,19 @@ app.delete('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
   }
 });
 
-// Mercado Livre/Mercado Pago – criar preferência de pagamento (mock)
+
+/**
+ * @api {post} /api/apps/:id/purchase Criar preferência de pagamento (MP)
+ * @apiDescription Cria uma preferência de pagamento no Mercado Pago para o aplicativo selecionado.
+ * @apiGroup MercadoPago
+ * @apiParam {number} id ID do aplicativo.
+ * @apiBody {Object} [payment_methods] Configurações de métodos de pagamento.
+ * @apiBody {string} [statement_descriptor] Descrição na fatura.
+ * @apiBody {Object} [payer] Dados do pagador (email, nome, identificação).
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {string} preference_id ID da preferência criada.
+ * @apiSuccess {string} init_point URL para checkout.
+ */
 app.post('/api/apps/:id/purchase', sensitiveLimiter, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     // Buscar app no banco
@@ -2750,7 +3403,17 @@ app.post('/api/apps/:id/purchase', sensitiveLimiter, async (req, res) => {
   return res.status(503).json({ error: 'Mercado Pago não configurado' });
 });
 
-// Consultar status da compra (mock)
+/**
+ * @api {get} /api/apps/:id/purchase/status Consultar status de pagamento
+ * @apiDescription Consulta o status de um pagamento do Mercado Pago e libera o download se aprovado.
+ * @apiGroup MercadoPago
+ * @apiParam {number} id ID do aplicativo.
+ * @apiQuery {string} [payment_id] ID do pagamento no MP.
+ * @apiQuery {string} [status] Status forçado (mock/debug).
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {string} status Status do pagamento (approved, pending, etc).
+ * @apiSuccess {string} [download_url] URL de download se aprovado.
+ */
 app.get('/api/apps/:id/purchase/status', sensitiveLimiter, async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const { status: statusQuery, payment_id } = req.query;
@@ -2949,7 +3612,16 @@ app.get('/api/apps/:id/purchase/status', sensitiveLimiter, async (req, res) => {
   res.json({ success: true, status, download_url });
 });
 
-// Endpoint geral de feedbacks (frontend chama /api/feedbacks)
+/**
+ * @api {post} /api/feedbacks Enviar feedback geral
+ * @apiDescription Envia um feedback, sugestão ou contato geral.
+ * @apiGroup Feedbacks
+ * @apiBody {string} [nome] Nome do remetente.
+ * @apiBody {string} [email] E-mail do remetente.
+ * @apiBody {string} mensagem Conteúdo da mensagem.
+ * @apiBody {string} [origem] Origem do feedback (ex: web).
+ * @apiSuccess {boolean} success Indica sucesso.
+ */
 app.post('/api/feedbacks', sensitiveLimiter, async (req, res) => {
   try {
     const { nome, email, mensagem, origem } = req.body || {};
@@ -2983,7 +3655,15 @@ app.post('/api/feedbacks', sensitiveLimiter, async (req, res) => {
   }
 });
 
-// Registrar download e validar pagamento
+/**
+ * @api {post} /api/apps/:id/download Registrar download
+ * @apiDescription Registra um download e retorna a URL do executável se permitido (grátis ou pago aprovado).
+ * @apiGroup Apps
+ * @apiPermission Authenticated
+ * @apiParam {number} id ID do aplicativo.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {string} download_url URL do executável.
+ */
 app.post('/api/apps/:id/download', authenticate, sensitiveLimiter, async (req, res) => {
   const id = parseInt(req.params.id, 10);
   let appItem = null;
@@ -3036,7 +3716,15 @@ app.post('/api/apps/:id/download', authenticate, sensitiveLimiter, async (req, r
   }
 });
 
-// Histórico de compras e downloads (mock, sem autenticação para usuário comum)
+/**
+ * @api {get} /api/apps/history Histórico de apps
+ * @apiDescription Lista o histórico global de downloads e compras de aplicativos.
+ * @apiGroup Apps
+ * @apiQuery {number} [page=1] Número da página.
+ * @apiQuery {number} [pageSize=20] Itens por página.
+ * @apiSuccess {Object[]} data Lista de eventos.
+ * @apiSuccess {Object} pagination Metadados de paginação.
+ */
 app.get('/api/apps/history', async (req, res, next) => {
   const page = parseInt(req.query.page || '1', 10);
   const pageSize = parseInt(req.query.pageSize || '20', 10);
@@ -3056,7 +3744,16 @@ app.get('/api/apps/history', async (req, res, next) => {
   }
 });
 
-// Feedback do app (mock)
+/**
+ * @api {post} /api/apps/:id/feedback Enviar feedback de app
+ * @apiDescription Registra uma avaliação e comentário para um aplicativo específico.
+ * @apiGroup Apps
+ * @apiPermission Authenticated
+ * @apiParam {number} id ID do aplicativo.
+ * @apiBody {number} [rating=5] Nota de 1 a 5.
+ * @apiBody {string} [comment] Comentário.
+ * @apiSuccess {boolean} success Indica sucesso.
+ */
 app.post('/api/apps/:id/feedback', authenticate, async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const { rating = 5, comment = '' } = req.body || {};
@@ -3077,6 +3774,7 @@ app.post('/api/apps/:id/feedback', authenticate, async (req, res) => {
     return res.status(500).json({ error: 'Erro ao registrar feedback' });
   }
 });
+
 
 const mpFriendlyMessage = (status, detail) => {
   const d = String(detail || '').toLowerCase();
@@ -3112,6 +3810,20 @@ const normalizeMpPaymentResponse = (json) => {
   };
 };
 
+/**
+ * @api {post} /api/apps/:id/payment/direct Pagamento Transparente
+ * @apiDescription Processa um pagamento direto (Card/Pix/etc) via Mercado Pago para um aplicativo.
+ * @apiGroup MercadoPago
+ * @apiParam {number} id ID do aplicativo.
+ * @apiBody {string} token Token do cartão (se aplicável).
+ * @apiBody {string} payment_method_id ID do método de pagamento (ex: master, visa, pix).
+ * @apiBody {number} installments Número de parcelas.
+ * @apiBody {string} [description] Descrição do pagamento.
+ * @apiBody {Object} [payer] Dados do pagador.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {string} payment_id ID do pagamento gerado.
+ * @apiSuccess {string} status Status do pagamento.
+ */
 app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -3380,9 +4092,14 @@ app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
   }
 });
 
-// Último resultado de pagamento direto para um app (cache em memória)
-// GET /api/apps/:id/payment/last
-// Retorna o último pagamento registrado via endpoint de pagamento direto
+/**
+ * @api {get} /api/apps/:id/payment/last Último pagamento direto
+ * @apiDescription Retorna os dados do último pagamento direto processado para um aplicativo (cache em memória).
+ * @apiGroup MercadoPago
+ * @apiParam {number} id ID do aplicativo.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} data Dados do pagamento em cache.
+ */
 app.get('/api/apps/:id/payment/last', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -3400,9 +4117,18 @@ app.get('/api/apps/:id/payment/last', async (req, res) => {
   }
 });
 
-// Busca de pagamentos no Mercado Pago (proxy seguro)
-// GET /api/payments/search?sort=...&criteria=...&external_reference=...&range=...&begin_date=...&end_date=...&collector.id=...&payer.id=...
-// Exige autenticação e perfil admin para proteger dados sensíveis
+/**
+ * @api {get} /api/payments/search Buscar pagamentos MP
+ * @apiDescription Proxy para buscar pagamentos na API do Mercado Pago (apenas admin).
+ * @apiGroup MercadoPago
+ * @apiPermission Admin
+ * @apiQuery {string} [sort] Ordenação.
+ * @apiQuery {string} [criteria] Critério de busca.
+ * @apiQuery {string} [external_reference] Referência externa (ID do app).
+ * @apiQuery {string} [status] Status do pagamento.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} data Resultado da busca no MP.
+ */
 app.get('/api/payments/search', authenticate, authorizeAdmin, async (req, res) => {
   try {
     // Garante token de acesso; se não houver, retorna erro claro de configuração (503)
@@ -3448,9 +4174,15 @@ app.get('/api/payments/search', authenticate, authorizeAdmin, async (req, res) =
   }
 });
 
-// Obter pagamento por ID no Mercado Pago (proxy seguro)
-// GET /api/payments/:id
-// Exige autenticação e perfil admin
+/**
+ * @api {get} /api/payments/:id Obter pagamento MP
+ * @apiDescription Proxy para obter detalhes de um pagamento específico na API do Mercado Pago (apenas admin).
+ * @apiGroup MercadoPago
+ * @apiPermission Admin
+ * @apiParam {string} id ID do pagamento.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} data Dados do pagamento.
+ */
 app.get('/api/payments/:id', authenticate, authorizeAdmin, async (req, res) => {
   try {
     const accessToken = await mercadoLivre.ensureAccessToken();
@@ -3481,9 +4213,16 @@ app.get('/api/payments/:id', authenticate, authorizeAdmin, async (req, res) => {
   }
 });
 
-// Atualizar pagamento por ID no Mercado Pago (proxy seguro)
-// PUT /api/payments/:id
-// Exige autenticação e perfil admin
+/**
+ * @api {put} /api/payments/:id Atualizar pagamento MP
+ * @apiDescription Proxy para atualizar um pagamento na API do Mercado Pago (apenas admin).
+ * @apiGroup MercadoPago
+ * @apiPermission Admin
+ * @apiParam {string} id ID do pagamento.
+ * @apiBody {Object} ... Campos a atualizar conforme API do MP.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {Object} data Dados atualizados.
+ */
 app.put('/api/payments/:id', authenticate, authorizeAdmin, async (req, res) => {
   try {
     const accessToken = await mercadoLivre.ensureAccessToken();
@@ -3520,7 +4259,15 @@ app.put('/api/payments/:id', authenticate, authorizeAdmin, async (req, res) => {
   }
 });
 
-// Webhook de pagamento Mercado Pago (mock/real)
+
+/**
+ * @api {post} /api/apps/webhook Webhook Mercado Pago
+ * @apiDescription Recebe notificações de atualizações de pagamento do Mercado Pago.
+ * @apiGroup Webhooks
+ * @apiParam {string} type Tipo da notificação (ex: 'payment').
+ * @apiParam {Object} data Dados da notificação (contém ID do pagamento).
+ * @apiSuccess {boolean} received Confirmação de recebimento.
+ */
 app.post('/api/apps/webhook', webhookLimiter, async (req, res) => {
   try {
     const { type, data } = req.body || {};
@@ -3533,8 +4280,13 @@ app.post('/api/apps/webhook', webhookLimiter, async (req, res) => {
   }
 });
 
-// Endpoint de verificação (GET) para testes de URL no painel do Mercado Pago
-// Alguns validadores fazem requisições GET/HEAD e esperam 200.
+/**
+ * @api {get} /api/apps/webhook Verificar Webhook
+ * @apiDescription Endpoint de verificação para testes de integração do Mercado Pago.
+ * @apiGroup Webhooks
+ * @apiSuccess {boolean} ok Status do endpoint.
+ * @apiSuccess {string} message Mensagem de sucesso.
+ */
 app.get('/api/apps/webhook', (req, res) => {
   try {
     res.status(200).json({ ok: true, message: 'Webhook endpoint ativo', method: 'GET', echo: req.query || null });
@@ -3544,7 +4296,19 @@ app.get('/api/apps/webhook', (req, res) => {
 });
 
 // --- Admin: Pagamentos no Banco ---
-// Lista pagamentos persistidos (filtros opcionais)
+/**
+ * @api {get} /api/admin/app-payments Listar Pagamentos (Admin)
+ * @apiDescription Lista pagamentos registrados no sistema com filtros opcionais (apenas admin).
+ * @apiGroup Financeiro
+ * @apiPermission Admin
+ * @apiParam {number} [limit=200] Limite de registros.
+ * @apiParam {string} [status] Filtrar por status.
+ * @apiParam {number} [app_id] Filtrar por ID do aplicativo.
+ * @apiParam {string} [payer_email] Filtrar por e-mail do pagador.
+ * @apiParam {string} [preference_id] Filtrar por ID da preferência.
+ * @apiParam {string} [payment_id] Filtrar por ID do pagamento.
+ * @apiSuccess {Object[]} data Lista de pagamentos.
+ */
 app.get('/api/admin/app-payments', authenticate, authorizeAdmin, async (req, res) => {
   try {
     const pool = await getConnectionPool();
@@ -3571,7 +4335,15 @@ app.get('/api/admin/app-payments', authenticate, authorizeAdmin, async (req, res
   }
 });
 
-// Obter pagamento e auditoria por payment_id
+/**
+ * @api {get} /api/admin/app-payments/:pid Detalhes do Pagamento (Admin)
+ * @apiDescription Obtém detalhes completos e auditoria de um pagamento específico (apenas admin).
+ * @apiGroup Financeiro
+ * @apiPermission Admin
+ * @apiParam {string} pid ID do pagamento.
+ * @apiSuccess {Object} payment Dados do pagamento.
+ * @apiSuccess {Object[]} audit Histórico de auditoria do pagamento.
+ */
 app.get('/api/admin/app-payments/:pid', authenticate, authorizeAdmin, async (req, res) => {
   const pid = String(req.params?.pid || '').trim();
   if (!pid) return res.status(400).json({ success: false, error: 'BAD_REQUEST', message: 'pid é obrigatório' });
@@ -3609,7 +4381,16 @@ app.get('/api/admin/app-payments/:pid', authenticate, authorizeAdmin, async (req
   }
 });
 
-// Rota de Ativação de Licença
+/**
+ * @api {post} /api/licenses/activate Ativar Licença
+ * @apiDescription Ativa uma licença para um aplicativo e hardware específico.
+ * @apiGroup Licencas
+ * @apiPermission Authenticated
+ * @apiParam {number} appId ID do aplicativo.
+ * @apiParam {string} hardwareId Identificador único do hardware.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {string} license_key Chave de licença gerada.
+ */
 app.post('/api/licenses/activate', authenticate, async (req, res) => {
   try {
     let body = req.body;
@@ -3650,7 +4431,16 @@ app.post('/api/licenses/activate', authenticate, async (req, res) => {
   }
 });
 
-// Reivindicar licença por e-mail (modelo híbrido online/offline)
+/**
+ * @api {post} /api/licenses/claim-by-email Reivindicar Licença por E-mail
+ * @apiDescription Reivindica uma licença usando o e-mail de compra (para usuários não logados na loja).
+ * @apiGroup Licencas
+ * @apiParam {string} email E-mail utilizado na compra.
+ * @apiParam {string} hardwareId Identificador único do hardware.
+ * @apiParam {number} appId ID do aplicativo.
+ * @apiSuccess {boolean} success Indica sucesso.
+ * @apiSuccess {string} license_key Chave de licença gerada.
+ */
 app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
   try {
     let body = req.body;
@@ -3770,6 +4560,13 @@ process.on('SIGINT', () => {
 });
 
 // OAuth callback Mercado Livre para troca de código por tokens
+/**
+ * @api {get} /api/mercado-livre/oauth/callback Callback OAuth Mercado Livre
+ * @apiDescription Recebe o código de autorização do Mercado Livre e troca por tokens de acesso.
+ * @apiGroup Integracoes
+ * @apiParam {string} code Código de autorização retornado pelo Mercado Livre.
+ * @apiSuccess {boolean} success Indica sucesso na troca de tokens.
+ */
 app.get('/api/mercado-livre/oauth/callback', async (req, res) => {
   try {
     const { code } = req.query;
@@ -3780,6 +4577,11 @@ app.get('/api/mercado-livre/oauth/callback', async (req, res) => {
     res.status(500).json({ error: 'OAuth callback error' });
   }
 });
+
+/**
+ * Verifica e cria a tabela de reset de senhas se não existir.
+ * @returns {Promise<void>}
+ */
 async function ensurePasswordResetsSchema() {
   try {
     const pool = await getConnectionPool();
@@ -3806,6 +4608,10 @@ async function ensurePasswordResetsSchema() {
   }
 }
 
+/**
+ * Verifica e cria a tabela de feedbacks se não existir.
+ * @returns {Promise<void>}
+ */
 async function ensureFeedbacksSchema() {
   try {
     const pool = await getConnectionPool();
@@ -3831,6 +4637,14 @@ async function ensureFeedbacksSchema() {
     console.error('Erro ao garantir esquema de dbo.feedbacks:', err);
   }
 }
+
+/**
+ * @api {get} /api/admin/projetos Listar Projetos (Admin)
+ * @apiDescription Retorna a lista de todos os projetos cadastrados (apenas admin).
+ * @apiGroup Projetos
+ * @apiPermission Admin
+ * @apiSuccess {Object[]} data Lista de projetos.
+ */
 app.get('/api/admin/projetos', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
     const pool = await getConnectionPool();
@@ -3849,6 +4663,11 @@ app.get('/api/admin/projetos', authenticate, authorizeAdmin, async (req, res, ne
     next(err);
   }
 });
+/**
+ * Processa webhooks de pagamento do Mercado Pago.
+ * @param {string|number} paymentId ID do pagamento no Mercado Pago.
+ * @returns {Promise<void>}
+ */
 async function handlePaymentWebhook(paymentId) {
   if (!mpClient) return;
   const payment = new Payment(mpClient);
