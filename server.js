@@ -3716,6 +3716,54 @@ app.post('/api/apps/:id/download', authenticate, sensitiveLimiter, async (req, r
   }
 });
 
+app.post('/api/apps/:id/download/by-email', sensitiveLimiter, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  try {
+    let body = req.body;
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+    const email = String(body?.email || '').trim();
+    if (!email || !validateEmail(email)) return res.status(400).json({ error: 'Email inválido' });
+
+    const pool = await getConnectionPool();
+    const dataRes = await pool.request().input('id', dbSql.Int, id).query('SELECT id, name, price, executable_url AS executableUrl FROM dbo.apps WHERE id=@id');
+    const appItem = dataRes.recordset[0] || null;
+    if (!appItem) return res.status(404).json({ error: 'Aplicativo não encontrado' });
+
+    const isFree = !appItem.price || appItem.price <= 0;
+    let allowed = isFree;
+
+    if (!allowed) {
+      const uRes = await pool.request().input('email', dbSql.NVarChar, email).query('SELECT TOP 1 id FROM dbo.users WHERE email=@email');
+      const uid = uRes.recordset[0]?.id || null;
+      const reqPay = pool.request().input('aid', dbSql.Int, id).input('email', dbSql.NVarChar, email);
+      let sql = "SELECT TOP 1 status FROM dbo.app_payments WHERE app_id=@aid AND status='approved' AND payer_email=@email";
+      if (uid) { reqPay.input('uid', dbSql.Int, uid); sql = "SELECT TOP 1 status FROM dbo.app_payments WHERE app_id=@aid AND status='approved' AND (payer_email=@email OR user_id=@uid)"; }
+      const payRes = await reqPay.query(sql);
+      if (payRes.recordset.length > 0) allowed = true;
+    }
+
+    if (!allowed) return res.status(403).json({ error: 'Download não liberado para este e-mail.' });
+
+    const fallbackUrl = String(appItem.name || '').toLowerCase() === 'coincraft' ? '/downloads/InstalarCoinCraft.exe' : null;
+    const url = appItem.executableUrl || fallbackUrl;
+    if (!url) return res.status(400).json({ error: 'Aplicativo sem URL de executável configurada' });
+
+    try {
+      await pool.request()
+        .input('type', dbSql.NVarChar, 'download')
+        .input('app_id', dbSql.Int, id)
+        .input('app_name', dbSql.NVarChar, appItem.name)
+        .input('status', dbSql.NVarChar, 'done')
+        .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
+    } catch (e) { void e }
+
+    return res.json({ success: true, download_url: url });
+  } catch (err) {
+    console.error('Erro interno ao processar download por e-mail:', err);
+    return res.status(500).json({ error: 'Erro interno ao processar download por e-mail.' });
+  }
+});
+
 /**
  * @api {get} /api/apps/history Histórico de apps
  * @apiDescription Lista o histórico global de downloads e compras de aplicativos.
@@ -4449,12 +4497,23 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
     if (!email || !hardwareId || !appId) return res.status(400).json({ error: 'Dados incompletos.' });
 
     const pool = await getConnectionPool();
+    let userId = null;
     const userRes = await pool.request().input('email', dbSql.NVarChar, String(email)).query('SELECT id, email, status FROM dbo.users WHERE email=@email');
-    const userRow = userRes.recordset[0] || null;
-    if (!userRow) return res.status(404).json({ error: 'Usuário não encontrado para este e-mail.' });
-    const userId = userRow.id;
+    let userRow = userRes.recordset[0] || null;
+    if (!userRow) {
+      const localName = String(email).split('@')[0] || 'Comprador';
+      const insertRes = await pool.request()
+        .input('name', dbSql.NVarChar, localName)
+        .input('email', dbSql.NVarChar, String(email))
+        .input('role', dbSql.NVarChar, 'viewer')
+        .input('status', dbSql.NVarChar, 'ativo')
+        .query("INSERT INTO dbo.users (name, email, role, status, created_at) OUTPUT Inserted.id, Inserted.email VALUES (@name, @email, @role, @status, SYSUTCDATETIME())");
+      const created = insertRes.recordset[0] || null;
+      userId = created?.id || null;
+    } else {
+      userId = userRow.id;
+    }
 
-    // Anti-duplicação: hardwareId já ativado para este app
     const dupRes = await pool.request()
       .input('aid', dbSql.Int, Number(appId))
       .input('hwid', dbSql.NVarChar, String(hardwareId))
@@ -4463,11 +4522,11 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
       return res.status(409).json({ error: "Esta máquina já possui uma licença ativa. Use a opção 'Tenho uma Chave'." });
     }
 
-    // Saldo de licenças: compras aprovadas x licenças já usadas
     const approvedCntRes = await pool.request()
       .input('uid', dbSql.Int, userId)
       .input('aid', dbSql.Int, Number(appId))
-      .query("SELECT COUNT(*) AS cnt FROM dbo.app_payments WHERE user_id=@uid AND app_id=@aid AND status='approved'");
+      .input('payer_email', dbSql.NVarChar, String(email))
+      .query("SELECT COUNT(*) AS cnt FROM dbo.app_payments WHERE app_id=@aid AND status='approved' AND (user_id=@uid OR payer_email=@payer_email)");
     const approved = approvedCntRes.recordset[0]?.cnt || 0;
     const usedCntRes = await pool.request()
       .input('uid', dbSql.Int, userId)
@@ -4478,7 +4537,6 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
       return res.status(403).json({ error: 'Limite de licenças atingido para este e-mail. Compre mais no site.' });
     }
 
-    // Geração de chave RSA
     let signature;
     const pem = process.env.PRIVATE_KEY_PEM || '';
     if (pem) {
@@ -4494,7 +4552,6 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
       signature = 'LIC-' + Buffer.from(String(hardwareId) + String(userId)).toString('base64');
     }
 
-    // Inserir licença
     await pool.request()
       .input('uid', dbSql.Int, userId)
       .input('aid', dbSql.Int, Number(appId))
@@ -4506,6 +4563,71 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
   } catch (err) {
     console.error('Erro em claim-by-email:', err);
     return res.status(500).json({ error: 'Erro ao ativar licença por e-mail.' });
+  }
+});
+
+app.get('/api/purchases/by-email', sensitiveLimiter, async (req, res) => {
+  try {
+    const email = String(req.query?.email || '').trim();
+    const appIdRaw = req.query?.appId;
+    const appId = appIdRaw !== undefined ? parseInt(String(appIdRaw), 10) : null;
+    if (!email || !validateEmail(email)) {
+      return res.status(400).json({ error: 'Email inválido' });
+    }
+    const pool = await getConnectionPool();
+    const uRes = await pool.request().input('email', dbSql.NVarChar, email).query('SELECT TOP 1 id FROM dbo.users WHERE email=@email');
+    const uid = uRes.recordset[0]?.id || null;
+
+    const reqList = pool.request().input('email', dbSql.NVarChar, email);
+    let where = "status='approved' AND (payer_email=@email";
+    if (uid) {
+      reqList.input('uid', dbSql.Int, uid);
+      where += ' OR user_id=@uid';
+    }
+    where += ')';
+    if (Number.isFinite(appId)) {
+      reqList.input('aid', dbSql.Int, appId);
+      where += ' AND app_id=@aid';
+    }
+    const listSql = `SELECT TOP(200) payment_id, app_id, status, amount, currency, payer_email, updated_at FROM dbo.app_payments WHERE ${where} ORDER BY updated_at DESC`;
+    const rows = await reqList.query(listSql);
+
+    let approved = 0;
+    if (Number.isFinite(appId)) {
+      const cntReq = pool.request().input('email', dbSql.NVarChar, email).input('aid', dbSql.Int, appId);
+      if (uid) cntReq.input('uid', dbSql.Int, uid);
+      const cntSql = uid
+        ? "SELECT COUNT(*) AS cnt FROM dbo.app_payments WHERE app_id=@aid AND status='approved' AND (user_id=@uid OR payer_email=@email)"
+        : "SELECT COUNT(*) AS cnt FROM dbo.app_payments WHERE app_id=@aid AND status='approved' AND payer_email=@email";
+      const cnt = await cntReq.query(cntSql);
+      approved = cnt.recordset[0]?.cnt || 0;
+    } else {
+      const cntReq = pool.request().input('email', dbSql.NVarChar, email);
+      if (uid) cntReq.input('uid', dbSql.Int, uid);
+      const cntSql = uid
+        ? "SELECT COUNT(*) AS cnt FROM dbo.app_payments WHERE status='approved' AND (user_id=@uid OR payer_email=@email)"
+        : "SELECT COUNT(*) AS cnt FROM dbo.app_payments WHERE status='approved' AND payer_email=@email";
+      const cnt = await cntReq.query(cntSql);
+      approved = cnt.recordset[0]?.cnt || 0;
+    }
+
+    let used = 0;
+    if (uid) {
+      if (Number.isFinite(appId)) {
+        const usedRes = await pool.request().input('uid', dbSql.Int, uid).input('aid', dbSql.Int, appId)
+          .query('SELECT COUNT(*) AS cnt FROM dbo.user_licenses WHERE user_id=@uid AND app_id=@aid AND hardware_id IS NOT NULL');
+        used = usedRes.recordset[0]?.cnt || 0;
+      } else {
+        const usedRes = await pool.request().input('uid', dbSql.Int, uid)
+          .query('SELECT COUNT(*) AS cnt FROM dbo.user_licenses WHERE user_id=@uid AND hardware_id IS NOT NULL');
+        used = usedRes.recordset[0]?.cnt || 0;
+      }
+    }
+
+    return res.json({ success: true, data: rows.recordset || [], summary: { approved, used } });
+  } catch (err) {
+    console.error('Erro em purchases/by-email:', err);
+    return res.status(500).json({ error: 'Erro ao consultar compras por e-mail.' });
   }
 });
 

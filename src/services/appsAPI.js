@@ -127,6 +127,10 @@ export async function registerDownload(appId) {
   return apiRequest(`/api/apps/${appId}/download`, { method: 'POST' });
 }
 
+export async function downloadByEmail(appId, email) {
+  return apiRequest(`/api/apps/${appId}/download/by-email`, { method: 'POST', body: JSON.stringify({ email }) });
+}
+
 // Histórico (compras e downloads)
 export async function getHistory({ page = 1, pageSize = 20 } = {}) {
   return apiRequest(`/api/apps/history?page=${page}&pageSize=${pageSize}`, { method: 'GET' });

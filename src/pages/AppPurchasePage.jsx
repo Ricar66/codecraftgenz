@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import CardDirectPayment from '../components/CardDirectPayment.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth.js';
-import { getAppById, getPurchaseStatus, registerDownload, submitFeedback, createPaymentPreference } from '../services/appsAPI.js';
+import { getAppById, getPurchaseStatus, registerDownload, submitFeedback, createPaymentPreference, downloadByEmail } from '../services/appsAPI.js';
 import { getAppPrice } from '../utils/appModel.js';
 
 // Mapeia códigos de status_detail do Mercado Pago para mensagens amigáveis
@@ -65,6 +65,11 @@ const AppPurchasePage = () => {
     (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('showCard') === '1')
   );
   const [showCardForm, setShowCardForm] = useState(initialShowCard);
+
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
+  const [emailConfirmError, setEmailConfirmError] = useState('');
+  const [confirmingDownload, setConfirmingDownload] = useState(false);
 
   // Fluxo simplificado: sem checkout externo
 
@@ -159,9 +164,41 @@ const AppPurchasePage = () => {
     try {
       const json = await registerDownload(id);
       const url = json?.download_url || downloadUrl;
-      if (url) window.open(url, '_blank', 'noopener');
-      else alert('Download ainda não liberado');
-    } catch (e) { alert('Erro ao registrar download: ' + e.message); }
+      if (url) { window.open(url, '_blank', 'noopener'); return; }
+      const existingEmail = String(payerInfo.email || user?.email || '').trim();
+      if (!existingEmail) {
+        setEmailInput('');
+        setEmailConfirmError('');
+        setShowEmailModal(true);
+        return;
+      }
+      const d = await downloadByEmail(id, existingEmail);
+      const u = d?.download_url || '';
+      if (u) window.open(u, '_blank', 'noopener');
+      else alert('Download ainda não liberado para este e-mail.');
+    } catch (e) { alert('Erro ao processar download: ' + e.message); }
+  };
+
+  const confirmEmailAndDownload = async () => {
+    const em = String(emailInput || '').trim();
+    const rx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!em || !rx.test(em)) { setEmailConfirmError('Informe um e-mail válido.'); return; }
+    try {
+      setConfirmingDownload(true);
+      setEmailConfirmError('');
+      const d = await downloadByEmail(id, em);
+      const u = d?.download_url || '';
+      if (u) {
+        setShowEmailModal(false);
+        window.open(u, '_blank', 'noopener');
+      } else {
+        setEmailConfirmError('Este e-mail não possui download liberado ainda.');
+      }
+    } catch (e) {
+      setEmailConfirmError(e.message || 'Erro ao validar e-mail para download.');
+    } finally {
+      setConfirmingDownload(false);
+    }
   };
 
   // Pagamento direto via Pix
@@ -379,6 +416,32 @@ const AppPurchasePage = () => {
         )}
       </div>
 
+      {showEmailModal && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-email-title">
+          <div className="modal-card" onClick={e=>e.stopPropagation()}>
+            <h3 id="confirm-email-title" className="modal-title">Confirmar e-mail da compra</h3>
+            <p className="modal-desc">Usaremos este e-mail para validar sua compra e ele será necessário para ativar o software após a instalação.</p>
+            <div className="modal-field">
+              <label className="modal-label">E-mail</label>
+              <input
+                className="input"
+                type="email"
+                placeholder="seu@email.com"
+                value={emailInput}
+                onChange={e=>setEmailInput(e.target.value)}
+              />
+              {emailConfirmError && <div className="modal-error" role="alert">{emailConfirmError}</div>}
+            </div>
+            <div className="modal-actions">
+              <button className="btn btn-outline" onClick={()=>{ if (!confirmingDownload) { setShowEmailModal(false); setEmailConfirmError(''); } }}>Cancelar</button>
+              <button className="btn btn-primary" onClick={confirmEmailAndDownload} disabled={confirmingDownload}>
+                {confirmingDownload ? 'Validando…' : 'Confirmar e baixar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .purchase-page { min-height: 100vh; }
         .purchase-card { max-width: 800px; margin: 16px auto; padding: 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; }
@@ -396,6 +459,14 @@ const AppPurchasePage = () => {
         .input:focus { border-color:#00E4F2; box-shadow: 0 0 0 2px rgba(0,228,242,.25); }
         .progress-bar { width: 100%; height: 8px; background: rgba(255,255,255,0.12); border-radius: 999px; overflow: hidden; }
         .progress { height: 100%; background: linear-gradient(90deg, #D12BF2, #00E4F2); }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(3,6,12,0.75); display:flex; align-items:center; justify-content:center; padding:16px; z-index: 1000; }
+        .modal-card { width: 100%; max-width: 520px; background: #0A0F1B; border: 1px solid rgba(0,228,242,0.35); border-radius: 12px; box-shadow: 0 0 24px rgba(209,43,242,0.18), 0 0 24px rgba(0,228,242,0.18); padding: 16px; }
+        .modal-title { color: var(--texto-branco); margin: 0 0 8px; }
+        .modal-desc { color: var(--texto-gelo); font-size: .95rem; margin-bottom: 12px; }
+        .modal-field { display:flex; flex-direction:column; gap:6px; }
+        .modal-label { color: var(--texto-gelo); font-size: .85rem; }
+        .modal-error { color: #FF6B6B; font-size: .9rem; }
+        .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top: 12px; }
       `}</style>
     </div>
   );
