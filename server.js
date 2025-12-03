@@ -3823,6 +3823,88 @@ app.post('/api/apps/:id/feedback', authenticate, async (req, res) => {
   }
 });
 
+// --- ROTA DE ATIVAÇÃO DE LICENÇA (pública) ---
+app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, res) => {
+  try {
+    const { email, app_id, hardware_id } = req.body || {};
+
+    if (!email || !validateEmail(email)) {
+      return res.status(400).json({ error: 'E-mail inválido ou não informado.' });
+    }
+    if (!app_id || !hardware_id) {
+      return res.status(400).json({ error: 'ID do App e Hardware ID são obrigatórios.' });
+    }
+
+    const pool = await getConnectionPool();
+
+    const comprasQuery = await pool.request()
+      .input('email', dbSql.NVarChar, email)
+      .input('app_id', dbSql.Int, Number(app_id))
+      .query(`
+        SELECT COUNT(*) as total
+        FROM dbo.app_payments
+        WHERE (payer_email = @email OR user_id IN (SELECT id FROM dbo.users WHERE email=@email))
+          AND app_id = @app_id
+          AND status = 'approved'
+      `);
+    const totalCompras = comprasQuery.recordset[0]?.total || 0;
+
+    if (totalCompras === 0) {
+      const ownerCheck = await pool.request()
+        .input('email', dbSql.NVarChar, email)
+        .input('app_id', dbSql.Int, Number(app_id))
+        .query(`
+          SELECT 1 FROM dbo.apps a
+          JOIN dbo.users u ON a.owner_id = u.id
+          WHERE a.id = @app_id AND u.email = @email
+        `);
+      if (!ownerCheck.recordset.length) {
+        return res.status(403).json({ licensed: false, message: 'Nenhuma compra confirmada encontrada para este e-mail.' });
+      }
+    }
+
+    let userId = null;
+    const userRes = await pool.request().input('email', dbSql.NVarChar, email).query('SELECT id FROM dbo.users WHERE email = @email');
+    if (userRes.recordset.length > 0) {
+      userId = userRes.recordset[0].id;
+    } else {
+      const newUser = await pool.request()
+        .input('name', dbSql.NVarChar, email.split('@')[0])
+        .input('email', dbSql.NVarChar, email)
+        .query(`INSERT INTO dbo.users (name, email, role, status, created_at) OUTPUT Inserted.id VALUES (@name, @email, 'viewer', 'ativo', SYSUTCDATETIME())`);
+      userId = newUser.recordset[0].id;
+    }
+
+    const licensesQuery = await pool.request()
+      .input('user_id', dbSql.Int, userId)
+      .input('app_id', dbSql.Int, Number(app_id))
+      .query(`SELECT id, hardware_id FROM dbo.user_licenses WHERE user_id = @user_id AND app_id = @app_id`);
+
+    const existingLicenses = licensesQuery.recordset || [];
+    const isSameHardware = existingLicenses.find(l => l.hardware_id === String(hardware_id));
+
+    if (isSameHardware) {
+      return res.json({ licensed: true, message: 'Licença ativa verificada.', license_key: `VALID-${userId}-${app_id}` });
+    }
+
+    if (totalCompras > existingLicenses.length) {
+      await pool.request()
+        .input('user_id', dbSql.Int, userId)
+        .input('app_id', dbSql.Int, Number(app_id))
+        .input('hwid', dbSql.NVarChar, String(hardware_id))
+        .input('key', dbSql.NVarChar, `LIC-${Date.now()}-${userId}`)
+        .query(`INSERT INTO dbo.user_licenses (user_id, app_id, hardware_id, license_key, created_at) VALUES (@user_id, @app_id, @hwid, @key, SYSUTCDATETIME())`);
+
+      return res.json({ licensed: true, message: 'Nova licença ativada com sucesso.', new_activation: true });
+    }
+
+    return res.status(403).json({ licensed: false, message: 'Limite de licenças atingido. Compre novamente para usar em outra máquina.' });
+  } catch (err) {
+    console.error('Erro na ativação:', err);
+    return res.status(500).json({ error: 'Erro interno ao validar licença.' });
+  }
+});
+
 
 const mpFriendlyMessage = (status, detail) => {
   const d = String(detail || '').toLowerCase();

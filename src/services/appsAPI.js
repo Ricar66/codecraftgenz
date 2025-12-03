@@ -127,6 +127,11 @@ export async function registerDownload(appId) {
   return apiRequest(`/api/apps/${appId}/download`, { method: 'POST' });
 }
 
+// Licenças – ativar licença do dispositivo (pública)
+export async function activateDeviceLicense({ email, appId, hardwareId }) {
+  return apiRequest(`/api/public/license/activate-device`, { method: 'POST', body: JSON.stringify({ email, app_id: appId, hardware_id: hardwareId }) });
+}
+
 export async function downloadByEmail(appId, email) {
   return apiRequest(`/api/apps/${appId}/download/by-email`, { method: 'POST', body: JSON.stringify({ email }) });
 }
