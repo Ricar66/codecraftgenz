@@ -397,6 +397,18 @@ img {
 .overflow-auto { overflow: auto; }
 .overflow-x-auto { overflow-x: auto; }
 .overflow-y-auto { overflow-y: auto; }
+
+/* ===== LAYOUT GLOBAL COM RODAPÉ ===== */
+.app-root { min-height: 100vh; display:flex; flex-direction: column; }
+.app-content { flex: 1; display:block; }
+.site-footer { border-top: 1px solid rgba(255,255,255,0.12); background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.25)); }
+.footer-container { max-width: 1200px; margin: 0 auto; padding: 16px; display:flex; align-items:center; justify-content: space-between; gap: 12px; }
+.footer-brand { color: var(--texto-branco); font-weight: 800; letter-spacing: 0.5px; }
+.footer-links { display:flex; gap: 12px; }
+.footer-links a { color: var(--texto-gelo); }
+.footer-links a:hover { color: var(--cor-terciaria); }
+.footer-note { color: var(--texto-gelo); opacity: 0.8; }
+@media (max-width: 640px) { .footer-container { flex-direction: column; align-items: flex-start; } }
 .overflow-hidden { overflow: hidden; }
 .min-w-0 { min-width: 0; }
 .max-w-full { max-width: 100%; }
