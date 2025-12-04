@@ -9,11 +9,11 @@ import styles from './Button.module.css';
  * - onClick: A função a ser executada ao clicar.
  * - variant: 'primary' (padrão) ou 'secondary' (para o azul Gen-Z).
  */
-const Button = ({ children, onClick, variant = 'primary' }) => {
+const Button = ({ children, onClick, variant = 'primary', className }) => {
   
   // Define a classe CSS com base na variante
   // ex: styles.btn e styles.primary ou styles.secondary
-  const buttonClass = `${styles.btn} ${styles[variant]}`;
+  const buttonClass = [styles.btn, styles[variant], className].filter(Boolean).join(' ');
 
   return (
     <button className={buttonClass} onClick={onClick}>

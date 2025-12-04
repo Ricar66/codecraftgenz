@@ -226,6 +226,7 @@ const AppsPage = () => {
   return (
     <div className="apps-page">
       <Navbar />
+      <div className="apps-content">
       <header className="apps-header">
         <h1>Meus Aplicativos</h1>
         <p>Baixe e compre seus apps com visual profissional.</p>
@@ -321,7 +322,8 @@ const AppsPage = () => {
       </section>
 
       <style>{`
-        .apps-page { min-height: 100vh; }
+        .apps-page { min-height: 100vh; display:flex; flex-direction:column; }
+        .apps-content { flex:1; display:block; }
         .apps-header { max-width: 1200px; margin: 24px auto; padding: 0 16px; text-align: center; }
         .apps-header h1 { color: var(--texto-branco); margin: 0; font-size: 2rem; }
         .apps-header p { color: var(--texto-gelo); margin-top: 6px; font-size: 1rem; }
@@ -347,6 +349,14 @@ const AppsPage = () => {
         .btn-primary { background: linear-gradient(90deg, #D12BF2, #00E4F2); color: #000; border:none; }
         .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 18px rgba(0,0,0,0.25); }
         .btn-outline { background: transparent; color: var(--texto-branco); }
+        .apps-footer { border-top: 1px solid rgba(255,255,255,0.12); background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.25)); }
+        .footer-container { max-width: 1200px; margin: 0 auto; padding: 16px; display:flex; align-items:center; justify-content: space-between; gap: 12px; }
+        .footer-brand { color: var(--texto-branco); font-weight: 800; letter-spacing: 0.5px; }
+        .footer-links { display:flex; gap: 12px; }
+        .footer-links a { color: var(--texto-gelo); }
+        .footer-links a:hover { color: var(--cor-terciaria); }
+        .footer-note { color: var(--texto-gelo); opacity: 0.8; }
+        @media (max-width: 640px) { .footer-container { flex-direction: column; align-items: flex-start; } }
       `}</style>
 
       {payModal.open && (
@@ -391,6 +401,18 @@ const AppsPage = () => {
           `}</style>
         </div>
       )}
+      </div>
+      <footer className="apps-footer">
+        <div className="footer-container">
+          <div className="footer-brand">CodeCraft Gen-Z</div>
+          <div className="footer-links">
+            <a href="/projetos">Projetos</a>
+            <a href="/apps">Apps</a>
+            <a href="/mentoria">Mentoria</a>
+          </div>
+          <div className="footer-note">Craftando ideias em software com estilo</div>
+        </div>
+      </footer>
     </div>
   );
 };
