@@ -477,10 +477,11 @@ async function ensureUserLicensesSchema() {
       BEGIN
         CREATE TABLE dbo.user_licenses (
           id INT IDENTITY(1,1) PRIMARY KEY,
-          user_id INT NOT NULL,
+          user_id INT NULL,
           app_id INT NOT NULL,
-          hardware_id NVARCHAR(256) NOT NULL,
-          license_key NVARCHAR(MAX) NOT NULL,
+          email NVARCHAR(256) NOT NULL,
+          hardware_id NVARCHAR(256) NULL,
+          license_key NVARCHAR(MAX) NULL,
           created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
           updated_at DATETIME2 NULL,
           CONSTRAINT FK_user_licenses_user FOREIGN KEY (user_id) REFERENCES dbo.users(id),
@@ -488,8 +489,14 @@ async function ensureUserLicensesSchema() {
         );
         CREATE INDEX IX_user_licenses_user_app ON dbo.user_licenses(user_id, app_id);
         CREATE INDEX IX_user_licenses_hardware ON dbo.user_licenses(hardware_id);
+        CREATE INDEX IX_user_licenses_app_email ON dbo.user_licenses(app_id, email);
       END;
     `);
+    await pool.request().query(`IF COL_LENGTH('dbo.user_licenses', 'email') IS NULL BEGIN ALTER TABLE dbo.user_licenses ADD email NVARCHAR(256) NOT NULL CONSTRAINT DF_user_licenses_email DEFAULT ''; END;`);
+    await pool.request().query(`ALTER TABLE dbo.user_licenses ALTER COLUMN user_id INT NULL;`);
+    await pool.request().query(`ALTER TABLE dbo.user_licenses ALTER COLUMN hardware_id NVARCHAR(256) NULL;`);
+    await pool.request().query(`ALTER TABLE dbo.user_licenses ALTER COLUMN license_key NVARCHAR(MAX) NULL;`);
+    await pool.request().query(`IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_user_licenses_app_email' AND object_id=OBJECT_ID('dbo.user_licenses')) BEGIN CREATE INDEX IX_user_licenses_app_email ON dbo.user_licenses(app_id, email); END;`);
     console.log('✅ Esquema de dbo.user_licenses verificado/criado');
   } catch (err) {
     console.error('Erro ao garantir esquema de dbo.user_licenses:', err);
@@ -2917,6 +2924,9 @@ app.get('/api/apps/public', async (req, res, next) => {
 // Detalhes de um app (público para exibição na página de compra)
 app.get('/api/apps/:id', async (req, res, next) => {
   const id = parseInt(req.params.id, 10);
+  if (!Number.isFinite(id)) {
+    return next();
+  }
   try {
     const pool = await getConnectionPool();
     const dataRes = await pool.request()
@@ -3744,6 +3754,13 @@ app.post('/api/apps/:id/download/by-email', sensitiveLimiter, async (req, res) =
 
     if (!allowed) return res.status(403).json({ error: 'Download não liberado para este e-mail.' });
 
+    try {
+      await pool.request()
+        .input('email', dbSql.NVarChar, email)
+        .input('aid', dbSql.Int, id)
+        .query("MERGE dbo.user_licenses AS T USING (SELECT @email AS email, @aid AS aid) AS S ON (T.email = S.email AND T.app_id = S.aid AND T.hardware_id IS NULL) WHEN NOT MATCHED THEN INSERT (email, app_id, created_at) VALUES (S.email, S.aid, SYSUTCDATETIME());");
+    } catch (e) { void e }
+
     const fallbackUrl = String(appItem.name || '').toLowerCase() === 'coincraft' ? '/downloads/InstalarCoinCraft.exe' : null;
     const url = appItem.executableUrl || fallbackUrl;
     if (!url) return res.status(400).json({ error: 'Aplicativo sem URL de executável configurada' });
@@ -3843,13 +3860,14 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
       .query(`
         SELECT COUNT(*) as total
         FROM dbo.app_payments
-        WHERE (payer_email = @email OR user_id IN (SELECT id FROM dbo.users WHERE email=@email))
+        WHERE payer_email = @email
           AND app_id = @app_id
           AND status = 'approved'
       `);
     const totalCompras = comprasQuery.recordset[0]?.total || 0;
 
-    if (totalCompras === 0) {
+    const devBypass = ((process.env.NODE_ENV || 'development') === 'development') && String(process.env.ALLOW_DEV_LICENSE || '').toLowerCase() === 'true';
+    if (totalCompras === 0 && !devBypass) {
       const ownerCheck = await pool.request()
         .input('email', dbSql.NVarChar, email)
         .input('app_id', dbSql.Int, Number(app_id))
@@ -3864,21 +3882,16 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
     }
 
     let userId = null;
-    const userRes = await pool.request().input('email', dbSql.NVarChar, email).query('SELECT id FROM dbo.users WHERE email = @email');
-    if (userRes.recordset.length > 0) {
-      userId = userRes.recordset[0].id;
-    } else {
-      const newUser = await pool.request()
-        .input('name', dbSql.NVarChar, email.split('@')[0])
-        .input('email', dbSql.NVarChar, email)
-        .query(`INSERT INTO dbo.users (name, email, role, status, created_at) OUTPUT Inserted.id VALUES (@name, @email, 'viewer', 'ativo', SYSUTCDATETIME())`);
-      userId = newUser.recordset[0].id;
-    }
+    const payUserRes = await pool.request()
+      .input('email', dbSql.NVarChar, email)
+      .input('app_id', dbSql.Int, Number(app_id))
+      .query(`SELECT TOP 1 user_id FROM dbo.app_payments WHERE app_id=@app_id AND status='approved' AND payer_email=@email ORDER BY updated_at DESC`);
+    userId = payUserRes.recordset[0]?.user_id || null;
 
     const licensesQuery = await pool.request()
-      .input('user_id', dbSql.Int, userId)
+      .input('email', dbSql.NVarChar, email)
       .input('app_id', dbSql.Int, Number(app_id))
-      .query(`SELECT id, hardware_id FROM dbo.user_licenses WHERE user_id = @user_id AND app_id = @app_id`);
+      .query(`SELECT id, hardware_id FROM dbo.user_licenses WHERE app_id = @app_id AND email = @email`);
 
     const existingLicenses = licensesQuery.recordset || [];
     const isSameHardware = existingLicenses.find(l => l.hardware_id === String(hardware_id));
@@ -3887,13 +3900,15 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
       return res.json({ licensed: true, message: 'Licença ativa verificada.', license_key: `VALID-${userId}-${app_id}` });
     }
 
-    if (totalCompras > existingLicenses.length) {
-      await pool.request()
+    const allowedActivations = devBypass ? Math.max(1, totalCompras) : totalCompras;
+    if (allowedActivations > existingLicenses.length) {
+    await pool.request()
         .input('user_id', dbSql.Int, userId)
         .input('app_id', dbSql.Int, Number(app_id))
+        .input('email', dbSql.NVarChar, String(email))
         .input('hwid', dbSql.NVarChar, String(hardware_id))
-        .input('key', dbSql.NVarChar, `LIC-${Date.now()}-${userId}`)
-        .query(`INSERT INTO dbo.user_licenses (user_id, app_id, hardware_id, license_key, created_at) VALUES (@user_id, @app_id, @hwid, @key, SYSUTCDATETIME())`);
+        .input('key', dbSql.NVarChar, `LIC-${Date.now()}-${userId ?? 'anon'}`)
+        .query(`INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key, created_at) VALUES (@user_id, @app_id, @email, @hwid, @key, SYSUTCDATETIME())`);
 
       return res.json({ licensed: true, message: 'Nova licença ativada com sucesso.', new_activation: true });
     }
@@ -4527,6 +4542,7 @@ app.post('/api/licenses/activate', authenticate, async (req, res) => {
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
     const { appId, hardwareId } = body || {};
     const userId = req.user.id;
+    const userEmail = req.user?.email || null;
     if (!appId || !hardwareId) return res.status(400).json({ error: 'Dados incompletos.' });
     const pool = await getConnectionPool();
     const check = await pool.request()
@@ -4551,9 +4567,10 @@ app.post('/api/licenses/activate', authenticate, async (req, res) => {
     await pool.request()
       .input('uid', dbSql.Int, userId)
       .input('aid', dbSql.Int, appId)
+      .input('em', dbSql.NVarChar, userEmail)
       .input('hwid', dbSql.NVarChar, hardwareId)
       .input('key', dbSql.NVarChar, signature)
-      .query("MERGE dbo.user_licenses AS T USING (SELECT @uid AS uid, @aid AS aid, @hwid AS hwid) AS S ON (T.user_id = S.uid AND T.app_id = S.aid AND T.hardware_id = S.hwid) WHEN MATCHED THEN UPDATE SET license_key=@key, updated_at=SYSUTCDATETIME() WHEN NOT MATCHED THEN INSERT (user_id, app_id, hardware_id, license_key) VALUES (@uid, @aid, @hwid, @key);");
+      .query("MERGE dbo.user_licenses AS T USING (SELECT @uid AS uid, @aid AS aid, @em AS em, @hwid AS hwid) AS S ON (T.user_id = S.uid AND T.app_id = S.aid AND T.hardware_id = S.hwid) WHEN MATCHED THEN UPDATE SET license_key=@key, email=@em, updated_at=SYSUTCDATETIME() WHEN NOT MATCHED THEN INSERT (user_id, app_id, email, hardware_id, license_key) VALUES (@uid, @aid, @em, @hwid, @key);");
     return res.json({ success: true, license_key: signature });
   } catch (err) {
     console.error(err);
@@ -4580,21 +4597,6 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
 
     const pool = await getConnectionPool();
     let userId = null;
-    const userRes = await pool.request().input('email', dbSql.NVarChar, String(email)).query('SELECT id, email, status FROM dbo.users WHERE email=@email');
-    let userRow = userRes.recordset[0] || null;
-    if (!userRow) {
-      const localName = String(email).split('@')[0] || 'Comprador';
-      const insertRes = await pool.request()
-        .input('name', dbSql.NVarChar, localName)
-        .input('email', dbSql.NVarChar, String(email))
-        .input('role', dbSql.NVarChar, 'viewer')
-        .input('status', dbSql.NVarChar, 'ativo')
-        .query("INSERT INTO dbo.users (name, email, role, status, created_at) OUTPUT Inserted.id, Inserted.email VALUES (@name, @email, @role, @status, SYSUTCDATETIME())");
-      const created = insertRes.recordset[0] || null;
-      userId = created?.id || null;
-    } else {
-      userId = userRow.id;
-    }
 
     const dupRes = await pool.request()
       .input('aid', dbSql.Int, Number(appId))
@@ -4605,15 +4607,14 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
     }
 
     const approvedCntRes = await pool.request()
-      .input('uid', dbSql.Int, userId)
       .input('aid', dbSql.Int, Number(appId))
       .input('payer_email', dbSql.NVarChar, String(email))
-      .query("SELECT COUNT(*) AS cnt FROM dbo.app_payments WHERE app_id=@aid AND status='approved' AND (user_id=@uid OR payer_email=@payer_email)");
+      .query("SELECT COUNT(*) AS cnt FROM dbo.app_payments WHERE app_id=@aid AND status='approved' AND payer_email=@payer_email");
     const approved = approvedCntRes.recordset[0]?.cnt || 0;
     const usedCntRes = await pool.request()
-      .input('uid', dbSql.Int, userId)
+      .input('email', dbSql.NVarChar, String(email))
       .input('aid', dbSql.Int, Number(appId))
-      .query('SELECT COUNT(*) AS cnt FROM dbo.user_licenses WHERE user_id=@uid AND app_id=@aid AND hardware_id IS NOT NULL');
+      .query('SELECT COUNT(*) AS cnt FROM dbo.user_licenses WHERE email=@email AND app_id=@aid AND hardware_id IS NOT NULL');
     const used = usedCntRes.recordset[0]?.cnt || 0;
     if (used >= approved) {
       return res.status(403).json({ error: 'Limite de licenças atingido para este e-mail. Compre mais no site.' });
@@ -4625,21 +4626,22 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
       try {
         const sign = nodeCrypto.createSign('RSA-SHA256');
         sign.update(String(hardwareId));
-        sign.update(String(userId));
+        sign.update(String(email));
         signature = sign.sign(pem, 'base64');
       } catch {
-        signature = 'LIC-' + Buffer.from(String(hardwareId) + String(userId)).toString('base64');
+        signature = 'LIC-' + Buffer.from(String(hardwareId) + String(email)).toString('base64');
       }
     } else {
-      signature = 'LIC-' + Buffer.from(String(hardwareId) + String(userId)).toString('base64');
+      signature = 'LIC-' + Buffer.from(String(hardwareId) + String(email)).toString('base64');
     }
 
     await pool.request()
       .input('uid', dbSql.Int, userId)
       .input('aid', dbSql.Int, Number(appId))
+      .input('email', dbSql.NVarChar, String(email))
       .input('hwid', dbSql.NVarChar, String(hardwareId))
       .input('key', dbSql.NVarChar, String(signature))
-      .query('INSERT INTO dbo.user_licenses (user_id, app_id, hardware_id, license_key) VALUES (@uid, @aid, @hwid, @key)');
+      .query('INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key) VALUES (@uid, @aid, @email, @hwid, @key)');
 
     return res.json({ success: true, license_key: signature });
   } catch (err) {
@@ -4694,16 +4696,14 @@ app.get('/api/purchases/by-email', sensitiveLimiter, async (req, res) => {
     }
 
     let used = 0;
-    if (uid) {
-      if (Number.isFinite(appId)) {
-        const usedRes = await pool.request().input('uid', dbSql.Int, uid).input('aid', dbSql.Int, appId)
-          .query('SELECT COUNT(*) AS cnt FROM dbo.user_licenses WHERE user_id=@uid AND app_id=@aid AND hardware_id IS NOT NULL');
-        used = usedRes.recordset[0]?.cnt || 0;
-      } else {
-        const usedRes = await pool.request().input('uid', dbSql.Int, uid)
-          .query('SELECT COUNT(*) AS cnt FROM dbo.user_licenses WHERE user_id=@uid AND hardware_id IS NOT NULL');
-        used = usedRes.recordset[0]?.cnt || 0;
-      }
+    if (Number.isFinite(appId)) {
+      const usedRes = await pool.request().input('email', dbSql.NVarChar, email).input('aid', dbSql.Int, appId)
+        .query('SELECT COUNT(*) AS cnt FROM dbo.user_licenses WHERE app_id=@aid AND hardware_id IS NOT NULL AND (email=@email' + (uid ? ' OR user_id=@uid' : '') + ')');
+      used = usedRes.recordset[0]?.cnt || 0;
+    } else {
+      const usedRes = await pool.request().input('email', dbSql.NVarChar, email)
+        .query('SELECT COUNT(*) AS cnt FROM dbo.user_licenses WHERE hardware_id IS NOT NULL AND (email=@email' + (uid ? ' OR user_id=@uid' : '') + ')');
+      used = usedRes.recordset[0]?.cnt || 0;
     }
 
     return res.json({ success: true, data: rows.recordset || [], summary: { approved, used } });
