@@ -1,6 +1,7 @@
 // src/App.jsx
 // teste
 import React from 'react';
+import { FaGithub, FaInstagram, FaWhatsapp } from 'react-icons/fa';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import AdminCrafters from './admin/AdminCrafters.jsx';
@@ -105,6 +106,11 @@ function App() {
             <a href="/aplicativos">Aplicativos</a>
             <a href="/mentoria">Mentoria</a>
             <a href="/ranking">Ranking</a>
+          </div>
+          <div className="footer-social" aria-label="Redes sociais">
+            <a className="social-link instagram" href="#" aria-label="Instagram (em breve)"><FaInstagram /></a>
+            <a className="social-link github" href="#" aria-label="GitHub (em breve)"><FaGithub /></a>
+            <a className="social-link whatsapp" href="#" aria-label="WhatsApp (em breve)"><FaWhatsapp /></a>
           </div>
           <div className="footer-note">Craftando ideias em software com estilo</div>
         </div>

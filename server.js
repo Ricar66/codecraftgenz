@@ -3940,6 +3940,107 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
   }
 });
 
+// --- ROTA DE VERIFICAÇÃO DE LICENÇA (Migração CoinCraft Desktop) --- 
+app.post('/api/verify-license', sensitiveLimiter, async (req, res) => { 
+  try { 
+    const { email, hardware_id, app_id: appIdBody } = req.body; 
+    const resolvedAppId = Number(appIdBody);
+    const app_id = Number.isInteger(resolvedAppId) && resolvedAppId > 0 
+      ? resolvedAppId 
+      : Number(process.env.COINCRAFT_APP_ID || 1);
+
+    // Validações básicas 
+    if (!email || !email.includes('@')) { 
+      return res.status(400).json({ success: false, licensed: false, code: 'INVALID_EMAIL', message: 'Email inválido' }); 
+    } 
+    if (!hardware_id || hardware_id.length < 5) { 
+      return res.status(400).json({ success: false, licensed: false, code: 'INVALID_HWID', message: 'ID do PC inválido' }); 
+    } 
+
+    const pool = await getConnectionPool(); 
+
+    // 2. VERIFICAÇÃO DE RECADASTRO (Licença já existente) 
+    const checkLicense = await pool.request() 
+      .input('email', dbSql.NVarChar, email) 
+      .input('hwid', dbSql.NVarChar, hardware_id) 
+      .input('app_id', dbSql.Int, app_id) 
+      .query(` 
+        SELECT TOP 1 l.id 
+        FROM dbo.user_licenses l 
+        JOIN dbo.users u ON l.user_id = u.id 
+        WHERE u.email = @email 
+          AND l.hardware_id = @hwid 
+          AND l.app_id = @app_id 
+      `); 
+
+    if (checkLicense.recordset.length > 0) { 
+      console.log(`Acesso validado (Recorrente): ${email}`); 
+      return res.json({ success: true, licensed: true, code: 'LICENSE_OK', message: "Acesso validado" }); 
+    } 
+
+    // 3. PRIMEIRO CADASTRO (Verifica saldo de compras) 
+    const purchases = await pool.request() 
+      .input('email', dbSql.NVarChar, email) 
+      .input('app_id', dbSql.Int, app_id) 
+      .query(` 
+        SELECT COUNT(*) as total 
+        FROM dbo.app_payments 
+        WHERE payer_email = @email AND status = 'approved' AND app_id = @app_id 
+      `); 
+    
+    const usedLicenses = await pool.request() 
+      .input('email', dbSql.NVarChar, email) 
+      .input('app_id', dbSql.Int, app_id) 
+      .query(` 
+        SELECT COUNT(*) as total 
+        FROM dbo.user_licenses l 
+        JOIN dbo.users u ON l.user_id = u.id 
+        WHERE u.email = @email AND l.app_id = @app_id 
+      `); 
+
+    const totalPaid = purchases.recordset[0].total; 
+    const totalUsed = usedLicenses.recordset[0].total; 
+
+    // Se tiver mais compras que licenças usadas, permite cadastrar a nova máquina 
+    if (totalPaid > totalUsed) { 
+      let userId = null; 
+      const userRes = await pool.request().input('e', dbSql.NVarChar, email).query('SELECT id FROM dbo.users WHERE email = @e'); 
+      
+      if(userRes.recordset.length > 0) { 
+        userId = userRes.recordset[0].id; 
+      } else { 
+          // Cria usuário rápido se não existir 
+          const newUser = await pool.request() 
+            .input('n', dbSql.NVarChar, email.split('@')[0]) 
+            .input('e', dbSql.NVarChar, email) 
+            .query("INSERT INTO dbo.users (name, email, role, status, created_at) OUTPUT Inserted.id VALUES (@n, @e, 'viewer', 'ativo', SYSUTCDATETIME())"); 
+          userId = newUser.recordset[0].id; 
+      } 
+
+      await pool.request() 
+        .input('uid', dbSql.Int, userId) 
+        .input('aid', dbSql.Int, app_id) 
+        .input('hwid', dbSql.NVarChar, hardware_id) 
+        .input('key', dbSql.NVarChar, `KEY-${Date.now()}`) 
+        .query(` 
+          INSERT INTO dbo.user_licenses (user_id, app_id, hardware_id, license_key, created_at) 
+          VALUES (@uid, @aid, @hwid, @key, SYSUTCDATETIME()) 
+        `); 
+
+      console.log(`Novo registro vinculado: ${email} -> ${hardware_id}`); 
+      return res.json({ success: true, licensed: true, new_activation: true, code: 'LICENSE_BOUND', message: "Registro atualizado e vinculado" }); 
+    } 
+
+    // Se chegou aqui, não tem compra ou todas estão em uso 
+    console.log(`Falha de acesso: ${email} (Sem saldo ou PC incorreto)`); 
+    return res.status(403).json({ success: false, licensed: false, code: 'LICENSE_LIMIT', message: "Credenciais não encontradas ou limite atingido" }); 
+
+  } catch (error) { 
+    console.error("Erro na API de licença:", error); 
+    res.status(500).json({ success: false, licensed: false, code: 'SERVER_ERROR', message: "Erro no servidor" }); 
+  } 
+});
+
 
 const mpFriendlyMessage = (status, detail) => {
   const d = String(detail || '').toLowerCase();
