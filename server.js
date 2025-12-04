@@ -4594,7 +4594,8 @@ app.post('/api/test/mock-approved-payment', sensitiveLimiter, async (req, res) =
       .input('payer_email', dbSql.NVarChar, email)
       .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
     return res.json({ success: true, payment_id: pid });
-  } catch (err) {
+  } catch (e) {
+    void e;
     return res.status(500).json({ error: 'MOCK_FAIL' });
   }
 });
@@ -4627,7 +4628,8 @@ app.post('/api/test/seed-license-row', sensitiveLimiter, async (req, res) => {
       .input('email', dbSql.NVarChar, email)
       .query('MERGE dbo.user_licenses AS T USING (SELECT @uid AS uid, @aid AS aid, @email AS email) AS S ON (T.user_id=S.uid AND T.app_id=S.aid AND T.email=S.email AND T.hardware_id IS NULL) WHEN NOT MATCHED THEN INSERT (user_id, app_id, email, created_at) VALUES (S.uid, S.aid, S.email, SYSUTCDATETIME());');
     return res.json({ success: true });
-  } catch (err) {
+  } catch (e) {
+    void e;
     return res.status(500).json({ error: 'SEED_FAIL' });
   }
 });
@@ -4815,11 +4817,15 @@ app.get('/api/purchases/by-email', sensitiveLimiter, async (req, res) => {
 
     let used = 0;
     if (Number.isFinite(appId)) {
-      const usedRes = await pool.request().input('email', dbSql.NVarChar, email).input('aid', dbSql.Int, appId)
+      const usedReq = pool.request().input('email', dbSql.NVarChar, email).input('aid', dbSql.Int, appId);
+      if (uid) usedReq.input('uid', dbSql.Int, uid);
+      const usedRes = await usedReq
         .query('SELECT COUNT(*) AS cnt FROM dbo.user_licenses WHERE app_id=@aid AND hardware_id IS NOT NULL AND (email=@email' + (uid ? ' OR user_id=@uid' : '') + ')');
       used = usedRes.recordset[0]?.cnt || 0;
     } else {
-      const usedRes = await pool.request().input('email', dbSql.NVarChar, email)
+      const usedReq = pool.request().input('email', dbSql.NVarChar, email);
+      if (uid) usedReq.input('uid', dbSql.Int, uid);
+      const usedRes = await usedReq
         .query('SELECT COUNT(*) AS cnt FROM dbo.user_licenses WHERE hardware_id IS NOT NULL AND (email=@email' + (uid ? ' OR user_id=@uid' : '') + ')');
       used = usedRes.recordset[0]?.cnt || 0;
     }
