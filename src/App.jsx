@@ -38,11 +38,15 @@ function App() {
 
   return (
     <div 
-      className="app-background"
+      className="app-root app-background"
       style={{
-        backgroundImage: shouldShowHeroBackground ? `url(${heroBackground})` : 'none'
+        backgroundImage: shouldShowHeroBackground ? `url(${heroBackground})` : 'none',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column'
       }}
     >
+      <div className="app-content" style={{ flex: 1 }}>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/projetos" element={<ProjectsPage />} />
@@ -92,6 +96,19 @@ function App() {
         {/* Fallback: qualquer rota desconhecida redireciona para /admin */}
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
+      </div>
+      <footer className="site-footer">
+        <div className="footer-container">
+          <div className="footer-brand">CodeCraft Gen-Z</div>
+          <div className="footer-links">
+            <a href="/projetos">Projetos</a>
+            <a href="/aplicativos">Aplicativos</a>
+            <a href="/mentoria">Mentoria</a>
+            <a href="/ranking">Ranking</a>
+          </div>
+          <div className="footer-note">Craftando ideias em software com estilo</div>
+        </div>
+      </footer>
     </div>
   );
 }
