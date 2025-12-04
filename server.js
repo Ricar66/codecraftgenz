@@ -3887,6 +3887,18 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
       .input('app_id', dbSql.Int, Number(app_id))
       .query(`SELECT TOP 1 user_id FROM dbo.app_payments WHERE app_id=@app_id AND status='approved' AND payer_email=@email ORDER BY updated_at DESC`);
     userId = payUserRes.recordset[0]?.user_id || null;
+    if (userId === null) {
+      const ownerRes = await pool.request().input('id', dbSql.Int, Number(app_id)).query('SELECT owner_id AS ownerId FROM dbo.apps WHERE id=@id');
+      userId = ownerRes.recordset[0]?.ownerId ?? null;
+    }
+    if (userId === null) {
+      const userByEmail = await pool.request().input('email', dbSql.NVarChar, email).query('SELECT TOP 1 id FROM dbo.users WHERE email=@email');
+      userId = userByEmail.recordset[0]?.id ?? null;
+    }
+    if (userId === null) {
+      const anyUser = await pool.request().query('SELECT TOP 1 id FROM dbo.users ORDER BY id ASC');
+      userId = anyUser.recordset[0]?.id ?? null;
+    }
 
     const licensesQuery = await pool.request()
       .input('email', dbSql.NVarChar, email)
@@ -3902,13 +3914,21 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
 
     const allowedActivations = devBypass ? Math.max(1, totalCompras) : totalCompras;
     if (allowedActivations > existingLicenses.length) {
-    await pool.request()
-        .input('user_id', dbSql.Int, userId)
+      const upd = await pool.request()
         .input('app_id', dbSql.Int, Number(app_id))
         .input('email', dbSql.NVarChar, String(email))
         .input('hwid', dbSql.NVarChar, String(hardware_id))
         .input('key', dbSql.NVarChar, `LIC-${Date.now()}-${userId ?? 'anon'}`)
-        .query(`INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key, created_at) VALUES (@user_id, @app_id, @email, @hwid, @key, SYSUTCDATETIME())`);
+        .query('UPDATE dbo.user_licenses SET hardware_id=@hwid, license_key=@key, updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND email=@email AND hardware_id IS NULL');
+      if ((upd.rowsAffected?.[0] || 0) === 0) {
+        await pool.request()
+          .input('user_id', dbSql.Int, userId)
+          .input('app_id', dbSql.Int, Number(app_id))
+          .input('email', dbSql.NVarChar, String(email))
+          .input('hwid', dbSql.NVarChar, String(hardware_id))
+          .input('key', dbSql.NVarChar, `LIC-${Date.now()}-${userId ?? 'anon'}`)
+          .query('INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key, created_at) VALUES (@user_id, @app_id, @email, @hwid, @key, SYSUTCDATETIME())');
+      }
 
       return res.json({ licensed: true, message: 'Nova licença ativada com sucesso.', new_activation: true });
     }
@@ -4526,6 +4546,92 @@ app.get('/api/admin/app-payments/:pid', authenticate, authorizeAdmin, async (req
   }
 });
 
+app.post('/api/test/mock-approved-payment', sensitiveLimiter, async (req, res) => {
+  try {
+    if (String(process.env.ENABLE_TEST_PAYMENTS || '').toLowerCase() !== 'true') {
+      return res.status(403).json({ error: 'TEST_DISABLED' });
+    }
+    let body = req.body;
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+    const email = String(body?.email || '').trim();
+    const aid = parseInt(String(body?.app_id || ''), 10);
+    if (!email || !validateEmail(email) || !Number.isFinite(aid)) {
+      return res.status(400).json({ error: 'BAD_REQUEST' });
+    }
+    const pool = await getConnectionPool();
+    const appRes = await pool.request().input('id', dbSql.Int, aid).query('SELECT id, name, price FROM dbo.apps WHERE id=@id');
+    const appItem = appRes.recordset[0] || null;
+    if (!appItem) return res.status(404).json({ error: 'APP_NOT_FOUND' });
+    const pid = 'mock_' + Date.now();
+    const amount = Number(appItem.price || 0);
+    await pool.request()
+      .input('type', dbSql.NVarChar, 'purchase')
+      .input('app_id', dbSql.Int, aid)
+      .input('app_name', dbSql.NVarChar, appItem.name)
+      .input('status', dbSql.NVarChar, 'approved')
+      .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
+    await pool.request()
+      .input('pid', dbSql.NVarChar, pid)
+      .input('aid', dbSql.Int, aid)
+      .input('status', dbSql.NVarChar, 'approved')
+      .input('amount', dbSql.Decimal(18, 2), amount)
+      .input('currency', dbSql.NVarChar, 'BRL')
+      .input('email', dbSql.NVarChar, email)
+      .input('source', dbSql.NVarChar, 'mock')
+      .query('INSERT INTO dbo.app_payments (payment_id, app_id, user_id, status, amount, currency, payer_email, source) VALUES (@pid, @aid, NULL, @status, @amount, @currency, @email, @source)');
+    await pool.request()
+      .input('payment_id', dbSql.NVarChar, pid)
+      .input('preference_id', dbSql.NVarChar, null)
+      .input('app_id', dbSql.Int, aid)
+      .input('user_id', dbSql.Int, null)
+      .input('action', dbSql.NVarChar, 'insert_mock')
+      .input('from_status', dbSql.NVarChar, null)
+      .input('to_status', dbSql.NVarChar, 'approved')
+      .input('from_payment_id', dbSql.NVarChar, null)
+      .input('to_payment_id', dbSql.NVarChar, pid)
+      .input('amount', dbSql.Decimal(18, 2), amount)
+      .input('currency', dbSql.NVarChar, 'BRL')
+      .input('payer_email', dbSql.NVarChar, email)
+      .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
+    return res.json({ success: true, payment_id: pid });
+  } catch (err) {
+    return res.status(500).json({ error: 'MOCK_FAIL' });
+  }
+});
+
+app.post('/api/test/seed-license-row', sensitiveLimiter, async (req, res) => {
+  try {
+    if (String(process.env.ENABLE_TEST_PAYMENTS || '').toLowerCase() !== 'true') {
+      return res.status(403).json({ error: 'TEST_DISABLED' });
+    }
+    let body = req.body;
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+    const email = String(body?.email || '').trim();
+    const aid = parseInt(String(body?.app_id || ''), 10);
+    if (!email || !validateEmail(email) || !Number.isFinite(aid)) {
+      return res.status(400).json({ error: 'BAD_REQUEST' });
+    }
+    const pool = await getConnectionPool();
+    const appRes = await pool.request().input('id', dbSql.Int, aid).query('SELECT id, owner_id AS ownerId FROM dbo.apps WHERE id=@id');
+    const appItem = appRes.recordset[0] || null;
+    if (!appItem) return res.status(404).json({ error: 'APP_NOT_FOUND' });
+    let uid = appItem.ownerId || null;
+    if (uid === null) {
+      const anyUser = await pool.request().query('SELECT TOP 1 id FROM dbo.users ORDER BY id ASC');
+      uid = anyUser.recordset[0]?.id || null;
+    }
+    if (uid === null) return res.status(500).json({ error: 'NO_USER_AVAILABLE' });
+    await pool.request()
+      .input('uid', dbSql.Int, uid)
+      .input('aid', dbSql.Int, aid)
+      .input('email', dbSql.NVarChar, email)
+      .query('MERGE dbo.user_licenses AS T USING (SELECT @uid AS uid, @aid AS aid, @email AS email) AS S ON (T.user_id=S.uid AND T.app_id=S.aid AND T.email=S.email AND T.hardware_id IS NULL) WHEN NOT MATCHED THEN INSERT (user_id, app_id, email, created_at) VALUES (S.uid, S.aid, S.email, SYSUTCDATETIME());');
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: 'SEED_FAIL' });
+  }
+});
+
 /**
  * @api {post} /api/licenses/activate Ativar Licença
  * @apiDescription Ativa uma licença para um aplicativo e hardware específico.
@@ -4620,6 +4726,18 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
       return res.status(403).json({ error: 'Limite de licenças atingido para este e-mail. Compre mais no site.' });
     }
 
+    if (userId === null) {
+      const ownerRes = await pool.request().input('id', dbSql.Int, Number(appId)).query('SELECT owner_id AS ownerId FROM dbo.apps WHERE id=@id');
+      userId = ownerRes.recordset[0]?.ownerId ?? null;
+    }
+    if (userId === null) {
+      const userByEmail = await pool.request().input('email', dbSql.NVarChar, email).query('SELECT TOP 1 id FROM dbo.users WHERE email=@email');
+      userId = userByEmail.recordset[0]?.id ?? null;
+    }
+    if (userId === null) {
+      const anyUser = await pool.request().query('SELECT TOP 1 id FROM dbo.users ORDER BY id ASC');
+      userId = anyUser.recordset[0]?.id ?? null;
+    }
     let signature;
     const pem = process.env.PRIVATE_KEY_PEM || '';
     if (pem) {
