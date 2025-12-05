@@ -1971,7 +1971,10 @@ app.get('/api/crafters', async (req, res, next) => {
       search = '',
       active_only,
       order_by = 'nome',
-      order_direction = 'asc'
+      order_direction = 'asc',
+      nivel,
+      min_points,
+      max_points
     } = req.query;
 
     const pageNum = parseInt(page);
@@ -1979,7 +1982,7 @@ app.get('/api/crafters', async (req, res, next) => {
     const offset = (pageNum - 1) * limitNum;
 
     // Mapeamento e proteção de colunas de ordenação
-    const allowedSortColumns = {'nome': 'nome', 'email': 'email', 'points': 'pontos', 'active': 'ativo'};
+    const allowedSortColumns = {'nome': 'nome', 'email': 'email', 'points': 'pontos', 'active': 'ativo', 'nivel': 'nivel'};
     const sortColumn = allowedSortColumns[order_by] || 'nome';
     const sortDirection = order_direction.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
@@ -1995,6 +1998,20 @@ app.get('/api/crafters', async (req, res, next) => {
       whereClauses.push("ativo = 1");
     } else if (active_only === 'false') {
       whereClauses.push("ativo = 0");
+    }
+    if (nivel) {
+      whereClauses.push("nivel LIKE @nivel");
+      request.input('nivel', dbSql.NVarChar, `%${nivel}%`);
+    }
+    const minPts = parseInt(min_points);
+    const maxPts = parseInt(max_points);
+    if (!isNaN(minPts)) {
+      whereClauses.push("pontos >= @minPts");
+      request.input('minPts', dbSql.Int, minPts);
+    }
+    if (!isNaN(maxPts)) {
+      whereClauses.push("pontos <= @maxPts");
+      request.input('maxPts', dbSql.Int, maxPts);
     }
 
     const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';

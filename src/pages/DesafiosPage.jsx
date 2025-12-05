@@ -5,6 +5,7 @@ import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth';
 import { realtime } from '../lib/realtime';
+import { apiRequest } from '../lib/apiConfig.js';
 
 export default function DesafiosPage() {
   const [desafios, setDesafios] = useState([]);
@@ -17,13 +18,12 @@ export default function DesafiosPage() {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch('/api/desafios');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
+      const json = await apiRequest('/api/desafios', { method: 'GET' });
       const list = Array.isArray(json?.data) ? json.data : [];
       setDesafios(list);
-    } catch {
-      setError('Falha ao carregar desafios');
+    } catch (e) {
+      const msg = e?.message || 'Falha ao carregar desafios';
+      setError(msg);
       setDesafios([]);
     } finally {
       setLoading(false);
@@ -45,10 +45,7 @@ export default function DesafiosPage() {
     }
     const payload = { crafter_id: crafterId };
     try {
-      const r = await fetch(`/api/desafios/${id}/inscrever`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      const ok = r.ok;
-      const json = await r.json().catch(()=>({}));
-      if (!ok) throw new Error(json?.error || 'Falha ao inscrever');
+      const json = await apiRequest(`/api/desafios/${id}/inscrever`, { method: 'POST', body: JSON.stringify(payload) });
       alert('Inscrição realizada!');
       realtime.publish('desafios_changed', {});
     } catch (e) {
@@ -69,10 +66,7 @@ export default function DesafiosPage() {
     }
     const payload = { crafter_id: crafterId, delivery: { url, notes: '' } };
     try {
-      const r = await fetch(`/api/desafios/${d.id}/entregar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      const ok = r.ok;
-      const json = await r.json().catch(()=>({}));
-      if (!ok) throw new Error(json?.error || 'Falha ao enviar');
+      const json = await apiRequest(`/api/desafios/${d.id}/entregar`, { method: 'POST', body: JSON.stringify(payload) });
       alert('Entrega enviada!');
       realtime.publish('desafios_changed', {});
       setDeliverUrls(prev => ({ ...prev, [d.id]: '' }));

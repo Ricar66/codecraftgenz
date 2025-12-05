@@ -426,20 +426,7 @@ const AppHubPage = () => {
       </section>
       ) : null}
 
-      {/* Contato – rodapé profissional */}
-      <section className={styles.contactSection}>
-        <div className={styles.contactContainer}>
-          <div className={styles.contactInfo}>
-            <span className={styles.contactLabel}>Fale com a CodeCraft</span>
-            <span className={styles.contactPhone}>WhatsApp: +{whatsNumber}</span>
-          </div>
-          <div className={styles.contactActions}>
-            <a href={whatsLink} target="_blank" rel="noopener noreferrer" className={styles.whatsButton} aria-label="Abrir WhatsApp de contato">
-              WhatsApp
-            </a>
-          </div>
-        </div>
-      </section>
+      
 
       {/* Footer */}
       <footer className={styles.footer}>
