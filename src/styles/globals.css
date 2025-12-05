@@ -670,8 +670,6 @@ img {
 .gap-sm { gap: var(--espaco-sm); }
 .gap-md { gap: var(--espaco-md); }
 .gap-lg { gap: var(--espaco-lg); }
-.stack-sm { }
-.stack-md { }
 @media (max-width: 992px) {
   .stack-md { flex-direction: column !important; align-items: stretch !important; }
 }
