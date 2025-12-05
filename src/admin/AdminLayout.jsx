@@ -1159,7 +1159,7 @@ export function Ranking() {
             return filtered.length === 0 ? (
               <div className="empty">Nenhum crafter ativo</div>
             ) : filtered.map(c => (
-              <article key={c.id} className="crafterCard" onClick={(e)=>{ if (user?.role === 'admin') { setEditModal({ open:true, item:{ id:c.id, nome:c.nome || c.name || '', nivel:c.nivel || '', avatar_url:c.avatar_url || '', pontos: Number(c.points ?? c.pontos ?? 0), ativo: c.active ?? c.ativo ?? true }, saving:false, error:'' }); } }}>
+              <article key={c.id} className="crafterCard" onClick={()=>{ if (user?.role === 'admin') { setEditModal({ open:true, item:{ id:c.id, nome:c.nome || c.name || '', nivel:c.nivel || '', avatar_url:c.avatar_url || '', pontos: Number(c.points ?? c.pontos ?? 0), ativo: c.active ?? c.ativo ?? true }, saving:false, error:'' }); } }}>
                 <div className="crafterAvatar" aria-hidden="true">
                   {c.avatar_url ? (<img src={c.avatar_url} alt="" />) : null}
                 </div>
