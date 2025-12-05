@@ -107,6 +107,7 @@ export default function RankingPage() {
           {!loading && (top3 || []).length > 0 ? (
             <div className="podium" aria-label="Pódio dos três melhores" aria-live="polite">
               <div className="podium-item second">
+                <span className="medal medal-silver" aria-hidden="true">🥈</span>
                 <div className="photo" aria-hidden="true" style={{
                   backgroundImage: ((top3 || []).find(p=>p.place===2)?.avatar ? `url(${(top3 || []).find(p=>p.place===2)?.avatar})` : undefined),
                   backgroundSize: 'cover',
@@ -127,6 +128,7 @@ export default function RankingPage() {
                   backgroundSize: 'cover',
                   backgroundPosition: 'center'
                 }} />
+                <span className="medal medal-gold" aria-hidden="true">🥇</span>
                 <div className="crown" title="Campeão" />
                 <div className="label">
                   <span className="place">1º</span>
@@ -138,6 +140,7 @@ export default function RankingPage() {
                 </div>
               </div>
               <div className="podium-item third">
+                <span className="medal medal-bronze" aria-hidden="true">🥉</span>
                 <div className="photo" aria-hidden="true" style={{
                   backgroundImage: ((top3 || []).find(p=>p.place===3)?.avatar ? `url(${(top3 || []).find(p=>p.place===3)?.avatar})` : undefined),
                   backgroundSize: 'cover',
@@ -245,6 +248,10 @@ export default function RankingPage() {
         .podium { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: end; margin-top: 24px; position: relative; }
         .podium::before { content: ''; position: absolute; top: -8px; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, rgba(255,255,255,0.2), rgba(255,255,255,0.06)); }
         .podium-item { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.18); border-radius: var(--raio-lg); padding: 16px; text-align: center; position: relative; }
+        .podium-item .medal { position:absolute; top:-10px; right:-10px; font-size: 22px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
+        .medal-gold { color: #FFD700; }
+        .medal-silver { color: #C0C0C0; }
+        .medal-bronze { color: #CD7F32; }
         .podium-item .photo { width: 80px; height: 80px; border-radius: 999px; margin: 0 auto 10px; background: radial-gradient(circle, rgba(255,255,255,0.18), rgba(255,255,255,0.06)); border: 1px solid rgba(255,255,255,0.18); }
         .podium-item .label { display: grid; gap: 6px; }
         .podium-item .place { font-weight: 800; color: var(--texto-branco); }

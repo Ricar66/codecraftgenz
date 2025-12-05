@@ -6,7 +6,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import ProjectCard from '../components/Projects/ProjectCard.jsx';
 import { useAuth } from '../context/useAuth';
-import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo, useDesafios, DesafiosRepo, useFinance, FinanceRepo, useRanking, RankingRepo, useLogs } from '../hooks/useAdminRepo';
+import { useUsers, UsersRepo, useMentors, MentorsRepo, useProjects, ProjectsRepo, useDesafios, DesafiosRepo, useFinance, FinanceRepo, useRanking, RankingRepo, useLogs, useCrafters } from '../hooks/useAdminRepo';
 import { apiRequest } from '../lib/apiConfig.js';
 import { realtime } from '../lib/realtime';
 import { getAllApps, updateApp, createApp, deleteApp, uploadAppExecutable } from '../services/appsAPI.js';
@@ -770,11 +770,14 @@ export function Mentores() {
 
 export function Ranking() {
   const { data: rk, loading, error, refresh } = useRanking();
+  const { user } = useAuth();
+  const { crafters, pagination, loading: loadingCrafters, error: errorCrafters, reload: reloadCrafters, loadPage, search } = useCrafters({ active_only: 'true', limit: 20, order_by: 'points', order_direction: 'desc' });
   const [busy, setBusy] = React.useState(false);
   const [filters, setFilters] = React.useState({ search: '', min_points: '', max_points: '', active_only: true, sort: 'points' });
   const [crafterForm, setCrafterForm] = React.useState({ name: '', avatar_url: '', points: 0, active: true });
   const [crafterErrors, setCrafterErrors] = React.useState({});
   const [isCrafterModalOpen, setCrafterModalOpen] = React.useState(false);
+  const [editModal, setEditModal] = React.useState({ open: false, item: null, saving: false, error: '' });
 
   // Ensure rk is an object with expected properties
   const rankingData = React.useMemo(() => {
@@ -1131,6 +1134,96 @@ export function Ranking() {
           </div>
         )}
       </section>
+
+      {/* Crafters Ativos (Cards) */}
+      <section className="card" style={{ marginBottom: '2rem' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <h3>Crafters Ativos</h3>
+          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+            <input aria-label="Buscar por nome" placeholder="Buscar por nome" value={filters.search} onChange={e=>{ setFilters(prev=>({ ...prev, search: e.target.value })); search(e.target.value); }} className="search-input" />
+            <input aria-label="Especialização" placeholder="Especialização" value={filters.spec || ''} onChange={e=> setFilters(prev=>({ ...prev, spec: e.target.value }))} className="filter-input" />
+            <input aria-label="Pontos mín." type="number" placeholder="Pontos mín." value={filters.min_points} onChange={e=> setFilters(prev=>({ ...prev, min_points: e.target.value }))} className="filter-input" />
+            <input aria-label="Pontos máx." type="number" placeholder="Pontos máx." value={filters.max_points} onChange={e=> setFilters(prev=>({ ...prev, max_points: e.target.value }))} className="filter-input" />
+          </div>
+        </div>
+        {loadingCrafters && (<p>Carregando crafters...</p>)}
+        {errorCrafters && (<p role="alert">{errorCrafters}</p>)}
+        <div className="crafterGrid" aria-busy={loadingCrafters} aria-live="polite">
+          {(() => {
+            const list = Array.isArray(crafters) ? crafters : [];
+            const filtered = list
+              .filter(c => !filters.search || String(c.nome || c.name || '').toLowerCase().includes(String(filters.search).toLowerCase()))
+              .filter(c => !filters.spec || String(c.nivel || '').toLowerCase().includes(String(filters.spec).toLowerCase()))
+              .filter(c => !filters.min_points || Number(c.points ?? c.pontos ?? 0) >= Number(filters.min_points))
+              .filter(c => !filters.max_points || Number(c.points ?? c.pontos ?? 0) <= Number(filters.max_points));
+            return filtered.length === 0 ? (
+              <div className="empty">Nenhum crafter ativo</div>
+            ) : filtered.map(c => (
+              <article key={c.id} className="crafterCard" onClick={(e)=>{ if (user?.role === 'admin') { setEditModal({ open:true, item:{ id:c.id, nome:c.nome || c.name || '', nivel:c.nivel || '', avatar_url:c.avatar_url || '', pontos: Number(c.points ?? c.pontos ?? 0), ativo: c.active ?? c.ativo ?? true }, saving:false, error:'' }); } }}>
+                <div className="crafterAvatar" aria-hidden="true">
+                  {c.avatar_url ? (<img src={c.avatar_url} alt="" />) : null}
+                </div>
+                <div className="crafterInfo">
+                  <span className="crafterName">{c.nome || c.name}</span>
+                  <span className="crafterSpec">{c.nivel || '—'}</span>
+                  <div className="crafterMeta">
+                    <span className="crafterPoints">{Number(c.points ?? c.pontos ?? 0)} pts</span>
+                    <span className={`crafterStatus ${ (c.active ?? c.ativo) !== false ? 'active' : 'inactive'}`}>{(c.active ?? c.ativo) !== false ? 'Ativo' : 'Inativo'}</span>
+                  </div>
+                </div>
+                <div className="crafterActions">
+                  {user?.role === 'admin' && (
+                    <button className="btn btn-outline" onClick={(e)=>{ e.stopPropagation(); setEditModal({ open:true, item:{ id:c.id, nome:c.nome || c.name || '', nivel:c.nivel || '', avatar_url:c.avatar_url || '', pontos: Number(c.points ?? c.pontos ?? 0), ativo: c.active ?? c.ativo ?? true }, saving:false, error:'' }); }}>Editar</button>
+                  )}
+                </div>
+              </article>
+            ));
+          })()}
+        </div>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:12 }}>
+          <span style={{ color:'#A6A6A6' }}>Total: {pagination.total}</span>
+          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+            <button className="btn btn-outline" onClick={()=> loadPage(Math.max(1, Number(pagination.page||1)-1))} disabled={loadingCrafters || !pagination.hasPrev}>◀</button>
+            <span>Página {pagination.page} / {pagination.totalPages || 1}</span>
+            <button className="btn btn-outline" onClick={()=> loadPage(Number(pagination.page||1)+1)} disabled={loadingCrafters || !pagination.hasNext}>▶</button>
+          </div>
+        </div>
+      </section>
+
+      {editModal.open && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`Editar crafter ${editModal.item?.nome || ''}`}>
+          <div className="modal">
+            <h3 className="title">Editar Crafter</h3>
+            {editModal.error && (<p role="alert" style={{ color:'#FF6B6B' }}>❌ {editModal.error}</p>)}
+            <div className="formRow" style={{ gridTemplateColumns:'1fr 1fr' }}>
+              <input aria-label="Nome" placeholder="Nome" value={editModal.item?.nome || ''} onChange={(e)=> setEditModal(s=> ({ ...s, item: { ...s.item, nome: e.target.value } }))} required />
+              <input aria-label="Especialização" placeholder="Especialização" value={editModal.item?.nivel || ''} onChange={(e)=> setEditModal(s=> ({ ...s, item: { ...s.item, nivel: e.target.value } }))} />
+            </div>
+            <div className="formRow" style={{ gridTemplateColumns:'1fr 1fr' }}>
+              <input aria-label="Avatar URL" placeholder="Avatar URL" value={editModal.item?.avatar_url || ''} onChange={(e)=> setEditModal(s=> ({ ...s, item: { ...s.item, avatar_url: e.target.value } }))} />
+              <input aria-label="Pontos" type="number" placeholder="Pontos" value={editModal.item?.pontos ?? 0} onChange={(e)=> setEditModal(s=> ({ ...s, item: { ...s.item, pontos: Number(e.target.value) } }))} />
+            </div>
+            <label className="checkbox-row" style={{ alignSelf:'center' }}>
+              <input type="checkbox" checked={(editModal.item?.ativo ?? true)} onChange={(e)=> setEditModal(s=> ({ ...s, item: { ...s.item, ativo: e.target.checked } }))} /> Ativo
+            </label>
+            <div style={{ display:'flex', gap:8, marginTop:8 }}>
+              <button className="btn btn-primary" onClick={async ()=>{
+                const nome = String(editModal.item?.nome || '').trim();
+                if (!nome) { setEditModal(s=> ({ ...s, error: 'Nome é obrigatório' })); return; }
+                try {
+                  setEditModal(s=> ({ ...s, saving:true, error:'' }));
+                  await apiRequest(`/api/crafters/${editModal.item.id}`, { method:'PUT', body: JSON.stringify({ nome: editModal.item.nome, nivel: editModal.item.nivel, avatar_url: editModal.item.avatar_url, pontos: Number(editModal.item.pontos||0), ativo: !!editModal.item.ativo }) });
+                  setEditModal({ open:false, item:null, saving:false, error:'' });
+                  reloadCrafters();
+                } catch (e) {
+                  setEditModal(s=> ({ ...s, saving:false, error: e.message || 'Falha ao salvar' }));
+                }
+              }} disabled={editModal.saving || user?.role !== 'admin'}>{editModal.saving ? 'Salvando…' : 'Salvar'}</button>
+              <button className="btn btn-outline" onClick={()=> setEditModal({ open:false, item:null, saving:false, error:'' })}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <section className="filters-section" style={{ marginBottom: '2rem' }}>
@@ -1693,7 +1786,7 @@ export function Desafios() {
       ))}</tbody></table></div>
       <section className="card" style={{ marginTop: 16 }}>
         <h3 style={{ marginBottom: 12 }}>{editingId ? '✏️ Editar Desafio' : '➕ Novo Desafio'}</h3>
-        <div className="formRow" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
+        <div className="formRow" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
           <input aria-label="Nome" placeholder="Nome" value={form?.name||''} onChange={e=>setForm({...form,name:e.target.value})} />
           <input aria-label="Objetivo" placeholder="Objetivo" value={form?.objective||''} onChange={e=>setForm({...form,objective:e.target.value})} />
           <input aria-label="Descrição" placeholder="Descrição" value={form?.description||''} onChange={e=>setForm({...form,description:e.target.value})} />
