@@ -81,11 +81,6 @@ export default function RankingPage() {
 
   return (
     <div className="ranking-page" style={{
-      backgroundImage: `url(${heroBackground})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat',
-      backgroundAttachment: 'fixed',
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column'
@@ -239,19 +234,6 @@ export default function RankingPage() {
       </section>
       </div>
 
-      <footer className="apps-footer">
-        <div className="footer-container">
-          <div className="footer-brand">CodeCraft Gen-Z</div>
-          <div className="footer-links">
-            <a href="/projetos">Projetos</a>
-            <a href="/apps">Apps</a>
-            <a href="/mentoria">Mentoria</a>
-            <a href="/ranking">Ranking</a>
-          </div>
-          <div className="footer-note">Craftando ideias em software com estilo</div>
-        </div>
-      </footer>
-
       <style>{`
         .ranking-page { min-height: 100vh; width: 100%; background: transparent; }
         .section-block { padding: 40px 24px; }
@@ -302,15 +284,6 @@ export default function RankingPage() {
           .podium { gap: 10px; }
           .admin-form .form-row { grid-template-columns: 1fr; }
         }
-
-        .apps-footer { border-top: 1px solid rgba(255,255,255,0.12); background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.25)); }
-        .footer-container { max-width: 1200px; margin: 0 auto; padding: 16px; display:flex; align-items:center; justify-content: space-between; gap: 12px; }
-        .footer-brand { color: var(--texto-branco); font-weight: 800; letter-spacing: 0.5px; }
-        .footer-links { display:flex; gap: 12px; }
-        .footer-links a { color: var(--texto-gelo); }
-        .footer-links a:hover { color: var(--cor-terciaria); }
-        .footer-note { color: var(--texto-gelo); opacity: 0.8; }
-        @media (max-width: 640px) { .footer-container { flex-direction: column; align-items: flex-start; } }
       `}</style>
     </div>
   );
