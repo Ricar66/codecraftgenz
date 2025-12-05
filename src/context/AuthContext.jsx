@@ -2,13 +2,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { apiRequest } from '../lib/apiConfig.js';
+
 import { AuthContext } from './AuthCore';
 
 async function fetchMe() {
   try {
-    const resp = await fetch('/api/auth/me', { credentials: 'include' });
-    if (!resp.ok) return null;
-    const json = await resp.json();
+    const json = await apiRequest('/api/auth/me', { method: 'GET' });
     return json?.user || null;
   } catch { return null; }
 }

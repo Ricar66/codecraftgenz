@@ -1,7 +1,6 @@
 // src/pages/RankingPage.jsx
 import React, { useEffect, useState } from 'react';
 
-import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
 import { realtime } from '../lib/realtime';
 import { getRanking } from '../services/rankingAPI.js';

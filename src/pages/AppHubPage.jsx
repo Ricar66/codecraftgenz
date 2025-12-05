@@ -28,8 +28,6 @@ const AppHubPage = () => {
   const [fromCache, setFromCache] = useState(false);
   const [showCacheBadge, setShowCacheBadge] = useState(false);
   const showGrid = false;
-  const whatsNumber = (import.meta.env.VITE_WHATSAPP_NUMBER || '559999999999');
-  const whatsLink = `https://wa.me/${whatsNumber}`;
 
   useEffect(() => {
     loadApps();

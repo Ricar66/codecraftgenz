@@ -73,6 +73,7 @@ export async function apiRequest(endpoint, options = {}) {
         ...(import.meta.env.VITE_CSRF_SECRET ? { 'x-csrf-token': String(import.meta.env.VITE_CSRF_SECRET) } : {}),
         ...options.headers,
       },
+      credentials: options.credentials || 'include',
       ...options,
     });
 
@@ -154,6 +155,7 @@ export async function apiRequestMultipart(endpoint, formData, options = {}) {
       method: options.method || 'POST',
       headers,
       body: formData,
+      credentials: options.credentials || 'include',
       ...options,
     });
     if (!response.ok) {
