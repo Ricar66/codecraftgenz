@@ -4,8 +4,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth';
-import { realtime } from '../lib/realtime';
 import { apiRequest } from '../lib/apiConfig.js';
+import { realtime } from '../lib/realtime';
 
 export default function DesafiosPage() {
   const [desafios, setDesafios] = useState([]);
@@ -45,7 +45,7 @@ export default function DesafiosPage() {
     }
     const payload = { crafter_id: crafterId };
     try {
-      const json = await apiRequest(`/api/desafios/${id}/inscrever`, { method: 'POST', body: JSON.stringify(payload) });
+      await apiRequest(`/api/desafios/${id}/inscrever`, { method: 'POST', body: JSON.stringify(payload) });
       alert('Inscrição realizada!');
       realtime.publish('desafios_changed', {});
     } catch (e) {
@@ -66,7 +66,7 @@ export default function DesafiosPage() {
     }
     const payload = { crafter_id: crafterId, delivery: { url, notes: '' } };
     try {
-      const json = await apiRequest(`/api/desafios/${d.id}/entregar`, { method: 'POST', body: JSON.stringify(payload) });
+      await apiRequest(`/api/desafios/${d.id}/entregar`, { method: 'POST', body: JSON.stringify(payload) });
       alert('Entrega enviada!');
       realtime.publish('desafios_changed', {});
       setDeliverUrls(prev => ({ ...prev, [d.id]: '' }));

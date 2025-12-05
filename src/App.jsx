@@ -33,8 +33,7 @@ import RankingPage from './pages/RankingPage.jsx';
 function App() {
   const location = useLocation();
   
-  // Páginas que não devem ter o fundo hero
-  const pagesWithoutHeroBackground = ['/ranking'];
+  const pagesWithoutHeroBackground = [];
   const shouldShowHeroBackground = !pagesWithoutHeroBackground.includes(location.pathname);
 
   return (
