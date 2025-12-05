@@ -493,9 +493,15 @@ async function ensureUserLicensesSchema() {
       END;
     `);
     await pool.request().query(`IF COL_LENGTH('dbo.user_licenses', 'email') IS NULL BEGIN ALTER TABLE dbo.user_licenses ADD email NVARCHAR(256) NOT NULL CONSTRAINT DF_user_licenses_email DEFAULT ''; END;`);
-    await pool.request().query(`ALTER TABLE dbo.user_licenses ALTER COLUMN user_id INT NULL;`);
-    await pool.request().query(`ALTER TABLE dbo.user_licenses ALTER COLUMN hardware_id NVARCHAR(256) NULL;`);
-    await pool.request().query(`ALTER TABLE dbo.user_licenses ALTER COLUMN license_key NVARCHAR(MAX) NULL;`);
+    await pool.request().query(`
+      BEGIN TRY
+        ALTER TABLE dbo.user_licenses ALTER COLUMN user_id INT NULL;
+        ALTER TABLE dbo.user_licenses ALTER COLUMN hardware_id NVARCHAR(256) NULL;
+        ALTER TABLE dbo.user_licenses ALTER COLUMN license_key NVARCHAR(MAX) NULL;
+      END TRY
+      BEGIN CATCH
+      END CATCH
+    `);
     await pool.request().query(`IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_user_licenses_app_email' AND object_id=OBJECT_ID('dbo.user_licenses')) BEGIN CREATE INDEX IX_user_licenses_app_email ON dbo.user_licenses(app_id, email); END;`);
     console.log('✅ Esquema de dbo.user_licenses verificado/criado');
   } catch (err) {
