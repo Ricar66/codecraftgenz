@@ -78,6 +78,9 @@ export async function getCrafters(options = {}) {
     if (options.active_only !== undefined) params.append('active_only', options.active_only);
     if (options.order_by) params.append('order_by', options.order_by);
     if (options.order_direction) params.append('order_direction', options.order_direction);
+    if (options.nivel) params.append('nivel', options.nivel);
+    if (options.min_points !== undefined && options.min_points !== '') params.append('min_points', options.min_points);
+    if (options.max_points !== undefined && options.max_points !== '') params.append('max_points', options.max_points);
 
     const url = `/api/crafters${params.toString() ? '?' + params.toString() : ''}`;
     return await apiRequest(url, { method: 'GET' });
