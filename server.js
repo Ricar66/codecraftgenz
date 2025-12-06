@@ -526,6 +526,7 @@ async function ensureUserLicensesSchema() {
       END;
     `);
     await pool.request().query(`IF COL_LENGTH('dbo.user_licenses', 'email') IS NULL BEGIN ALTER TABLE dbo.user_licenses ADD email NVARCHAR(256) NOT NULL CONSTRAINT DF_user_licenses_email DEFAULT ''; END;`);
+    await pool.request().query(`IF COL_LENGTH('dbo.user_licenses', 'activated_at') IS NULL BEGIN ALTER TABLE dbo.user_licenses ADD activated_at DATETIME2 NULL; END;`);
     await pool.request().query(`
       BEGIN TRY
         ALTER TABLE dbo.user_licenses ALTER COLUMN user_id INT NULL;
@@ -536,9 +537,39 @@ async function ensureUserLicensesSchema() {
       END CATCH
     `);
     await pool.request().query(`IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_user_licenses_app_email' AND object_id=OBJECT_ID('dbo.user_licenses')) BEGIN CREATE INDEX IX_user_licenses_app_email ON dbo.user_licenses(app_id, email); END;`);
+    await pool.request().query(`IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_user_licenses_app_email_hwid' AND object_id=OBJECT_ID('dbo.user_licenses')) BEGIN CREATE INDEX IX_user_licenses_app_email_hwid ON dbo.user_licenses(app_id, email, hardware_id); END;`);
     console.log('✅ Esquema de dbo.user_licenses verificado/criado');
   } catch (err) {
     console.error('Erro ao garantir esquema de dbo.user_licenses:', err);
+  }
+}
+
+async function ensureLicenseActivationsSchema() {
+  try {
+    const pool = await getConnectionPool();
+    await pool.request().query(`
+      IF OBJECT_ID('dbo.license_activations', 'U') IS NULL
+      BEGIN
+        CREATE TABLE dbo.license_activations (
+          id INT IDENTITY(1,1) PRIMARY KEY,
+          app_id INT NOT NULL,
+          email NVARCHAR(256) NULL,
+          hardware_id NVARCHAR(256) NULL,
+          license_id INT NULL,
+          action NVARCHAR(32) NOT NULL,
+          status NVARCHAR(16) NOT NULL,
+          message NVARCHAR(256) NULL,
+          ip NVARCHAR(64) NULL,
+          user_agent NVARCHAR(512) NULL,
+          created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+        );
+        CREATE INDEX IX_license_activations_app_email ON dbo.license_activations(app_id, email);
+        CREATE INDEX IX_license_activations_hwid ON dbo.license_activations(hardware_id);
+      END;
+    `);
+    console.log('✅ Esquema de dbo.license_activations verificado/criado');
+  } catch (err) {
+    console.error('Erro ao garantir esquema de dbo.license_activations:', err);
   }
 }
 
@@ -4007,6 +4038,19 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
     const isSameHardware = existingLicenses.find(l => l.hardware_id === String(hardware_id));
 
     if (isSameHardware) {
+      const ua = String(req.headers['user-agent'] || '');
+      const ip = req.ip || req.connection?.remoteAddress || '';
+      await pool.request()
+        .input('app_id', dbSql.Int, Number(app_id))
+        .input('email', dbSql.NVarChar, String(email))
+        .input('hardware_id', dbSql.NVarChar, String(hardware_id))
+        .input('license_id', dbSql.Int, isSameHardware.id)
+        .input('action', dbSql.NVarChar, 'activate')
+        .input('status', dbSql.NVarChar, 'ok')
+        .input('message', dbSql.NVarChar, 'VALIDATED')
+        .input('ip', dbSql.NVarChar, String(ip))
+        .input('ua', dbSql.NVarChar, ua)
+        .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
       return res.json({ licensed: true, message: 'Licença ativa verificada.', license_key: `VALID-${userId}-${app_id}` });
     }
 
@@ -4017,7 +4061,7 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
         .input('email', dbSql.NVarChar, String(email))
         .input('hwid', dbSql.NVarChar, String(hardware_id))
         .input('key', dbSql.NVarChar, `LIC-${Date.now()}-${userId ?? 'anon'}`)
-        .query('UPDATE dbo.user_licenses SET hardware_id=@hwid, license_key=@key, updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND email=@email AND hardware_id IS NULL');
+        .query('UPDATE dbo.user_licenses SET hardware_id=@hwid, license_key=@key, activated_at=ISNULL(activated_at, SYSUTCDATETIME()), updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND email=@email AND hardware_id IS NULL');
       if ((upd.rowsAffected?.[0] || 0) === 0) {
         await pool.request()
           .input('user_id', dbSql.Int, userId)
@@ -4025,8 +4069,27 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
           .input('email', dbSql.NVarChar, String(email))
           .input('hwid', dbSql.NVarChar, String(hardware_id))
           .input('key', dbSql.NVarChar, `LIC-${Date.now()}-${userId ?? 'anon'}`)
-          .query('INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key, created_at) VALUES (@user_id, @app_id, @email, @hwid, @key, SYSUTCDATETIME())');
+          .query('INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key, activated_at, created_at) VALUES (@user_id, @app_id, @email, @hwid, @key, SYSUTCDATETIME(), SYSUTCDATETIME())');
       }
+      const ua = String(req.headers['user-agent'] || '');
+      const ip = req.ip || req.connection?.remoteAddress || '';
+      const licRow = await pool.request()
+        .input('app_id', dbSql.Int, Number(app_id))
+        .input('email', dbSql.NVarChar, String(email))
+        .input('hwid', dbSql.NVarChar, String(hardware_id))
+        .query('SELECT TOP 1 id FROM dbo.user_licenses WHERE app_id=@app_id AND email=@email AND hardware_id=@hwid ORDER BY id DESC');
+      const licId = licRow.recordset[0]?.id || null;
+      await pool.request()
+        .input('app_id', dbSql.Int, Number(app_id))
+        .input('email', dbSql.NVarChar, String(email))
+        .input('hardware_id', dbSql.NVarChar, String(hardware_id))
+        .input('license_id', dbSql.Int, licId)
+        .input('action', dbSql.NVarChar, 'activate')
+        .input('status', dbSql.NVarChar, 'ok')
+        .input('message', dbSql.NVarChar, 'NEW_ACTIVATION')
+        .input('ip', dbSql.NVarChar, String(ip))
+        .input('ua', dbSql.NVarChar, ua)
+        .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
 
       return res.json({ licensed: true, message: 'Nova licença ativada com sucesso.', new_activation: true });
     }
@@ -4073,6 +4136,20 @@ app.post('/api/verify-license', sensitiveLimiter, async (req, res) => {
 
     if (checkLicense.recordset.length > 0) { 
       console.log(`Acesso validado (Recorrente): ${email}`); 
+      const ua = String(req.headers['user-agent'] || '');
+      const ip = req.ip || req.connection?.remoteAddress || '';
+      const licId = checkLicense.recordset[0].id;
+      await pool.request()
+        .input('app_id', dbSql.Int, app_id)
+        .input('email', dbSql.NVarChar, email)
+        .input('hardware_id', dbSql.NVarChar, hardware_id)
+        .input('license_id', dbSql.Int, licId)
+        .input('action', dbSql.NVarChar, 'verify')
+        .input('status', dbSql.NVarChar, 'ok')
+        .input('message', dbSql.NVarChar, 'LICENSE_OK')
+        .input('ip', dbSql.NVarChar, String(ip))
+        .input('ua', dbSql.NVarChar, ua)
+        .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
       return res.json({ success: true, licensed: true, code: 'LICENSE_OK', message: "Acesso validado" }); 
     } 
 
@@ -4115,21 +4192,49 @@ app.post('/api/verify-license', sensitiveLimiter, async (req, res) => {
           userId = newUser.recordset[0].id; 
       } 
 
-      await pool.request() 
+      const ua = String(req.headers['user-agent'] || '');
+      const ip = req.ip || req.connection?.remoteAddress || '';
+      const ins = await pool.request() 
         .input('uid', dbSql.Int, userId) 
         .input('aid', dbSql.Int, app_id) 
+        .input('email', dbSql.NVarChar, email) 
         .input('hwid', dbSql.NVarChar, hardware_id) 
         .input('key', dbSql.NVarChar, `KEY-${Date.now()}`) 
         .query(` 
-          INSERT INTO dbo.user_licenses (user_id, app_id, hardware_id, license_key, created_at) 
-          VALUES (@uid, @aid, @hwid, @key, SYSUTCDATETIME()) 
+          INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key, activated_at, created_at) 
+          OUTPUT Inserted.id 
+          VALUES (@uid, @aid, @email, @hwid, @key, SYSUTCDATETIME(), SYSUTCDATETIME()) 
         `); 
-
+      const licId = ins.recordset[0]?.id || null;
+      await pool.request()
+        .input('app_id', dbSql.Int, app_id)
+        .input('email', dbSql.NVarChar, email)
+        .input('hardware_id', dbSql.NVarChar, hardware_id)
+        .input('license_id', dbSql.Int, licId)
+        .input('action', dbSql.NVarChar, 'activate')
+        .input('status', dbSql.NVarChar, 'ok')
+        .input('message', dbSql.NVarChar, 'LICENSE_BOUND')
+        .input('ip', dbSql.NVarChar, String(ip))
+        .input('ua', dbSql.NVarChar, ua)
+        .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
       console.log(`Novo registro vinculado: ${email} -> ${hardware_id}`); 
       return res.json({ success: true, licensed: true, new_activation: true, code: 'LICENSE_BOUND', message: "Registro atualizado e vinculado" }); 
     } 
 
     // Se chegou aqui, não tem compra ou todas estão em uso 
+    const ua = String(req.headers['user-agent'] || '');
+    const ip = req.ip || req.connection?.remoteAddress || '';
+    await pool.request()
+      .input('app_id', dbSql.Int, app_id)
+      .input('email', dbSql.NVarChar, email)
+      .input('hardware_id', dbSql.NVarChar, hardware_id)
+      .input('license_id', dbSql.Int, null)
+      .input('action', dbSql.NVarChar, 'verify')
+      .input('status', dbSql.NVarChar, 'denied')
+      .input('message', dbSql.NVarChar, 'LICENSE_LIMIT')
+      .input('ip', dbSql.NVarChar, String(ip))
+      .input('ua', dbSql.NVarChar, ua)
+      .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
     console.log(`Falha de acesso: ${email} (Sem saldo ou PC incorreto)`); 
     return res.status(403).json({ success: false, licensed: false, code: 'LICENSE_LIMIT', message: "Credenciais não encontradas ou limite atingido" }); 
 
@@ -4908,7 +5013,8 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
     const dupRes = await pool.request()
       .input('aid', dbSql.Int, Number(appId))
       .input('hwid', dbSql.NVarChar, String(hardwareId))
-      .query('SELECT TOP 1 id FROM dbo.user_licenses WHERE app_id=@aid AND hardware_id=@hwid');
+      .input('email', dbSql.NVarChar, String(email))
+      .query('SELECT TOP 1 id FROM dbo.user_licenses WHERE app_id=@aid AND hardware_id=@hwid AND email=@email');
     if (dupRes.recordset.length > 0) {
       return res.status(409).json({ error: "Esta máquina já possui uma licença ativa. Use a opção 'Tenho uma Chave'." });
     }
@@ -4954,13 +5060,27 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
       signature = 'LIC-' + Buffer.from(String(hardwareId) + String(email)).toString('base64');
     }
 
-    await pool.request()
+    const ua = String(req.headers['user-agent'] || '');
+    const ip = req.ip || req.connection?.remoteAddress || '';
+    const ins = await pool.request()
       .input('uid', dbSql.Int, userId)
       .input('aid', dbSql.Int, Number(appId))
       .input('email', dbSql.NVarChar, String(email))
       .input('hwid', dbSql.NVarChar, String(hardwareId))
       .input('key', dbSql.NVarChar, String(signature))
-      .query('INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key) VALUES (@uid, @aid, @email, @hwid, @key)');
+      .query('INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key, activated_at, created_at) OUTPUT Inserted.id VALUES (@uid, @aid, @email, @hwid, @key, SYSUTCDATETIME(), SYSUTCDATETIME())');
+    const licId = ins.recordset[0]?.id || null;
+    await pool.request()
+      .input('app_id', dbSql.Int, Number(appId))
+      .input('email', dbSql.NVarChar, String(email))
+      .input('hardware_id', dbSql.NVarChar, String(hardwareId))
+      .input('license_id', dbSql.Int, licId)
+      .input('action', dbSql.NVarChar, 'activate')
+      .input('status', dbSql.NVarChar, 'ok')
+      .input('message', dbSql.NVarChar, 'CLAIM_OK')
+      .input('ip', dbSql.NVarChar, String(ip))
+      .input('ua', dbSql.NVarChar, ua)
+      .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
 
     return res.json({ success: true, license_key: signature });
   } catch (err) {
@@ -5364,6 +5484,7 @@ getConnectionPool().then(async () => {
   await ensurePaymentsAuditPatch();
   await ensureAppPaymentsSchema();
   await ensureUserLicensesSchema();
+  await ensureLicenseActivationsSchema();
   await ensurePasswordResetsSchema();
   await ensureFeedbacksSchema();
   await ensureDesafiosSchema();
