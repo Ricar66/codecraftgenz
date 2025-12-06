@@ -4062,7 +4062,7 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
         .input('email', dbSql.NVarChar, String(email))
         .input('hwid', dbSql.NVarChar, String(hardware_id))
         .input('key', dbSql.NVarChar, `LIC-${Date.now()}-${userId ?? 'anon'}`)
-        .query('UPDATE dbo.user_licenses SET hardware_id=@hwid, license_key=@key, activated_at=ISNULL(activated_at, SYSUTCDATETIME()), updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND email=@email AND hardware_id IS NULL');
+        .query("UPDATE dbo.user_licenses SET hardware_id=@hwid, license_key=@key, activated_at=ISNULL(activated_at, SYSUTCDATETIME()), updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND email=@email AND (hardware_id IS NULL OR LTRIM(RTRIM(hardware_id))='')");
       if ((upd.rowsAffected?.[0] || 0) === 0) {
         await pool.request()
           .input('user_id', dbSql.Int, userId)
@@ -4171,7 +4171,7 @@ app.post('/api/verify-license', sensitiveLimiter, async (req, res) => {
         SELECT COUNT(*) as total 
         FROM dbo.user_licenses l 
         JOIN dbo.users u ON l.user_id = u.id 
-        WHERE u.email = @email AND l.app_id = @app_id AND l.hardware_id IS NOT NULL 
+        WHERE u.email = @email AND l.app_id = @app_id AND l.hardware_id IS NOT NULL AND LTRIM(RTRIM(l.hardware_id)) <> '' 
       `); 
 
     const totalPaid = purchases.recordset[0].total; 
@@ -4979,7 +4979,7 @@ app.post('/api/test/provision-license', sensitiveLimiter, async (req, res) => {
     const unbound = await pool.request()
       .input('aid', dbSql.Int, aid)
       .input('email', dbSql.NVarChar, email)
-      .query('SELECT TOP 1 id FROM dbo.user_licenses WHERE app_id=@aid AND email=@email AND hardware_id IS NULL ORDER BY id DESC');
+      .query("SELECT TOP 1 id FROM dbo.user_licenses WHERE app_id=@aid AND email=@email AND (hardware_id IS NULL OR LTRIM(RTRIM(hardware_id))='') ORDER BY id DESC");
     if (unbound.recordset.length) {
       return res.json({ success: true, provisioned: true, message: 'Licença já disponível para ativação.' });
     }
@@ -4987,7 +4987,7 @@ app.post('/api/test/provision-license', sensitiveLimiter, async (req, res) => {
     const boundCountQ = await pool.request()
       .input('aid', dbSql.Int, aid)
       .input('email', dbSql.NVarChar, email)
-      .query('SELECT COUNT(*) AS total FROM dbo.user_licenses WHERE app_id=@aid AND email=@email AND hardware_id IS NOT NULL');
+      .query("SELECT COUNT(*) AS total FROM dbo.user_licenses WHERE app_id=@aid AND email=@email AND hardware_id IS NOT NULL AND LTRIM(RTRIM(hardware_id)) <> ''");
     const used = boundCountQ.recordset[0]?.total || 0;
     if (totalPaid > used) {
       const ins = await pool.request()
@@ -4995,14 +4995,14 @@ app.post('/api/test/provision-license', sensitiveLimiter, async (req, res) => {
         .input('aid', dbSql.Int, aid)
         .input('email', dbSql.NVarChar, email)
         .input('key', dbSql.NVarChar, `LIC-${Date.now()}-preprov`)
-        .query('INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key, created_at) OUTPUT Inserted.id VALUES (@uid, @aid, @email, NULL, @key, SYSUTCDATETIME())');
+        .query("INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key, created_at) OUTPUT Inserted.id VALUES (@uid, @aid, @email, '', @key, SYSUTCDATETIME())");
       const ua = String(req.headers['user-agent'] || '');
       const ip = req.ip || req.connection?.remoteAddress || '';
       const licId = ins.recordset[0]?.id || null;
       await pool.request()
         .input('app_id', dbSql.Int, aid)
         .input('email', dbSql.NVarChar, email)
-        .input('hardware_id', dbSql.NVarChar, null)
+        .input('hardware_id', dbSql.NVarChar, '')
         .input('license_id', dbSql.Int, licId)
         .input('action', dbSql.NVarChar, 'provision')
         .input('status', dbSql.NVarChar, 'ok')
@@ -5040,13 +5040,13 @@ app.post('/api/test/release-license', sensitiveLimiter, async (req, res) => {
     if (!row) return res.status(404).json({ success: false, error: 'NO_BOUND_LICENSE' });
     await pool.request()
       .input('id', dbSql.Int, row.id)
-      .query('UPDATE dbo.user_licenses SET hardware_id=NULL, activated_at=NULL, updated_at=SYSUTCDATETIME() WHERE id=@id');
+      .query("UPDATE dbo.user_licenses SET hardware_id='', activated_at=NULL, updated_at=SYSUTCDATETIME() WHERE id=@id");
     const ua = String(req.headers['user-agent'] || '');
     const ip = req.ip || req.connection?.remoteAddress || '';
     await pool.request()
       .input('app_id', dbSql.Int, aid)
       .input('email', dbSql.NVarChar, email)
-      .input('hardware_id', dbSql.NVarChar, null)
+      .input('hardware_id', dbSql.NVarChar, '')
       .input('license_id', dbSql.Int, row.id)
       .input('action', dbSql.NVarChar, 'release')
       .input('status', dbSql.NVarChar, 'ok')
