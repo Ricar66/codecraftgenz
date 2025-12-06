@@ -3586,7 +3586,7 @@ app.get('/api/apps/:id/purchase/status', sensitiveLimiter, async (req, res) => {
             products: meta.products || [{ title: appItem.name, quantity: 1, unit_price: Number(appItem.price || 0) }],
             customer: { email: req.user?.email, name: req.user?.name },
           };
-          await mercadoLivre.sendTransaction(tx, { external_reference: String(id), metadata: { payment_id } });
+          await mercadoLivre.sendTransaction(tx, { external_reference: String(payment_id), metadata: { payment_id } });
         } catch (syncErr) {
           console.warn('Sync Mercado Livre falhou:', syncErr?.message || syncErr);
         }
@@ -3731,7 +3731,7 @@ app.get('/api/apps/:id/purchase/status', sensitiveLimiter, async (req, res) => {
         products: meta.products || [{ title: appItem.name, quantity: 1, unit_price: Number(appItem.price || 0) }],
         customer: { email: req.user?.email, name: req.user?.name },
       };
-      await mercadoLivre.sendTransaction(tx, { external_reference: String(id), metadata: { source: 'status_check' } });
+      await mercadoLivre.sendTransaction(tx, { external_reference: String(paymentsByApp.get(id)?.payment_id || id), metadata: { source: 'status_check', payment_id: paymentsByApp.get(id)?.payment_id } });
     } catch (syncErr) {
       console.warn('Sync Mercado Livre (status) falhou, mantendo fallback:', syncErr?.message || syncErr);
     }
@@ -4536,7 +4536,7 @@ app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
           products: meta.products || items.map(i => ({ title: i.title, quantity: i.quantity, unit_price: i.unit_price })),
           customer: { email: payerEmail, name: req.user?.name },
         };
-        await mercadoLivre.sendTransaction(tx, { external_reference: String(id), metadata: { payment_id } });
+        await mercadoLivre.sendTransaction(tx, { external_reference: String(payment_id), metadata: { payment_id } });
       } catch (syncErr) {
         console.warn('Sync Mercado Livre falhou (pagamento direto):', syncErr?.message || syncErr);
       }
@@ -5726,7 +5726,7 @@ async function handlePaymentWebhook(paymentId) {
       products: [{ title: appItem?.name || String(appId), quantity: 1, unit_price: Number(appItem?.price || 0) }],
       customer: { email: pay?.payer?.email || undefined, name: undefined },
     };
-    await mercadoLivre.sendTransaction(tx, { external_reference: String(appId), metadata: { payment_id: String(paymentId), source: 'webhook' } });
+    await mercadoLivre.sendTransaction(tx, { external_reference: String(paymentId), metadata: { payment_id: String(paymentId), source: 'webhook' } });
   } catch (syncErr) {
     console.warn('Webhook: falha ao sincronizar com Mercado Livre:', syncErr?.message || syncErr);
   }

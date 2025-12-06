@@ -167,13 +167,20 @@ export async function sendTransaction(tx, context = {}) {
     throw new Error('Dados da transação inválidos: ' + errors.join('; '));
   }
   const token = await ensureAccessToken();
+  const ctxPidRaw = context?.metadata?.payment_id || context?.payment_id || '';
+  const ctxPid = String(ctxPidRaw || '').trim();
+  const extRef = String(context.external_reference || ctxPid || '').trim();
   const payload = {
-    external_reference: String(context.external_reference || ''),
+    external_reference: extRef,
     payer: { email: tx.customer.email, name: tx.customer.name || undefined },
     items: tx.products.map(p => ({ title: p.title, quantity: p.quantity, unit_price: Number(p.unit_price), currency_id: 'BRL' })),
     transaction_amount: Number(tx.amount),
     metadata: { source: 'codecraft', ...context?.metadata },
   };
+  if (ctxPid) {
+    const pidNum = Number(ctxPid);
+    payload.payments = [{ id: Number.isFinite(pidNum) ? pidNum : ctxPid }];
+  }
   state.log.info('Enviando transação para sync', { url: state.syncUrl, ref: payload.external_reference, amount: payload.transaction_amount });
   const resp = await fetch(state.syncUrl, {
     method: 'POST',
