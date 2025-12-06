@@ -105,7 +105,7 @@ app.use(cors({
   },
   methods: ['GET','HEAD','PUT','PATCH','POST','DELETE'],
   allowedHeaders: ['Content-Type','Authorization','x-csrf-token','x-admin-reset-token','X-Device-Id','x-device-id','X-Tracking-Id','x-tracking-id'],
-  credentials: false,
+  credentials: true,
 }));
 if (isProd) {
   app.use(helmet.hsts({ maxAge: 15552000 }));
@@ -809,10 +809,11 @@ app.post('/api/auth/login', loginLimiter, validateBody(loginSchema), (req, res) 
       const token = jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
       res.cookie('token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: isProd,
+        sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000,
         path: '/',
+        ...(process.env.COOKIE_DOMAIN ? { domain: String(process.env.COOKIE_DOMAIN).trim() } : {}),
       });
       logEvent('auth_login_success', { user_id: user.id, role: user.role });
       return res.json({ success: true, user });
@@ -855,9 +856,10 @@ app.post('/api/auth/logout', (req, res) => {
   try {
     res.clearCookie('token', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: isProd,
+      sameSite: 'lax',
       path: '/',
+      ...(process.env.COOKIE_DOMAIN ? { domain: String(process.env.COOKIE_DOMAIN).trim() } : {}),
     });
     return res.json({ success: true });
   } catch {
