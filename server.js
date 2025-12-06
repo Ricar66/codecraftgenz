@@ -5019,6 +5019,48 @@ app.post('/api/test/provision-license', sensitiveLimiter, async (req, res) => {
   }
 });
 
+app.post('/api/test/release-license', sensitiveLimiter, async (req, res) => {
+  try {
+    if (String(process.env.ENABLE_TEST_LICENSE_ADMIN || '').toLowerCase() !== 'true') {
+      return res.status(403).json({ error: 'ADMIN_TEST_DISABLED' });
+    }
+    let body = req.body;
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+    const email = String(body?.email || '').trim();
+    const aid = parseInt(String(body?.app_id || process.env.COINCRAFT_APP_ID || ''), 10);
+    if (!email || !validateEmail(email) || !Number.isFinite(aid)) {
+      return res.status(400).json({ error: 'BAD_REQUEST' });
+    }
+    const pool = await getConnectionPool();
+    const licQ = await pool.request()
+      .input('aid', dbSql.Int, aid)
+      .input('email', dbSql.NVarChar, email)
+      .query('SELECT TOP 1 id, hardware_id FROM dbo.user_licenses WHERE app_id=@aid AND email=@email AND hardware_id IS NOT NULL ORDER BY updated_at DESC');
+    const row = licQ.recordset[0] || null;
+    if (!row) return res.status(404).json({ success: false, error: 'NO_BOUND_LICENSE' });
+    await pool.request()
+      .input('id', dbSql.Int, row.id)
+      .query('UPDATE dbo.user_licenses SET hardware_id=NULL, activated_at=NULL, updated_at=SYSUTCDATETIME() WHERE id=@id');
+    const ua = String(req.headers['user-agent'] || '');
+    const ip = req.ip || req.connection?.remoteAddress || '';
+    await pool.request()
+      .input('app_id', dbSql.Int, aid)
+      .input('email', dbSql.NVarChar, email)
+      .input('hardware_id', dbSql.NVarChar, null)
+      .input('license_id', dbSql.Int, row.id)
+      .input('action', dbSql.NVarChar, 'release')
+      .input('status', dbSql.NVarChar, 'ok')
+      .input('message', dbSql.NVarChar, 'LICENSE_RELEASED')
+      .input('ip', dbSql.NVarChar, String(ip))
+      .input('ua', dbSql.NVarChar, ua)
+      .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
+    return res.json({ success: true, released: true });
+  } catch (err) {
+    console.warn('Falha ao liberar licença de teste:', err?.message || err);
+    return res.status(500).json({ success: false, error: 'RELEASE_FAIL' });
+  }
+});
+
 function startTestLicenseMonitor() {
   const enabled = String(process.env.ENABLE_TEST_LICENSE_MONITOR || '').toLowerCase() === 'true';
   const email = String(process.env.TEST_LICENSE_EMAIL || '').trim();
