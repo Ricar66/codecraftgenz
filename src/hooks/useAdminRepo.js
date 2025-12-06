@@ -522,7 +522,7 @@ export const DesafiosRepo = {
     try {
       const data = await apiRequest('/api/desafios', { method: 'POST', body: JSON.stringify(desafio) });
       realtime.publish('desafios_changed', { desafios: null });
-      return { ok: true, desafio: data.challenge || data.data || data };
+      return { ok: true, desafio: data.data?.challenge || data.challenge || data.data || data };
     } catch (err) {
       return { ok: false, error: err.message };
     }
@@ -532,7 +532,7 @@ export const DesafiosRepo = {
     try {
       const data = await apiRequest(`/api/desafios/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
       realtime.publish('desafios_changed', { desafios: null });
-      return { ok: true, desafio: data.challenge || data.data || data };
+      return { ok: true, desafio: data.data?.challenge || data.challenge || data.data || data };
     } catch (err) {
       return { ok: false, error: err.message };
     }
@@ -542,7 +542,7 @@ export const DesafiosRepo = {
     try {
       const data = await apiRequest(`/api/desafios/${id}/visibility`, { method: 'PUT' });
       realtime.publish('desafios_changed', { desafios: null });
-      return { ok: true, desafio: data.challenge || data.data || data };
+      return { ok: true, desafio: data.data?.challenge || data.challenge || data.data || data };
     } catch (err) {
       return { ok: false, error: err.message };
     }
@@ -554,7 +554,7 @@ export const DesafiosRepo = {
       const url = isUpdate ? `/api/desafios/${desafio.id}` : '/api/desafios';
       const data = await apiRequest(url, { method: isUpdate ? 'PUT' : 'POST', body: JSON.stringify(desafio) });
       realtime.publish('desafios_changed', { desafios: null });
-      return { ok: true, desafio: data.challenge || data.data || data };
+      return { ok: true, desafio: data.data?.challenge || data.challenge || data.data || data };
     } catch (err) {
       return { ok: false, error: err.message };
     }
@@ -564,7 +564,7 @@ export const DesafiosRepo = {
     try {
       const data = await apiRequest(`/api/submissions/${submissionId}/review`, { method:'PUT', body: JSON.stringify(review) });
       realtime.publish('desafios_changed', { desafios: null });
-      return { ok: true, submission: data.submission || data.data || data };
+      return { ok: true, submission: data.data?.submission || data.submission || data.data || data };
     } catch (err) {
       return { ok: false, error: err.message };
     }

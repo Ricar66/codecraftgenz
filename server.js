@@ -452,6 +452,39 @@ function mapUserRow(row) {
   };
 }
 
+function parseJsonSafe(s, fallback) {
+  try {
+    if (s == null) return fallback;
+    const t = typeof s === 'string' ? s : String(s);
+    const v = t.trim();
+    if (!v) return fallback;
+    return JSON.parse(v);
+  } catch { return fallback; }
+}
+
+function mapChallengeRow(row) {
+  const tags = parseJsonSafe(row.tags_json, null);
+  const tagsArr = Array.isArray(tags) ? tags : (String(row.tags || '').split(',').map(s => s.trim()).filter(Boolean));
+  return {
+    id: row.id,
+    name: row.name,
+    objective: row.objective,
+    description: row.description,
+    deadline: row.deadline,
+    difficulty: row.difficulty,
+    tags: tagsArr,
+    reward: row.reward,
+    base_points: Number(row.base_points || 0),
+    delivery_type: row.delivery_type,
+    thumb_url: row.thumb_url,
+    status: row.status,
+    visible: row.visible !== false && row.visible !== 0,
+    created_by: row.created_by,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
 /**
  * Garante que a tabela `dbo.app_payments` possua a coluna `mp_response_json`.
  * Utilizada para armazenar o JSON bruto de resposta do Mercado Pago.
@@ -902,7 +935,10 @@ app.post('/api/auth/password-reset/request', sensitiveLimiter, async (req, res) 
     if (process.env.NODE_ENV !== 'production') {
       return res.json({ success: true, reset_link: link });
     }
-    return res.json({ success: true });
+    const top3Res = await pool.request().query(
+      "SELECT rt.crafter_id, rt.position, rt.reward, c.nome AS name, c.pontos AS points, c.avatar_url FROM dbo.ranking_top3 rt LEFT JOIN dbo.crafters c ON c.id = rt.crafter_id WHERE rt.position IN (1,2,3) ORDER BY rt.position ASC"
+    );
+    return res.json({ success: true, data: { top3: top3Res.recordset } });
   } catch (err) {
     console.error('Erro em password-reset/request:', err);
     return res.status(500).json({ error: 'Erro interno' });
@@ -2280,7 +2316,7 @@ app.get('/api/ranking', async (req, res, next) => {
       
     // 2. Buscar o Top 3 (armazenado separadamente)
     const top3Result = await pool.request()
-      .query("SELECT crafter_id, position, reward FROM dbo.ranking_top3 WHERE position IN (1, 2, 3)");
+      .query("SELECT crafter_id, position, reward FROM dbo.ranking_top3 WHERE position IN (1, 2, 3) ORDER BY position ASC");
     
     const response = {
       crafters: crafters, // Lista completa para o ranking
@@ -2335,6 +2371,43 @@ app.put('/api/ranking/points/:crafterId', authenticate, authorizeAdmin, async (r
     
   } catch (err) {
     console.error('Erro ao atualizar pontos:', err);
+    next(err);
+  }
+});
+
+app.put('/api/ranking/top3', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    let payload = req.body;
+    if (typeof payload === 'string') {
+      try { payload = JSON.parse(payload); } catch { payload = {}; }
+    }
+    const arr = Array.isArray(payload?.top3) ? payload.top3 : (Array.isArray(payload) ? payload : []);
+    if (!Array.isArray(arr) || arr.length !== 3) {
+      return res.status(400).json({ error: 'Top3 inválido' });
+    }
+    const positions = arr.map(x => Number(x.position));
+    const ids = arr.map(x => Number(x.crafter_id));
+    if (positions.some(p => ![1,2,3].includes(p)) || new Set(positions).size !== 3) {
+      return res.status(400).json({ error: 'Posições inválidas' });
+    }
+    if (ids.some(id => !id || isNaN(id)) || new Set(ids).size !== 3) {
+      return res.status(400).json({ error: 'Crafters inválidos ou duplicados' });
+    }
+
+    const pool = await getConnectionPool();
+    await pool.request().query('DELETE FROM dbo.ranking_top3 WHERE position IN (1,2,3)');
+
+    for (const item of arr) {
+      const r = pool.request()
+        .input('crafter_id', dbSql.Int, Number(item.crafter_id))
+        .input('position', dbSql.Int, Number(item.position))
+        .input('reward', dbSql.NVarChar, String(item.reward || ''));
+      await r.query('INSERT INTO dbo.ranking_top3 (crafter_id, position, reward) VALUES (@crafter_id, @position, @reward)');
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Erro ao atualizar top3:', err);
     next(err);
   }
 });
@@ -4963,11 +5036,238 @@ app.get('/api/purchases/by-email', sensitiveLimiter, async (req, res) => {
   }
 });
 
+app.get('/api/desafios', async (req, res, next) => {
+  try {
+    const pool = await getConnectionPool();
+    const isAdmin = !!req.headers['authorization'];
+    const allFlag = String(req.query.all || '').toLowerCase();
+    const visibleFlag = String(req.query.visible || '').toLowerCase();
+    let where = '';
+    if (isAdmin && allFlag === '1') {
+      where = '';
+    } else if (visibleFlag === 'true') {
+      where = 'WHERE visible = 1';
+    } else {
+      where = "WHERE visible = 1 AND (status = 'active' OR status = 'draft')";
+    }
+    const result = await pool.request().query(`SELECT id, name, objective, description, deadline, difficulty, tags, reward, base_points, delivery_type, thumb_url, status, visible, created_at, updated_at FROM dbo.desafios ${where} ORDER BY created_at DESC`);
+    const list = (result.recordset || []).map(mapChallengeRow);
+    res.json({ success: true, data: list });
+  } catch (err) { next(err); }
+});
+
+app.get('/api/desafios/:id', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const pool = await getConnectionPool();
+    const chRes = await pool.request().input('id', dbSql.Int, id).query('SELECT id, name, objective, description, deadline, difficulty, tags, reward, base_points, delivery_type, thumb_url, status, visible, created_at, updated_at FROM dbo.desafios WHERE id=@id');
+    if (!chRes.recordset.length) return res.status(404).json({ error: 'Desafio não encontrado' });
+    const challenge = mapChallengeRow(chRes.recordset[0]);
+    const regsRes = await pool.request().input('id', dbSql.Int, id).query('SELECT id, desafio_id, crafter_id, at FROM dbo.desafio_registrations WHERE desafio_id=@id ORDER BY at DESC');
+    const subsRes = await pool.request().input('id', dbSql.Int, id).query('SELECT id, desafio_id, crafter_id, delivery, status, score, review, created_at, updated_at FROM dbo.desafio_submissions WHERE desafio_id=@id ORDER BY created_at DESC');
+    const registrations = (regsRes.recordset || []).map(r => ({ id: r.id, desafio_id: r.desafio_id, crafter_id: r.crafter_id, at: r.at }));
+    const submissions = (subsRes.recordset || []).map(s => ({ id: s.id, desafio_id: s.desafio_id, crafter_id: s.crafter_id, delivery: parseJsonSafe(s.delivery, {}), status: s.status, score: s.score, review: parseJsonSafe(s.review, {}), created_at: s.created_at, updated_at: s.updated_at }));
+    res.json({ success: true, data: { challenge, registrations, submissions } });
+  } catch (err) { next(err); }
+});
+
+const desafioSchema = z.object({
+  name: z.string().min(1),
+  objective: z.string().optional(),
+  description: z.string().optional(),
+  deadline: z.string().optional(),
+  difficulty: z.enum(['starter','intermediate','pro']).optional(),
+  tags: z.array(z.string()).optional(),
+  reward: z.string().optional(),
+  base_points: z.number().int().min(0).optional(),
+  delivery_type: z.enum(['link','github','file']).optional(),
+  thumb_url: z.string().optional(),
+  status: z.enum(['draft','active','closed','archived']).optional(),
+  visible: z.boolean().optional()
+});
+
+app.post('/api/desafios', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    let payload = req.body;
+    if (typeof payload === 'string') { try { payload = JSON.parse(payload); } catch { payload = {}; } }
+    const parsed = desafioSchema.safeParse(payload || {});
+    if (!parsed.success) return res.status(400).json({ error: 'VALIDATION_ERROR' });
+    const d = parsed.data;
+    const pool = await getConnectionPool();
+    const tagsJson = d.tags ? JSON.stringify(d.tags) : null;
+    const r = await pool.request()
+      .input('name', dbSql.NVarChar, d.name)
+      .input('objective', dbSql.NVarChar, d.objective || null)
+      .input('description', dbSql.NVarChar, d.description || null)
+      .input('deadline', dbSql.DateTime2, d.deadline ? new Date(d.deadline) : null)
+      .input('difficulty', dbSql.NVarChar, d.difficulty || null)
+      .input('tags', dbSql.NVarChar, Array.isArray(d.tags) ? d.tags.join(',') : null)
+      .input('tags_json', dbSql.NVarChar, tagsJson)
+      .input('reward', dbSql.NVarChar, d.reward || null)
+      .input('base_points', dbSql.Int, Number(d.base_points || 0))
+      .input('delivery_type', dbSql.NVarChar, d.delivery_type || null)
+      .input('thumb_url', dbSql.NVarChar, d.thumb_url || null)
+      .input('status', dbSql.NVarChar, d.status || 'draft')
+      .input('visible', dbSql.Bit, d.visible === false ? 0 : 1)
+      .input('created_by', dbSql.Int, req.user?.id || null)
+      .query(`INSERT INTO dbo.desafios (name, objective, description, deadline, difficulty, tags, tags_json, reward, base_points, delivery_type, thumb_url, status, visible, created_by)
+              OUTPUT Inserted.*
+              VALUES (@name,@objective,@description,@deadline,@difficulty,@tags,@tags_json,@reward,@base_points,@delivery_type,@thumb_url,@status,@visible,@created_by)`);
+    const row = r.recordset[0];
+    res.status(201).json({ success: true, data: { challenge: mapChallengeRow(row) } });
+  } catch (err) { next(err); }
+});
+
+app.put('/api/desafios/:id', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    let payload = req.body;
+    if (typeof payload === 'string') { try { payload = JSON.parse(payload); } catch { payload = {}; } }
+    const parsed = desafioSchema.partial().safeParse(payload || {});
+    if (!parsed.success) return res.status(400).json({ error: 'VALIDATION_ERROR' });
+    const d = parsed.data;
+    const pool = await getConnectionPool();
+    const currRes = await pool.request().input('id', dbSql.Int, id).query('SELECT * FROM dbo.desafios WHERE id=@id');
+    if (!currRes.recordset.length) return res.status(404).json({ error: 'Desafio não encontrado' });
+    const curr = currRes.recordset[0];
+    const next = {
+      name: d.name ?? curr.name,
+      objective: d.objective ?? curr.objective,
+      description: d.description ?? curr.description,
+      deadline: d.deadline ? new Date(d.deadline) : curr.deadline,
+      difficulty: d.difficulty ?? curr.difficulty,
+      tags_str: Array.isArray(d.tags) ? d.tags.join(',') : curr.tags,
+      tags_json: Array.isArray(d.tags) ? JSON.stringify(d.tags) : curr.tags_json,
+      reward: d.reward ?? curr.reward,
+      base_points: d.base_points !== undefined ? Number(d.base_points) : Number(curr.base_points || 0),
+      delivery_type: d.delivery_type ?? curr.delivery_type,
+      thumb_url: d.thumb_url ?? curr.thumb_url,
+      status: d.status ?? curr.status,
+      visible: d.visible !== undefined ? (d.visible ? 1 : 0) : (curr.visible ? 1 : 0)
+    };
+    await pool.request()
+      .input('id', dbSql.Int, id)
+      .input('name', dbSql.NVarChar, next.name)
+      .input('objective', dbSql.NVarChar, next.objective)
+      .input('description', dbSql.NVarChar, next.description)
+      .input('deadline', dbSql.DateTime2, next.deadline)
+      .input('difficulty', dbSql.NVarChar, next.difficulty)
+      .input('tags', dbSql.NVarChar, next.tags_str)
+      .input('tags_json', dbSql.NVarChar, next.tags_json)
+      .input('reward', dbSql.NVarChar, next.reward)
+      .input('base_points', dbSql.Int, next.base_points)
+      .input('delivery_type', dbSql.NVarChar, next.delivery_type)
+      .input('thumb_url', dbSql.NVarChar, next.thumb_url)
+      .input('status', dbSql.NVarChar, next.status)
+      .input('visible', dbSql.Bit, next.visible)
+      .query('UPDATE dbo.desafios SET name=@name, objective=@objective, description=@description, deadline=@deadline, difficulty=@difficulty, tags=@tags, tags_json=@tags_json, reward=@reward, base_points=@base_points, delivery_type=@delivery_type, thumb_url=@thumb_url, status=@status, visible=@visible, updated_at=SYSUTCDATETIME() WHERE id=@id');
+    const outRes = await pool.request().input('id', dbSql.Int, id).query('SELECT id, name, objective, description, deadline, difficulty, tags, reward, base_points, delivery_type, thumb_url, status, visible, created_at, updated_at FROM dbo.desafios WHERE id=@id');
+    res.json({ success: true, data: { challenge: mapChallengeRow(outRes.recordset[0]) } });
+  } catch (err) { next(err); }
+});
+
+app.put('/api/desafios/:id/visibility', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    let payload = req.body;
+    if (typeof payload === 'string') { try { payload = JSON.parse(payload); } catch { payload = {}; } }
+    const vis = payload && typeof payload.visible === 'boolean' ? (payload.visible ? 1 : 0) : null;
+    const pool = await getConnectionPool();
+    if (vis === null) {
+      const cur = await pool.request().input('id', dbSql.Int, id).query('SELECT visible FROM dbo.desafios WHERE id=@id');
+      if (!cur.recordset.length) return res.status(404).json({ error: 'Desafio não encontrado' });
+      const next = cur.recordset[0].visible ? 0 : 1;
+      await pool.request().input('id', dbSql.Int, id).input('visible', dbSql.Bit, next).query('UPDATE dbo.desafios SET visible=@visible, updated_at=SYSUTCDATETIME() WHERE id=@id');
+    } else {
+      await pool.request().input('id', dbSql.Int, id).input('visible', dbSql.Bit, vis).query('UPDATE dbo.desafios SET visible=@visible, updated_at=SYSUTCDATETIME() WHERE id=@id');
+    }
+    const outRes = await pool.request().input('id', dbSql.Int, id).query('SELECT id, name, objective, description, deadline, difficulty, tags, reward, base_points, delivery_type, thumb_url, status, visible, created_at, updated_at FROM dbo.desafios WHERE id=@id');
+    res.json({ success: true, data: { challenge: mapChallengeRow(outRes.recordset[0]) } });
+  } catch (err) { next(err); }
+});
+
+app.put('/api/desafios/:id/status', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    let payload = req.body;
+    if (typeof payload === 'string') { try { payload = JSON.parse(payload); } catch { payload = {}; } }
+    const status = String(payload?.status || '').toLowerCase();
+    if (!['draft','active','closed','archived'].includes(status)) return res.status(400).json({ error: 'Status inválido' });
+    const pool = await getConnectionPool();
+    await pool.request().input('id', dbSql.Int, id).input('status', dbSql.NVarChar, status).query('UPDATE dbo.desafios SET status=@status, updated_at=SYSUTCDATETIME() WHERE id=@id');
+    const outRes = await pool.request().input('id', dbSql.Int, id).query('SELECT id, name, objective, description, deadline, difficulty, tags, tags_json, reward, base_points, delivery_type, thumb_url, status, visible, created_by, created_at, updated_at FROM dbo.desafios WHERE id=@id');
+    res.json({ success: true, data: { challenge: mapChallengeRow(outRes.recordset[0]) } });
+  } catch (err) { next(err); }
+});
+
+app.post('/api/desafios/:id/inscrever', authenticate, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    let payload = req.body;
+    if (typeof payload === 'string') { try { payload = JSON.parse(payload); } catch { payload = {}; } }
+    const crafterId = Number(payload?.crafter_id || req.user?.id || 0);
+    if (!crafterId) return res.status(400).json({ error: 'crafter_id obrigatório' });
+    const pool = await getConnectionPool();
+    const exists = await pool.request().input('id', dbSql.Int, id).query('SELECT id FROM dbo.desafios WHERE id=@id');
+    if (!exists.recordset.length) return res.status(404).json({ error: 'Desafio não encontrado' });
+    const dup = await pool.request().input('did', dbSql.Int, id).input('cid', dbSql.Int, crafterId).query('SELECT id FROM dbo.desafio_registrations WHERE desafio_id=@did AND crafter_id=@cid');
+    if (dup.recordset.length) return res.json({ success: true, data: { registered: true } });
+    const ins = await pool.request().input('did', dbSql.Int, id).input('cid', dbSql.Int, crafterId).query('INSERT INTO dbo.desafio_registrations (desafio_id, crafter_id) OUTPUT Inserted.* VALUES (@did, @cid)');
+    res.status(201).json({ success: true, data: ins.recordset[0] });
+  } catch (err) { next(err); }
+});
+
+app.post('/api/desafios/:id/entregar', authenticate, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    let payload = req.body;
+    if (typeof payload === 'string') { try { payload = JSON.parse(payload); } catch { payload = {}; } }
+    const crafterId = Number(payload?.crafter_id || req.user?.id || 0);
+    if (!crafterId) return res.status(400).json({ error: 'crafter_id obrigatório' });
+    const delivery = payload?.delivery || {};
+    const pool = await getConnectionPool();
+    const exists = await pool.request().input('id', dbSql.Int, id).query('SELECT id, base_points FROM dbo.desafios WHERE id=@id');
+    if (!exists.recordset.length) return res.status(404).json({ error: 'Desafio não encontrado' });
+    const ins = await pool.request()
+      .input('did', dbSql.Int, id)
+      .input('cid', dbSql.Int, crafterId)
+      .input('delivery', dbSql.NVarChar, JSON.stringify(delivery))
+      .query('INSERT INTO dbo.desafio_submissions (desafio_id, crafter_id, delivery) OUTPUT Inserted.* VALUES (@did, @cid, @delivery)');
+    const row = ins.recordset[0];
+    res.status(201).json({ success: true, data: row });
+  } catch (err) { next(err); }
+});
+
+const reviewSchema = z.object({ status: z.enum(['approved','rejected']).optional(), score: z.number().int().min(0).optional(), review: z.any().optional() });
+
+app.put('/api/submissions/:id/review', authenticate, authorizeAdmin, async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    let payload = req.body;
+    if (typeof payload === 'string') { try { payload = JSON.parse(payload); } catch { payload = {}; } }
+    const parsed = reviewSchema.safeParse(payload || {});
+    if (!parsed.success) return res.status(400).json({ error: 'VALIDATION_ERROR' });
+    const r = parsed.data;
+    const pool = await getConnectionPool();
+    const cur = await pool.request().input('id', dbSql.Int, id).query('SELECT * FROM dbo.desafio_submissions WHERE id=@id');
+    if (!cur.recordset.length) return res.status(404).json({ error: 'Submissão não encontrada' });
+    const nextStatus = r.status ?? cur.recordset[0].status;
+    const nextScore = r.score !== undefined ? Number(r.score) : cur.recordset[0].score;
+    const nextReview = r.review !== undefined ? JSON.stringify(r.review) : cur.recordset[0].review;
+    await pool.request().input('id', dbSql.Int, id).input('status', dbSql.NVarChar, nextStatus).input('score', dbSql.Int, nextScore).input('review', dbSql.NVarChar, nextReview).query('UPDATE dbo.desafio_submissions SET status=@status, score=@score, review=@review, updated_at=SYSUTCDATETIME() WHERE id=@id');
+    const out = await pool.request().input('id', dbSql.Int, id).query('SELECT id, desafio_id, crafter_id, delivery, status, score, review, created_at, updated_at FROM dbo.desafio_submissions WHERE id=@id');
+    const row = out.recordset[0];
+    res.json({ success: true, data: { submission: { id: row.id, desafio_id: row.desafio_id, crafter_id: row.crafter_id, delivery: parseJsonSafe(row.delivery, {}), status: row.status, score: row.score, review: parseJsonSafe(row.review, {}), created_at: row.created_at, updated_at: row.updated_at } } });
+  } catch (err) { next(err); }
+});
+
 // --- Servir Arquivos Estáticos ---
 app.use(express.static(path.join(__dirname, 'dist')));
 app.use('/downloads', express.static(path.join(__dirname, 'public', 'downloads')));
-
-// Rota catch-all para SPA (Single Page Application)
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'API endpoint not found' });
+  next();
+});
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
@@ -4991,6 +5291,7 @@ getConnectionPool().then(async () => {
   await ensureUserLicensesSchema();
   await ensurePasswordResetsSchema();
   await ensureFeedbacksSchema();
+  await ensureDesafiosSchema();
   await ensureCoinCraftInstallerUrl();
   app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
@@ -5089,6 +5390,85 @@ async function ensureFeedbacksSchema() {
     console.log('✅ Esquema de dbo.feedbacks verificado/criado');
   } catch (err) {
     console.error('Erro ao garantir esquema de dbo.feedbacks:', err);
+  }
+}
+
+async function ensureDesafiosSchema() {
+  try {
+    const pool = await getConnectionPool();
+    await pool.request().query(`
+      IF OBJECT_ID('dbo.desafios','U') IS NULL
+      BEGIN
+        CREATE TABLE dbo.desafios (
+          id INT IDENTITY(1,1) PRIMARY KEY,
+          name NVARCHAR(128) NOT NULL,
+          objective NVARCHAR(MAX) NULL,
+          description NVARCHAR(MAX) NULL,
+          deadline DATETIME2 NULL,
+          difficulty NVARCHAR(32) NULL,
+          tags NVARCHAR(MAX) NULL,
+          tags_json NVARCHAR(MAX) NULL,
+          reward NVARCHAR(128) NULL,
+          base_points INT NOT NULL CONSTRAINT DF_desafios_base_points DEFAULT 0,
+          delivery_type NVARCHAR(32) NULL,
+          thumb_url NVARCHAR(256) NULL,
+          status NVARCHAR(16) NOT NULL CONSTRAINT DF_desafios_status DEFAULT 'draft',
+          visible BIT NOT NULL CONSTRAINT DF_desafios_visible DEFAULT 1,
+          created_by INT NULL,
+          created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+          updated_at DATETIME2 NULL
+        );
+      END;
+    `);
+    const addCol = async (name, type, defaults) => {
+      await pool.request().query(`
+        IF COL_LENGTH('dbo.desafios', '${name}') IS NULL
+        BEGIN
+          ALTER TABLE dbo.desafios ADD ${name} ${type} ${defaults || ''};
+        END;
+      `);
+    };
+    await addCol('tags_json', 'NVARCHAR(MAX) NULL');
+    await addCol('created_by', 'INT NULL');
+    await addCol('updated_at', 'DATETIME2 NULL');
+    await addCol('base_points', 'INT NOT NULL', 'CONSTRAINT DF_desafios_base_points DEFAULT 0');
+    await addCol('visible', 'BIT NOT NULL', 'CONSTRAINT DF_desafios_visible DEFAULT 1');
+    await addCol('status', "NVARCHAR(16) NOT NULL", "CONSTRAINT DF_desafios_status DEFAULT 'draft'");
+    await pool.request().query(`
+      IF OBJECT_ID('dbo.desafio_registrations','U') IS NULL
+      BEGIN
+        CREATE TABLE dbo.desafio_registrations (
+          id INT IDENTITY(1,1) PRIMARY KEY,
+          desafio_id INT NOT NULL,
+          crafter_id INT NOT NULL,
+          at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+          CONSTRAINT FK_desafio_reg_ch FOREIGN KEY (desafio_id) REFERENCES dbo.desafios(id),
+          CONSTRAINT FK_desafio_reg_crafter FOREIGN KEY (crafter_id) REFERENCES dbo.crafters(id)
+        );
+        CREATE INDEX IX_desafio_reg ON dbo.desafio_registrations(desafio_id, crafter_id);
+      END;
+    `);
+    await pool.request().query(`
+      IF OBJECT_ID('dbo.desafio_submissions','U') IS NULL
+      BEGIN
+        CREATE TABLE dbo.desafio_submissions (
+          id INT IDENTITY(1,1) PRIMARY KEY,
+          desafio_id INT NOT NULL,
+          crafter_id INT NOT NULL,
+          delivery NVARCHAR(MAX) NULL,
+          status NVARCHAR(16) NOT NULL CONSTRAINT DF_desafio_sub_status DEFAULT 'submitted',
+          score INT NULL,
+          review NVARCHAR(MAX) NULL,
+          created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+          updated_at DATETIME2 NULL,
+          CONSTRAINT FK_desafio_sub_ch FOREIGN KEY (desafio_id) REFERENCES dbo.desafios(id),
+          CONSTRAINT FK_desafio_sub_crafter FOREIGN KEY (crafter_id) REFERENCES dbo.crafters(id)
+        );
+        CREATE INDEX IX_desafio_sub ON dbo.desafio_submissions(desafio_id, crafter_id);
+      END;
+    `);
+  } catch (err) {
+    console.error('Erro ao garantir esquema de desafios:', err);
   }
 }
 

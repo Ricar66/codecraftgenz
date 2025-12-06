@@ -773,7 +773,7 @@ export function Ranking() {
   const { user } = useAuth();
   const { crafters, pagination, loading: loadingCrafters, error: errorCrafters, reload: reloadCrafters, loadPage, search } = useCrafters({ active_only: 'true', limit: 20, order_by: 'points', order_direction: 'desc' });
   const [busy, setBusy] = React.useState(false);
-  const [filters, setFilters] = React.useState({ search: '', min_points: '', max_points: '', active_only: true, sort: 'points' });
+  const [filters, setFilters] = React.useState({ search: '', min_points: '', max_points: '', active_only: true, sort: 'points_desc' });
   const [crafterForm, setCrafterForm] = React.useState({ name: '', avatar_url: '', points: 0, active: true });
   const [crafterErrors, setCrafterErrors] = React.useState({});
   const [isCrafterModalOpen, setCrafterModalOpen] = React.useState(false);
@@ -792,7 +792,9 @@ export function Ranking() {
   }, [rk]);
 
   // Utilizar listas seguras e instrumentar logs para depuração
-  const allList = Array.isArray(rankingData.all) ? rankingData.all : [];
+  const allList = Array.isArray(rankingData.all)
+    ? [...rankingData.all].sort((a, b) => Number(b.points ?? b.pontos ?? 0) - Number(a.points ?? a.pontos ?? 0))
+    : [];
   if (typeof window !== 'undefined' && !Array.isArray(rankingData.all)) {
     console.warn('[Ranking] rankingData.all não é array:', rankingData.all);
   }
@@ -803,9 +805,10 @@ export function Ranking() {
 
   React.useEffect(() => {
     if (rankingData.top3) {
-      setTop3(rankingData.top3);
+      const sorted = [...rankingData.top3].sort((a, b) => Number(a.position) - Number(b.position));
+      setTop3(sorted);
       const rewards = {};
-      rankingData.top3.forEach(t => rewards[t.position] = t.reward || '');
+      sorted.forEach(t => { rewards[t.position] = t.reward || ''; });
       setPodiumRewards(rewards);
     }
   }, [rankingData.top3]);
@@ -834,7 +837,20 @@ export function Ranking() {
         position: i + 1,
         reward: podiumRewards[i + 1] || ''
       }));
-      await RankingRepo.setTop3(payload);
+      const resp = await RankingRepo.updateTop3(payload);
+      if (resp && resp.ok && resp.result && resp.result.data && Array.isArray(resp.result.data.top3)) {
+        const newTop3 = resp.result.data.top3.map(rec => ({
+          id: rec.crafter_id,
+          name: rec.name || '',
+          points: Number(rec.points || 0),
+          avatar_url: rec.avatar_url || '',
+          position: rec.position
+        })).sort((a, b) => Number(a.position) - Number(b.position));
+        setTop3(newTop3);
+        const rewards = {};
+        newTop3.forEach(r => { rewards[r.position] = r.reward || ''; });
+        setPodiumRewards(rewards);
+      }
       refresh();
     } finally { setBusy(false); }
   };
@@ -894,17 +910,21 @@ export function Ranking() {
       crafters = crafters.filter(c => c.active !== false);
     }
     
-    if (filters.sort === 'points') {
-      crafters.sort((a, b) => b.points - a.points);
-    } else if (filters.sort === 'name') {
-      crafters.sort((a, b) => a.name.localeCompare(b.name));
+    if (filters.sort === 'points_desc') {
+      crafters.sort((a, b) => Number(b.points || 0) - Number(a.points || 0));
+    } else if (filters.sort === 'points_asc') {
+      crafters.sort((a, b) => Number(a.points || 0) - Number(b.points || 0));
+    } else if (filters.sort === 'name_asc') {
+      crafters.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+    } else if (filters.sort === 'name_desc') {
+      crafters.sort((a, b) => String(b.name || '').localeCompare(String(a.name || '')));
     }
     
     return crafters;
   }, [rankingData.table, filters]);
 
   const resetFilters = () => {
-    setFilters({ search: '', min_points: '', max_points: '', active_only: true, sort: 'points' });
+    setFilters({ search: '', min_points: '', max_points: '', active_only: true, sort: 'points_desc' });
   };
 
   if (loading) return <div className="admin-content"><h1 className="title">Ranking</h1><p>Carregando...</p></div>;
@@ -1144,6 +1164,12 @@ export function Ranking() {
             <input aria-label="Especialização" placeholder="Especialização" value={filters.spec || ''} onChange={e=> setFilters(prev=>({ ...prev, spec: e.target.value }))} className="filter-input" />
             <input aria-label="Pontos mín." type="number" placeholder="Pontos mín." value={filters.min_points} onChange={e=> setFilters(prev=>({ ...prev, min_points: e.target.value }))} className="filter-input" />
             <input aria-label="Pontos máx." type="number" placeholder="Pontos máx." value={filters.max_points} onChange={e=> setFilters(prev=>({ ...prev, max_points: e.target.value }))} className="filter-input" />
+            <select aria-label="Ordenar" value={filters.sort} onChange={e=> setFilters(prev=>({ ...prev, sort: e.target.value }))} className="filter-input">
+              <option value="points_desc">Pontos ↓</option>
+              <option value="points_asc">Pontos ↑</option>
+              <option value="name_asc">Nome A→Z</option>
+              <option value="name_desc">Nome Z→A</option>
+            </select>
           </div>
         </div>
         {loadingCrafters && (<p>Carregando crafters...</p>)}
@@ -1151,11 +1177,20 @@ export function Ranking() {
         <div className="crafterGrid" aria-busy={loadingCrafters} aria-live="polite">
           {(() => {
             const list = Array.isArray(crafters) ? crafters : [];
-            const filtered = list
+            let filtered = list
               .filter(c => !filters.search || String(c.nome || c.name || '').toLowerCase().includes(String(filters.search).toLowerCase()))
               .filter(c => !filters.spec || String(c.nivel || '').toLowerCase().includes(String(filters.spec).toLowerCase()))
               .filter(c => !filters.min_points || Number(c.points ?? c.pontos ?? 0) >= Number(filters.min_points))
               .filter(c => !filters.max_points || Number(c.points ?? c.pontos ?? 0) <= Number(filters.max_points));
+            if (filters.sort === 'points_desc') {
+              filtered = filtered.sort((a, b) => Number(b.points ?? b.pontos ?? 0) - Number(a.points ?? a.pontos ?? 0));
+            } else if (filters.sort === 'points_asc') {
+              filtered = filtered.sort((a, b) => Number(a.points ?? a.pontos ?? 0) - Number(b.points ?? b.pontos ?? 0));
+            } else if (filters.sort === 'name_asc') {
+              filtered = filtered.sort((a, b) => String(a.nome || a.name || '').localeCompare(String(b.nome || b.name || '')));
+            } else if (filters.sort === 'name_desc') {
+              filtered = filtered.sort((a, b) => String(b.nome || b.name || '').localeCompare(String(a.nome || a.name || '')));
+            }
             return filtered.length === 0 ? (
               <div className="empty">Nenhum crafter ativo</div>
             ) : filtered.map(c => (
@@ -1250,8 +1285,10 @@ export function Ranking() {
             value={filters.sort}
             onChange={e => setFilters(prev => ({ ...prev, sort: e.target.value }))}
           >
-            <option value="points">Ordenar por pontos</option>
-            <option value="name">Ordenar por nome</option>
+            <option value="points_desc">Pontos ↓</option>
+            <option value="points_asc">Pontos ↑</option>
+            <option value="name_asc">Nome A→Z</option>
+            <option value="name_desc">Nome Z→A</option>
           </select>
           <label>
             <input 
@@ -1656,7 +1693,7 @@ export function Desafios() {
     setDetailsError('');
     try {
       const json = await apiRequest(`/api/desafios/${id}`, { method: 'GET' });
-      setDetails(json?.challenge || json);
+      setDetails(json?.data?.challenge || json?.challenge || json);
     } catch {
       setDetailsError('Falha ao carregar detalhes');
     } finally { setDetailsLoading(false); }
