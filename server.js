@@ -69,6 +69,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
+// Porta do servidor e segredos obrigatórios
 const PORT = process.env.PORT_OVERRIDE || process.env.PORT || 8080;
 const JWT_SECRET = process.env.JWT_SECRET;
 const ADMIN_RESET_TOKEN = process.env.ADMIN_RESET_TOKEN;
@@ -79,10 +80,12 @@ if (!JWT_SECRET || !ADMIN_RESET_TOKEN) {
 console.log('🔐 Segredos essenciais definidos (valores não exibidos)');
 
 // --- Middlewares Essenciais ---
+// Segurança (helmet), CORS dinâmico por ambiente, compressão, parsers
 app.use(helmet({
   contentSecurityPolicy: false,
 }));
 const isProd = (process.env.NODE_ENV === 'production');
+// Converte lista de origens permitidas em array normalizado
 const parseOrigins = (raw) => String(raw || '').split(',').map(s => s.trim()).filter(Boolean);
 const allowedOrigins = parseOrigins(process.env.ALLOWED_ORIGINS);
 if (isProd && allowedOrigins.length === 0) {
@@ -91,6 +94,7 @@ if (isProd && allowedOrigins.length === 0) {
 }
 const devOrigin = 'http://localhost:5173';
 const devOriginAlt = 'http://127.0.0.1:5173';
+// CORS com validação de origem: permite dev (localhost) e lista configurada
 app.use(cors({
   origin: (origin, callback) => {
     const list = isProd ? [...allowedOrigins, ...(process.env.WEBSITE_HOSTNAME ? [`https://${String(process.env.WEBSITE_HOSTNAME).trim()}`] : [])] : [devOrigin, devOriginAlt, ...allowedOrigins];
@@ -107,6 +111,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type','Authorization','x-csrf-token','x-admin-reset-token','X-Device-Id','x-device-id','X-Tracking-Id','x-tracking-id'],
   credentials: true,
 }));
+// HSTS apenas em produção
 if (isProd) {
   app.use(helmet.hsts({ maxAge: 15552000 }));
 }
@@ -116,6 +121,7 @@ app.use(express.text({ limit: '10mb', type: 'text/plain' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
+// Limite de tentativas de login por IP
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -136,6 +142,7 @@ const loginLimiter = rateLimit({
   }
 });
 
+// Validação de corpo com Zod; popula req.validated
 function validateBody(schema) {
   return (req, res, next) => {
     let payload = req.body;
@@ -150,7 +157,7 @@ function validateBody(schema) {
     next();
   };
 }
-//teste
+// Limite para rotas sensíveis (licença, pagamentos)
 const sensitiveLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
@@ -169,6 +176,7 @@ const sensitiveLimiter = rateLimit({
     return ip;
   }
 });
+// Limite para webhooks externos
 const webhookLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 120,
@@ -224,6 +232,8 @@ async function auditLicense(pool, { app_id, email, hardware_id, license_id, acti
 }
 
 async function auditPaymentAction(pool, { payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email }) {
+  // Registra mudanças de estado de pagamentos em dbo.app_payments_audit
+  // Utilizado para rastreabilidade de eventos (inserção mock, transições de status, etc.)
   await pool.request()
     .input('payment_id', dbSql.NVarChar, payment_id)
     .input('preference_id', dbSql.NVarChar, preference_id ?? null)
@@ -241,6 +251,7 @@ async function auditPaymentAction(pool, { payment_id, preference_id, app_id, use
 }
 
 async function getApprovedPurchasesCount(pool, email, appId) {
+  // Conta compras aprovadas para o par (email, appId) em dbo.app_payments
   const r = await pool.request()
     .input('email', dbSql.NVarChar, email)
     .input('app_id', dbSql.Int, appId)
@@ -249,6 +260,8 @@ async function getApprovedPurchasesCount(pool, email, appId) {
 }
 
 async function getUsedLicensesCount(pool, email, appId) {
+  // Conta licenças já vinculadas (hardware_id não vazio) para o par (email, appId)
+  // Importante: ignora slots livres (hardware_id='' ou NULL)
   const r = await pool.request()
     .input('email', dbSql.NVarChar, email)
     .input('app_id', dbSql.Int, appId)
@@ -552,6 +565,7 @@ async function ensureAppPaymentsSchema() {
 async function ensureUserLicensesSchema() {
   try {
     const pool = await getConnectionPool();
+    // Cria tabela dbo.user_licenses caso não exista e garante colunas/índices necessários
     await pool.request().query(`
       IF OBJECT_ID('dbo.user_licenses', 'U') IS NULL
       BEGIN
@@ -572,6 +586,7 @@ async function ensureUserLicensesSchema() {
         CREATE INDEX IX_user_licenses_app_email ON dbo.user_licenses(app_id, email);
       END;
     `);
+    // Garantias incrementais: email, activated_at e flexibilização de colunas
     await pool.request().query(`IF COL_LENGTH('dbo.user_licenses', 'email') IS NULL BEGIN ALTER TABLE dbo.user_licenses ADD email NVARCHAR(256) NOT NULL CONSTRAINT DF_user_licenses_email DEFAULT ''; END;`);
     await pool.request().query(`IF COL_LENGTH('dbo.user_licenses', 'activated_at') IS NULL BEGIN ALTER TABLE dbo.user_licenses ADD activated_at DATETIME2 NULL; END;`);
     await pool.request().query(`
@@ -585,6 +600,7 @@ async function ensureUserLicensesSchema() {
     `);
     await pool.request().query(`IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_user_licenses_app_email' AND object_id=OBJECT_ID('dbo.user_licenses')) BEGIN CREATE INDEX IX_user_licenses_app_email ON dbo.user_licenses(app_id, email); END;`);
     await pool.request().query(`IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_user_licenses_app_email_hwid' AND object_id=OBJECT_ID('dbo.user_licenses')) BEGIN CREATE INDEX IX_user_licenses_app_email_hwid ON dbo.user_licenses(app_id, email, hardware_id); END;`);
+    // Nova coluna para relatórios por software e backfill com dbo.apps.name
     await pool.request().query(`IF COL_LENGTH('dbo.user_licenses', 'app_name') IS NULL BEGIN ALTER TABLE dbo.user_licenses ADD app_name NVARCHAR(256) NULL; END;`);
     await pool.request().query(`UPDATE l SET app_name = a.name FROM dbo.user_licenses l JOIN dbo.apps a ON l.app_id = a.id WHERE l.app_name IS NULL OR LTRIM(RTRIM(l.app_name)) = ''`);
     console.log('✅ Esquema de dbo.user_licenses verificado/criado');
@@ -596,6 +612,7 @@ async function ensureUserLicensesSchema() {
 async function ensureLicenseActivationsSchema() {
   try {
     const pool = await getConnectionPool();
+    // Cria tabela de auditoria de ativações de licença
     await pool.request().query(`
       IF OBJECT_ID('dbo.license_activations', 'U') IS NULL
       BEGIN
@@ -694,6 +711,7 @@ async function ensurePaymentsAuditPatch() {
 }
 
 async function ensureCoinCraftInstallerUrl() {
+  // Atualiza/exige a URL do instalador do CoinCraft no registro de apps
   try {
     const pool = await getConnectionPool();
     await pool.request()
@@ -716,6 +734,7 @@ async function ensureCoinCraftInstallerUrl() {
  * @apiSuccess {string} environment Ambiente de execução.
  */
 app.get('/api/health', (req, res) => {
+  // Saúde básica do servidor (uptime, ambiente)
   res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),
@@ -736,6 +755,7 @@ app.get('/api/health', (req, res) => {
  * @apiSuccess {boolean} can_ensure_access_token Indica se o token pode ser validado/renovado.
  */
 app.get('/api/health/mercadopago', async (req, res) => {
+  // Health detalhado da integração de pagamentos: verifica chaves, OAuth e renovação de token
   try {
     const mpPublic = process.env.VITE_MERCADO_PAGO_PUBLIC_KEY || process.env.MERCADO_PAGO_PUBLIC_KEY || '';
     const mpAccess = process.env.MERCADO_PAGO_ACCESS_TOKEN || '';
@@ -4019,6 +4039,9 @@ app.post('/api/apps/:id/feedback', authenticate, async (req, res) => {
 });
 
 // --- ROTA DE ATIVAÇÃO DE LICENÇA (pública) ---
+// Fluxo público para clientes não autenticados vincularem um novo hardware.
+// Valida e-mail/hardware, verifica compras aprovadas e atualiza/inserta licença.
+// Aceita payload em camelCase ou snake_case para compatibilidade com diferentes clientes.
 app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, res) => {
   try {
     let body = req.body;
@@ -4151,6 +4174,9 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
 });
 
 // --- ROTA DE VERIFICAÇÃO DE LICENÇA (Migração CoinCraft Desktop) --- 
+// Verifica se a máquina já está cadastrada; caso não, permite cadastro
+// se houver saldo de compras (compras aprovadas > licenças usadas).
+// Audita tanto sucessos quanto rejeições em dbo.license_activations.
 app.post('/api/verify-license', sensitiveLimiter, async (req, res) => { 
   try { 
     let body = req.body; 
@@ -4405,6 +4431,7 @@ app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
     };
 
     // Obtém token de acesso (OAuth ou access token direto)
+    // Usa ensureAccessToken para preferir OAuth; se indisponível, depende do access token direto
     let accessToken = null;
     try {
       accessToken = await mercadoLivre.ensureAccessToken();
@@ -4420,6 +4447,7 @@ app.post('/api/apps/:id/payment/direct', sensitiveLimiter, async (req, res) => {
       || `app-${id}-user-${req.user?.id || 'anon'}-${Date.now()}`;
 
     // Chama API de pagamentos
+    // Define cabeçalhos com idempotência e dados de rastreio (device/tracking)
     let resp;
     try {
       resp = await fetch('https://api.mercadopago.com/v1/payments', {
@@ -4606,6 +4634,7 @@ app.get('/api/apps/:id/payment/last', async (req, res) => {
  * @apiSuccess {Object} data Resultado da busca no MP.
  */
 app.get('/api/payments/search', authenticate, authorizeAdmin, async (req, res) => {
+  // Proxy de busca de pagamentos no MP: repassa query string do cliente e retorna JSON
   try {
     // Garante token de acesso; se não houver, retorna erro claro de configuração (503)
     let accessToken = null;
@@ -4660,6 +4689,7 @@ app.get('/api/payments/search', authenticate, authorizeAdmin, async (req, res) =
  * @apiSuccess {Object} data Dados do pagamento.
  */
 app.get('/api/payments/:id', authenticate, authorizeAdmin, async (req, res) => {
+  // Proxy de detalhes de pagamento por ID
   try {
     const accessToken = await mercadoLivre.ensureAccessToken();
     const { id } = req.params || {};
@@ -4898,7 +4928,8 @@ app.post('/api/test/mock-approved-payment', sensitiveLimiter, async (req, res) =
   }
 });
 
-// Provisiona uma licença disponível (hardware_id NULL) para um e-mail de teste
+// Provisiona uma licença disponível (hardware_id vazio) para um e-mail de teste
+// Útil para preparar slots antes da ativação, simulando compra mock quando necessário.
 app.post('/api/test/provision-license', sensitiveLimiter, async (req, res) => {
   try {
     if (String(process.env.ENABLE_TEST_PAYMENTS || '').toLowerCase() !== 'true') {
@@ -5232,6 +5263,9 @@ app.post('/api/licenses/activate', authenticate, async (req, res) => {
  * @apiSuccess {boolean} success Indica sucesso.
  * @apiSuccess {string} license_key Chave de licença gerada.
  */
+// Endpoint de recuperação/ativação direta por e-mail de compra.
+// Impede duplicidade por (email, hardwareId) e respeita saldo de compras.
+// Preenche app_name para facilitar relatórios futuros por software.
 app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
   try {
     let body = req.body;
@@ -5673,6 +5707,7 @@ app.get('/downloads/:file', async (req, res) => {
 });
 
 app.get('/api/downloads/:file/integrity', async (req, res) => {
+  // Fornece integridade (SHA-256) e tamanho do arquivo solicitado
   try {
     const safeName = path.basename(String(req.params.file || '').trim());
     const baseDir = path.join(__dirname, 'public', 'downloads');
@@ -5717,6 +5752,7 @@ app.use((err, req, res, next) => {
 
 // --- Inicialização do Servidor (aguarda conexão ao banco) ---
 getConnectionPool().then(async () => {
+  // Garantias de schema e patches de migração
   await ensureUserTableSchema();
   await ensureProjetosOptionalColumns();
   await ensurePaymentsAuditPatch();
@@ -5727,6 +5763,7 @@ getConnectionPool().then(async () => {
   await ensureFeedbacksSchema();
   await ensureDesafiosSchema();
   await ensureCoinCraftInstallerUrl();
+  // Monitor de licenças em ambiente de teste
   startTestLicenseMonitor();
   app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
@@ -5758,6 +5795,7 @@ process.on('SIGINT', () => {
  * @apiSuccess {boolean} success Indica sucesso na troca de tokens.
  */
 app.get('/api/mercado-livre/oauth/callback', async (req, res) => {
+  // Callback de OAuth do Mercado Livre: troca código por tokens e persiste internamente
   try {
     const { code } = req.query;
     await mercadoLivre.exchangeCode(code);
@@ -5773,6 +5811,7 @@ app.get('/api/mercado-livre/oauth/callback', async (req, res) => {
  * @returns {Promise<void>}
  */
 async function ensurePasswordResetsSchema() {
+  // Cria/garante tabela de resets de senha com índices por usuário e token
   try {
     const pool = await getConnectionPool();
     const existsQ = await pool.request().query("SELECT 1 AS found FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='dbo' AND TABLE_NAME='password_resets'");
@@ -5803,6 +5842,7 @@ async function ensurePasswordResetsSchema() {
  * @returns {Promise<void>}
  */
 async function ensureFeedbacksSchema() {
+  // Cria/garante tabela de feedbacks (mensagens do usuário) e índice por user_id
   try {
     const pool = await getConnectionPool();
     await pool.request().query(`
@@ -5829,6 +5869,7 @@ async function ensureFeedbacksSchema() {
 }
 
 async function ensureDesafiosSchema() {
+  // Cria/garante tabela de desafios (conteúdo/funcionalidades gamificadas) se necessário
   try {
     const pool = await getConnectionPool();
     await pool.request().query(`
