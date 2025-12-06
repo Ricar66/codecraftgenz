@@ -4019,7 +4019,12 @@ app.post('/api/apps/:id/feedback', authenticate, async (req, res) => {
 // --- ROTA DE ATIVAÇÃO DE LICENÇA (pública) ---
 app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, res) => {
   try {
-    const { email, app_id, hardware_id } = req.body || {};
+    let body = req.body;
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+    const email = String(body?.email || '').trim();
+    const rawAppPub = body?.app_id ?? body?.appId ?? process.env.COINCRAFT_APP_ID ?? 1;
+    const app_id = Number(rawAppPub);
+    const hardware_id = String(body?.hardware_id ?? body?.hardwareId ?? '');
 
     if (!email || !validateEmail(email)) {
       return res.status(400).json({ error: 'E-mail inválido ou não informado.' });
@@ -4142,8 +4147,12 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
 // --- ROTA DE VERIFICAÇÃO DE LICENÇA (Migração CoinCraft Desktop) --- 
 app.post('/api/verify-license', sensitiveLimiter, async (req, res) => { 
   try { 
-    const { email, hardware_id, app_id: appIdBody } = req.body; 
-    const resolvedAppId = Number(appIdBody);
+    let body = req.body; 
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } } 
+    const email = String(body?.email || '').trim(); 
+    const hardware_id = String(body?.hardware_id ?? body?.hardwareId ?? ''); 
+    const rawApp = body?.app_id ?? body?.appId; 
+    const resolvedAppId = Number(rawApp);
     const app_id = Number.isInteger(resolvedAppId) && resolvedAppId > 0 
       ? resolvedAppId 
       : Number(process.env.COINCRAFT_APP_ID || 1);
@@ -5217,7 +5226,10 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
   try {
     let body = req.body;
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
-    const { email, hardwareId, appId } = body || {};
+    const email = String(body?.email || '').trim();
+    const hardwareId = String(body?.hardwareId ?? body?.hardware_id ?? '').trim();
+    const rawAppClaim = body?.appId ?? body?.app_id ?? process.env.COINCRAFT_APP_ID ?? 1;
+    const appId = Number(rawAppClaim);
     if (!email || !hardwareId || !appId) return res.status(400).json({ error: 'Dados incompletos.' });
 
     const pool = await getConnectionPool();
