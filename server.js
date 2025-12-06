@@ -5263,6 +5263,81 @@ app.put('/api/submissions/:id/review', authenticate, authorizeAdmin, async (req,
 
 // --- Servir Arquivos Estáticos ---
 app.use(express.static(path.join(__dirname, 'dist')));
+app.get('/downloads/:file', async (req, res) => {
+  try {
+    const ua = String(req.headers['user-agent'] || 'unknown');
+    const ip = req.ip || req.connection?.remoteAddress || 'unknown';
+    const safeName = path.basename(String(req.params.file || '').trim());
+    const baseDir = path.join(__dirname, 'public', 'downloads');
+    const filePath = path.join(baseDir, safeName);
+    const exists = fs.existsSync(filePath);
+    if (!exists) {
+      console.warn('DOWNLOAD 404', { ip, ua, file: safeName });
+      return res.status(404).json({ error: 'Arquivo não encontrado', file: safeName });
+    }
+
+    const stat = fs.statSync(filePath);
+    const size = stat.size;
+    const ext = path.extname(safeName).toLowerCase();
+    const mimeMap = {
+      '.exe': 'application/x-msdownload',
+      '.msi': 'application/x-msi',
+      '.zip': 'application/zip',
+      '.7z': 'application/x-7z-compressed',
+    };
+    const ctype = mimeMap[ext] || 'application/octet-stream';
+
+    res.setHeader('Content-Type', ctype);
+    res.setHeader('Content-Disposition', `attachment; filename="${safeName}"`);
+    res.setHeader('Content-Length', String(size));
+    res.setHeader('Cache-Control', 'private, max-age=86400, no-transform');
+    res.setHeader('Accept-Ranges', 'bytes');
+
+    const hash = nodeCrypto.createHash('sha256');
+    const stream = fs.createReadStream(filePath);
+    stream.on('data', (chunk) => hash.update(chunk));
+    stream.on('end', () => {
+      try {
+        const sha256 = hash.digest('hex');
+        res.setHeader('X-File-SHA256', sha256);
+        console.log('DOWNLOAD OK', { file: safeName, size, sha256, ip, ua });
+      } catch (e) { void e; }
+    });
+    stream.on('error', (err) => {
+      console.error('DOWNLOAD STREAM ERROR', { file: safeName, message: err?.message || String(err) });
+      if (!res.headersSent) res.status(500).end();
+    });
+    stream.pipe(res);
+  } catch (err) {
+    console.error('DOWNLOAD ERROR', err);
+    return res.status(500).json({ error: 'Falha ao enviar arquivo para download' });
+  }
+});
+
+app.get('/api/downloads/:file/integrity', async (req, res) => {
+  try {
+    const safeName = path.basename(String(req.params.file || '').trim());
+    const baseDir = path.join(__dirname, 'public', 'downloads');
+    const filePath = path.join(baseDir, safeName);
+    if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Arquivo não encontrado', file: safeName });
+    const stat = fs.statSync(filePath);
+    const size = stat.size;
+    const hash = nodeCrypto.createHash('sha256');
+    await new Promise((resolve, reject) => {
+      const s = fs.createReadStream(filePath);
+      s.on('data', (c) => hash.update(c));
+      s.on('end', resolve);
+      s.on('error', reject);
+    });
+    const sha256 = hash.digest('hex');
+    return res.json({ success: true, data: { file: safeName, size, sha256 } });
+  } catch (err) {
+    console.error('INTEGRITY ERROR', err);
+    return res.status(500).json({ error: 'Falha ao calcular integridade do arquivo' });
+  }
+});
+
+// Fallback estático para imagens e outros arquivos que não exigem cabeçalhos especiais
 app.use('/downloads', express.static(path.join(__dirname, 'public', 'downloads')));
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'API endpoint not found' });
