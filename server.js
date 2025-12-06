@@ -4055,7 +4055,8 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
     }
 
     const allowedActivations = devBypass ? Math.max(1, totalCompras) : totalCompras;
-    if (allowedActivations > existingLicenses.length) {
+    const usedCount = existingLicenses.filter(l => l.hardware_id && String(l.hardware_id).trim() !== '').length;
+    if (allowedActivations > usedCount) {
       const upd = await pool.request()
         .input('app_id', dbSql.Int, Number(app_id))
         .input('email', dbSql.NVarChar, String(email))
@@ -4170,7 +4171,7 @@ app.post('/api/verify-license', sensitiveLimiter, async (req, res) => {
         SELECT COUNT(*) as total 
         FROM dbo.user_licenses l 
         JOIN dbo.users u ON l.user_id = u.id 
-        WHERE u.email = @email AND l.app_id = @app_id 
+        WHERE u.email = @email AND l.app_id = @app_id AND l.hardware_id IS NOT NULL 
       `); 
 
     const totalPaid = purchases.recordset[0].total; 
@@ -4904,6 +4905,221 @@ app.post('/api/test/mock-approved-payment', sensitiveLimiter, async (req, res) =
   }
 });
 
+// Provisiona uma licença disponível (hardware_id NULL) para um e-mail de teste
+app.post('/api/test/provision-license', sensitiveLimiter, async (req, res) => {
+  try {
+    if (String(process.env.ENABLE_TEST_PAYMENTS || '').toLowerCase() !== 'true') {
+      return res.status(403).json({ error: 'TEST_DISABLED' });
+    }
+    let body = req.body;
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+    const email = String(body?.email || '').trim();
+    const aid = parseInt(String(body?.app_id || process.env.COINCRAFT_APP_ID || ''), 10);
+    if (!email || !validateEmail(email) || !Number.isFinite(aid)) {
+      return res.status(400).json({ error: 'BAD_REQUEST' });
+    }
+    const pool = await getConnectionPool();
+    const appRes = await pool.request().input('id', dbSql.Int, aid).query('SELECT id, name, price FROM dbo.apps WHERE id=@id');
+    const appItem = appRes.recordset[0] || null;
+    if (!appItem) return res.status(404).json({ error: 'APP_NOT_FOUND' });
+
+    const purchasesQ = await pool.request()
+      .input('email', dbSql.NVarChar, email)
+      .input('app_id', dbSql.Int, aid)
+      .query(`SELECT COUNT(*) AS total FROM dbo.app_payments WHERE payer_email=@email AND app_id=@app_id AND status='approved'`);
+    let totalPaid = purchasesQ.recordset[0]?.total || 0;
+
+    if (totalPaid === 0) {
+      const pid = 'mock_' + Date.now();
+      const amount = Number(appItem.price || 0);
+      await pool.request()
+        .input('type', dbSql.NVarChar, 'purchase')
+        .input('app_id', dbSql.Int, aid)
+        .input('app_name', dbSql.NVarChar, appItem.name)
+        .input('status', dbSql.NVarChar, 'approved')
+        .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
+      await pool.request()
+        .input('pid', dbSql.NVarChar, pid)
+        .input('aid', dbSql.Int, aid)
+        .input('status', dbSql.NVarChar, 'approved')
+        .input('amount', dbSql.Decimal(18, 2), amount)
+        .input('currency', dbSql.NVarChar, 'BRL')
+        .input('email', dbSql.NVarChar, email)
+        .input('source', dbSql.NVarChar, 'mock')
+        .query('INSERT INTO dbo.app_payments (payment_id, app_id, user_id, status, amount, currency, payer_email, source) VALUES (@pid, @aid, NULL, @status, @amount, @currency, @email, @source)');
+      await pool.request()
+        .input('payment_id', dbSql.NVarChar, pid)
+        .input('preference_id', dbSql.NVarChar, null)
+        .input('app_id', dbSql.Int, aid)
+        .input('user_id', dbSql.Int, null)
+        .input('action', dbSql.NVarChar, 'insert_mock')
+        .input('from_status', dbSql.NVarChar, null)
+        .input('to_status', dbSql.NVarChar, 'approved')
+        .input('from_payment_id', dbSql.NVarChar, null)
+        .input('to_payment_id', dbSql.NVarChar, pid)
+        .input('amount', dbSql.Decimal(18, 2), amount)
+        .input('currency', dbSql.NVarChar, 'BRL')
+        .input('payer_email', dbSql.NVarChar, email)
+        .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
+      totalPaid = 1;
+    }
+
+    let userId = null;
+    const userRes = await pool.request().input('e', dbSql.NVarChar, email).query('SELECT id FROM dbo.users WHERE email=@e');
+    if (userRes.recordset.length) {
+      userId = userRes.recordset[0].id;
+    } else {
+      const newUser = await pool.request()
+        .input('n', dbSql.NVarChar, email.split('@')[0])
+        .input('e', dbSql.NVarChar, email)
+        .query("INSERT INTO dbo.users (name, email, role, status, created_at) OUTPUT Inserted.id VALUES (@n, @e, 'viewer', 'ativo', SYSUTCDATETIME())");
+      userId = newUser.recordset[0].id;
+    }
+
+    const unbound = await pool.request()
+      .input('aid', dbSql.Int, aid)
+      .input('email', dbSql.NVarChar, email)
+      .query('SELECT TOP 1 id FROM dbo.user_licenses WHERE app_id=@aid AND email=@email AND hardware_id IS NULL ORDER BY id DESC');
+    if (unbound.recordset.length) {
+      return res.json({ success: true, provisioned: true, message: 'Licença já disponível para ativação.' });
+    }
+
+    const boundCountQ = await pool.request()
+      .input('aid', dbSql.Int, aid)
+      .input('email', dbSql.NVarChar, email)
+      .query('SELECT COUNT(*) AS total FROM dbo.user_licenses WHERE app_id=@aid AND email=@email AND hardware_id IS NOT NULL');
+    const used = boundCountQ.recordset[0]?.total || 0;
+    if (totalPaid > used) {
+      const ins = await pool.request()
+        .input('uid', dbSql.Int, userId)
+        .input('aid', dbSql.Int, aid)
+        .input('email', dbSql.NVarChar, email)
+        .input('key', dbSql.NVarChar, `LIC-${Date.now()}-preprov`)
+        .query('INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key, created_at) OUTPUT Inserted.id VALUES (@uid, @aid, @email, NULL, @key, SYSUTCDATETIME())');
+      const ua = String(req.headers['user-agent'] || '');
+      const ip = req.ip || req.connection?.remoteAddress || '';
+      const licId = ins.recordset[0]?.id || null;
+      await pool.request()
+        .input('app_id', dbSql.Int, aid)
+        .input('email', dbSql.NVarChar, email)
+        .input('hardware_id', dbSql.NVarChar, null)
+        .input('license_id', dbSql.Int, licId)
+        .input('action', dbSql.NVarChar, 'provision')
+        .input('status', dbSql.NVarChar, 'ok')
+        .input('message', dbSql.NVarChar, 'LICENSE_AVAILABLE')
+        .input('ip', dbSql.NVarChar, String(ip))
+        .input('ua', dbSql.NVarChar, ua)
+        .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
+      return res.json({ success: true, provisioned: true, message: 'Licença disponibilizada para ativação.' });
+    }
+    return res.status(403).json({ success: false, provisioned: false, message: 'Limite de licenças atingido para este e-mail.' });
+  } catch (e) {
+    console.error('Falha ao provisionar licença de teste:', e?.message || e);
+    return res.status(500).json({ success: false, error: 'PROVISION_FAIL' });
+  }
+});
+
+function startTestLicenseMonitor() {
+  const enabled = String(process.env.ENABLE_TEST_LICENSE_MONITOR || '').toLowerCase() === 'true';
+  const email = String(process.env.TEST_LICENSE_EMAIL || '').trim();
+  const aid = parseInt(String(process.env.TEST_LICENSE_APP_ID || process.env.COINCRAFT_APP_ID || ''), 10);
+  const intervalMs = parseInt(String(process.env.TEST_LICENSE_MONITOR_INTERVAL_MS || '300000'), 10);
+  if (!enabled || !email || !validateEmail(email) || !Number.isFinite(aid)) return;
+  setInterval(async () => {
+    try {
+      const pool = await getConnectionPool();
+      const purchasesQ = await pool.request()
+        .input('email', dbSql.NVarChar, email)
+        .input('app_id', dbSql.Int, aid)
+        .query(`SELECT COUNT(*) AS total FROM dbo.app_payments WHERE payer_email=@email AND app_id=@app_id AND status='approved'`);
+      let totalPaid = purchasesQ.recordset[0]?.total || 0;
+      if (totalPaid === 0 && String(process.env.ENABLE_TEST_PAYMENTS || '').toLowerCase() === 'true') {
+        const appRes = await pool.request().input('id', dbSql.Int, aid).query('SELECT id, name, price FROM dbo.apps WHERE id=@id');
+        const appItem = appRes.recordset[0] || null;
+        if (appItem) {
+          const pid = 'mock_' + Date.now();
+          const amount = Number(appItem.price || 0);
+          await pool.request()
+            .input('type', dbSql.NVarChar, 'purchase')
+            .input('app_id', dbSql.Int, aid)
+            .input('app_name', dbSql.NVarChar, appItem.name)
+            .input('status', dbSql.NVarChar, 'approved')
+            .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
+          await pool.request()
+            .input('pid', dbSql.NVarChar, pid)
+            .input('aid', dbSql.Int, aid)
+            .input('status', dbSql.NVarChar, 'approved')
+            .input('amount', dbSql.Decimal(18, 2), amount)
+            .input('currency', dbSql.NVarChar, 'BRL')
+            .input('email', dbSql.NVarChar, email)
+            .input('source', dbSql.NVarChar, 'mock')
+            .query('INSERT INTO dbo.app_payments (payment_id, app_id, user_id, status, amount, currency, payer_email, source) VALUES (@pid, @aid, NULL, @status, @amount, @currency, @email, @source)');
+          await pool.request()
+            .input('payment_id', dbSql.NVarChar, pid)
+            .input('preference_id', dbSql.NVarChar, null)
+            .input('app_id', dbSql.Int, aid)
+            .input('user_id', dbSql.Int, null)
+            .input('action', dbSql.NVarChar, 'insert_mock')
+            .input('from_status', dbSql.NVarChar, null)
+            .input('to_status', dbSql.NVarChar, 'approved')
+            .input('from_payment_id', dbSql.NVarChar, null)
+            .input('to_payment_id', dbSql.NVarChar, pid)
+            .input('amount', dbSql.Decimal(18, 2), amount)
+            .input('currency', dbSql.NVarChar, 'BRL')
+            .input('payer_email', dbSql.NVarChar, email)
+            .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
+          totalPaid = 1;
+        }
+      }
+
+      const boundCountQ = await pool.request()
+        .input('aid', dbSql.Int, aid)
+        .input('email', dbSql.NVarChar, email)
+        .query('SELECT COUNT(*) AS total FROM dbo.user_licenses WHERE app_id=@aid AND email=@email AND hardware_id IS NOT NULL');
+      const used = boundCountQ.recordset[0]?.total || 0;
+      const unboundQ = await pool.request()
+        .input('aid', dbSql.Int, aid)
+        .input('email', dbSql.NVarChar, email)
+        .query('SELECT TOP 1 id FROM dbo.user_licenses WHERE app_id=@aid AND email=@email AND hardware_id IS NULL ORDER BY id DESC');
+      const hasAvailable = unboundQ.recordset.length > 0;
+
+      if (!hasAvailable && totalPaid > used) {
+        let userId = null;
+        const userRes = await pool.request().input('e', dbSql.NVarChar, email).query('SELECT id FROM dbo.users WHERE email=@e');
+        if (userRes.recordset.length) {
+          userId = userRes.recordset[0].id;
+        } else {
+          const newUser = await pool.request()
+            .input('n', dbSql.NVarChar, email.split('@')[0])
+            .input('e', dbSql.NVarChar, email)
+            .query("INSERT INTO dbo.users (name, email, role, status, created_at) OUTPUT Inserted.id VALUES (@n, @e, 'viewer', 'ativo', SYSUTCDATETIME())");
+          userId = newUser.recordset[0].id;
+        }
+        const ins = await pool.request()
+          .input('uid', dbSql.Int, userId)
+          .input('aid', dbSql.Int, aid)
+          .input('email', dbSql.NVarChar, email)
+          .input('key', dbSql.NVarChar, `LIC-${Date.now()}-preprov`)
+          .query('INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key, created_at) OUTPUT Inserted.id VALUES (@uid, @aid, @email, NULL, @key, SYSUTCDATETIME())');
+        const licId = ins.recordset[0]?.id || null;
+        await pool.request()
+          .input('app_id', dbSql.Int, aid)
+          .input('email', dbSql.NVarChar, email)
+          .input('hardware_id', dbSql.NVarChar, null)
+          .input('license_id', dbSql.Int, licId)
+          .input('action', dbSql.NVarChar, 'provision')
+          .input('status', dbSql.NVarChar, 'ok')
+          .input('message', dbSql.NVarChar, 'LICENSE_AVAILABLE')
+          .input('ip', dbSql.NVarChar, '')
+          .input('ua', dbSql.NVarChar, '')
+          .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
+      }
+    } catch (err) {
+      console.warn('Monitor de licença de teste: falha ao verificar/provisionar', err?.message || err);
+    }
+  }, isNaN(intervalMs) ? 300000 : intervalMs);
+}
+
 app.post('/api/test/seed-license-row', sensitiveLimiter, async (req, res) => {
   try {
     if (String(process.env.ENABLE_TEST_PAYMENTS || '').toLowerCase() !== 'true') {
@@ -5489,6 +5705,7 @@ getConnectionPool().then(async () => {
   await ensureFeedbacksSchema();
   await ensureDesafiosSchema();
   await ensureCoinCraftInstallerUrl();
+  startTestLicenseMonitor();
   app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
     console.log(`📱 Ambiente: ${process.env.NODE_ENV || 'development'}`);
