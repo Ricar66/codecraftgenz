@@ -209,6 +209,53 @@ function validateEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+async function auditLicense(pool, { app_id, email, hardware_id, license_id, action, status, message, ip, ua }) {
+  await pool.request()
+    .input('app_id', dbSql.Int, app_id)
+    .input('email', dbSql.NVarChar, email)
+    .input('hardware_id', dbSql.NVarChar, hardware_id)
+    .input('license_id', dbSql.Int, license_id)
+    .input('action', dbSql.NVarChar, action)
+    .input('status', dbSql.NVarChar, status)
+    .input('message', dbSql.NVarChar, message)
+    .input('ip', dbSql.NVarChar, String(ip || ''))
+    .input('ua', dbSql.NVarChar, String(ua || ''))
+    .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
+}
+
+async function auditPaymentAction(pool, { payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email }) {
+  await pool.request()
+    .input('payment_id', dbSql.NVarChar, payment_id)
+    .input('preference_id', dbSql.NVarChar, preference_id ?? null)
+    .input('app_id', dbSql.Int, app_id)
+    .input('user_id', dbSql.Int, user_id ?? null)
+    .input('action', dbSql.NVarChar, action)
+    .input('from_status', dbSql.NVarChar, from_status ?? null)
+    .input('to_status', dbSql.NVarChar, to_status ?? null)
+    .input('from_payment_id', dbSql.NVarChar, from_payment_id ?? null)
+    .input('to_payment_id', dbSql.NVarChar, to_payment_id ?? null)
+    .input('amount', dbSql.Decimal(18, 2), amount ?? null)
+    .input('currency', dbSql.NVarChar, currency ?? null)
+    .input('payer_email', dbSql.NVarChar, payer_email ?? null)
+    .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
+}
+
+async function getApprovedPurchasesCount(pool, email, appId) {
+  const r = await pool.request()
+    .input('email', dbSql.NVarChar, email)
+    .input('app_id', dbSql.Int, appId)
+    .query('SELECT COUNT(*) AS total FROM dbo.app_payments WHERE payer_email=@email AND app_id=@app_id AND status=\'approved\'');
+  return r.recordset[0]?.total || 0;
+}
+
+async function getUsedLicensesCount(pool, email, appId) {
+  const r = await pool.request()
+    .input('email', dbSql.NVarChar, email)
+    .input('app_id', dbSql.Int, appId)
+    .query("SELECT COUNT(*) AS total FROM dbo.user_licenses l JOIN dbo.users u ON l.user_id=u.id WHERE u.email=@email AND l.app_id=@app_id AND l.hardware_id IS NOT NULL AND LTRIM(RTRIM(l.hardware_id)) <> ''");
+  return r.recordset[0]?.total || 0;
+}
+
 // --- Schemas Zod para validação antecipada ---
 const loginSchema = z.object({
   email: z.string().email(),
@@ -4080,17 +4127,7 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
         .input('hwid', dbSql.NVarChar, String(hardware_id))
         .query('SELECT TOP 1 id FROM dbo.user_licenses WHERE app_id=@app_id AND email=@email AND hardware_id=@hwid ORDER BY id DESC');
       const licId = licRow.recordset[0]?.id || null;
-      await pool.request()
-        .input('app_id', dbSql.Int, Number(app_id))
-        .input('email', dbSql.NVarChar, String(email))
-        .input('hardware_id', dbSql.NVarChar, String(hardware_id))
-        .input('license_id', dbSql.Int, licId)
-        .input('action', dbSql.NVarChar, 'activate')
-        .input('status', dbSql.NVarChar, 'ok')
-        .input('message', dbSql.NVarChar, 'NEW_ACTIVATION')
-        .input('ip', dbSql.NVarChar, String(ip))
-        .input('ua', dbSql.NVarChar, ua)
-        .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
+      await auditLicense(pool, { app_id: Number(app_id), email: String(email), hardware_id: String(hardware_id), license_id: licId, action: 'activate', status: 'ok', message: 'NEW_ACTIVATION', ip, ua });
 
       return res.json({ licensed: true, message: 'Nova licença ativada com sucesso.', new_activation: true });
     }
@@ -4140,42 +4177,13 @@ app.post('/api/verify-license', sensitiveLimiter, async (req, res) => {
       const ua = String(req.headers['user-agent'] || '');
       const ip = req.ip || req.connection?.remoteAddress || '';
       const licId = checkLicense.recordset[0].id;
-      await pool.request()
-        .input('app_id', dbSql.Int, app_id)
-        .input('email', dbSql.NVarChar, email)
-        .input('hardware_id', dbSql.NVarChar, hardware_id)
-        .input('license_id', dbSql.Int, licId)
-        .input('action', dbSql.NVarChar, 'verify')
-        .input('status', dbSql.NVarChar, 'ok')
-        .input('message', dbSql.NVarChar, 'LICENSE_OK')
-        .input('ip', dbSql.NVarChar, String(ip))
-        .input('ua', dbSql.NVarChar, ua)
-        .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
+      await auditLicense(pool, { app_id, email, hardware_id, license_id: licId, action: 'verify', status: 'ok', message: 'LICENSE_OK', ip, ua });
       return res.json({ success: true, licensed: true, code: 'LICENSE_OK', message: "Acesso validado" }); 
     } 
 
     // 3. PRIMEIRO CADASTRO (Verifica saldo de compras) 
-    const purchases = await pool.request() 
-      .input('email', dbSql.NVarChar, email) 
-      .input('app_id', dbSql.Int, app_id) 
-      .query(` 
-        SELECT COUNT(*) as total 
-        FROM dbo.app_payments 
-        WHERE payer_email = @email AND status = 'approved' AND app_id = @app_id 
-      `); 
-    
-    const usedLicenses = await pool.request() 
-      .input('email', dbSql.NVarChar, email) 
-      .input('app_id', dbSql.Int, app_id) 
-      .query(` 
-        SELECT COUNT(*) as total 
-        FROM dbo.user_licenses l 
-        JOIN dbo.users u ON l.user_id = u.id 
-        WHERE u.email = @email AND l.app_id = @app_id AND l.hardware_id IS NOT NULL AND LTRIM(RTRIM(l.hardware_id)) <> '' 
-      `); 
-
-    const totalPaid = purchases.recordset[0].total; 
-    const totalUsed = usedLicenses.recordset[0].total; 
+    const totalPaid = await getApprovedPurchasesCount(pool, email, app_id);
+    const totalUsed = await getUsedLicensesCount(pool, email, app_id);
 
     // Se tiver mais compras que licenças usadas, permite cadastrar a nova máquina 
     if (totalPaid > totalUsed) { 
@@ -4207,17 +4215,7 @@ app.post('/api/verify-license', sensitiveLimiter, async (req, res) => {
           VALUES (@uid, @aid, @email, @hwid, @key, SYSUTCDATETIME(), SYSUTCDATETIME()) 
         `); 
       const licId = ins.recordset[0]?.id || null;
-      await pool.request()
-        .input('app_id', dbSql.Int, app_id)
-        .input('email', dbSql.NVarChar, email)
-        .input('hardware_id', dbSql.NVarChar, hardware_id)
-        .input('license_id', dbSql.Int, licId)
-        .input('action', dbSql.NVarChar, 'activate')
-        .input('status', dbSql.NVarChar, 'ok')
-        .input('message', dbSql.NVarChar, 'LICENSE_BOUND')
-        .input('ip', dbSql.NVarChar, String(ip))
-        .input('ua', dbSql.NVarChar, ua)
-        .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
+      await auditLicense(pool, { app_id, email, hardware_id, license_id: licId, action: 'activate', status: 'ok', message: 'LICENSE_BOUND', ip, ua });
       console.log(`Novo registro vinculado: ${email} -> ${hardware_id}`); 
       return res.json({ success: true, licensed: true, new_activation: true, code: 'LICENSE_BOUND', message: "Registro atualizado e vinculado" }); 
     } 
@@ -4225,17 +4223,7 @@ app.post('/api/verify-license', sensitiveLimiter, async (req, res) => {
     // Se chegou aqui, não tem compra ou todas estão em uso 
     const ua = String(req.headers['user-agent'] || '');
     const ip = req.ip || req.connection?.remoteAddress || '';
-    await pool.request()
-      .input('app_id', dbSql.Int, app_id)
-      .input('email', dbSql.NVarChar, email)
-      .input('hardware_id', dbSql.NVarChar, hardware_id)
-      .input('license_id', dbSql.Int, null)
-      .input('action', dbSql.NVarChar, 'verify')
-      .input('status', dbSql.NVarChar, 'denied')
-      .input('message', dbSql.NVarChar, 'LICENSE_LIMIT')
-      .input('ip', dbSql.NVarChar, String(ip))
-      .input('ua', dbSql.NVarChar, ua)
-      .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
+    await auditLicense(pool, { app_id, email, hardware_id, license_id: null, action: 'verify', status: 'denied', message: 'LICENSE_LIMIT', ip, ua });
     console.log(`Falha de acesso: ${email} (Sem saldo ou PC incorreto)`); 
     return res.status(403).json({ success: false, licensed: false, code: 'LICENSE_LIMIT', message: "Credenciais não encontradas ou limite atingido" }); 
 
@@ -4884,20 +4872,7 @@ app.post('/api/test/mock-approved-payment', sensitiveLimiter, async (req, res) =
       .input('email', dbSql.NVarChar, email)
       .input('source', dbSql.NVarChar, 'mock')
       .query('INSERT INTO dbo.app_payments (payment_id, app_id, user_id, status, amount, currency, payer_email, source) VALUES (@pid, @aid, NULL, @status, @amount, @currency, @email, @source)');
-    await pool.request()
-      .input('payment_id', dbSql.NVarChar, pid)
-      .input('preference_id', dbSql.NVarChar, null)
-      .input('app_id', dbSql.Int, aid)
-      .input('user_id', dbSql.Int, null)
-      .input('action', dbSql.NVarChar, 'insert_mock')
-      .input('from_status', dbSql.NVarChar, null)
-      .input('to_status', dbSql.NVarChar, 'approved')
-      .input('from_payment_id', dbSql.NVarChar, null)
-      .input('to_payment_id', dbSql.NVarChar, pid)
-      .input('amount', dbSql.Decimal(18, 2), amount)
-      .input('currency', dbSql.NVarChar, 'BRL')
-      .input('payer_email', dbSql.NVarChar, email)
-      .query('INSERT INTO dbo.app_payments_audit (payment_id, preference_id, app_id, user_id, action, from_status, to_status, from_payment_id, to_payment_id, amount, currency, payer_email) VALUES (@payment_id, @preference_id, @app_id, @user_id, @action, @from_status, @to_status, @from_payment_id, @to_payment_id, @amount, @currency, @payer_email)');
+    await auditPaymentAction(pool, { payment_id: pid, preference_id: null, app_id: aid, user_id: null, action: 'insert_mock', from_status: null, to_status: 'approved', from_payment_id: null, to_payment_id: pid, amount, currency: 'BRL', payer_email: email });
     return res.json({ success: true, payment_id: pid });
   } catch (e) {
     void e;
@@ -4999,17 +4974,7 @@ app.post('/api/test/provision-license', sensitiveLimiter, async (req, res) => {
       const ua = String(req.headers['user-agent'] || '');
       const ip = req.ip || req.connection?.remoteAddress || '';
       const licId = ins.recordset[0]?.id || null;
-      await pool.request()
-        .input('app_id', dbSql.Int, aid)
-        .input('email', dbSql.NVarChar, email)
-        .input('hardware_id', dbSql.NVarChar, '')
-        .input('license_id', dbSql.Int, licId)
-        .input('action', dbSql.NVarChar, 'provision')
-        .input('status', dbSql.NVarChar, 'ok')
-        .input('message', dbSql.NVarChar, 'LICENSE_AVAILABLE')
-        .input('ip', dbSql.NVarChar, String(ip))
-        .input('ua', dbSql.NVarChar, ua)
-        .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
+      await auditLicense(pool, { app_id: aid, email, hardware_id: '', license_id: licId, action: 'provision', status: 'ok', message: 'LICENSE_AVAILABLE', ip, ua });
       return res.json({ success: true, provisioned: true, message: 'Licença disponibilizada para ativação.' });
     }
     return res.status(403).json({ success: false, provisioned: false, message: 'Limite de licenças atingido para este e-mail.' });
@@ -5043,17 +5008,7 @@ app.post('/api/test/release-license', sensitiveLimiter, async (req, res) => {
       .query("UPDATE dbo.user_licenses SET hardware_id='', activated_at=NULL, updated_at=SYSUTCDATETIME() WHERE id=@id");
     const ua = String(req.headers['user-agent'] || '');
     const ip = req.ip || req.connection?.remoteAddress || '';
-    await pool.request()
-      .input('app_id', dbSql.Int, aid)
-      .input('email', dbSql.NVarChar, email)
-      .input('hardware_id', dbSql.NVarChar, '')
-      .input('license_id', dbSql.Int, row.id)
-      .input('action', dbSql.NVarChar, 'release')
-      .input('status', dbSql.NVarChar, 'ok')
-      .input('message', dbSql.NVarChar, 'LICENSE_RELEASED')
-      .input('ip', dbSql.NVarChar, String(ip))
-      .input('ua', dbSql.NVarChar, ua)
-      .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
+    await auditLicense(pool, { app_id: aid, email, hardware_id: '', license_id: row.id, action: 'release', status: 'ok', message: 'LICENSE_RELEASED', ip, ua });
     return res.json({ success: true, released: true });
   } catch (err) {
     console.warn('Falha ao liberar licença de teste:', err?.message || err);
