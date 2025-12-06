@@ -62,6 +62,7 @@ export async function apiRequest(endpoint, options = {}) {
   const authHeader = getAuthHeader();
   
   try {
+    const suppressLog = options.suppressLog === true;
     if (isDebug) {
       const m = String(options.method || 'GET').toUpperCase();
       console.log('[API:req]', m, endpoint);
@@ -92,7 +93,7 @@ export async function apiRequest(endpoint, options = {}) {
       const apiError = new Error(errorMessage);
       apiError.status = response.status;
       if (errorDetails) apiError.details = errorDetails;
-      if (isDebug) {
+      if (isDebug && !suppressLog) {
         console.error('[API:err]', endpoint, apiError.status, errorMessage, errorDetails || '');
       }
       throw apiError;
@@ -127,7 +128,7 @@ export async function apiRequest(endpoint, options = {}) {
       throw networkError;
     }
     
-    if (isDebug) {
+    if (isDebug && options.suppressLog !== true) {
       console.error('[API:catch]', endpoint, error?.status || 0, error?.message || error);
     }
     throw error;
