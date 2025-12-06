@@ -585,6 +585,8 @@ async function ensureUserLicensesSchema() {
     `);
     await pool.request().query(`IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_user_licenses_app_email' AND object_id=OBJECT_ID('dbo.user_licenses')) BEGIN CREATE INDEX IX_user_licenses_app_email ON dbo.user_licenses(app_id, email); END;`);
     await pool.request().query(`IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_user_licenses_app_email_hwid' AND object_id=OBJECT_ID('dbo.user_licenses')) BEGIN CREATE INDEX IX_user_licenses_app_email_hwid ON dbo.user_licenses(app_id, email, hardware_id); END;`);
+    await pool.request().query(`IF COL_LENGTH('dbo.user_licenses', 'app_name') IS NULL BEGIN ALTER TABLE dbo.user_licenses ADD app_name NVARCHAR(256) NULL; END;`);
+    await pool.request().query(`UPDATE l SET app_name = a.name FROM dbo.user_licenses l JOIN dbo.apps a ON l.app_id = a.id WHERE l.app_name IS NULL OR LTRIM(RTRIM(l.app_name)) = ''`);
     console.log('✅ Esquema de dbo.user_licenses verificado/criado');
   } catch (err) {
     console.error('Erro ao garantir esquema de dbo.user_licenses:', err);
@@ -4086,8 +4088,8 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
       .input('app_id', dbSql.Int, Number(app_id))
       .query(`SELECT id, hardware_id FROM dbo.user_licenses WHERE app_id = @app_id AND email = @email`);
 
-    const existingLicenses = licensesQuery.recordset || [];
-    const isSameHardware = existingLicenses.find(l => l.hardware_id === String(hardware_id));
+  const existingLicenses = licensesQuery.recordset || [];
+  const isSameHardware = existingLicenses.find(l => l.hardware_id === String(hardware_id));
 
     if (isSameHardware) {
       const ua = String(req.headers['user-agent'] || '');
@@ -4109,20 +4111,24 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
     const allowedActivations = devBypass ? Math.max(1, totalCompras) : totalCompras;
     const usedCount = existingLicenses.filter(l => l.hardware_id && String(l.hardware_id).trim() !== '').length;
     if (allowedActivations > usedCount) {
+      const appNameRes = await pool.request().input('id', dbSql.Int, Number(app_id)).query('SELECT name FROM dbo.apps WHERE id=@id');
+      const appName = appNameRes.recordset[0]?.name || null;
       const upd = await pool.request()
         .input('app_id', dbSql.Int, Number(app_id))
         .input('email', dbSql.NVarChar, String(email))
         .input('hwid', dbSql.NVarChar, String(hardware_id))
+        .input('appname', dbSql.NVarChar, appName)
         .input('key', dbSql.NVarChar, `LIC-${Date.now()}-${userId ?? 'anon'}`)
-        .query("UPDATE dbo.user_licenses SET hardware_id=@hwid, license_key=@key, activated_at=ISNULL(activated_at, SYSUTCDATETIME()), updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND email=@email AND (hardware_id IS NULL OR LTRIM(RTRIM(hardware_id))='')");
+        .query("UPDATE dbo.user_licenses SET hardware_id=@hwid, license_key=@key, app_name=@appname, activated_at=ISNULL(activated_at, SYSUTCDATETIME()), updated_at=SYSUTCDATETIME() WHERE app_id=@app_id AND email=@email AND (hardware_id IS NULL OR LTRIM(RTRIM(hardware_id))='')");
       if ((upd.rowsAffected?.[0] || 0) === 0) {
         await pool.request()
           .input('user_id', dbSql.Int, userId)
           .input('app_id', dbSql.Int, Number(app_id))
           .input('email', dbSql.NVarChar, String(email))
           .input('hwid', dbSql.NVarChar, String(hardware_id))
+          .input('appname', dbSql.NVarChar, appName)
           .input('key', dbSql.NVarChar, `LIC-${Date.now()}-${userId ?? 'anon'}`)
-          .query('INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key, activated_at, created_at) VALUES (@user_id, @app_id, @email, @hwid, @key, SYSUTCDATETIME(), SYSUTCDATETIME())');
+          .query('INSERT INTO dbo.user_licenses (user_id, app_id, app_name, email, hardware_id, license_key, activated_at, created_at) VALUES (@user_id, @app_id, @appname, @email, @hwid, @key, SYSUTCDATETIME(), SYSUTCDATETIME())');
       }
       const ua = String(req.headers['user-agent'] || '');
       const ip = req.ip || req.connection?.remoteAddress || '';
@@ -4212,16 +4218,19 @@ app.post('/api/verify-license', sensitiveLimiter, async (req, res) => {
 
       const ua = String(req.headers['user-agent'] || '');
       const ip = req.ip || req.connection?.remoteAddress || '';
+      const appNameRes = await pool.request().input('id', dbSql.Int, app_id).query('SELECT name FROM dbo.apps WHERE id=@id');
+      const appName = appNameRes.recordset[0]?.name || null;
       const ins = await pool.request() 
         .input('uid', dbSql.Int, userId) 
         .input('aid', dbSql.Int, app_id) 
+        .input('appname', dbSql.NVarChar, appName) 
         .input('email', dbSql.NVarChar, email) 
         .input('hwid', dbSql.NVarChar, hardware_id) 
         .input('key', dbSql.NVarChar, `KEY-${Date.now()}`) 
         .query(` 
-          INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key, activated_at, created_at) 
+          INSERT INTO dbo.user_licenses (user_id, app_id, app_name, email, hardware_id, license_key, activated_at, created_at) 
           OUTPUT Inserted.id 
-          VALUES (@uid, @aid, @email, @hwid, @key, SYSUTCDATETIME(), SYSUTCDATETIME()) 
+          VALUES (@uid, @aid, @appname, @email, @hwid, @key, SYSUTCDATETIME(), SYSUTCDATETIME()) 
         `); 
       const licId = ins.recordset[0]?.id || null;
       await auditLicense(pool, { app_id, email, hardware_id, license_id: licId, action: 'activate', status: 'ok', message: 'LICENSE_BOUND', ip, ua });
@@ -4977,9 +4986,10 @@ app.post('/api/test/provision-license', sensitiveLimiter, async (req, res) => {
       const ins = await pool.request()
         .input('uid', dbSql.Int, userId)
         .input('aid', dbSql.Int, aid)
+        .input('appname', dbSql.NVarChar, appItem.name)
         .input('email', dbSql.NVarChar, email)
         .input('key', dbSql.NVarChar, `LIC-${Date.now()}-preprov`)
-        .query("INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key, created_at) OUTPUT Inserted.id VALUES (@uid, @aid, @email, '', @key, SYSUTCDATETIME())");
+        .query("INSERT INTO dbo.user_licenses (user_id, app_id, app_name, email, hardware_id, license_key, created_at) OUTPUT Inserted.id VALUES (@uid, @aid, @appname, @email, '', @key, SYSUTCDATETIME())");
       const ua = String(req.headers['user-agent'] || '');
       const ip = req.ip || req.connection?.remoteAddress || '';
       const licId = ins.recordset[0]?.id || null;
@@ -5287,13 +5297,16 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
 
     const ua = String(req.headers['user-agent'] || '');
     const ip = req.ip || req.connection?.remoteAddress || '';
+    const appNameRes = await pool.request().input('id', dbSql.Int, Number(appId)).query('SELECT name FROM dbo.apps WHERE id=@id');
+    const appName = appNameRes.recordset[0]?.name || null;
     const ins = await pool.request()
       .input('uid', dbSql.Int, userId)
       .input('aid', dbSql.Int, Number(appId))
+      .input('appname', dbSql.NVarChar, appName)
       .input('email', dbSql.NVarChar, String(email))
       .input('hwid', dbSql.NVarChar, String(hardwareId))
       .input('key', dbSql.NVarChar, String(signature))
-      .query('INSERT INTO dbo.user_licenses (user_id, app_id, email, hardware_id, license_key, activated_at, created_at) OUTPUT Inserted.id VALUES (@uid, @aid, @email, @hwid, @key, SYSUTCDATETIME(), SYSUTCDATETIME())');
+      .query('INSERT INTO dbo.user_licenses (user_id, app_id, app_name, email, hardware_id, license_key, activated_at, created_at) OUTPUT Inserted.id VALUES (@uid, @aid, @appname, @email, @hwid, @key, SYSUTCDATETIME(), SYSUTCDATETIME())');
     const licId = ins.recordset[0]?.id || null;
     await pool.request()
       .input('app_id', dbSql.Int, Number(appId))
