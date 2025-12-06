@@ -5240,7 +5240,7 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
     const usedCntRes = await pool.request()
       .input('email', dbSql.NVarChar, String(email))
       .input('aid', dbSql.Int, Number(appId))
-      .query('SELECT COUNT(*) AS cnt FROM dbo.user_licenses WHERE email=@email AND app_id=@aid AND hardware_id IS NOT NULL');
+      .query("SELECT COUNT(*) AS cnt FROM dbo.user_licenses WHERE email=@email AND app_id=@aid AND hardware_id IS NOT NULL AND LTRIM(RTRIM(hardware_id)) <> ''");
     const used = usedCntRes.recordset[0]?.cnt || 0;
     if (used >= approved) {
       return res.status(403).json({ error: 'Limite de licenças atingido para este e-mail. Compre mais no site.' });
