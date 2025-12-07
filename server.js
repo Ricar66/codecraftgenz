@@ -2083,7 +2083,7 @@ app.post('/api/mentores', authenticate, authorizeAdmin, async (req, res, next) =
       .input('email', dbSql.NVarChar, sanitizeString(String(email), 128))
       .input('telefone', dbSql.NVarChar, telefone ? sanitizeString(String(telefone), 64) : null)
       .input('bio', dbSql.NVarChar(dbSql.MAX), bio ? sanitizeString(String(bio), 4000) : null)
-      .input('avatar_url', dbSql.NVarChar, avatar_url ? sanitizeString(String(avatar_url), 512) : null)
+      .input('avatar_url', dbSql.NVarChar(dbSql.MAX), avatar_url ? sanitizeString(String(avatar_url), 10485760) : null)
       .input('visible', dbSql.Bit, (visible === undefined || visible === null) ? 1 : (visible ? 1 : 0));
 
     const insertQuery = `
@@ -2134,7 +2134,7 @@ app.put('/api/mentores/:id', authenticate, authorizeAdmin, async (req, res, next
       .input('email', dbSql.NVarChar, email ? sanitizeString(String(email), 128) : null)
       .input('telefone', dbSql.NVarChar, telefone ? sanitizeString(String(telefone), 64) : null)
       .input('bio', dbSql.NVarChar(dbSql.MAX), bio ? sanitizeString(String(bio), 4000) : null)
-      .input('avatar_url', dbSql.NVarChar, avatar_url ? sanitizeString(String(avatar_url), 512) : null)
+      .input('avatar_url', dbSql.NVarChar(dbSql.MAX), avatar_url ? sanitizeString(String(avatar_url), 10485760) : null)
       .input('visible', dbSql.Bit, visible === undefined || visible === null ? null : (visible ? 1 : 0));
 
     // Atualização com SET completo (usa COALESCE para manter valores quando null)

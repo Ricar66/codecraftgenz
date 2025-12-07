@@ -35,7 +35,7 @@ BEGIN
     telefone     NVARCHAR(40) NULL, 
     bio          NVARCHAR(MAX) NULL, 
     visible      BIT NOT NULL DEFAULT 1, 
-    avatar_url   NVARCHAR(512) NULL, 
+    avatar_url   NVARCHAR(MAX) NULL, 
     created_at   DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(), 
     updated_at   DATETIME2(0) NULL 
   ); 
