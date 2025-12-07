@@ -21,7 +21,7 @@ const FeaturesSection = () => {
         <div className={styles.featuresGrid}>
 
           {/* Card 1: Desafios */}
-          <div className={styles.featureCard}>
+          <div link="/desafios" className={styles.featureCard}>
             <div className={styles.iconWrapper}>
               <FaTrophy />
             </div>
@@ -32,7 +32,7 @@ const FeaturesSection = () => {
           </div>
 
           {/* Card 2: Projetos */}
-          <div className={styles.featureCard}>
+          <div link="/projetos" className={styles.featureCard}>
             <div className={styles.iconWrapper}>
               <FaProjectDiagram />
             </div>
@@ -43,7 +43,7 @@ const FeaturesSection = () => {
           </div>
 
           {/* Card 3: Mentorias */}
-          <div className={styles.featureCard}>
+          <div link="/mentorias" className={styles.featureCard}>
             <div className={styles.iconWrapper}>
               <FaUsers />
             </div>
@@ -54,7 +54,7 @@ const FeaturesSection = () => {
           </div>
 
           {/* Card 4: Ranking */}
-          <div className={styles.featureCard}>
+          <div link="/ranking" className={styles.featureCard}>
             <div className={styles.iconWrapper}>
               <FaChartLine />
             </div>
