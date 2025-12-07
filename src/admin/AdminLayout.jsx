@@ -498,8 +498,8 @@ export function Mentores() {
   const [errors, setErrors] = React.useState({});
   const [busy, setBusy] = React.useState(false);
   const [toast, setToast] = React.useState('');
-  const MAX_PHOTO_BYTES = 1024 * 1024;
-  const ACCEPT_TYPES = ['image/jpeg','image/png','image/webp','image/jpg','image/pjpeg','image/gif'];
+  const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5MB limit
+  const ACCEPT_TYPES = ['image/jpeg','image/png','image/webp','image/jpg','image/pjpeg','image/gif','image/svg+xml'];
   const [query, setQuery] = React.useState('');
   const [filterSpec, setFilterSpec] = React.useState('');
   const [filterStatus, setFilterStatus] = React.useState('');
@@ -549,9 +549,11 @@ export function Mentores() {
   };
   const onPhotoFile = async (file) => {
     if (!file) return;
-    const isImage = (file.type && file.type.startsWith('image/')) || ACCEPT_TYPES.includes(file.type);
-    if (!isImage) { alert('Formato inválido. Use imagens (JPEG, PNG, WEBP, GIF).'); return; }
-    if (file.size > MAX_PHOTO_BYTES) { alert('Imagem muito grande. Máximo de ~1MB.'); return; }
+    console.log('Selected file:', file.name, file.type, file.size);
+    // Relaxed check: trust browser's file object or ACCEPT_TYPES
+    const isImage = (file.type && file.type.startsWith('image/')); 
+    if (!isImage) { alert('Formato inválido. Use imagens (JPEG, PNG, WEBP, GIF, SVG).'); return; }
+    if (file.size > MAX_PHOTO_BYTES) { alert('Imagem muito grande. Máximo de 5MB.'); return; }
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result;
