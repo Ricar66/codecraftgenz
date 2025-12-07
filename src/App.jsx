@@ -123,6 +123,10 @@ function App() {
               target="_blank" 
               rel="noopener noreferrer" 
               aria-label="GitHub"
+              onClick={(e) => {
+                e.preventDefault();
+                window.open("https://github.com/CodeCraftgenz", "_blank", "noopener,noreferrer");
+              }}
             >
               <FaGithub />
             </a>
@@ -132,6 +136,10 @@ function App() {
               target="_blank" 
               rel="noopener noreferrer" 
               aria-label="WhatsApp"
+              onClick={(e) => {
+                e.preventDefault();
+                window.open("https://wa.me/5535999358856", "_blank", "noopener,noreferrer");
+              }}
             >
               <FaWhatsapp />
             </a>
