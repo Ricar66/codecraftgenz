@@ -551,7 +551,7 @@ export function Mentores() {
     if (!file) return;
     console.log('Selected file:', file.name, file.type, file.size);
     // Relaxed check: trust browser's file object or ACCEPT_TYPES
-    const isImage = (file.type && file.type.startsWith('image/')); 
+    const isImage = (file.type && file.type.startsWith('image/')) || ACCEPT_TYPES.includes(file.type); 
     if (!isImage) { alert('Formato inválido. Use imagens (JPEG, PNG, WEBP, GIF, SVG).'); return; }
     if (file.size > MAX_PHOTO_BYTES) { alert('Imagem muito grande. Máximo de 5MB.'); return; }
     const reader = new FileReader();
@@ -708,7 +708,7 @@ export function Mentores() {
             </div>
             <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
               <input aria-label="Foto (URL)" placeholder="Foto (URL)" value={form.photo} onChange={e=>setForm({...form,photo:e.target.value})} />
-              <input aria-label="Enviar foto" type="file" accept="image/*" onChange={e=>onPhotoFile(e.target.files?.[0])} />
+              <input aria-label="Enviar foto" type="file" accept={ACCEPT_TYPES.join(',')} onChange={e=>onPhotoFile(e.target.files?.[0])} />
             </div>
             <div className="formRow">
               <input aria-label="Avatar URL (banco)" placeholder="Avatar URL (banco)" value={form.avatar_url} onChange={e=>setForm({...form,avatar_url:e.target.value})} />
