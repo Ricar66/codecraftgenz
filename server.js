@@ -254,6 +254,11 @@ function logEvent(type, details) {
 function sanitizeString(s, maxLen = 2048) {
   if (typeof s !== 'string') return s;
   const trimmed = s.trim().slice(0, maxLen);
+  // Se for uma Data URL, não remove tags HTML pois pode quebrar o formato (embora base64 use +, /, =)
+  // Base64 não contém < ou > exceto se for SVG malformado inline, mas Data URIs começam com data:
+  if (trimmed.startsWith('data:image/')) {
+    return trimmed;
+  }
   return trimmed.replace(/<[^>]*>/g, '');
 }
 
