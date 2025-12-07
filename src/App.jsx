@@ -108,8 +108,8 @@ function App() {
           </div>
           <div className="footer-social" aria-label="Redes sociais">
             <a className="social-link instagram" href="#" aria-label="Instagram (em breve)"><FaInstagram /></a>
-            <a className="social-link github" href="#" aria-label="GitHub (em breve)"><FaGithub /></a>
-            <a className="social-link whatsapp" href="#" aria-label="WhatsApp (em breve)"><FaWhatsapp /></a>
+            <a className="social-link github" href="https://github.com/CodeCraftgenz" aria-label="GitHub"><FaGithub /></a>
+            <a className="social-link whatsapp" href="https://wa.me/5535999358856" aria-label="WhatsApp"><FaWhatsapp /></a>
           </div>
           <div className="footer-note">Craftando ideias em software com estilo</div>
         </div>

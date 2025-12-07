@@ -3,6 +3,12 @@
   background: transparent;
 }
 
+@media (min-width: 1024px) {
+  .osspSection {
+    padding: 80px 20px;
+  }
+}
+
 .osspHeader {
   text-align: center;
   margin-bottom: 3rem;
