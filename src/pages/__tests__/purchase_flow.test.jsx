@@ -10,10 +10,28 @@ vi.mock('../../services/appsAPI.js', () => ({
   getPurchaseStatus: vi.fn(async () => ({ status: 'approved', download_url: 'https://example.com/download/test.exe' })),
   registerDownload: vi.fn(async () => ({ success: true, download_url: 'https://example.com/download/test.exe' })),
   submitFeedback: vi.fn(async () => ({ success: true })),
+  activateDeviceLicense: vi.fn(async () => ({ licensed: true, license_key: 'KEY-123' })),
+  downloadByEmail: vi.fn(async () => ({ download_url: 'https://example.com/download/test.exe' })),
+}));
+
+vi.mock('../../hooks/useAnalytics.js', () => ({
+  useAnalytics: () => ({
+    trackEvent: vi.fn(),
+  }),
 }));
 
 import { AuthContext } from '../../context/AuthCore.js';
 import AppPurchasePage from '../AppPurchasePage.jsx';
+import OrderSuccessPage from '../OrderSuccessPage.jsx';
+
+// Mock do crypto para OrderSuccessPage
+Object.defineProperty(global, 'crypto', {
+  value: {
+    subtle: {
+      digest: vi.fn().mockResolvedValue(new Uint8Array(32)),
+    },
+  },
+});
 
 const renderPage = (initialEntries = ['/apps/7/compra'], mockUser = { name: 'Test User', email: 'test@user.com' }) => {
   return render(
@@ -21,6 +39,7 @@ const renderPage = (initialEntries = ['/apps/7/compra'], mockUser = { name: 'Tes
       <MemoryRouter initialEntries={initialEntries}>
         <Routes>
           <Route path="/apps/:id/compra" element={<AppPurchasePage />} />
+          <Route path="/apps/:id/sucesso" element={<OrderSuccessPage />} />
         </Routes>
       </MemoryRouter>
     </AuthContext.Provider>
@@ -32,26 +51,30 @@ describe('Fluxo de compra – regressão sem auto-download', () => {
     vi.restoreAllMocks();
   });
 
-  it('não inicia download automaticamente após status approved; exige clique no botão', async () => {
+  it('redireciona para página de sucesso e não inicia download automaticamente', async () => {
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => {});
 
+    // Simula status approved vindo da URL (retorno do gateway)
     const initialEntries = ['/apps/7/compra?preference_id=pref_123&status=approved'];
     renderPage(initialEntries);
 
-    // Espera renderizar o título e status aprovado
-    const titleEl = await screen.findByText('App Teste');
-    expect(titleEl).toBeDefined();
+    // Deve redirecionar para a página de sucesso
+    // A página de sucesso exibe "Parabéns pela compra" ou o nome do app
+    const successMsg = await screen.findByText(/Parabéns pela compra/i);
+    expect(successMsg).toBeDefined();
 
-    const statusEl = await screen.findByText(/Status da compra: approved/i);
-    expect(statusEl).toBeDefined();
+    // Verifica se estamos na página de sucesso procurando pelo botão específico
+    const btn = await screen.findByRole('button', { name: /Baixar Executável/i });
+    expect(btn).toBeDefined();
 
     // Não deve abrir janela automaticamente
     expect(openSpy).not.toHaveBeenCalled();
 
     // Ao clicar no botão de download, deve abrir
-    const btn = await screen.findByRole('button', { name: /Baixar executável/i });
-    expect(btn).toBeDefined();
-
+    // Precisamos simular o downloadURL vindo da API
+    const mods = await import('../../services/appsAPI.js');
+    mods.getPurchaseStatus.mockResolvedValue({ status: 'approved', download_url: 'https://example.com/download/test.exe' });
+    
     // Simula clique
     btn.click();
     await waitFor(() => {
