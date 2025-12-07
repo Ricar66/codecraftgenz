@@ -1,6 +1,6 @@
 // src/pages/AppPurchasePage.jsx
 import React, { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 
 import CardDirectPayment from '../components/CardDirectPayment.jsx';
 import Navbar from '../components/Navbar/Navbar';
@@ -44,12 +44,13 @@ const AppPurchasePage = () => {
   // Fluxo simplificado: apenas Cartão (Brick)
   const { id } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [app, setApp] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
   const [statusDetail, setStatusDetail] = useState('');
-  const [downloadUrl, setDownloadUrl] = useState('');
+  const downloadUrl = '';
   const [progress] = useState(0);
   const [downloadStatus] = useState('idle'); // idle | downloading | done | error
   const [downloadError] = useState('');
@@ -150,14 +151,15 @@ const AppPurchasePage = () => {
           setStatus(resolvedStatus);
           setStatusDetail(s?.status_detail || '');
           if (resolvedStatus === 'approved') {
-            if (s?.download_url) setDownloadUrl(s.download_url);
+            navigate(`/apps/${id}/sucesso?payment_id=${paymentId || s?.payment_id || ''}&status=approved`);
+            return;
           }
         } catch (e) {
           console.warn('Erro ao consultar status:', e);
         }
       })();
     }
-  }, [id, searchParams]);
+  }, [id, searchParams, navigate]);
 
   // Fluxo Wallet (Checkout Pro)
   const startWalletCheckout = async () => {
@@ -370,15 +372,8 @@ const AppPurchasePage = () => {
                     deviceId={deviceId}
                     onPaymentSuccess={async (resp) => {
                       setStatus('approved');
-                      const det = resp?.status_detail || resp?.data?.status_detail || '';
-                      if (det) setStatusDetail(det);
-                      try {
-                        const json = await registerDownload(id);
-                        const url = json?.download_url;
-                        if (url) setDownloadUrl(url);
-                      } catch (e) {
-                        console.warn('Falha ao registrar download após aprovação:', e);
-                      }
+                      const payId = resp?.id || resp?.data?.id || '';
+                      navigate(`/apps/${id}/sucesso?payment_id=${payId}&status=approved`);
                     }}
                   />
                 </div>

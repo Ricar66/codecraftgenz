@@ -22,6 +22,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import HomePage from './pages/HomePage/HomePage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import MentoriaPage from './pages/MentoriaPage.jsx';
+import OrderSuccessPage from './pages/OrderSuccessPage.jsx';
 import PasswordResetPage from './pages/PasswordResetPage.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
 import RankingPage from './pages/RankingPage.jsx';
@@ -65,6 +66,7 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/apps/:id/compra" element={<AppPurchasePage />} />
+        <Route path="/apps/:id/sucesso" element={<OrderSuccessPage />} />
         <Route path="/admin" element={
           <ProtectedRoute allowed={["admin","editor"]}>
             <AdminLayout />
