@@ -217,6 +217,20 @@ function validateEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function isValidPcId(id) {
+  return /^[a-zA-Z0-9\-_]{6,32}$/.test(String(id || ''));
+}
+
+async function resolveAppId(pool, rawApp, rawName) {
+  const n = Number(rawApp);
+  if (Number.isFinite(n) && n > 0) return n;
+  const name = String(rawName || '').trim().toLowerCase();
+  if (!name) return null;
+  const r = await pool.request().input('name', dbSql.NVarChar, name)
+    .query("SELECT TOP 1 id FROM dbo.apps WHERE LOWER(name)=@name");
+  return r.recordset[0]?.id || null;
+}
+
 async function auditLicense(pool, { app_id, email, hardware_id, license_id, action, status, message, ip, ua }) {
   await pool.request()
     .input('app_id', dbSql.Int, app_id)
@@ -4052,10 +4066,10 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
     const hardware_id = String(body?.hardware_id ?? body?.hardwareId ?? '');
 
     if (!email || !validateEmail(email)) {
-      return res.status(400).json({ error: 'E-mail inválido ou não informado.' });
+      return res.status(400).json({ success: false, message: 'E-mail inválido ou não informado.' });
     }
     if (!app_id || !hardware_id) {
-      return res.status(400).json({ error: 'ID do App e Hardware ID são obrigatórios.' });
+      return res.status(400).json({ success: false, message: 'ID do App e Hardware ID são obrigatórios.' });
     }
 
     const pool = await getConnectionPool();
@@ -4083,7 +4097,7 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
           WHERE a.id = @app_id AND u.email = @email
         `);
       if (!ownerCheck.recordset.length) {
-        return res.status(403).json({ licensed: false, message: 'Nenhuma compra confirmada encontrada para este e-mail.' });
+        return res.status(403).json({ success: false, licensed: false, message: 'Nenhuma compra confirmada encontrada para este e-mail.' });
       }
     }
 
@@ -4128,7 +4142,7 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
         .input('ip', dbSql.NVarChar, String(ip))
         .input('ua', dbSql.NVarChar, ua)
         .query('INSERT INTO dbo.license_activations (app_id, email, hardware_id, license_id, action, status, message, ip, user_agent) VALUES (@app_id, @email, @hardware_id, @license_id, @action, @status, @message, @ip, @ua)');
-      return res.json({ licensed: true, message: 'Licença ativa verificada.', license_key: `VALID-${userId}-${app_id}` });
+      return res.json({ success: true, licensed: true, message: 'Licença ativa verificada.', license_key: `VALID-${userId}-${app_id}` });
     }
 
     const allowedActivations = devBypass ? Math.max(1, totalCompras) : totalCompras;
@@ -4163,13 +4177,13 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
       const licId = licRow.recordset[0]?.id || null;
       await auditLicense(pool, { app_id: Number(app_id), email: String(email), hardware_id: String(hardware_id), license_id: licId, action: 'activate', status: 'ok', message: 'NEW_ACTIVATION', ip, ua });
 
-      return res.json({ licensed: true, message: 'Nova licença ativada com sucesso.', new_activation: true });
+      return res.json({ success: true, licensed: true, message: 'Nova licença ativada com sucesso.', new_activation: true });
     }
 
-    return res.status(403).json({ licensed: false, message: 'Limite de licenças atingido. Compre novamente para usar em outra máquina.' });
+    return res.status(403).json({ success: false, licensed: false, message: 'Limite de licenças atingido. Compre novamente para usar em outra máquina.' });
   } catch (err) {
     console.error('Erro na ativação:', err);
-    return res.status(500).json({ error: 'Erro interno ao validar licença.' });
+    return res.status(500).json({ success: false, message: 'Erro interno ao validar licença.' });
   }
 });
 
@@ -4191,10 +4205,10 @@ app.post('/api/verify-license', sensitiveLimiter, async (req, res) => {
 
     // Validações básicas 
     if (!email || !email.includes('@')) { 
-      return res.status(400).json({ success: false, licensed: false, code: 'INVALID_EMAIL', message: 'Email inválido' }); 
+      return res.status(400).json({ success: false, licensed: false, message: 'Email inválido' }); 
     } 
     if (!hardware_id || hardware_id.length < 5) { 
-      return res.status(400).json({ success: false, licensed: false, code: 'INVALID_HWID', message: 'ID do PC inválido' }); 
+      return res.status(400).json({ success: false, licensed: false, message: 'ID do PC inválido' }); 
     } 
 
     const pool = await getConnectionPool(); 
@@ -4219,7 +4233,7 @@ app.post('/api/verify-license', sensitiveLimiter, async (req, res) => {
       const ip = req.ip || req.connection?.remoteAddress || '';
       const licId = checkLicense.recordset[0].id;
       await auditLicense(pool, { app_id, email, hardware_id, license_id: licId, action: 'verify', status: 'ok', message: 'LICENSE_OK', ip, ua });
-      return res.json({ success: true, licensed: true, code: 'LICENSE_OK', message: "Acesso validado" }); 
+      return res.json({ success: true, licensed: true, message: "Acesso validado" }); 
     } 
 
     // 3. PRIMEIRO CADASTRO (Verifica saldo de compras) 
@@ -4261,7 +4275,7 @@ app.post('/api/verify-license', sensitiveLimiter, async (req, res) => {
       const licId = ins.recordset[0]?.id || null;
       await auditLicense(pool, { app_id, email, hardware_id, license_id: licId, action: 'activate', status: 'ok', message: 'LICENSE_BOUND', ip, ua });
       console.log(`Novo registro vinculado: ${email} -> ${hardware_id}`); 
-      return res.json({ success: true, licensed: true, new_activation: true, code: 'LICENSE_BOUND', message: "Registro atualizado e vinculado" }); 
+      return res.json({ success: true, licensed: true, new_activation: true, message: "Registro atualizado e vinculado" }); 
     } 
 
     // Se chegou aqui, não tem compra ou todas estão em uso 
@@ -4269,12 +4283,208 @@ app.post('/api/verify-license', sensitiveLimiter, async (req, res) => {
     const ip = req.ip || req.connection?.remoteAddress || '';
     await auditLicense(pool, { app_id, email, hardware_id, license_id: null, action: 'verify', status: 'denied', message: 'LICENSE_LIMIT', ip, ua });
     console.log(`Falha de acesso: ${email} (Sem saldo ou PC incorreto)`); 
-    return res.status(403).json({ success: false, licensed: false, code: 'LICENSE_LIMIT', message: "Credenciais não encontradas ou limite atingido" }); 
+    return res.status(403).json({ success: false, licensed: false, message: "Credenciais não encontradas ou limite atingido" }); 
 
   } catch (error) { 
     console.error("Erro na API de licença:", error); 
-    res.status(500).json({ success: false, licensed: false, code: 'SERVER_ERROR', message: "Erro no servidor" }); 
+    res.status(500).json({ success: false, licensed: false, message: "Erro no servidor" }); 
   } 
+});
+
+app.get('/api/compat/license-check', sensitiveLimiter, async (req, res) => {
+  try {
+    const email = String((req.query?.email || '')).trim().toLowerCase();
+    const id_pc = String((req.query?.id_pc || req.query?.hardware_id || req.query?.hardwareId || req.headers['x-device-id'] || req.headers['X-Device-Id'] || '')).trim();
+    const pool = await getConnectionPool();
+    const app_id = await resolveAppId(pool, (req.query?.app_id ?? req.query?.appId), (req.query?.app ?? req.query?.app_name));
+
+    if (!validateEmail(email)) {
+      return res.status(400).json({ success: false, message: 'Email inválido' });
+    }
+    if (!isValidPcId(id_pc)) {
+      return res.status(400).json({ success: false, message: 'ID do PC inválido' });
+    }
+    if (!Number.isFinite(app_id) || app_id <= 0) {
+      return res.status(400).json({ success: false, message: 'App inválido' });
+    }
+
+    const rec = await pool.request()
+      .input('email', dbSql.NVarChar, email)
+      .input('hwid', dbSql.NVarChar, id_pc)
+      .input('aid', dbSql.Int, app_id)
+      .query(`
+        SELECT TOP 1 l.id
+        FROM dbo.user_licenses l
+        JOIN dbo.users u ON l.user_id = u.id
+        WHERE u.email = @email AND l.hardware_id = @hwid AND l.app_id = @aid
+      `);
+
+    if (rec.recordset.length > 0) {
+      const ua = String(req.headers['user-agent'] || '');
+      const ip = req.ip || req.connection?.remoteAddress || '';
+      const licId = rec.recordset[0].id;
+      await auditLicense(pool, { app_id, email, hardware_id: id_pc, license_id: licId, action: 'verify', status: 'ok', message: 'LICENSE_OK', ip, ua });
+      return res.json({ success: true, message: 'Acesso validado' });
+    }
+
+    const slotQ = await pool.request()
+      .input('email', dbSql.NVarChar, email)
+      .input('aid', dbSql.Int, app_id)
+      .query(`
+        SELECT TOP 1 l.id
+        FROM dbo.user_licenses l
+        JOIN dbo.users u ON l.user_id = u.id
+        WHERE u.email = @email AND l.app_id = @aid AND (l.hardware_id IS NULL OR LTRIM(RTRIM(l.hardware_id))='')
+        ORDER BY l.id ASC
+      `);
+
+    const ua = String(req.headers['user-agent'] || '');
+    const ip = req.ip || req.connection?.remoteAddress || '';
+
+    if (slotQ.recordset.length > 0) {
+      const licId = slotQ.recordset[0].id;
+      await pool.request()
+        .input('id', dbSql.Int, licId)
+        .input('hwid', dbSql.NVarChar, id_pc)
+        .query("UPDATE dbo.user_licenses SET hardware_id=@hwid, activated_at=ISNULL(activated_at, SYSUTCDATETIME()), updated_at=SYSUTCDATETIME() WHERE id=@id");
+      await auditLicense(pool, { app_id, email, hardware_id: id_pc, license_id: licId, action: 'activate', status: 'ok', message: 'LICENSE_BOUND', ip, ua });
+      return res.json({ success: true, message: 'Registro atualizado' });
+    }
+
+    const totalPaid = await getApprovedPurchasesCount(pool, email, app_id);
+    const totalUsed = await getUsedLicensesCount(pool, email, app_id);
+    if (totalPaid <= totalUsed) {
+      await auditLicense(pool, { app_id, email, hardware_id: id_pc, license_id: null, action: 'verify', status: 'denied', message: 'LICENSE_LIMIT', ip, ua });
+      return res.json({ success: false, message: 'Credenciais não encontradas' });
+    }
+
+    let userId = null;
+    const uRes = await pool.request().input('email', dbSql.NVarChar, email).query('SELECT TOP 1 id FROM dbo.users WHERE email=@email');
+    userId = uRes.recordset[0]?.id || null;
+    if (!userId) {
+      const newUser = await pool.request()
+        .input('n', dbSql.NVarChar, email.split('@')[0])
+        .input('e', dbSql.NVarChar, email)
+        .query("INSERT INTO dbo.users (name, email, role, status, created_at) OUTPUT Inserted.id VALUES (@n, @e, 'viewer', 'ativo', SYSUTCDATETIME())");
+      userId = newUser.recordset[0]?.id || null;
+    }
+
+    const appNameRes = await pool.request().input('id', dbSql.Int, app_id).query('SELECT name FROM dbo.apps WHERE id=@id');
+    const appName = appNameRes.recordset[0]?.name || null;
+    const ins = await pool.request()
+      .input('uid', dbSql.Int, userId)
+      .input('aid', dbSql.Int, app_id)
+      .input('appname', dbSql.NVarChar, appName)
+      .input('email', dbSql.NVarChar, email)
+      .input('hwid', dbSql.NVarChar, id_pc)
+      .input('key', dbSql.NVarChar, `KEY-${Date.now()}`)
+      .query('INSERT INTO dbo.user_licenses (user_id, app_id, app_name, email, hardware_id, license_key, activated_at, created_at) OUTPUT Inserted.id VALUES (@uid, @aid, @appname, @email, @hwid, @key, SYSUTCDATETIME(), SYSUTCDATETIME())');
+    const licId = ins.recordset[0]?.id || null;
+    await auditLicense(pool, { app_id, email, hardware_id: id_pc, license_id: licId, action: 'activate', status: 'ok', message: 'LICENSE_BOUND', ip, ua });
+    return res.json({ success: true, message: 'Registro atualizado' });
+  } catch (err) {
+    void err;
+    return res.status(500).json({ success: false, message: 'Erro no servidor' });
+  }
+});
+
+app.post('/api/compat/license-check', sensitiveLimiter, async (req, res) => {
+  try {
+    let body = req.body;
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+    const email = String((body?.email || '')).trim().toLowerCase();
+    const id_pc = String((body?.id_pc || body?.hardware_id || body?.hardwareId || req.headers['x-device-id'] || req.headers['X-Device-Id'] || '')).trim();
+    const pool = await getConnectionPool();
+    const app_id = await resolveAppId(pool, (body?.app_id ?? body?.appId), (body?.app ?? body?.app_name));
+
+    if (!validateEmail(email)) {
+      return res.status(400).json({ success: false, message: 'Email inválido' });
+    }
+    if (!isValidPcId(id_pc)) {
+      return res.status(400).json({ success: false, message: 'ID do PC inválido' });
+    }
+    if (!Number.isFinite(app_id) || app_id <= 0) {
+      return res.status(400).json({ success: false, message: 'App inválido' });
+    }
+
+    const rec = await pool.request()
+      .input('email', dbSql.NVarChar, email)
+      .input('hwid', dbSql.NVarChar, id_pc)
+      .input('aid', dbSql.Int, app_id)
+      .query(`
+        SELECT TOP 1 l.id
+        FROM dbo.user_licenses l
+        JOIN dbo.users u ON l.user_id = u.id
+        WHERE u.email = @email AND l.hardware_id = @hwid AND l.app_id = @aid
+      `);
+
+    if (rec.recordset.length > 0) {
+      const ua = String(req.headers['user-agent'] || '');
+      const ip = req.ip || req.connection?.remoteAddress || '';
+      const licId = rec.recordset[0].id;
+      await auditLicense(pool, { app_id, email, hardware_id: id_pc, license_id: licId, action: 'verify', status: 'ok', message: 'LICENSE_OK', ip, ua });
+      return res.json({ success: true, message: 'Acesso validado' });
+    }
+
+    const slotQ = await pool.request()
+      .input('email', dbSql.NVarChar, email)
+      .input('aid', dbSql.Int, app_id)
+      .query(`
+        SELECT TOP 1 l.id
+        FROM dbo.user_licenses l
+        JOIN dbo.users u ON l.user_id = u.id
+        WHERE u.email = @email AND l.app_id = @aid AND (l.hardware_id IS NULL OR LTRIM(RTRIM(l.hardware_id))='')
+        ORDER BY l.id ASC
+      `);
+
+    const ua = String(req.headers['user-agent'] || '');
+    const ip = req.ip || req.connection?.remoteAddress || '';
+
+    if (slotQ.recordset.length > 0) {
+      const licId = slotQ.recordset[0].id;
+      await pool.request()
+        .input('id', dbSql.Int, licId)
+        .input('hwid', dbSql.NVarChar, id_pc)
+        .query("UPDATE dbo.user_licenses SET hardware_id=@hwid, activated_at=ISNULL(activated_at, SYSUTCDATETIME()), updated_at=SYSUTCDATETIME() WHERE id=@id");
+      await auditLicense(pool, { app_id, email, hardware_id: id_pc, license_id: licId, action: 'activate', status: 'ok', message: 'LICENSE_BOUND', ip, ua });
+      return res.json({ success: true, message: 'Registro atualizado' });
+    }
+
+    const totalPaid = await getApprovedPurchasesCount(pool, email, app_id);
+    const totalUsed = await getUsedLicensesCount(pool, email, app_id);
+    if (totalPaid <= totalUsed) {
+      await auditLicense(pool, { app_id, email, hardware_id: id_pc, license_id: null, action: 'verify', status: 'denied', message: 'LICENSE_LIMIT', ip, ua });
+      return res.json({ success: false, message: 'Credenciais não encontradas' });
+    }
+
+    let userId = null;
+    const uRes = await pool.request().input('email', dbSql.NVarChar, email).query('SELECT TOP 1 id FROM dbo.users WHERE email=@email');
+    userId = uRes.recordset[0]?.id || null;
+    if (!userId) {
+      const newUser = await pool.request()
+        .input('n', dbSql.NVarChar, email.split('@')[0])
+        .input('e', dbSql.NVarChar, email)
+        .query("INSERT INTO dbo.users (name, email, role, status, created_at) OUTPUT Inserted.id VALUES (@n, @e, 'viewer', 'ativo', SYSUTCDATETIME())");
+      userId = newUser.recordset[0]?.id || null;
+    }
+
+    const appNameRes = await pool.request().input('id', dbSql.Int, app_id).query('SELECT name FROM dbo.apps WHERE id=@id');
+    const appName = appNameRes.recordset[0]?.name || null;
+    const ins = await pool.request()
+      .input('uid', dbSql.Int, userId)
+      .input('aid', dbSql.Int, app_id)
+      .input('appname', dbSql.NVarChar, appName)
+      .input('email', dbSql.NVarChar, email)
+      .input('hwid', dbSql.NVarChar, id_pc)
+      .input('key', dbSql.NVarChar, `KEY-${Date.now()}`)
+      .query('INSERT INTO dbo.user_licenses (user_id, app_id, app_name, email, hardware_id, license_key, activated_at, created_at) OUTPUT Inserted.id VALUES (@uid, @aid, @appname, @email, @hwid, @key, SYSUTCDATETIME(), SYSUTCDATETIME())');
+    const licId = ins.recordset[0]?.id || null;
+    await auditLicense(pool, { app_id, email, hardware_id: id_pc, license_id: licId, action: 'activate', status: 'ok', message: 'LICENSE_BOUND', ip, ua });
+    return res.json({ success: true, message: 'Registro atualizado' });
+  } catch (err) {
+    void err;
+    return res.status(500).json({ success: false, message: 'Erro no servidor' });
+  }
 });
 
 
@@ -5218,13 +5428,13 @@ app.post('/api/licenses/activate', authenticate, async (req, res) => {
     const { appId, hardwareId } = body || {};
     const userId = req.user.id;
     const userEmail = req.user?.email || null;
-    if (!appId || !hardwareId) return res.status(400).json({ error: 'Dados incompletos.' });
+    if (!appId || !hardwareId) return res.status(400).json({ success: false, message: 'Dados incompletos.' });
     const pool = await getConnectionPool();
     const check = await pool.request()
       .input('uid', dbSql.Int, userId)
       .input('aid', dbSql.Int, appId)
       .query("SELECT id FROM dbo.app_payments WHERE user_id=@uid AND app_id=@aid AND status='approved' UNION SELECT id FROM dbo.apps WHERE id=@aid AND owner_id=@uid");
-    if (check.recordset.length === 0) return res.status(403).json({ error: 'Sem licença válida.' });
+    if (check.recordset.length === 0) return res.status(403).json({ success: false, message: 'Sem licença válida.' });
     let signature;
     const pem = process.env.PRIVATE_KEY_PEM || '';
     if (pem) {
@@ -5249,7 +5459,7 @@ app.post('/api/licenses/activate', authenticate, async (req, res) => {
     return res.json({ success: true, license_key: signature });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: 'Erro ao gerar licença.' });
+    return res.status(500).json({ success: false, message: 'Erro ao gerar licença.' });
   }
 });
 
@@ -5274,7 +5484,7 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
     const hardwareId = String(body?.hardwareId ?? body?.hardware_id ?? '').trim();
     const rawAppClaim = body?.appId ?? body?.app_id ?? process.env.COINCRAFT_APP_ID ?? 1;
     const appId = Number(rawAppClaim);
-    if (!email || !hardwareId || !appId) return res.status(400).json({ error: 'Dados incompletos.' });
+    if (!email || !hardwareId || !appId) return res.status(400).json({ success: false, message: 'Dados incompletos.' });
 
     const pool = await getConnectionPool();
     let userId = null;
@@ -5285,7 +5495,7 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
       .input('email', dbSql.NVarChar, String(email))
       .query('SELECT TOP 1 id FROM dbo.user_licenses WHERE app_id=@aid AND hardware_id=@hwid AND email=@email');
     if (dupRes.recordset.length > 0) {
-      return res.status(409).json({ error: "Esta máquina já possui uma licença ativa. Use a opção 'Tenho uma Chave'." });
+      return res.status(409).json({ success: false, message: "Esta máquina já possui uma licença ativa. Use a opção 'Tenho uma Chave'." });
     }
 
     const approvedCntRes = await pool.request()
@@ -5299,7 +5509,7 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
       .query("SELECT COUNT(*) AS cnt FROM dbo.user_licenses WHERE email=@email AND app_id=@aid AND hardware_id IS NOT NULL AND LTRIM(RTRIM(hardware_id)) <> ''");
     const used = usedCntRes.recordset[0]?.cnt || 0;
     if (used >= approved) {
-      return res.status(403).json({ error: 'Limite de licenças atingido para este e-mail. Compre mais no site.' });
+      return res.status(403).json({ success: false, message: 'Limite de licenças atingido para este e-mail. Compre mais no site.' });
     }
 
     if (userId === null) {
@@ -5357,7 +5567,7 @@ app.post('/api/licenses/claim-by-email', sensitiveLimiter, async (req, res) => {
     return res.json({ success: true, license_key: signature });
   } catch (err) {
     console.error('Erro em claim-by-email:', err);
-    return res.status(500).json({ error: 'Erro ao ativar licença por e-mail.' });
+    return res.status(500).json({ success: false, message: 'Erro ao ativar licença por e-mail.' });
   }
 });
 
