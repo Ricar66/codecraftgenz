@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { useAnalytics } from '../../hooks/useAnalytics.js';
+
 import styles from './MetricsSection.module.css';
 
 const Metric = ({ label, target, suffix = '' }) => {
