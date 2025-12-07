@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FaArrowRight, FaCheckCircle, FaEnvelope, FaHome, FaSpinner, FaWindows } from 'react-icons/fa';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
+import Navbar from '../components/Navbar/Navbar';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import { activateDeviceLicense, downloadByEmail, getAppById, getPurchaseStatus, registerDownload } from '../services/appsAPI.js';
 
