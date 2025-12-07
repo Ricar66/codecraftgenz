@@ -3,33 +3,41 @@
 /* Estilo base do botão */
 .btn {
   padding: 12px 24px;
-  font-family: 'Poppins', sans-serif; /* Fonte de navegação [cite: 8] */
+  font-family: var(--fonte-subtitulos);
   font-weight: 700;
   font-size: 16px;
   border: none;
-  border-radius: 8px; /* Cantos arredondados  */
+  border-radius: var(--raio-md);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--transicao-rapida);
   text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
 }
 
 /* Variante primária (Violeta) */
 .primary {
-  background-color: var(--cor-principal); /* Violeta vibrante  */
-  color: var(--cor-branco-puro);
+  background-color: var(--cor-primaria);
+  color: var(--texto-branco);
+  box-shadow: 0 0 15px var(--cor-primaria); /* Glow inicial */
 }
 
 .primary:hover {
-  background-color: var(--cor-destaque-escuro); /* Roxo escuro  */
+  background-color: var(--cor-secundaria);
+  box-shadow: 0 0 25px var(--cor-primaria); /* Glow mais intenso */
+  transform: translateY(-2px);
 }
 
 /* Variante secundária (Azul) */
 .secondary {
-  background-color: var(--cor-destaque-acao); /* Azul Gen-Z  */
-  color: var(--cor-texto-principal);
+  background-color: var(--cor-terciaria);
+  color: var(--fundo-escuro); /* Contraste melhor com o azul neon */
+  box-shadow: 0 0 15px var(--cor-terciaria); /* Glow inicial */
 }
 
 .secondary:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 15px rgba(0, 228, 242, 0.3);
+  background-color: var(--cor-acento); /* Azul um pouco mais escuro no hover */
+  color: var(--texto-branco);
+  box-shadow: 0 0 25px var(--cor-terciaria); /* Glow mais intenso */
+  transform: translateY(-2px);
 }
