@@ -1,0 +1,118 @@
+/* src/components/CasesSection/CasesSection.module.css */
+
+.casesSection {
+  padding: var(--espaco-md);
+}
+
+.casesHeader {
+  text-align: center;
+  margin-bottom: 0.75rem; /* 12px */
+}
+
+.casesTitle {
+  color: var(--texto-branco);
+  font-family: var(--fonte-titulos);
+  font-weight: 800;
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  line-height: 1.2;
+}
+
+.casesLead {
+  color: var(--texto-gelo);
+  font-family: var(--fonte-subtitulos);
+  margin-top: 0.375rem; /* 6px */
+  line-height: 1.6;
+}
+
+.casesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem; /* 12px */
+}
+
+@media (max-width: 900px) {
+  .casesGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .casesGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.caseCard {
+  background: var(--fundo-card);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--raio-lg); /* 12px */
+  padding: var(--espaco-md);
+  transition: transform var(--transicao-rapida), box-shadow var(--transicao-rapida);
+  display: flex;
+  flex-direction: column;
+}
+
+.caseCard:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--sombra-md);
+}
+
+.caseHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--espaco-sm);
+}
+
+.caseTitle {
+  color: var(--texto-branco);
+  font-family: var(--fonte-subtitulos);
+  font-weight: 600;
+  margin: 0;
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+}
+
+.caseClient {
+  color: var(--texto-gelo);
+  font-family: var(--fonte-principal);
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.caseSummary {
+  color: var(--texto-gelo);
+  font-family: var(--fonte-principal);
+  margin: var(--espaco-sm) 0;
+  line-height: 1.5;
+  flex-grow: 1;
+}
+
+.caseImpact {
+  color: var(--texto-branco);
+  font-family: var(--fonte-principal);
+  padding-left: 1.125rem; /* 18px */
+  margin: var(--espaco-sm) 0;
+  font-size: var(--texto-sm);
+}
+
+.caseImpact li {
+  margin: 0.25rem 0; /* 4px */
+}
+
+.caseTags {
+  margin-top: var(--espaco-sm);
+  display: flex;
+  gap: var(--espaco-sm);
+  flex-wrap: wrap;
+}
+
+.caseTag {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--texto-gelo);
+  padding: 0.25rem 0.5rem; /* 4px 8px */
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-family: var(--fonte-codigo);
+}
