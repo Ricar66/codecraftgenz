@@ -107,9 +107,9 @@ function App() {
             <a href="/ranking">Ranking</a>
           </div>
           <div className="footer-social" aria-label="Redes sociais">
-            <a className="social-link instagram" href="#" aria-label="Instagram (em breve)"><FaInstagram /></a>
-            <a className="social-link github" href="https://github.com/CodeCraftgenz" aria-label="GitHub"><FaGithub /></a>
-            <a className="social-link whatsapp" href="https://wa.me/5535999358856" aria-label="WhatsApp"><FaWhatsapp /></a>
+            <a className="social-link instagram" href="#" target="_blank" rel="noopener noreferrer" aria-label="Instagram (em breve)"><FaInstagram /></a>
+            <a className="social-link github" href="https://github.com/CodeCraftgenz" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><FaGithub /></a>
+            <a className="social-link whatsapp" href="https://wa.me/5535999358856" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><FaWhatsapp /></a>
           </div>
           <div className="footer-note">Craftando ideias em software com estilo</div>
         </div>
