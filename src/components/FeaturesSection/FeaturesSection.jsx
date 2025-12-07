@@ -1,7 +1,5 @@
 // src/components/FeaturesSection/FeaturesSection.jsx
 import React from 'react';
-import { FaTrophy, FaProjectDiagram, FaUsers, FaChartLine } from 'react-icons/fa';
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaTrophy, FaProjectDiagram, FaUsers, FaChartLine } from 'react-icons/fa';
 
