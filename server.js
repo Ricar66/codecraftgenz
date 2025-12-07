@@ -1,28 +1,51 @@
+/**
+ * =========================================================================================
+ * SERVER.JS - Backend API Principal
+ * =========================================================================================
+ * Este arquivo configura o servidor Express, middlewares, conexão com banco de dados e
+ * define todas as rotas da API (Autenticação, Projetos, Finanças, Licenças, etc.).
+ *
+ * Módulos Principais:
+ * - Autenticação: JWT, BCrypt, MFA (TOTP).
+ * - Banco de Dados: MSSQL (via pool connection).
+ * - Pagamentos: Integração com Mercado Pago.
+ * - Segurança: Helmet, Rate Limit, CORS.
+ *
+ * Manutenção:
+ * - Certifique-se de que as variáveis de ambiente (.env) estão carregadas corretamente.
+ * - Logs de auditoria são gravados via `logEvent` e `auditLicense`.
+ */
+
 import * as nodeCrypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import process from 'process';
 import { fileURLToPath } from 'url';
 
-import bcrypt from 'bcrypt';
-import compression from 'compression';
-import cookieParser from 'cookie-parser';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import express from 'express';
-import rateLimit from 'express-rate-limit';
-import helmet from 'helmet';
-import jwt from 'jsonwebtoken';
-import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
-import multer from 'multer';
-import sharp from 'sharp';
-import { z } from 'zod';
+// Middlewares e Utilitários de Terceiros
+import bcrypt from 'bcrypt';          // Hashing de senhas
+import compression from 'compression'; // Compressão GZIP de respostas
+import cookieParser from 'cookie-parser'; // Parser de cookies para JWT
+import cors from 'cors';              // Cross-Origin Resource Sharing
+import dotenv from 'dotenv';          // Gerenciamento de variáveis de ambiente
+import express from 'express';        // Framework Web
+import rateLimit from 'express-rate-limit'; // Proteção contra DDoS/Brute-force
+import helmet from 'helmet';          // Headers de segurança HTTP
+import jwt from 'jsonwebtoken';       // Tokens de autenticação
+import { MercadoPagoConfig, Preference, Payment } from 'mercadopago'; // SDK Mercado Pago
+import multer from 'multer';          // Upload de arquivos (se utilizado)
+import sharp from 'sharp';            // Processamento de imagens (logo generation)
+import { z } from 'zod';              // Validação de schemas de dados
 
+// Módulos Locais
 import { mercadoLivre } from './src/integrations/mercadoLivre.js';
 import { getConnectionPool, dbSql } from './src/lib/db.js';
 
-// Carregar variáveis de ambiente (db.js já faz isso, mas garantimos aqui também)
-// Seleciona arquivo conforme NODE_ENV, com fallback para .env
+// -----------------------------------------------------------------------------------------
+// 1. Configuração de Variáveis de Ambiente
+// -----------------------------------------------------------------------------------------
+// Carrega variáveis de ambiente com prioridade por ambiente (production > staging > development > .env)
+// Garante que segredos e configurações sensíveis estejam disponíveis antes de iniciar.
 try {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
@@ -65,27 +88,37 @@ try {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// --- Configuração do Servidor Express ---
+// -----------------------------------------------------------------------------------------
+// 2. Configuração do Servidor Express
+// -----------------------------------------------------------------------------------------
 const app = express();
-app.disable('x-powered-by');
-app.set('trust proxy', 1);
+app.disable('x-powered-by'); // Remove header X-Powered-By para segurança
+app.set('trust proxy', 1);   // Necessário para rate limiters funcionarem atrás de proxies (Nginx/Cloudflare)
+
 // Porta do servidor e segredos obrigatórios
 const PORT = process.env.PORT_OVERRIDE || process.env.PORT || 8080;
 const JWT_SECRET = process.env.JWT_SECRET;
 const ADMIN_RESET_TOKEN = process.env.ADMIN_RESET_TOKEN;
+
+// Validação crítica de configuração
 if (!JWT_SECRET || !ADMIN_RESET_TOKEN) {
   console.error('ERRO FATAL: JWT_SECRET ou ADMIN_RESET_TOKEN não definidos no .env');
   process.exit(1);
 }
 console.log('🔐 Segredos essenciais definidos (valores não exibidos)');
 
-// --- Middlewares Essenciais ---
+// -----------------------------------------------------------------------------------------
+// 3. Middlewares Globais
+// -----------------------------------------------------------------------------------------
 // Segurança (helmet), CORS dinâmico por ambiente, compressão, parsers
+
+// Helmet: Define headers de segurança HTTP (CSP desativado pois frontend é servido separadamente ou lida com isso)
 app.use(helmet({
   contentSecurityPolicy: false,
 }));
 const isProd = (process.env.NODE_ENV === 'production');
-// Converte lista de origens permitidas em array normalizado
+
+// CORS: Controle de acesso a recursos de origens diferentes
 const parseOrigins = (raw) => String(raw || '').split(',').map(s => s.trim()).filter(Boolean);
 const allowedOrigins = parseOrigins(process.env.ALLOWED_ORIGINS);
 if (isProd && allowedOrigins.length === 0) {
@@ -94,37 +127,51 @@ if (isProd && allowedOrigins.length === 0) {
 }
 const devOrigin = 'http://localhost:5173';
 const devOriginAlt = 'http://127.0.0.1:5173';
-// CORS com validação de origem: permite dev (localhost) e lista configurada
+
 app.use(cors({
   origin: (origin, callback) => {
+    // Em produção: Permite origens listadas + hostname do site (se definido)
+    // Em dev: Permite localhost + origens listadas
     const list = isProd ? [...allowedOrigins, ...(process.env.WEBSITE_HOSTNAME ? [`https://${String(process.env.WEBSITE_HOSTNAME).trim()}`] : [])] : [devOrigin, devOriginAlt, ...allowedOrigins];
     const normalizedOrigin = origin ? origin.replace(/\/$/, '') : origin;
     const normalizedList = list.map(o => o.replace(/\/$/, ''));
+    
+    // Requisições sem origem (server-to-server) são permitidas
     if (!normalizedOrigin) return callback(null, true);
+    
+    // Valida regex para localhost em desenvolvimento
     const devRegex = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
     if (!isProd && devRegex.test(normalizedOrigin)) return callback(null, true);
+    
     if (normalizedList.includes(normalizedOrigin)) return callback(null, true);
+    
     console.error('CORS bloqueado para origem', normalizedOrigin, 'permitidos', normalizedList);
     return callback(new Error('CORS origin não permitido'), false);
   },
   methods: ['GET','HEAD','PUT','PATCH','POST','DELETE'],
   allowedHeaders: ['Content-Type','Authorization','x-csrf-token','x-admin-reset-token','X-Device-Id','x-device-id','X-Tracking-Id','x-tracking-id'],
-  credentials: true,
+  credentials: true, // Permite envio de cookies
 }));
-// HSTS apenas em produção
+
+// HSTS: Força HTTPS em produção
 if (isProd) {
   app.use(helmet.hsts({ maxAge: 15552000 }));
 }
-app.use(compression());
-// Aceita corpo text/plain para rotas que recebem JSON como string
-app.use(express.text({ limit: '10mb', type: 'text/plain' }));
-app.use(express.json({ limit: '10mb' }));
-app.use(cookieParser());
+app.use(compression()); // Melhora performance comprimindo respostas
+
+// Parsers de corpo de requisição
+app.use(express.text({ limit: '10mb', type: 'text/plain' })); // Para webhooks que enviam raw text
+app.use(express.json({ limit: '10mb' })); // Para APIs JSON
+app.use(cookieParser()); // Para ler token JWT dos cookies
+
+// -----------------------------------------------------------------------------------------
+// 4. Rate Limiters (Proteção contra abuso)
+// -----------------------------------------------------------------------------------------
 
 // Limite de tentativas de login por IP
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 10, // 10 tentativas
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Muitas tentativas de login, tente novamente em 15 minutos.' },
@@ -184,6 +231,10 @@ const webhookLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// -----------------------------------------------------------------------------------------
+// 5. Helpers & Utilitários (Logging, Sanitização, Validação)
+// -----------------------------------------------------------------------------------------
+
 function logEvent(type, details) {
   try {
     const entry = { type, time: new Date().toISOString(), ...details };
@@ -230,6 +281,10 @@ async function resolveAppId(pool, rawApp, rawName) {
     .query("SELECT TOP 1 id FROM dbo.apps WHERE LOWER(name)=@name");
   return r.recordset[0]?.id || null;
 }
+
+// -----------------------------------------------------------------------------------------
+// 6. Funções de Auditoria e Estatísticas
+// -----------------------------------------------------------------------------------------
 
 async function auditLicense(pool, { app_id, email, hardware_id, license_id, action, status, message, ip, ua }) {
   await pool.request()
@@ -283,7 +338,10 @@ async function getUsedLicensesCount(pool, email, appId) {
   return r.recordset[0]?.total || 0;
 }
 
-// --- Schemas Zod para validação antecipada ---
+// -----------------------------------------------------------------------------------------
+// 7. Schemas de Validação (Zod) e Helpers de Segurança
+// -----------------------------------------------------------------------------------------
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
@@ -353,7 +411,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// --- Geração dinâmica do logo PNG ---
+// -----------------------------------------------------------------------------------------
+// 8. Inicialização de Serviços Externos (Logo, MP, Mercado Livre)
+// -----------------------------------------------------------------------------------------
+
+// Geração dinâmica do logo PNG (para uso em emails/meta tags)
 const logoSvgPath = path.join(__dirname, 'src', 'assets', 'logo-codecraft.svg');
 const logoPngPath = path.join(__dirname, 'public', 'logo-codecraft.png');
 
@@ -378,7 +440,9 @@ async function ensureLogoCodecraftPng() {
 
 await ensureLogoCodecraftPng();
 
-// --- REMOVEMOS OS MOCK DATA ---
+// -----------------------------------------------------------------------------------------
+// 8.1. Nota: Mock Data Removido
+// -----------------------------------------------------------------------------------------
 // const mockData = { ... };
 
 const MP_ENV = String(process.env.MP_ENV || process.env.MERCADO_PAGO_ENV || '').toLowerCase();
@@ -419,6 +483,10 @@ try {
 }
 
 const paymentsByApp = new Map();
+
+// -----------------------------------------------------------------------------------------
+// 9. Middlewares de Autenticação e Autorização
+// -----------------------------------------------------------------------------------------
 
 /**
  * Middleware de autenticação via JWT.
@@ -467,6 +535,10 @@ function authorizeAdmin(req, res, next) {
   }
   next();
 }
+
+// -----------------------------------------------------------------------------------------
+// 10. Gerenciamento de Schema do Banco de Dados (Migrações Automáticas)
+// -----------------------------------------------------------------------------------------
 
 /**
  * Garante que a tabela `dbo.users` possua as colunas necessárias.
@@ -575,7 +647,9 @@ async function ensureAppPaymentsSchema() {
   }
 }
 
-// --- Garantir tabela user_licenses ---
+// -----------------------------------------------------------------------------------------
+// 10.1. Garantia de Tabela de Licenças
+// -----------------------------------------------------------------------------------------
 async function ensureUserLicensesSchema() {
   try {
     const pool = await getConnectionPool();
@@ -653,7 +727,9 @@ async function ensureLicenseActivationsSchema() {
   }
 }
 
-// --- Garantir tabela de auditoria, colunas analíticas e índices (replica backups/2025-11-15_app_payments_audit_patch.sql) ---
+// -----------------------------------------------------------------------------------------
+// 10.2. Garantia de Tabela de Auditoria e Índices
+// -----------------------------------------------------------------------------------------
 async function ensurePaymentsAuditPatch() {
   const pool = await getConnectionPool();
 
@@ -736,7 +812,9 @@ async function ensureCoinCraftInstallerUrl() {
   }
 }
 
-// --- ROTAS DA API (CONECTADAS AO BANCO) ---
+// -----------------------------------------------------------------------------------------
+// 11. Rotas de Sistema e Health Checks (Diagnóstico)
+// -----------------------------------------------------------------------------------------
 
 /**
  * @api {get} /api/health Health Check
@@ -907,6 +985,10 @@ app.get('/api/health/db', async (req, res) => {
     return res.status(500).json({ status: 'ERROR', message: err?.message || String(err), details: out });
   }
 });
+
+// -----------------------------------------------------------------------------------------
+// 12. Rotas de Autenticação (Login, MFA, Registro)
+// -----------------------------------------------------------------------------------------
 
 /**
  * @api {post} /api/auth/login Login de usuário
@@ -1091,6 +1173,10 @@ app.post('/api/auth/password-reset/confirm', sensitiveLimiter, async (req, res) 
     return res.status(500).json({ error: 'Erro interno' });
   }
 });
+
+// -----------------------------------------------------------------------------------------
+// Helpers MFA (TOTP) - Algoritmos de Time-Based One-Time Password
+// -----------------------------------------------------------------------------------------
 
 /**
  * Codifica um buffer em Base32.
@@ -1314,7 +1400,9 @@ if (process.env.NODE_ENV !== 'production') {
   console.log('🔒 Rota /api/auth/admin/reset-password desativada em produção');
 }
 
-// --- Rotas de Usuários Admin ---
+// -----------------------------------------------------------------------------------------
+// 13. Rotas de Administração de Usuários (CRUD)
+// -----------------------------------------------------------------------------------------
 
 /**
  * @api {get} /api/auth/users Listar usuários
@@ -1468,7 +1556,9 @@ app.patch('/api/auth/users/:id/toggle-status', authenticate, authorizeAdmin, asy
   }
 });
 
-// --- LÓGICA DE NEGÓCIOS (FINANÇAS) ---
+// -----------------------------------------------------------------------------------------
+// 14. Lógica de Negócios (Finanças)
+// -----------------------------------------------------------------------------------------
 
 /**
  * Sincroniza as informações financeiras de um projeto com a tabela de finanças.
@@ -1527,7 +1617,9 @@ async function syncProjectToFinance(projectId, projeto) {
   }
 }
 
-// --- Rotas de Projetos (Lógica 1, 4) ---
+// -----------------------------------------------------------------------------------------
+// 15. Rotas de Gerenciamento de Projetos (CRUD)
+// -----------------------------------------------------------------------------------------
 
 /**
  * @api {get} /api/projetos Listar projetos
@@ -1901,7 +1993,9 @@ app.get('/api/projetos/column/progresso', authenticate, authorizeAdmin, async (r
   }
 });
 
-// --- Rotas de Mentores (Lógica 1, 2) ---
+// -----------------------------------------------------------------------------------------
+// 16. Rotas de Mentores
+// -----------------------------------------------------------------------------------------
 
 /**
  * @api {get} /api/mentores Listar mentores
@@ -2104,7 +2198,9 @@ app.delete('/api/mentores/:id', authenticate, authorizeAdmin, async (req, res, n
   }
 });
 
-// --- Rotas de Crafters (Lógica 1, 3) ---
+// -----------------------------------------------------------------------------------------
+// 16.1. Rotas de Crafters (Gestão de Profissionais)
+// -----------------------------------------------------------------------------------------
 
 /**
  * @api {get} /api/crafters Listar crafters
@@ -2402,7 +2498,9 @@ app.delete('/api/crafters/:id', authenticate, authorizeAdmin, async (req, res, n
   }
 });
 
-// --- Rota de Ranking (Lógica 3) ---
+// -----------------------------------------------------------------------------------------
+// 17. Rotas de Ranking (Gamificação)
+// -----------------------------------------------------------------------------------------
 
 /**
  * @api {get} /api/ranking Obter ranking
@@ -2526,7 +2624,9 @@ app.put('/api/ranking/top3', authenticate, authorizeAdmin, async (req, res, next
   }
 });
 
-// --- Rotas de Equipes (Lógica 1) ---
+// -----------------------------------------------------------------------------------------
+// 18. Rotas de Equipes (Gestão de Times)
+// -----------------------------------------------------------------------------------------
 
 /**
  * @api {get} /api/equipes Listar equipes
@@ -2713,7 +2813,9 @@ app.post('/api/projetos/:id/mentor', authenticate, authorizeAdmin, async (req, r
   }
 });
 
-// --- Rotas de Inscrições (Lógica 6) ---
+// -----------------------------------------------------------------------------------------
+// 19. Rotas de Inscrições (Interesse Público)
+// -----------------------------------------------------------------------------------------
 
 /**
  * @api {get} /api/inscricoes Listar inscrições
@@ -2793,7 +2895,9 @@ app.post('/api/inscricoes', async (req, res, next) => {
   }
 });
 
-// --- Rota para atualizar status da inscrição ---
+// -----------------------------------------------------------------------------------------
+// 19.1. Atualizar Status de Inscrição
+// -----------------------------------------------------------------------------------------
 
 /**
  * @api {put} /api/inscricoes/:id/status Atualizar status inscrição
@@ -2858,7 +2962,9 @@ app.put('/api/inscricoes/:id/status', authenticate, authorizeAdmin, async (req, 
   }
 });
 
-// --- Remover uma inscrição ---
+// -----------------------------------------------------------------------------------------
+// 19.2. Remover Inscrição
+// -----------------------------------------------------------------------------------------
 
 /**
  * @api {delete} /api/inscricoes/:id Remover inscrição
@@ -2893,7 +2999,9 @@ app.delete('/api/inscricoes/:id', authenticate, authorizeAdmin, async (req, res,
   }
 });
 
-// --- Rotas de Finanças (Lógica 4) ---
+// -----------------------------------------------------------------------------------------
+// 20. Rotas de Finanças (Gestão Financeira)
+// -----------------------------------------------------------------------------------------
 
 /**
  * @api {get} /api/financas Listar finanças
@@ -2925,7 +3033,9 @@ app.get('/api/financas', authenticate, authorizeAdmin, async (req, res, next) =>
   }
 });
 
-// --- Rota de Dashboard (Lógica 5) ---
+// -----------------------------------------------------------------------------------------
+// 21. Rotas de Dashboard (KPIs e Métricas)
+// -----------------------------------------------------------------------------------------
 
 /**
  * @api {get} /api/dashboard/resumo Resumo do dashboard
@@ -2978,7 +3088,9 @@ app.get('/api/dashboard/resumo', authenticate, authorizeAdmin, async (req, res, 
 });
 
 
-// --- Rotas de Aplicativos (Conectadas ao Banco) ---
+// -----------------------------------------------------------------------------------------
+// 22. Rotas de Aplicativos (Gestão de Aplicativos)
+// -----------------------------------------------------------------------------------------
 // Lista apps do usuário (permite acesso sem autenticação no ambiente atual)
 
 /**
@@ -3440,6 +3552,10 @@ app.delete('/api/apps/:id', authenticate, authorizeAdmin, async (req, res) => {
   }
 });
 
+
+// -----------------------------------------------------------------------------------------
+// 23. Rotas de Mercado Pago (Integração de Pagamentos)
+// -----------------------------------------------------------------------------------------
 
 /**
  * @api {post} /api/apps/:id/purchase Criar preferência de pagamento (MP)
@@ -3993,6 +4109,10 @@ app.post('/api/apps/:id/download/by-email', sensitiveLimiter, async (req, res) =
   }
 });
 
+// -----------------------------------------------------------------------------------------
+// 26. Rotas de Histórico e Feedback de Apps (Gestão de Apps)
+// -----------------------------------------------------------------------------------------
+
 /**
  * @api {get} /api/apps/history Histórico de apps
  * @apiDescription Lista o histórico global de downloads e compras de aplicativos.
@@ -4052,11 +4172,16 @@ app.post('/api/apps/:id/feedback', authenticate, async (req, res) => {
   }
 });
 
-// --- ROTA DE ATIVAÇÃO DE LICENÇA (pública) ---
+// -----------------------------------------------------------------------------------------
+// 24. Rotas de Licenças (Ativação e Validação)
+// -----------------------------------------------------------------------------------------
 // Fluxo público para clientes não autenticados vincularem um novo hardware.
 // Valida e-mail/hardware, verifica compras aprovadas e atualiza/inserta licença.
 // Aceita payload em camelCase ou snake_case para compatibilidade com diferentes clientes.
 app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, res) => {
+  let emailForLog = null;
+  let appIdForLog = null;
+  let hwidForLog = null;
   try {
     let body = req.body;
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
@@ -4064,6 +4189,9 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
     const rawAppPub = body?.app_id ?? body?.appId ?? process.env.COINCRAFT_APP_ID ?? 1;
     const app_id = Number(rawAppPub);
     const hardware_id = String(body?.hardware_id ?? body?.hardwareId ?? '');
+    emailForLog = email;
+    appIdForLog = app_id;
+    hwidForLog = hardware_id;
 
     if (!email || !validateEmail(email)) {
       return res.status(400).json({ success: false, message: 'E-mail inválido ou não informado.' });
@@ -4107,9 +4235,17 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
       .input('app_id', dbSql.Int, Number(app_id))
       .query(`SELECT TOP 1 user_id FROM dbo.app_payments WHERE app_id=@app_id AND status='approved' AND payer_email=@email ORDER BY updated_at DESC`);
     userId = payUserRes.recordset[0]?.user_id || null;
+    if (userId !== null) {
+      const chkPayUid = await pool.request().input('id', dbSql.Int, userId).query('SELECT id FROM dbo.users WHERE id=@id');
+      if (!chkPayUid.recordset[0]) userId = null;
+    }
     if (userId === null) {
       const ownerRes = await pool.request().input('id', dbSql.Int, Number(app_id)).query('SELECT owner_id AS ownerId FROM dbo.apps WHERE id=@id');
-      userId = ownerRes.recordset[0]?.ownerId ?? null;
+      const ownerId = ownerRes.recordset[0]?.ownerId ?? null;
+      if (ownerId !== null) {
+        const chkOwner = await pool.request().input('id', dbSql.Int, ownerId).query('SELECT id FROM dbo.users WHERE id=@id');
+        userId = chkOwner.recordset[0]?.id ?? null;
+      }
     }
     if (userId === null) {
       const userByEmail = await pool.request().input('email', dbSql.NVarChar, email).query('SELECT TOP 1 id FROM dbo.users WHERE email=@email');
@@ -4182,12 +4318,14 @@ app.post('/api/public/license/activate-device', sensitiveLimiter, async (req, re
 
     return res.status(403).json({ success: false, licensed: false, message: 'Limite de licenças atingido. Compre novamente para usar em outra máquina.' });
   } catch (err) {
-    console.error('Erro na ativação:', err);
+    console.error('Erro na ativação:', { email: emailForLog, app_id: appIdForLog, hardware_id: hwidForLog, error: err?.message || err });
     return res.status(500).json({ success: false, message: 'Erro interno ao validar licença.' });
   }
 });
 
-// --- ROTA DE VERIFICAÇÃO DE LICENÇA (Migração CoinCraft Desktop) --- 
+// -----------------------------------------------------------------------------------------
+// 25. Rotas de Verificação de Licença (Compatibilidade)
+// -----------------------------------------------------------------------------------------
 // Verifica se a máquina já está cadastrada; caso não, permite cadastro
 // se houver saldo de compras (compras aprovadas > licenças usadas).
 // Audita tanto sucessos quanto rejeições em dbo.license_activations.
@@ -4976,6 +5114,10 @@ app.put('/api/payments/:id', authenticate, authorizeAdmin, async (req, res) => {
 });
 
 
+// -----------------------------------------------------------------------------------------
+// 27. Rotas de Webhooks (Integração de Pagamentos)
+// -----------------------------------------------------------------------------------------
+
 /**
  * @api {post} /api/apps/webhook Webhook Mercado Pago
  * @apiDescription Recebe notificações de atualizações de pagamento do Mercado Pago.
@@ -5011,7 +5153,9 @@ app.get('/api/apps/webhook', (req, res) => {
   }
 });
 
-// --- Admin: Pagamentos no Banco ---
+// -----------------------------------------------------------------------------------------
+// 28. Rotas de Administração Financeira (Pagamentos)
+// -----------------------------------------------------------------------------------------
 /**
  * @api {get} /api/admin/app-payments Listar Pagamentos (Admin)
  * @apiDescription Lista pagamentos registrados no sistema com filtros opcionais (apenas admin).
@@ -5638,6 +5782,10 @@ app.get('/api/purchases/by-email', sensitiveLimiter, async (req, res) => {
   }
 });
 
+// -----------------------------------------------------------------------------------------
+// 29. Rotas de Gamificação (Desafios)
+// -----------------------------------------------------------------------------------------
+
 app.get('/api/desafios', async (req, res, next) => {
   try {
     const pool = await getConnectionPool();
@@ -5863,7 +6011,9 @@ app.put('/api/submissions/:id/review', authenticate, authorizeAdmin, async (req,
   } catch (err) { next(err); }
 });
 
-// --- Servir Arquivos Estáticos ---
+// -----------------------------------------------------------------------------------------
+// 30. Rotas de Arquivos Estáticos e Downloads
+// -----------------------------------------------------------------------------------------
 app.use(express.static(path.join(__dirname, 'dist')));
 app.get('/downloads/:file', async (req, res) => {
   try {
@@ -5950,7 +6100,9 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-// --- Middleware de Tratamento de Erros ---
+// -----------------------------------------------------------------------------------------
+// 31. Middleware Global de Erros
+// -----------------------------------------------------------------------------------------
 app.use((err, req, res, next) => {
   void next; // marca como usado para o ESLint mantendo a assinatura de 4 parâmetros
   console.error('Erro no servidor:', err);
@@ -5960,7 +6112,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-// --- Inicialização do Servidor (aguarda conexão ao banco) ---
+// -----------------------------------------------------------------------------------------
+// 32. Inicialização do Servidor e Banco de Dados
+// -----------------------------------------------------------------------------------------
 getConnectionPool().then(async () => {
   // Garantias de schema e patches de migração
   await ensureUserTableSchema();
@@ -5996,6 +6150,10 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
+// -----------------------------------------------------------------------------------------
+// 33. Rotas de Integração OAuth (Mercado Livre)
+// -----------------------------------------------------------------------------------------
+
 // OAuth callback Mercado Livre para troca de código por tokens
 /**
  * @api {get} /api/mercado-livre/oauth/callback Callback OAuth Mercado Livre
@@ -6015,6 +6173,10 @@ app.get('/api/mercado-livre/oauth/callback', async (req, res) => {
     res.status(500).json({ error: 'OAuth callback error' });
   }
 });
+
+// -----------------------------------------------------------------------------------------
+// 34. Funções de Gerenciamento de Schema do Banco de Dados
+// -----------------------------------------------------------------------------------------
 
 /**
  * Verifica e cria a tabela de reset de senhas se não existir.
@@ -6158,6 +6320,10 @@ async function ensureDesafiosSchema() {
   }
 }
 
+// -----------------------------------------------------------------------------------------
+// 35. Rotas de Administração de Projetos (Visualização)
+// -----------------------------------------------------------------------------------------
+
 /**
  * @api {get} /api/admin/projetos Listar Projetos (Admin)
  * @apiDescription Retorna a lista de todos os projetos cadastrados (apenas admin).
@@ -6183,6 +6349,10 @@ app.get('/api/admin/projetos', authenticate, authorizeAdmin, async (req, res, ne
     next(err);
   }
 });
+// -----------------------------------------------------------------------------------------
+// 36. Funções Auxiliares de Webhook e Pagamento
+// -----------------------------------------------------------------------------------------
+
 /**
  * Processa webhooks de pagamento do Mercado Pago.
  * @param {string|number} paymentId ID do pagamento no Mercado Pago.
@@ -6323,4 +6493,6 @@ async function handlePaymentWebhook(paymentId) {
     console.warn('Webhook: falha ao persistir atualização de pagamento no banco:', dbErr?.message || dbErr);
   }
 }
-// --- Upload de executáveis (admin) – configurado antes das rotas
+// -----------------------------------------------------------------------------------------
+// 22.1. Upload de Executáveis (Admin) – Configuração antes da rota
+// -----------------------------------------------------------------------------------------
