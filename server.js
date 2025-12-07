@@ -218,7 +218,7 @@ function validateEmail(email) {
 }
 
 function isValidPcId(id) {
-  return /^[a-zA-Z0-9\-_]{6,32}$/.test(String(id || ''));
+  return /^[a-zA-Z0-9\-_]{6,64}$/.test(String(id || ''));
 }
 
 async function resolveAppId(pool, rawApp, rawName) {
