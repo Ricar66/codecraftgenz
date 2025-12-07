@@ -1,6 +1,7 @@
 // src/components/FeaturesSection/FeaturesSection.jsx
 import React from 'react';
 import { FaTrophy, FaProjectDiagram, FaUsers, FaChartLine } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 
 import styles from './FeaturesSection.module.css';
 
@@ -21,7 +22,7 @@ const FeaturesSection = () => {
         <div className={styles.featuresGrid}>
 
           {/* Card 1: Desafios */}
-          <div link="/desafios" className={styles.featureCard}>
+          <Link to="/desafios" className={styles.featureCard} style={{ textDecoration: 'none', display: 'block' }}>
             <div className={styles.iconWrapper}>
               <FaTrophy />
             </div>
@@ -29,10 +30,10 @@ const FeaturesSection = () => {
             <p className={styles.cardText}>
               Teste suas habilidades com desafios de código reais propostos por empresas parceiras.
             </p>
-          </div>
+          </Link>
 
           {/* Card 2: Projetos */}
-          <div link="/projetos" className={styles.featureCard}>
+          <Link to="/projetos" className={styles.featureCard} style={{ textDecoration: 'none', display: 'block' }}>
             <div className={styles.iconWrapper}>
               <FaProjectDiagram />
             </div>
@@ -40,10 +41,10 @@ const FeaturesSection = () => {
             <p className={styles.cardText}>
               Construa portfólio participando de projetos open-source e squads de desenvolvimento.
             </p>
-          </div>
+          </Link>
 
           {/* Card 3: Mentorias */}
-          <div link="/mentorias" className={styles.featureCard}>
+          <Link to="/mentoria" className={styles.featureCard} style={{ textDecoration: 'none', display: 'block' }}>
             <div className={styles.iconWrapper}>
               <FaUsers />
             </div>
@@ -51,10 +52,10 @@ const FeaturesSection = () => {
             <p className={styles.cardText}>
               Conecte-se com profissionais experientes do mercado para acelerar sua jornada.
             </p>
-          </div>
+          </Link>
 
           {/* Card 4: Ranking */}
-          <div link="/ranking" className={styles.featureCard}>
+          <Link to="/ranking" className={styles.featureCard} style={{ textDecoration: 'none', display: 'block' }}>
             <div className={styles.iconWrapper}>
               <FaChartLine />
             </div>
@@ -62,7 +63,7 @@ const FeaturesSection = () => {
             <p className={styles.cardText}>
               Gamifique seu aprendizado, ganhe pontos e se destaque para os recrutadores.
             </p>
-          </div>
+          </Link>
 
         </div>
       </div>
