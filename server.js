@@ -3494,12 +3494,10 @@ if (!fs.existsSync(downloadsDir)) {
 const uploadStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, downloadsDir),
   filename: (req, file, cb) => {
-    const id = parseInt(req.params.id || '0', 10);
     const original = file.originalname || 'arquivo.exe';
     const ext = path.extname(original).toLowerCase();
     const base = path.basename(original, ext).replace(/[^a-z0-9\-_.]/gi, '_').slice(0, 64) || 'instalador';
-    const stamp = Date.now();
-    cb(null, `${base}-${id}-${stamp}${ext || '.exe'}`);
+    cb(null, `${base}${ext || '.exe'}`);
   }
 });
 const upload = multer({ storage: uploadStorage, limits: { fileSize: 200 * 1024 * 1024 } }); // 200MB
