@@ -34,8 +34,18 @@ import helmet from 'helmet';          // Headers de segurança HTTP
 import jwt from 'jsonwebtoken';       // Tokens de autenticação
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago'; // SDK Mercado Pago
 import multer from 'multer';          // Upload de arquivos (se utilizado)
+import nodemailer from 'nodemailer';  // Envio de e-mails
 import sharp from 'sharp';            // Processamento de imagens (logo generation)
 import { z } from 'zod';              // Validação de schemas de dados
+
+// Configuração do Transporter de E-mail (Gmail)
+const emailTransporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'codecraftgenz@gmail.com',
+    pass: 'nzjn lodu mcmm mmrc'
+  }
+});
 
 // Módulos Locais
 import { mercadoLivre } from './src/integrations/mercadoLivre.js';
@@ -4085,7 +4095,7 @@ app.post('/api/apps/:id/download/by-email', sensitiveLimiter, async (req, res) =
       if (payRes.recordset.length > 0) allowed = true;
     }
 
-    if (!allowed) return res.status(403).json({ error: 'Download não liberado para este e-mail.' });
+    if (!allowed) return res.status(403).json({ error: 'O email deve estar relacionado com o da compra executada' });
 
     try {
       await pool.request()
@@ -4106,6 +4116,36 @@ app.post('/api/apps/:id/download/by-email', sensitiveLimiter, async (req, res) =
         .input('status', dbSql.NVarChar, 'done')
         .query('INSERT INTO dbo.app_history (type, app_id, app_name, status) VALUES (@type, @app_id, @app_name, @status)');
     } catch (e) { void e }
+
+    // Envio de e-mail com o link
+    try {
+      const fullUrl = url.startsWith('http') ? url : `https://codecraftgenz.com.br${url}`;
+      const mailOptions = {
+        from: '"CodeCraft GenZ" <codecraftgenz@gmail.com>',
+        to: email,
+        subject: `Obrigado por comprar ${appItem.name}!`,
+        html: `
+          <div style="font-family: Arial, sans-serif; color: #333;">
+            <h2>Obrigado pela sua compra!</h2>
+            <p>Olá,</p>
+            <p>Agradecemos por adquirir o <strong>${appItem.name}</strong>.</p>
+            <p>Para baixar seu aplicativo, clique no link abaixo:</p>
+            <p>
+              <a href="${fullUrl}" style="background-color: #00E4F2; color: #000; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                Baixar ${appItem.name}
+              </a>
+            </p>
+            <p>Se o botão não funcionar, copie e cole o link abaixo no seu navegador:</p>
+            <p>${fullUrl}</p>
+            <br/>
+            <p>Atenciosamente,<br/>Equipe CodeCraft GenZ</p>
+          </div>
+        `
+      };
+      await emailTransporter.sendMail(mailOptions);
+    } catch (emailErr) {
+      console.error('Erro ao enviar e-mail de download:', emailErr);
+    }
 
     return res.json({ success: true, download_url: url });
   } catch (err) {
