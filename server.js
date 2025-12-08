@@ -4123,20 +4123,24 @@ app.post('/api/apps/:id/download/by-email', sensitiveLimiter, async (req, res) =
         to: email,
         subject: `Obrigado por comprar ${appItem.name}!`,
         html: `
-          <div style="font-family: Arial, sans-serif; color: #333;">
-            <h2>Obrigado pela sua compra!</h2>
-            <p>Olá,</p>
-            <p>Agradecemos por adquirir o <strong>${appItem.name}</strong>.</p>
-            <p>Para baixar seu aplicativo, clique no link abaixo:</p>
-            <p>
-              <a href="${fullUrl}" style="background-color: #00E4F2; color: #000; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                Baixar ${appItem.name}
-              </a>
-            </p>
-            <p>Se o botão não funcionar, copie e cole o link abaixo no seu navegador:</p>
-            <p>${fullUrl}</p>
-            <br/>
-            <p>Atenciosamente,<br/>Equipe CodeCraft GenZ</p>
+          <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; background-color: #f9f9f9;">
+            <h2 style="color: #007bff; text-align: center;">Obrigado pela sua compra!</h2>
+            <p style="font-size: 16px;">Olá,</p>
+            <p style="font-size: 16px;">Estamos muito felizes que você escolheu o <strong>${appItem.name}</strong>. Agradecemos pela confiança!</p>
+            <p style="font-size: 16px;">Seu aplicativo já está pronto para download. Basta clicar no botão abaixo:</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${fullUrl}" style="background-color: #00E4F2; color: #000; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; display: inline-block;">
+                    BAIXAR ${appItem.name.toUpperCase()}
+                </a>
+            </div>
+
+            <p style="font-size: 14px; color: #666;">Caso o botão não funcione, você pode copiar e colar o seguinte link no seu navegador:</p>
+            <p style="font-size: 14px; color: #0066cc; word-break: break-all;">${fullUrl}</p>
+            
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+            
+            <p style="font-size: 14px;">Atenciosamente,<br/><strong>Equipe CodeCraft GenZ</strong></p>
           </div>
         `
       };
