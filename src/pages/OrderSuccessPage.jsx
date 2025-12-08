@@ -34,7 +34,7 @@ const OrderSuccessPage = () => {
     const enc = new TextEncoder().encode(src);
     const digest = await crypto.subtle.digest('SHA-256', enc);
     const arr = Array.from(new Uint8Array(digest));
-    return arr.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+    return arr.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 64);
   };
 
   useEffect(() => {
