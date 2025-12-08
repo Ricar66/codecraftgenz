@@ -310,6 +310,16 @@ const AppPurchasePage = () => {
             {step === 1 && (
               <div id="buyer-info-section" style={{ marginTop: 12 }}>
                 <h3 className="title" style={{ fontSize:'1rem' }}>Dados do comprador</h3>
+                
+                <div style={{ backgroundColor: 'rgba(255, 193, 7, 0.1)', border: '1px solid rgba(255, 193, 7, 0.3)', borderRadius: 8, padding: '10px 12px', marginBottom: 16 }}>
+                  <p className="muted" style={{ color: '#FFC107', fontSize: '0.9rem', margin: 0, display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                    <span>
+                      <strong>Importante:</strong> O e-mail informado abaixo será usado para <strong>ativar sua licença</strong> assim que a compra for aprovada. Verifique se está correto.
+                    </span>
+                  </p>
+                </div>
+
                 <div className="form-grid">
                   <div className="input-wrap">
                     <label>Nome completo</label>

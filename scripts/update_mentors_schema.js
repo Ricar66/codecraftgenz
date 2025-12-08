@@ -1,5 +1,6 @@
-import { getConnectionPool } from '../src/lib/db.js';
 import process from 'process';
+
+import { getConnectionPool } from '../src/lib/db.js';
 
 async function run() {
   try {
