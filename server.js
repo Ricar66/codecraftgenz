@@ -38,14 +38,11 @@ import nodemailer from 'nodemailer';  // Envio de e-mails
 import sharp from 'sharp';            // Processamento de imagens (logo generation)
 import { z } from 'zod';              // Validação de schemas de dados
 
-// Configuração do Transporter de E-mail (Gmail)
-const emailTransporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'codecraftgenz@gmail.com',
-    pass: 'nzjn lodu mcmm mmrc'
-  }
-});
+const EMAIL_USER = process.env.EMAIL_USER || '';
+const EMAIL_PASS = process.env.EMAIL_PASS || '';
+const emailTransporter = (EMAIL_USER && EMAIL_PASS)
+  ? nodemailer.createTransport({ service: 'gmail', auth: { user: EMAIL_USER, pass: EMAIL_PASS } })
+  : null;
 
 // Módulos Locais
 import { mercadoLivre } from './src/integrations/mercadoLivre.js';
@@ -4119,7 +4116,7 @@ app.post('/api/apps/:id/download/by-email', sensitiveLimiter, async (req, res) =
     try {
       const fullUrl = url.startsWith('http') ? url : `https://codecraftgenz.com.br${url}`;
       const mailOptions = {
-        from: '"CodeCraft GenZ" <codecraftgenz@gmail.com>',
+        from: `"CodeCraft GenZ" <${EMAIL_USER || 'no-reply@codecraftgenz.com.br'}>`,
         to: email,
         subject: `Obrigado por comprar ${appItem.name}!`,
         html: `
@@ -4144,7 +4141,9 @@ app.post('/api/apps/:id/download/by-email', sensitiveLimiter, async (req, res) =
           </div>
         `
       };
-      await emailTransporter.sendMail(mailOptions);
+      if (emailTransporter) {
+        await emailTransporter.sendMail(mailOptions);
+      }
     } catch (emailErr) {
       console.error('Erro ao enviar e-mail de download:', emailErr);
     }
