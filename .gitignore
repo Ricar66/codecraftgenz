@@ -76,5 +76,5 @@ node_modules
 # *.p12
 # .vite/
 # backups/
-.env*
+## .env*
 # !.env.example
