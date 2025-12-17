@@ -1,62 +1,71 @@
-# Configuração do Ambiente de Desenvolvimento
+# Configuração e Migração do Ambiente
+
+Este guia cobre como configurar o projeto em uma nova máquina ou ambiente de desenvolvimento.
 
 ## Pré-requisitos
-- Node.js 18 ou superior
-- npm ou yarn
+- **Node.js**: Versão 18 ou superior.
+- **Git**: Para clonar o repositório.
+- **Acesso ao Banco de Dados**: Credenciais para o Azure SQL Server.
 
-## Configuração Inicial
+## 🚀 Passo a Passo para Migrar/Configurar em Outra Máquina
 
-### 1. Instalar Dependências
+### 1. Clonar o Repositório
+Baixe o código para a nova máquina:
+```bash
+git clone https://github.com/Ricar66/codecraftgenz.git
+cd codecraftgenz
+```
+
+### 2. Instalar Dependências
+Instale todas as bibliotecas listadas no `package.json`:
 ```bash
 npm install
 ```
 
-### 2. Configurar Variáveis de Ambiente
-Copie o arquivo `.env.example` para `.env`:
-```bash
-cp .env.example .env
+### 3. Configurar Variáveis de Ambiente (CRÍTICO)
+O arquivo `.env` **não** é baixado pelo Git por segurança. Você precisa criá-lo manualmente na raiz do projeto.
+Crie um arquivo chamado `.env` e preencha com as credenciais (peça ao administrador ou copie da máquina antiga):
+
+```ini
+# Exemplo de .env (não use valores reais aqui)
+PORT=8080
+ALLOWED_ORIGINS=http://localhost:5173
+
+# Segurança
+JWT_SECRET=seu_segredo_super_secreto_aqui
+
+# Banco de Dados (Azure SQL)
+DB_SERVER=codecraft-sql.database.windows.net
+DB_DATABASE=codecraft_db
+DB_USER=seu_usuario
+DB_PASSWORD=sua_senha
+
+# Mercado Pago
+MERCADO_PAGO_ACCESS_TOKEN=seu_token
+MERCADO_PAGO_PUBLIC_KEY=sua_chave_publica
 ```
 
-Edite o arquivo `.env` conforme necessário para seu ambiente local.
+### 4. Executar o Projeto
 
-### 3. Inicializar Banco de Dados
-O banco SQLite será criado automaticamente na primeira execução:
+**Modo Desenvolvimento (com Hot Reload):**
+Abra dois terminais:
+1. Terminal 1 (Frontend): `npm run dev`
+2. Terminal 2 (Backend): `npm start` (ou `node server.js`)
+
+**Modo Produção:**
 ```bash
-npm run db:init
+npm run build
+npm start
 ```
 
-### 4. Executar em Desenvolvimento
-```bash
-npm run dev    # Frontend (Vite)
-npm start      # Backend + Frontend (Produção)
-```
+## Estrutura Importante
+- `server.js`: Backend principal (API).
+- `src/`: Frontend React.
+- `.env`: Arquivo de configuração (segredos).
+- `public/downloads`: Pasta onde ficam os executáveis (.exe) para download.
 
-## Estrutura de Arquivos Importantes
+## Solução de Problemas Comuns
 
-- `.env` - Variáveis de ambiente (não versionado)
-- `.env.example` - Template das variáveis de ambiente
-- `database.sqlite` - Banco de dados SQLite (não versionado)
-- `server.js` - Servidor principal
-- `src/` - Código fonte da aplicação
-
-## Comandos Disponíveis
-
-- `npm run dev` - Servidor de desenvolvimento
-- `npm run build` - Build para produção
-- `npm start` - Servidor de produção
-- `npm test` - Executar testes
-- `npm run lint` - Verificar código
-
-## Notas de Segurança
-
-- Nunca commite arquivos `.env*` (exceto `.env.example`)
-- Nunca commite arquivos de banco de dados (`*.sqlite`, `*.db`)
-- Mantenha suas chaves de API e senhas seguras
-
-## Visibilidade e Permissões de Projetos
-
-- Visibilidade pública segue a mesma lógica dos mentores: itens visíveis aparecem para todos os usuários; itens em rascunho ficam ocultos do público.
-- Administração: em `Admin > Projetos`, há um botão para alternar entre Exibir/Ocultar que altera o `status` do projeto entre `rascunho` e `ongoing`.
-- API: a listagem pública usa o parâmetro `visivel=true`; na camada de serviço, projetos em `rascunho/draft` são filtrados quando o acesso é público.
-- Fallback: quando ocorrer 401/erros de rede/5xx, a listagem do admin faz fallback para os projetos públicos se `VITE_ADMIN_PUBLIC_FALLBACK=true`.
-- Permissões: rotas de admin exigem perfis `admin` ou `editor`; demais perfis acessam apenas listagem pública.
+- **Erro de Conexão com Banco:** Verifique se o IP da nova máquina está liberado no Firewall do Azure SQL.
+- **Erro de Dependências:** Tente rodar `npm install` novamente ou apague a pasta `node_modules` e instale de novo.
+- **Imagens/Arquivos faltando:** Verifique se a pasta `public/downloads` contém os executáveis necessários (eles não costumam ir para o Git se forem muito grandes, mas neste projeto alguns estão versionados).
