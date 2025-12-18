@@ -95,6 +95,28 @@ try {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+let appInsightsClient = null;
+async function initTelemetry() {
+  try {
+    const conn =
+      process.env.APPLICATIONINSIGHTS_CONNECTION_STRING ||
+      process.env.APPINSIGHTS_CONNECTION_STRING ||
+      process.env.APPINSIGHTS_INSTRUMENTATIONKEY ||
+      '';
+    if (!conn) return;
+    const ai = await import('applicationinsights').catch(() => null);
+    if (!ai) return;
+    if (String(conn).includes('InstrumentationKey=')) {
+      ai.setup(conn).start();
+    } else {
+      ai.setup().setConnectionString(conn).start();
+    }
+    appInsightsClient = ai.defaultClient;
+  } catch (e) {
+    console.warn('telemetry_init_error', e?.message || e);
+  }
+}
+initTelemetry();
 // -----------------------------------------------------------------------------------------
 // 2. Configuração do Servidor Express
 // -----------------------------------------------------------------------------------------
@@ -243,6 +265,9 @@ function logEvent(type, details) {
   try {
     const entry = { type, time: new Date().toISOString(), ...details };
     console.log(JSON.stringify(entry));
+    if (appInsightsClient) {
+      appInsightsClient.trackEvent({ name: String(type || 'event'), properties: details || {} });
+    }
   } catch {
     console.log(`[LOG] ${type}`, details);
   }
