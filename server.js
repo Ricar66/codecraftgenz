@@ -3524,7 +3524,7 @@ const uploadStorage = multer.diskStorage({
     cb(null, `${base}${ext || '.exe'}`);
   }
 });
-const upload = multer({ storage: uploadStorage, limits: { fileSize: 200 * 1024 * 1024 } }); // 200MB
+const upload = multer({ storage: uploadStorage, limits: { fileSize: 512 * 1024 * 1024 } });
 
 /**
  * @api {post} /api/apps/:id/executable/upload Upload de executável
@@ -6247,7 +6247,13 @@ app.get('*', (req, res) => {
 // 31. Middleware Global de Erros
 // -----------------------------------------------------------------------------------------
 app.use((err, req, res, next) => {
-  void next; // marca como usado para o ESLint mantendo a assinatura de 4 parâmetros
+  void next;
+  if (err && (err.code === 'LIMIT_FILE_SIZE')) {
+    return res.status(413).json({ error: 'Arquivo excede o limite', limit_mb: 512 });
+  }
+  if (err && (err.name === 'MulterError')) {
+    return res.status(400).json({ error: String(err.message || 'Falha no upload') });
+  }
   console.error('Erro no servidor:', err);
   res.status(500).json({
     error: 'Erro interno do servidor',
