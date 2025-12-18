@@ -5233,6 +5233,7 @@ function verifyMpSignature(signature, requestId, dataId) {
 app.post('/api/apps/webhook', express.raw({ type: '*/*', limit: '2mb' }), async (req, res) => {
   try {
     if (String(process.env.MERCADO_PAGO_WEBHOOK_BYPASS || '').toLowerCase() === 'true') {
+      logEvent('webhook_bypass', { method: 'POST', query: req.query || null });
       return res.status(200).json({ received: true, bypass: true });
     }
     let type = null;
@@ -5247,23 +5248,36 @@ app.post('/api/apps/webhook', express.raw({ type: '*/*', limit: '2mb' }), async 
       }
     } catch (e) {
       console.warn('Webhook JSON parse falhou', e?.message || e);
+      logEvent('webhook_parse_error', { error: e?.message || String(e) });
     }
     const q = req.query || {};
     const paymentId = q.id || q['data.id'] || (data && data.id) || null;
     const xSig = req.headers['x-signature'] || '';
     const xReqId = req.headers['x-request-id'] || '';
+    logEvent('webhook_received', {
+      reqId: String(xReqId || ''),
+      paymentId: String(paymentId || ''),
+      type: String(type || ''),
+    });
     const ok = verifyMpSignature(String(xSig || ''), String(xReqId || ''), String(paymentId || ''));
     if (!ok) {
       console.warn('Webhook assinatura inválida', { xReqId, paymentId });
+      logEvent('webhook_invalid_signature', { reqId: String(xReqId || ''), paymentId: String(paymentId || '') });
       return res.status(401).json({ error: 'Assinatura inválida' });
     }
+    logEvent('webhook_valid_signature', { reqId: String(xReqId || ''), paymentId: String(paymentId || '') });
     if (type === 'payment' && data?.id) {
+      logEvent('webhook_process_scheduled', { paymentId: String(data.id) });
       Promise.resolve()
         .then(() => handlePaymentWebhook(data.id))
-        .catch((e) => console.error('Falha ao processar webhook MP', e?.message || e));
+        .catch((e) => {
+          console.error('Falha ao processar webhook MP', e?.message || e);
+          logEvent('webhook_process_error', { paymentId: String(data.id), error: e?.message || String(e) });
+        });
     }
     return res.status(200).json({ received: true });
   } catch {
+    logEvent('webhook_unhandled_error', {});
     res.status(500).json({ error: 'Webhook POST error' });
   }
 });
