@@ -168,7 +168,10 @@ app.use(compression()); // Melhora performance comprimindo respostas
 
 // Parsers de corpo de requisição
 app.use(express.text({ limit: '10mb', type: 'text/plain' })); // Para webhooks que enviam raw text
-app.use(express.json({ limit: '10mb' })); // Para APIs JSON
+app.use((req, res, next) => {
+  if (req.path === '/api/apps/webhook') return next();
+  return express.json({ limit: '10mb' })(req, res, next);
+}); // Pula o JSON parser global para o webhook, usa parser específico na rota
 app.use(cookieParser()); // Para ler token JWT dos cookies
 
 // -----------------------------------------------------------------------------------------
@@ -230,13 +233,7 @@ const sensitiveLimiter = rateLimit({
     return ip;
   }
 });
-// Limite para webhooks externos
-const webhookLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 120,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// Limite para webhooks externos removido temporariamente para facilitar testes de produção
 
 // -----------------------------------------------------------------------------------------
 // 5. Helpers & Utilitários (Logging, Sanitização, Validação)
@@ -466,6 +463,7 @@ const MP_SUCCESS_URL = process.env.MERCADO_PAGO_SUCCESS_URL || 'http://localhost
 const MP_FAILURE_URL = process.env.MERCADO_PAGO_FAILURE_URL || 'http://localhost:5173/apps/:id/compra';
 const MP_PENDING_URL = process.env.MERCADO_PAGO_PENDING_URL || 'http://localhost:5173/apps/:id/compra';
 const MP_WEBHOOK_URL = process.env.MERCADO_PAGO_WEBHOOK_URL || 'http://localhost:8080/api/apps/webhook';
+const MP_WEBHOOK_SECRET = process.env.MERCADO_PAGO_WEBHOOK_SECRET || process.env.MP_WEBHOOK_SECRET || '';
 
 let mpClient = null;
 try {
@@ -1234,13 +1232,17 @@ function generateMfaSecret() {
  */
 function verifyTotp(base32Secret, token) {
   if (!base32Secret || !token) return false;
+  const tok = String(token);
+  if (!/^\d{6}$/.test(tok)) return false;
   const secret = base32ToBuffer(base32Secret);
   const period = 30;
   const now = Math.floor(Date.now() / 1000);
   for (let drift = -1; drift <= 1; drift++) {
     const counter = Math.floor(now / period) + drift;
     const code = totpCode(secret, counter);
-    if (code === token) return true;
+    const a = Buffer.from(code, 'utf8');
+    const b = Buffer.from(tok, 'utf8');
+    if (a.length === b.length && nodeCrypto.timingSafeEqual(a, b)) return true;
   }
   return false;
 }
@@ -5164,6 +5166,37 @@ app.put('/api/payments/:id', authenticate, authorizeAdmin, async (req, res) => {
 // 27. Rotas de Webhooks (Integração de Pagamentos)
 // -----------------------------------------------------------------------------------------
 
+function verifyMpSignature(signature, requestId, dataId) {
+  try {
+    if (!signature || !requestId || !dataId || !MP_WEBHOOK_SECRET) return false;
+    const parts = String(signature).split(',');
+    let ts = null;
+    let v1 = null;
+    for (const part of parts) {
+      const idx = part.indexOf('=');
+      if (idx === -1) continue;
+      const key = part.slice(0, idx).trim();
+      const val = part.slice(idx + 1).trim();
+      if (key === 'ts') ts = val;
+      else if (key === 'v1') v1 = val.toLowerCase();
+    }
+    if (!ts || !v1) return false;
+    const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
+    const computed = nodeCrypto.createHmac('sha256', MP_WEBHOOK_SECRET).update(manifest).digest('hex');
+    const a = Buffer.from(computed, 'utf8');
+    const b = Buffer.from(v1, 'utf8');
+    if (a.length !== b.length) return false;
+    if (!nodeCrypto.timingSafeEqual(a, b)) return false;
+    const tsNum = Number(ts);
+    if (!Number.isFinite(tsNum)) return false;
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (Math.abs(nowSec - tsNum) > 300) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * @api {post} /api/apps/webhook Webhook Mercado Pago
  * @apiDescription Recebe notificações de atualizações de pagamento do Mercado Pago.
@@ -5172,13 +5205,39 @@ app.put('/api/payments/:id', authenticate, authorizeAdmin, async (req, res) => {
  * @apiParam {Object} data Dados da notificação (contém ID do pagamento).
  * @apiSuccess {boolean} received Confirmação de recebimento.
  */
-app.post('/api/apps/webhook', webhookLimiter, async (req, res) => {
+app.post('/api/apps/webhook', express.raw({ type: '*/*', limit: '2mb' }), async (req, res) => {
   try {
-    const { type, data } = req.body || {};
-    if (type === 'payment' && data?.id) {
-      await handlePaymentWebhook(data.id);
+    if (String(process.env.MERCADO_PAGO_WEBHOOK_BYPASS || '').toLowerCase() === 'true') {
+      return res.status(200).json({ received: true, bypass: true });
     }
-    res.status(200).json({ received: true });
+    let type = null;
+    let data = null;
+    try {
+      const ctype = String(req.headers['content-type'] || '');
+      if (ctype.includes('application/json')) {
+        const raw = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : String(req.body || '');
+        const parsed = JSON.parse(raw || '{}');
+        type = parsed?.type || null;
+        data = parsed?.data || null;
+      }
+    } catch (e) {
+      console.warn('Webhook JSON parse falhou', e?.message || e);
+    }
+    const q = req.query || {};
+    const paymentId = q.id || q['data.id'] || (data && data.id) || null;
+    const xSig = req.headers['x-signature'] || '';
+    const xReqId = req.headers['x-request-id'] || '';
+    const ok = verifyMpSignature(String(xSig || ''), String(xReqId || ''), String(paymentId || ''));
+    if (!ok) {
+      console.warn('Webhook assinatura inválida', { xReqId, paymentId });
+      return res.status(401).json({ error: 'Assinatura inválida' });
+    }
+    if (type === 'payment' && data?.id) {
+      Promise.resolve()
+        .then(() => handlePaymentWebhook(data.id))
+        .catch((e) => console.error('Falha ao processar webhook MP', e?.message || e));
+    }
+    return res.status(200).json({ received: true });
   } catch {
     res.status(500).json({ error: 'Webhook POST error' });
   }
@@ -6137,7 +6196,6 @@ app.get('/api/downloads/:file/integrity', async (req, res) => {
 });
 
 // Fallback estático para imagens e outros arquivos que não exigem cabeçalhos especiais
-app.use('/downloads', express.static(path.join(__dirname, 'public', 'downloads')));
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'API endpoint not found' });
   next();
