@@ -72,6 +72,9 @@
     "vite-plugin-pwa": "^1.1.0",
     "vitest": "^4.0.3"
   },
+  "overrides": {
+    "@azure/core-rest-pipeline": "1.22.2"
+  },
   "engines": {
     "node": ">=18"
   }
