@@ -1,36 +1,45 @@
 <div align="center">
-  <img alt="Logo CodeCraftGenz" src="src/assets/logo-codecraft.svg" width="120" />
-
-  <h1>CodeCraftGenz — Frontend + API</h1>
-
+  <img alt="Logo CodeCraft Gen‑Z" src="src/assets/logo-codecraft.svg" width="180" />
+  <br />
+  <img alt="Marca CodeCraft Gen‑Z (versão imagem)" src="src/assets/logo-codecraft.svg" width="0" height="0" />
+  <h1>CodeCraft Gen‑Z</h1>
+  <p><strong>Plataforma moderna para criar, lançar e evoluir apps — com pagamentos, licenças e experiências de ponta.</strong></p>
+  <a href="https://codecraftgenz.com.br" target="_blank"><b>🌐 codecraftgenz.com.br</b></a>
+  <br /><br />
   <a href="https://github.com/Ricar66/codecraftgenz/actions/workflows/main_codecraftgenz.yml">
     <img alt="Build" src="https://github.com/Ricar66/codecraftgenz/actions/workflows/main_codecraftgenz.yml/badge.svg" />
   </a>
   <img alt="Node" src="https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white" />
   <img alt="React" src="https://img.shields.io/badge/react-19-61DAFB?logo=react&logoColor=061A23" />
   <img alt="Vite" src="https://img.shields.io/badge/vite-5-646CFF?logo=vite&logoColor=white" />
+  <img alt="API" src="https://img.shields.io/badge/API-Express-000000?logo=express&logoColor=white" />
 </div>
 
 ---
 
-Aplicação web moderna com:
-- ⚛️ Frontend em React (Vite)
-- 🚀 API Node.js/Express
-- 💳 Integração Mercado Pago
-- 🗄️ Banco Azure SQL
-- 🛡️ Segurança com Helmet, CORS e JWT
+## Sobre a Empresa
+- ✨ A CodeCraft Gen‑Z conecta talentos e tecnologia para transformar ideias em software real.
+- 🧭 Foco em experiências, performance e segurança para apps web e desktop.
+- 🤝 Parcerias e mentorias para acelerar projetos do zero ao lançamento.
 
-## Recursos
-- Performance com Vite e otimizações de build
-- Roteamento no frontend e API consolidada
-- Integrações de pagamento e webhooks
-- Configuração via variáveis de ambiente (sem expor segredos)
+## O Projeto
+- ⚛️ Frontend em `React` com `Vite` e estratégias de performance.
+- 🚀 API `Node.js/Express` com pagamentos (`Mercado Pago`), licenças e webhooks.
+- 🗄️ Banco de dados `Azure SQL` com migrações automáticas e auditoria.
+- 🛡️ Segurança: `Helmet`, `CORS`, `JWT`, rate‑limit e sanitização.
 
-## Pré-requisitos
-- Node.js `>=18`
-- npm `>=9`
+## Demonstração
+- Página principal: `https://codecraftgenz.com.br`
+- Apps e compras: `https://codecraftgenz.com.br/apps`
+- Downloads seguros: rotas protegidas e URLs de integridade
 
-## Comece Rápido
+## Destaques
+- 💳 Checkout com Mercado Pago, verificação de status e webhooks de confirmação.
+- 🔐 Ativação de licença por hardware e trilha de auditoria de eventos.
+- 📦 Upload de executáveis com entrega via `/downloads/:file` e checagem de integridade.
+- 📈 Telemetria opcional com Application Insights.
+
+## Como Executar
 ```bash
 npm install
 npm run dev       # Frontend em http://localhost:5173
@@ -38,7 +47,7 @@ npm start         # API em http://localhost:8080 (requer .env)
 ```
 
 ## Variáveis de Ambiente
-Defina em `.env` (ou `.env.development`/`.env.production`). Não exponha valores sensíveis.
+Defina em `.env` conforme o ambiente. Não exponha segredos.
 
 ```ini
 # Frontend
@@ -49,18 +58,18 @@ VITE_WP_API_URL=https://cms.codecraftgenz.com.br/wp-json
 # API / Server
 PORT=8080
 ALLOWED_ORIGINS=http://localhost:5173
-JWT_SECRET=<defina-um-segredo-forte>
-ADMIN_RESET_TOKEN=<defina-um-token-admin>
+JWT_SECRET=...
+ADMIN_RESET_TOKEN=...
 
 # Banco (Azure SQL)
-DB_SERVER=<servidor>
-DB_USER=<usuario>
-DB_PASSWORD=<senha>
-DB_DATABASE=<banco>
+DB_SERVER=...
+DB_USER=...
+DB_PASSWORD=...
+DB_DATABASE=...
 
 # Mercado Pago
-MERCADO_PAGO_ACCESS_TOKEN=<token>
-MERCADO_PAGO_PUBLIC_KEY=<chave_publica>
+MERCADO_PAGO_ACCESS_TOKEN=...
+MERCADO_PAGO_PUBLIC_KEY=...
 MERCADO_PAGO_SUCCESS_URL=https://codecraftgenz.azurewebsites.net/apps/:id/compra
 MERCADO_PAGO_FAILURE_URL=https://codecraftgenz.azurewebsites.net/apps/:id/compra
 MERCADO_PAGO_PENDING_URL=https://codecraftgenz.azurewebsites.net/apps/:id/compra
@@ -74,21 +83,14 @@ MERCADO_PAGO_WEBHOOK_URL=https://codecraftgenz.azurewebsites.net/api/apps/webhoo
 - `npm start` – inicia a API
 - `npm run test` – executa testes
 
-## Testes
-```bash
-npm run test
-```
-
-## Deploy
-- CI via GitHub Actions (deploy para Azure Web App)
-- Segredos via GitHub Secrets
-
 ## Segurança
-- Nunca commitar segredos
+- Não commitar segredos
 - Gere um `JWT_SECRET` forte:
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
 ## Contato
-Abra uma issue para dúvidas e suporte
+- 🌐 Site: `https://codecraftgenz.com.br`
+- ✉️ Comercial: `contato@codecraftgenz.com.br`
+- 🐛 Issues e suporte via GitHub

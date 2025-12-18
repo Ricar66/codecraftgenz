@@ -16,7 +16,8 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "brand:logo": "node scripts/brand/prepare-logo.mjs --input ./assets/new-logo.png --outPng src/assets/logo-codecraft.png --outSvg src/assets/logo-codecraft.svg --threshold 250"
   },
   "dependencies": {
     "@mercadopago/sdk-react": "^1.0.6",
@@ -44,6 +45,7 @@
     "regenerator-runtime": "^0.14.1",
     "serve": "^14.2.5",
     "sharp": "^0.34.5",
+    "potrace": "^2.1.8",
     "zod": "^4.1.13"
   },
   "devDependencies": {
