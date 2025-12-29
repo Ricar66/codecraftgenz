@@ -309,8 +309,29 @@
   cursor: pointer;
 }
 
-.feedbackGrid input {
-  composes: input;
+.feedbackInput {
+  width: 100%;
+  padding: var(--espaco-md);
+  border-radius: var(--raio-md);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--texto-branco);
+  font-size: var(--texto-base);
+  font-family: inherit;
+  transition: all 0.2s ease;
+  outline: none;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.feedbackInput::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.feedbackInput:focus {
+  border-color: var(--cor-terciaria);
+  box-shadow: 0 0 0 3px rgba(0, 228, 242, 0.15);
+  background: rgba(0, 0, 0, 0.4);
 }
 
 /* ===== DETALHES/AJUDA ===== */
