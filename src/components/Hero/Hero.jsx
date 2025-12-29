@@ -116,35 +116,33 @@ const Hero = ({ onCrafterClick }) => {
           )}
         </div>
 
-        {/* Scroll Indicator */}
-        <div
-          className={styles.scrollIndicator}
-          onClick={() => {
-            const nextSection = document.querySelector('[data-section="features"]');
-            if (nextSection) {
-              nextSection.scrollIntoView({ behavior: 'smooth' });
-            } else {
-              window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
-            }
-          }}
-          role="button"
-          tabIndex={0}
-          aria-label="Rolar para baixo"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
-            }
-          }}
-        >
-          <span className={styles.scrollText}>Descubra mais</span>
-          <div className={styles.scrollMouse}>
-            <div className={styles.scrollWheel}></div>
-          </div>
-        </div>
-
       </div>
 
-      {/* Overlay removido para manter um único fundo na Home */}
+      {/* Scroll Indicator - fora do heroContent para posicionamento correto */}
+      <div
+        className={styles.scrollIndicator}
+        onClick={() => {
+          const nextSection = document.querySelector('[data-section="features"]');
+          if (nextSection) {
+            nextSection.scrollIntoView({ behavior: 'smooth' });
+          } else {
+            window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label="Rolar para baixo"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
+          }
+        }}
+      >
+        <span className={styles.scrollText}>Descubra mais</span>
+        <div className={styles.scrollMouse}>
+          <div className={styles.scrollWheel}></div>
+        </div>
+      </div>
     </section>
   );
 };
