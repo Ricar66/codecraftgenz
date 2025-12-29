@@ -7,6 +7,7 @@ import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth.js';
 import { getAppById, getPurchaseStatus, registerDownload, submitFeedback, createPaymentPreference, downloadByEmail, activateDeviceLicense } from '../services/appsAPI.js';
 import { getAppPrice } from '../utils/appModel.js';
+import styles from './AppPurchasePage.module.css';
 
 // Mapeia códigos de status_detail do Mercado Pago para mensagens amigáveis
 function mapStatusDetail(detail) {
@@ -85,10 +86,6 @@ const AppPurchasePage = () => {
     const arr = Array.from(new Uint8Array(digest));
     return arr.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
   };
-
-  // Fluxo simplificado: sem checkout externo
-
-  // Removido: auto-download para evitar qualquer comportamento de download não intencional
 
   useEffect(() => {
     let mounted = true;
@@ -252,11 +249,6 @@ const AppPurchasePage = () => {
     }
   };
 
-  // Pagamento direto via Pix
-  // Fluxo Pix removido neste modo simplificado
-
-  // autoDownload definido acima com useCallback
-
   const sendFeedback = async () => {
     try {
       await submitFeedback(id, feedback);
@@ -268,35 +260,42 @@ const AppPurchasePage = () => {
   };
 
   return (
-    <div className="purchase-page">
+    <div className={styles.purchasePage}>
       <Navbar />
-      <div className="purchase-card">
+      <div className={styles.purchaseCard}>
         {loading ? (
-          <p className="muted">Carregando…</p>
+          <p className={styles.muted}>Carregando...</p>
         ) : error ? (
-          <p role="alert" style={{ color: '#FF6B6B' }}>❌ {error}</p>
+          <p className={styles.errorMessage} role="alert">
+            <span>❌</span> {error}
+          </p>
         ) : (
           <>
-            <h1 className="title">{app?.name || app?.titulo}</h1>
-            <p className="muted">{app?.description || app?.mainFeature}</p>
-            <p className="price">Preço: {(() => { const p = getAppPrice(app||{}); return p > 0 ? `R$ ${p.toLocaleString('pt-BR')}` : 'a definir'; })()}</p>
-            <p className="muted" title="Informação de preço">
+            <h1 className={styles.title}>{app?.name || app?.titulo}</h1>
+            <p className={styles.muted}>{app?.description || app?.mainFeature}</p>
+            <p className={styles.price}>
+              {(() => {
+                const p = getAppPrice(app || {});
+                return p > 0 ? `R$ ${p.toLocaleString('pt-BR')}` : 'A definir';
+              })()}
+            </p>
+            <p className={styles.muted}>
               Preço final do produto. Taxas de processamento do pagamento são absorvidas pela plataforma.
             </p>
 
-            <p className="muted" style={{ marginTop: 8 }}>
+            <p className={styles.muted} style={{ marginTop: 8 }}>
               Método disponível: Cartão de crédito/débito (via Mercado Pago).
             </p>
 
-            <div className="btn-group" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+            <div className={styles.btnGroup}>
               <button
-                className="btn btn-outline"
+                className={`${styles.btn} ${styles.btnOutline}`}
                 onClick={startWalletCheckout}
               >
                 Pagar com Mercado Pago (Wallet)
               </button>
               <button
-                className="btn btn-primary"
+                className={`${styles.btn} ${styles.btnPrimary}`}
                 onClick={() => {
                   setStep(1);
                   const el = document.getElementById('buyer-info-section');
@@ -305,94 +304,162 @@ const AppPurchasePage = () => {
               >
                 Pagar com Cartão de Crédito
               </button>
-              <button className="btn btn-outline" onClick={handleDownload} disabled={!downloadUrl && status!=='approved'}>Baixar executável</button>
+              <button
+                className={`${styles.btn} ${styles.btnOutline}`}
+                onClick={handleDownload}
+                disabled={!downloadUrl && status !== 'approved'}
+              >
+                Baixar executável
+              </button>
             </div>
+
             {step === 1 && (
-              <div id="buyer-info-section" style={{ marginTop: 12 }}>
-                <h3 className="title" style={{ fontSize:'1rem' }}>Dados do comprador</h3>
-                
-                <div style={{ backgroundColor: 'rgba(255, 193, 7, 0.1)', border: '1px solid rgba(255, 193, 7, 0.3)', borderRadius: 8, padding: '10px 12px', marginBottom: 16 }}>
-                  <p className="muted" style={{ color: '#FFC107', fontSize: '0.9rem', margin: 0, display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span style={{ fontSize: '1.2rem' }}>⚠️</span>
-                    <span>
-                      <strong>Importante:</strong> O e-mail informado abaixo será usado para <strong>ativar sua licença</strong> assim que a compra for aprovada. Verifique se está correto.
-                    </span>
+              <div id="buyer-info-section" className={styles.buyerSection}>
+                <h3 className={styles.subtitle}>Dados do comprador</h3>
+
+                <div className={styles.warningBox}>
+                  <span className={styles.warningIcon}>⚠️</span>
+                  <p className={styles.warningText}>
+                    <strong>Importante:</strong> O e-mail informado abaixo será usado para{' '}
+                    <strong>ativar sua licença</strong> assim que a compra for aprovada. Verifique se está correto.
                   </p>
                 </div>
 
-                <div className="form-grid">
-                  <div className="input-wrap">
+                <div className={styles.formGrid}>
+                  <div className={styles.inputWrap}>
                     <label>Nome completo</label>
-                    <input className="input" aria-label="Nome completo" placeholder="Ex: Ricardo Coradini" value={payerInfo.name} onChange={e=>setPayerInfo(s=>({ ...s, name: e.target.value }))} />
+                    <input
+                      className={styles.input}
+                      aria-label="Nome completo"
+                      placeholder="Ex: Ricardo Coradini"
+                      value={payerInfo.name}
+                      onChange={e => setPayerInfo(s => ({ ...s, name: e.target.value }))}
+                    />
                   </div>
-                  <div className="input-wrap">
+                  <div className={styles.inputWrap}>
                     <label>E-mail</label>
-                    <input className="input" aria-label="E-mail" placeholder="seu@email.com" type="email" value={payerInfo.email} onChange={e=>setPayerInfo(s=>({ ...s, email: e.target.value }))} />
+                    <input
+                      className={styles.input}
+                      aria-label="E-mail"
+                      placeholder="seu@email.com"
+                      type="email"
+                      value={payerInfo.email}
+                      onChange={e => setPayerInfo(s => ({ ...s, email: e.target.value }))}
+                    />
                   </div>
-                  <div className="input-wrap">
+                  <div className={styles.inputWrap}>
                     <label>CPF</label>
-                    <input className="input" aria-label="CPF" placeholder="000.000.000-00" value={payerInfo.identification} onChange={e=>setPayerInfo(s=>({ ...s, identification: String(e.target.value||'').replace(/[^0-9]/g,'').slice(0,11) }))} />
+                    <input
+                      className={styles.input}
+                      aria-label="CPF"
+                      placeholder="000.000.000-00"
+                      value={payerInfo.identification}
+                      onChange={e => setPayerInfo(s => ({ ...s, identification: String(e.target.value || '').replace(/[^0-9]/g, '').slice(0, 11) }))}
+                    />
                   </div>
                 </div>
-                <div className="form-grid" style={{ marginTop:8 }}>
-                  <div className="input-wrap">
+
+                <div className={styles.formGrid} style={{ marginTop: 12 }}>
+                  <div className={styles.inputWrap}>
                     <label>Telefone (opcional)</label>
-                    <input className="input" aria-label="Telefone" placeholder="(11) 99999-9999" value={payerInfo.phone || ''} onChange={e=>setPayerInfo(s=>({ ...s, phone: String(e.target.value||'').replace(/[^0-9+\s-]/g,'') }))} />
+                    <input
+                      className={styles.input}
+                      aria-label="Telefone"
+                      placeholder="(11) 99999-9999"
+                      value={payerInfo.phone || ''}
+                      onChange={e => setPayerInfo(s => ({ ...s, phone: String(e.target.value || '').replace(/[^0-9+\s-]/g, '') }))}
+                    />
                   </div>
-                  <div className="input-wrap">
+                  <div className={styles.inputWrap}>
                     <label>CEP (opcional)</label>
-                    <input className="input" aria-label="CEP" placeholder="00000-000" value={payerInfo.zip || ''} onChange={e=>setPayerInfo(s=>({ ...s, zip: String(e.target.value||'').replace(/[^0-9]/g,'').slice(0,8) }))} />
+                    <input
+                      className={styles.input}
+                      aria-label="CEP"
+                      placeholder="00000-000"
+                      value={payerInfo.zip || ''}
+                      onChange={e => setPayerInfo(s => ({ ...s, zip: String(e.target.value || '').replace(/[^0-9]/g, '').slice(0, 8) }))}
+                    />
                   </div>
-                  <div className="input-wrap">
+                  <div className={styles.inputWrap}>
                     <label>Endereço (rua) (opcional)</label>
-                    <input className="input" aria-label="Endereço" placeholder="Rua Exemplo, 123" value={payerInfo.streetName || ''} onChange={e=>setPayerInfo(s=>({ ...s, streetName: String(e.target.value||'').replace(/<[^>]*>/g,'').trim() }))} />
+                    <input
+                      className={styles.input}
+                      aria-label="Endereço"
+                      placeholder="Rua Exemplo, 123"
+                      value={payerInfo.streetName || ''}
+                      onChange={e => setPayerInfo(s => ({ ...s, streetName: String(e.target.value || '').replace(/<[^>]*>/g, '').trim() }))}
+                    />
                   </div>
                 </div>
-                <p className="muted" style={{ marginTop: 6 }}>Preencha nome, e-mail e CPF para continuar. Telefone e endereço ajudam a aprovação do pagamento.</p>
-                <div style={{ marginTop: 8 }}>
-                  <button className="btn btn-outline" onClick={(e)=>{
-                    e.preventDefault();
-                    const n = String(payerInfo.name||'').trim();
-                    const em = String(payerInfo.email||'').trim();
-                    const id = String(payerInfo.identification||'').trim();
-                    if (!n || !em || !id) { alert('Por favor, preencha nome, e-mail e CPF.'); return; }
-                    setStep(2);
-                    setShowCardForm(true);
-                    const el = document.getElementById('card-payment-section');
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }}>Continuar para pagamento com cartão</button>
+
+                <p className={styles.muted} style={{ marginTop: 8 }}>
+                  Preencha nome, e-mail e CPF para continuar. Telefone e endereço ajudam a aprovação do pagamento.
+                </p>
+
+                <div style={{ marginTop: 12 }}>
+                  <button
+                    className={`${styles.btn} ${styles.btnPrimary}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const n = String(payerInfo.name || '').trim();
+                      const em = String(payerInfo.email || '').trim();
+                      const cpf = String(payerInfo.identification || '').trim();
+                      if (!n || !em || !cpf) {
+                        alert('Por favor, preencha nome, e-mail e CPF.');
+                        return;
+                      }
+                      setStep(2);
+                      setShowCardForm(true);
+                      setTimeout(() => {
+                        const el = document.getElementById('card-payment-section');
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 100);
+                    }}
+                  >
+                    Continuar para pagamento com cartão
+                  </button>
                 </div>
               </div>
             )}
-            {/* Opções avançadas removidas no modo simplificado */}
-            {status && <p className="muted">Status da compra: {status}</p>}
 
-            {/* Fluxo Pix removido no modo simplificado */}
+            {status && (
+              <p className={styles.muted} style={{ marginTop: 12 }}>
+                Status da compra: <strong>{status}</strong>
+              </p>
+            )}
 
-              {showCardForm && step === 2 && (
-                <div id="card-payment-section" style={{ marginTop: 12 }}>
-                  <CardDirectPayment
-                    appId={id}
-                    amount={app?.price || 0}
-                    description={(app?.name || app?.titulo) ? `Compra de ${app?.name || app?.titulo}` : 'Compra de aplicativo'}
-                    buyer={{ name: payerInfo.name, email: payerInfo.email, docType: 'CPF', docNumber: payerInfo.identification, phone: payerInfo.phone, zip: payerInfo.zip, streetName: payerInfo.streetName }}
-                    cardholderEmail={payerInfo.email}
-                    identificationType="CPF"
-                    identificationNumber={payerInfo.identification}
-                    deviceId={deviceId}
-                    onPaymentSuccess={async (resp) => {
-                      setStatus('approved');
-                      const payId = resp?.id || resp?.data?.id || '';
-                      navigate(`/apps/${id}/sucesso?payment_id=${payId}&status=approved`);
-                    }}
-                  />
-                </div>
-              )}
+            {showCardForm && step === 2 && (
+              <div id="card-payment-section" className={styles.cardPaymentSection}>
+                <CardDirectPayment
+                  appId={id}
+                  amount={app?.price || 0}
+                  description={(app?.name || app?.titulo) ? `Compra de ${app?.name || app?.titulo}` : 'Compra de aplicativo'}
+                  buyer={{
+                    name: payerInfo.name,
+                    email: payerInfo.email,
+                    docType: 'CPF',
+                    docNumber: payerInfo.identification,
+                    phone: payerInfo.phone,
+                    zip: payerInfo.zip,
+                    streetName: payerInfo.streetName
+                  }}
+                  cardholderEmail={payerInfo.email}
+                  identificationType="CPF"
+                  identificationNumber={payerInfo.identification}
+                  deviceId={deviceId}
+                  onPaymentSuccess={async (resp) => {
+                    setStatus('approved');
+                    const payId = resp?.id || resp?.data?.id || '';
+                    navigate(`/apps/${id}/sucesso?payment_id=${payId}&status=approved`);
+                  }}
+                />
+              </div>
+            )}
 
             {status === 'approved' && (
-              <div className="approved-wrap" style={{ marginTop: 10, padding: '10px 12px', border:'1px solid rgba(0,228,242,0.3)', borderRadius:8 }}>
-                <p className="muted" style={{ color:'#00E4F2' }}>✔ Pagamento aprovado. Você pode baixar o executável com segurança.</p>
-                <ol style={{ marginTop: 8, paddingLeft: 20 }}>
+              <div className={`${styles.statusBox} ${styles.statusApproved}`}>
+                <p>✔ Pagamento aprovado. Você pode baixar o executável com segurança.</p>
+                <ol>
                   <li>Clique em "Baixar executável" para iniciar o download.</li>
                   <li>Mantenha o arquivo salvo em um local seguro.</li>
                   <li>Em caso de dúvida, entre em contato pelo suporte informado na confirmação do pagamento.</li>
@@ -401,22 +468,26 @@ const AppPurchasePage = () => {
             )}
 
             {status === 'pending' && (
-              <div className="pending-wrap" style={{ marginTop: 10, padding: '10px 12px', border:'1px solid rgba(255, 193, 7, 0.3)', borderRadius:8 }}>
-                <p className="muted" style={{ color:'#FFC107' }}>⏳ Pagamento pendente. Aguarde a compensação ou utilize outro método.</p>
-                <p className="muted">Você poderá baixar o executável assim que o status for atualizado para aprovado.</p>
+              <div className={`${styles.statusBox} ${styles.statusPending}`}>
+                <p>⏳ Pagamento pendente. Aguarde a compensação ou utilize outro método.</p>
+                <p className={styles.muted}>
+                  Você poderá baixar o executável assim que o status for atualizado para aprovado.
+                </p>
               </div>
             )}
 
             {status === 'rejected' && (
-              <div className="rejected-wrap" style={{ marginTop: 10, padding: '10px 12px', border:'1px solid rgba(255, 107, 107, 0.3)', borderRadius:8 }}>
-                <p className="muted" style={{ color:'#FF6B6B' }}>❌ Pagamento negado.</p>
+              <div className={`${styles.statusBox} ${styles.statusRejected}`}>
+                <p>❌ Pagamento negado.</p>
                 {statusDetail && (
                   <>
-                    <p className="muted">{mapStatusDetail(statusDetail)}</p>
-                    <p className="muted" style={{ fontSize:'0.85em' }}>Código: {statusDetail}</p>
+                    <p>{mapStatusDetail(statusDetail)}</p>
+                    <p className={styles.muted} style={{ fontSize: '0.85em' }}>
+                      Código: {statusDetail}
+                    </p>
                   </>
                 )}
-                <ul className="muted" style={{ marginTop: 8, paddingLeft: 20 }}>
+                <ul>
                   <li>Verifique os dados do cartão e tente novamente.</li>
                   <li>Se persistir, contate seu banco ou use outro método.</li>
                 </ul>
@@ -424,9 +495,9 @@ const AppPurchasePage = () => {
             )}
 
             {status === 'rejected' && String(statusDetail || '').toLowerCase() === 'cc_rejected_high_risk' && (
-              <div style={{ marginTop: 10, padding: '10px 12px', border:'1px solid rgba(255, 193, 7, 0.3)', borderRadius:8 }}>
-                <p className="muted" style={{ color:'#FFC107' }}>⚠ Transação sinalizada como alto risco</p>
-                <ul className="muted" style={{ marginTop: 8, paddingLeft: 20 }}>
+              <div className={`${styles.statusBox} ${styles.statusPending}`}>
+                <p style={{ color: '#FFC107' }}>⚠ Transação sinalizada como alto risco</p>
+                <ul>
                   <li>Tente outro cartão ou método de pagamento.</li>
                   <li>Confirme telefone e endereço corretamente preenchidos.</li>
                   <li>Se necessário, solicite liberação ao seu banco.</li>
@@ -434,9 +505,9 @@ const AppPurchasePage = () => {
               </div>
             )}
 
-            <details style={{ marginTop: 14 }}>
-              <summary style={{ cursor:'pointer' }}>Ajuda</summary>
-              <ul className="muted" style={{ marginTop: 8, paddingLeft: 20 }}>
+            <details className={styles.helpDetails}>
+              <summary>Ajuda</summary>
+              <ul>
                 <li>Se o checkout não abrir, desative bloqueadores de pop-up e tente novamente.</li>
                 <li>PIX e boleto podem levar alguns minutos para confirmação.</li>
                 <li>Após aprovação, o botão de download fica ativo nesta página.</li>
@@ -444,26 +515,50 @@ const AppPurchasePage = () => {
             </details>
 
             {(downloadStatus === 'downloading' || downloadStatus === 'done') && (
-              <div aria-live="polite" className="progress-wrap" style={{ marginTop: 12 }}>
-                <div className="progress-bar"><div className="progress" style={{ width: `${progress}%` }} /></div>
-                <p className="muted">{downloadStatus === 'done' ? 'Download concluído!' : `Baixando… ${progress}%`}</p>
+              <div aria-live="polite" className={styles.progressWrap}>
+                <div className={styles.progressBar}>
+                  <div className={styles.progress} style={{ width: `${progress}%` }} />
+                </div>
+                <p className={styles.muted}>
+                  {downloadStatus === 'done' ? 'Download concluído!' : `Baixando... ${progress}%`}
+                </p>
               </div>
             )}
-            {downloadError && <p role="alert" style={{ color: '#FF6B6B' }}>❌ {downloadError}</p>}
+
+            {downloadError && (
+              <p className={styles.errorMessage} role="alert">
+                <span>❌</span> {downloadError}
+              </p>
+            )}
 
             {status === 'approved' && (
-              <section style={{ marginTop: 12 }}>
-                <h3 className="title" style={{ fontSize:'1rem' }}>Avalie este aplicativo</h3>
-                <div style={{ display:'grid', gridTemplateColumns:'auto 1fr', gap:12, alignItems:'center' }}>
+              <section className={styles.feedbackSection}>
+                <h3 className={styles.subtitle}>Avalie este aplicativo</h3>
+                <div className={styles.feedbackGrid}>
                   <label>
                     Nota
-                    <select value={feedback.rating} onChange={e=>setFeedback({ ...feedback, rating:Number(e.target.value) })} style={{ marginLeft:8 }}>
-                      {[5,4,3,2,1].map(n=> <option key={n} value={n}>{n}</option>)}
+                    <select
+                      value={feedback.rating}
+                      onChange={e => setFeedback({ ...feedback, rating: Number(e.target.value) })}
+                      style={{ marginLeft: 8 }}
+                    >
+                      {[5, 4, 3, 2, 1].map(n => <option key={n} value={n}>{n}</option>)}
                     </select>
                   </label>
-                  <input placeholder="Comentário" value={feedback.comment} onChange={e=>setFeedback({ ...feedback, comment:e.target.value })} />
+                  <input
+                    className={styles.input}
+                    placeholder="Comentário"
+                    value={feedback.comment}
+                    onChange={e => setFeedback({ ...feedback, comment: e.target.value })}
+                  />
                 </div>
-                <button className="btn btn-outline" style={{ marginTop:8 }} onClick={sendFeedback}>Enviar feedback</button>
+                <button
+                  className={`${styles.btn} ${styles.btnOutline}`}
+                  style={{ marginTop: 12 }}
+                  onClick={sendFeedback}
+                >
+                  Enviar feedback
+                </button>
               </section>
             )}
           </>
@@ -471,60 +566,53 @@ const AppPurchasePage = () => {
       </div>
 
       {showEmailModal && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-email-title">
-          <div className="modal-card" onClick={e=>e.stopPropagation()}>
-            <h3 id="confirm-email-title" className="modal-title">Confirmar e-mail da compra</h3>
-            <p className="modal-desc">Usaremos este e-mail para validar sua compra e ele será necessário para ativar o software após a instalação.</p>
-            <div className="modal-field">
-              <label className="modal-label">E-mail</label>
+        <div
+          className={styles.modalOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-email-title"
+          onClick={() => { if (!confirmingDownload) { setShowEmailModal(false); setEmailConfirmError(''); } }}
+        >
+          <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+            <h3 id="confirm-email-title" className={styles.modalTitle}>
+              Confirmar e-mail da compra
+            </h3>
+            <p className={styles.modalDesc}>
+              Usaremos este e-mail para validar sua compra e ele será necessário para ativar o software após a instalação.
+            </p>
+            <div className={styles.modalField}>
+              <label className={styles.modalLabel}>E-mail</label>
               <input
-                className="input"
+                className={styles.input}
                 type="email"
                 placeholder="seu@email.com"
                 value={emailInput}
-                onChange={e=>setEmailInput(e.target.value)}
+                onChange={e => setEmailInput(e.target.value)}
               />
-              {emailConfirmError && <div className="modal-error" role="alert">{emailConfirmError}</div>}
+              {emailConfirmError && (
+                <div className={styles.modalError} role="alert">{emailConfirmError}</div>
+              )}
             </div>
-            <div className="modal-actions">
-              <button className="btn btn-outline" onClick={()=>{ if (!confirmingDownload) { setShowEmailModal(false); setEmailConfirmError(''); } }}>Cancelar</button>
-              <button className="btn btn-primary" onClick={confirmEmailAndDownload} disabled={confirmingDownload}>
-                {confirmingDownload ? 'Validando…' : 'Confirmar e baixar'}
+            <div className={styles.modalActions}>
+              <button
+                className={`${styles.btn} ${styles.btnOutline}`}
+                onClick={() => { if (!confirmingDownload) { setShowEmailModal(false); setEmailConfirmError(''); } }}
+              >
+                Cancelar
+              </button>
+              <button
+                className={`${styles.btn} ${styles.btnPrimary}`}
+                onClick={confirmEmailAndDownload}
+                disabled={confirmingDownload}
+              >
+                {confirmingDownload ? 'Validando...' : 'Confirmar e baixar'}
               </button>
             </div>
           </div>
         </div>
       )}
-
-      <style>{`
-        .purchase-page { min-height: 100vh; }
-        .purchase-card { max-width: 800px; margin: 16px auto; padding: 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; }
-        .title { color: var(--texto-branco); margin: 0 0 6px; }
-        .muted { color: var(--texto-gelo); }
-        .price { color: var(--texto-branco); font-weight: 600; }
-        .btn { padding: 8px 12px; border-radius: 8px; border:1px solid rgba(255,255,255,0.18); transition: transform .12s ease, box-shadow .12s ease; }
-        .btn-primary { background: #00E4F2; color: #000; }
-        .btn-outline { background: transparent; color: var(--texto-branco); }
-        .btn:active { transform: translateY(0px) scale(0.98); }
-        .form-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
-        .input-wrap { display:flex; flex-direction:column; gap:6px; }
-        .input-wrap label { color: var(--texto-gelo); font-size: .85rem; }
-        .input { padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.25); color: var(--texto-branco); outline:none; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
-        .input:focus { border-color:#00E4F2; box-shadow: 0 0 0 2px rgba(0,228,242,.25); }
-        .progress-bar { width: 100%; height: 8px; background: rgba(255,255,255,0.12); border-radius: 999px; overflow: hidden; }
-        .progress { height: 100%; background: linear-gradient(90deg, #D12BF2, #00E4F2); }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(3,6,12,0.75); display:flex; align-items:center; justify-content:center; padding:16px; z-index: 1000; }
-        .modal-card { width: 100%; max-width: 520px; background: #0A0F1B; border: 1px solid rgba(0,228,242,0.35); border-radius: 12px; box-shadow: 0 0 24px rgba(209,43,242,0.18), 0 0 24px rgba(0,228,242,0.18); padding: 16px; }
-        .modal-title { color: var(--texto-branco); margin: 0 0 8px; }
-        .modal-desc { color: var(--texto-gelo); font-size: .95rem; margin-bottom: 12px; }
-        .modal-field { display:flex; flex-direction:column; gap:6px; }
-        .modal-label { color: var(--texto-gelo); font-size: .85rem; }
-        .modal-error { color: #FF6B6B; font-size: .9rem; }
-        .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top: 12px; }
-      `}</style>
     </div>
   );
 };
 
 export default AppPurchasePage;
-// Removido: inicialização fora de componente (causava invalid hook call)
