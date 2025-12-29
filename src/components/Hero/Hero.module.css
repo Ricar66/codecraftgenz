@@ -198,8 +198,8 @@
 
 /* ===== SCROLL INDICATOR ===== */
 .scrollIndicator {
-  position: absolute;
-  bottom: 35px;
+  position: relative;
+  top: 8px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
