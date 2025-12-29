@@ -199,7 +199,7 @@
 /* ===== SCROLL INDICATOR ===== */
 .scrollIndicator {
   position: absolute;
-  bottom: 20px;
+  bottom: 35px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
