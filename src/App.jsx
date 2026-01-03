@@ -6,7 +6,6 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import ProtectedRoute from './admin/ProtectedRoute.jsx';
 import heroBackground from './assets/hero-background.svg';
 import { ErrorBoundary } from './components/UI/ErrorBoundary';
-import { LoadingOverlay } from './components/UI/Loading';
 import { ToastProvider } from './components/UI/Toast';
 
 // Lazy load das paginas para melhor performance
@@ -45,10 +44,36 @@ const Config = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default
 const Apps = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Apps })));
 
 /**
- * Componente de fallback para carregamento de paginas
+ * Componente de fallback leve para carregamento de paginas
+ * Usa CSS inline para renderizar imediatamente sem dependências externas
+ * Melhora LCP ao mostrar conteúdo mais rápido que um spinner pesado
  */
 const PageLoader = () => (
-  <LoadingOverlay message="Carregando pagina..." />
+  <div
+    style={{
+      minHeight: '60vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '16px',
+      padding: '20px'
+    }}
+    aria-label="Carregando página"
+    role="status"
+  >
+    <div
+      style={{
+        width: '40px',
+        height: '40px',
+        border: '3px solid rgba(255,255,255,0.1)',
+        borderTopColor: '#00E4F2',
+        borderRadius: '50%',
+        animation: 'spin 0.8s linear infinite'
+      }}
+    />
+    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+  </div>
 );
 
 /**
