@@ -182,9 +182,9 @@ const ProjectsList = ({ useAdminStore = false }) => {
   } = useProjects({
     autoFetch: true,
     filters: {},
-    refetchInterval: 30000,
-    timeout: 10000,
-    maxRetries: 3,
+    refetchInterval: 60000, // Aumentado para 60s (era 30s) - reduz carga na API
+    timeout: 8000, // Reduzido para 8s (era 10s) - falha mais rápido
+    maxRetries: 2, // Reduzido para 2 (era 3) - menos espera em erros
     useAdminStore,
     publicOnly: false
   });
