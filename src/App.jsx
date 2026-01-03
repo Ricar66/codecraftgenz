@@ -73,7 +73,7 @@ function App() {
             flexDirection: 'column'
           }}
         >
-          <div className="app-content" style={{ flex: 1 }}>
+          <main id="main-content" className="app-content" style={{ flex: 1 }}>
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<HomePage />} />
@@ -126,16 +126,16 @@ function App() {
                 <Route path="*" element={<Navigate to="/admin" replace />} />
               </Routes>
             </Suspense>
-          </div>
-          <footer className="site-footer">
+          </main>
+          <footer className="site-footer" aria-label="Rodape do site">
             <div className="footer-container">
               <div className="footer-brand">CodeCraft Gen-Z</div>
-              <div className="footer-links">
+              <nav className="footer-links" aria-label="Links do rodape">
                 <a href="/projetos">Projetos</a>
                 <a href="/aplicativos">Aplicativos</a>
                 <a href="/mentoria">Mentoria</a>
                 <a href="/ranking">Ranking</a>
-              </div>
+              </nav>
               <div className="footer-social" aria-label="Redes sociais">
                 <a
                   className="social-link instagram"

@@ -34,7 +34,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className={styles.navbar}>
+    <nav className={styles.navbar} aria-label="Navegacao principal">
       <div className={styles.navbarContainer}>
         
         {/* 1. Logo */}
@@ -44,7 +44,7 @@ const Navbar = () => {
 
         {/* 2. Links de Navegação (Desktop) */}
         {/* Usamos a classe 'navMenu' e adicionamos 'active' se o menu mobile estiver aberto */}
-        <ul className={isMobileMenuOpen ? `${styles.navMenu} ${styles.active}` : styles.navMenu}>
+        <ul id="nav-menu" className={isMobileMenuOpen ? `${styles.navMenu} ${styles.active}` : styles.navMenu}>
           
           {/* Baseado nos ícones de área da plataforma */}
           <li className={styles.navItem}>
@@ -123,10 +123,16 @@ const Navbar = () => {
         </ul>
 
         {/* 3. Ícone do Menu Mobile (Hambúrguer) */}
-        <div className={styles.mobileIcon} onClick={toggleMobileMenu}>
+        <button
+          className={styles.mobileIcon}
+          onClick={toggleMobileMenu}
+          aria-label={isMobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="nav-menu"
+        >
           {/* Alterna entre ícone de hambúrguer e X */}
           {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
-        </div>
+        </button>
 
       </div>
     </nav>
