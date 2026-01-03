@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Bloqueia rotas de API e downloads
+Disallow: /api/
+Disallow: /downloads/
+
+# Sitemap (atualize com o domínio correto)
+Sitemap: https://codecraftgenz.com.br/sitemap.xml
