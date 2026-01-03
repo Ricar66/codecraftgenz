@@ -111,38 +111,12 @@ body {
   font-size: var(--texto-base);
   line-height: 1.6;
   color: var(--texto-gelo);
-  /* Gradiente estatico para melhor performance - animacao removida para reduzir CLS e repaints */
-  background: linear-gradient(135deg,
-    var(--fundo-escuro) 0%,
-    #1a0a2e 20%,
-    rgba(209, 43, 242, 0.1) 40%,
-    rgba(104, 0, 123, 0.15) 60%,
-    rgba(0, 228, 242, 0.08) 80%,
-    var(--fundo-escuro) 100%
-  );
-  background-size: 100% 100%;
-  background-attachment: fixed;
+  /* Fundo escuro neutro - a imagem hero-background.svg e aplicada via App.jsx */
+  background-color: var(--fundo-escuro);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   position: relative;
   overflow-x: hidden;
-}
-
-/* Elementos geométricos Gen-Z - estatico para melhor performance */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image:
-    radial-gradient(circle at 20% 80%, rgba(209, 43, 242, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(0, 228, 242, 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(104, 0, 123, 0.08) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: -2;
-  /* Animacao removida para melhorar TBT e evitar repaints */
 }
 
 /* Animação de pulsação Gen-Z */
@@ -391,6 +365,14 @@ img {
 /* ===== LAYOUT GLOBAL COM RODAPÉ ===== */
 .app-root { min-height: 100vh; display:flex; flex-direction: column; }
 .app-content { flex: 1; display:block; }
+/* Background image settings - imagem aplicada via inline style no App.jsx */
+.app-background {
+  background-color: var(--fundo-escuro);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
 /* Footer com altura minima fixa para evitar CLS */
 .site-footer { border-top: 1px solid rgba(255,255,255,0.12); background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.25)); min-height: 72px; contain: layout style; }
 .footer-container { max-width: 1200px; margin: 0 auto; padding: 16px; display:flex; align-items:center; justify-content: space-between; gap: 12px; min-height: 40px; }
