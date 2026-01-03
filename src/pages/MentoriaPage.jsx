@@ -1,16 +1,47 @@
 // src/pages/MentoriaPage.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
 import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
 import { API_BASE_URL } from '../lib/apiConfig';
 import { realtime } from '../lib/realtime';
 
+/**
+ * Skeleton loader para cards de mentores - renderiza imediatamente
+ */
+const MentorSkeleton = () => (
+  <div className="mentor-card skeleton-card" aria-hidden="true">
+    <div className="avatar skeleton-avatar" />
+    <div className="info">
+      <div className="skeleton-line" style={{ width: '70%', height: '20px' }} />
+      <div className="skeleton-line" style={{ width: '50%', height: '16px', marginTop: '8px' }} />
+      <div className="skeleton-line" style={{ width: '90%', height: '14px', marginTop: '12px' }} />
+      <div className="skeleton-line" style={{ width: '80%', height: '14px', marginTop: '4px' }} />
+    </div>
+  </div>
+);
+
 export default function MentoriaPage() {
   const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  const fetchMentors = async () => {
+
+  // Função normalizada para processar dados de mentores
+  const normalizeMentor = useCallback((m) => ({
+    ...m,
+    photo: m.avatar_url || m.foto_url || m.photo || null,
+    name: m.nome || m.name || '',
+    phone: m.telefone || m.phone || '',
+    specialty: m.especialidade || m.specialty || '',
+    cargo: m.cargo || m.role || '',
+    bio: m.bio || m.descricao || '',
+    email: m.email || '',
+    visible: m.visible !== undefined ? !!m.visible : true,
+    createdAt: m.created_at || m.createdAt || null,
+    updatedAt: m.updated_at || m.updatedAt || null,
+    projects_count: m.projects_count || m.projetos_count || m.projectsCount || null,
+  }), []);
+
+  const fetchMentors = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/mentores`);
       if (!response.ok) {
@@ -18,92 +49,40 @@ export default function MentoriaPage() {
       }
       const json = await response.json();
       const list = Array.isArray(json?.data) ? json.data : [];
-      // Normaliza campos vindos do endpoint (foto_url → photo)
-      const normalized = list.map(m => ({
-        ...m,
-        // normalização de nomes de campo banco -> UI
-        photo: m.avatar_url || m.foto_url || m.photo || null,
-        name: m.nome || m.name || '',
-        phone: m.telefone || m.phone || '',
-        specialty: m.especialidade || m.specialty || '',
-        cargo: m.cargo || m.role || '',
-        bio: m.bio || m.descricao || '',
-        email: m.email || '',
-        visible: m.visible !== undefined ? !!m.visible : true,
-        createdAt: m.created_at || m.createdAt || null,
-        updatedAt: m.updated_at || m.updatedAt || null,
-        projects_count: m.projects_count || m.projetos_count || m.projectsCount || null,
-      }));
-      // Exibe todos os mentores criados, indicando visibilidade no card
-      setMentors(normalized);
+      setMentors(list.map(normalizeMentor));
     } catch (error) {
       console.error('Erro ao carregar mentores:', error);
-      setMentors([]); // Em caso de erro, lista vazia
+      setMentors([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [normalizeMentor]);
 
   useEffect(() => {
-    let isMounted = true; // Flag para verificar se o componente ainda está montado
-    
+    let isMounted = true;
+
     fetchMentors();
 
     const unsub = realtime.subscribe('mentors_changed', () => {
-      // Quando o admin publicar mudanças, refaz fetch do endpoint
-      if (isMounted) {
-        fetchMentors();
-      }
+      if (isMounted) fetchMentors();
     });
 
-    // Em ambiente de teste, evitamos polling para reduzir warnings de act
+    // Polling reduzido para 60s (era 5s) - melhora performance significativamente
     const isTest = !!import.meta.env?.VITEST_WORKER_ID;
-    const pollMs = Number(import.meta.env.VITE_MENTORS_POLL_MS || (isTest ? 0 : 5000));
+    const pollMs = Number(import.meta.env.VITE_MENTORS_POLL_MS || (isTest ? 0 : 60000));
     let iv = null;
     if (pollMs > 0) {
       iv = setInterval(() => {
-        if (!isMounted) return; // Evita fetch se componente foi desmontado
-        
-        fetch(`${API_BASE_URL}/api/mentores`)
-          .then(r => r.ok ? r.json() : Promise.reject())
-          .then(json => {
-            if (!isMounted) return; // Evita setState se componente foi desmontado
-            
-            const list = Array.isArray(json?.data) ? json.data : [];
-            const normalized = list.map(m => ({
-              ...m,
-              photo: m.avatar_url || m.foto_url || m.photo || null,
-              name: m.nome || m.name || '',
-              phone: m.telefone || m.phone || '',
-              specialty: m.especialidade || m.specialty || '',
-              cargo: m.cargo || m.role || '',
-              bio: m.bio || m.descricao || '',
-              email: m.email || '',
-              visible: m.visible !== undefined ? !!m.visible : true,
-              createdAt: m.created_at || m.createdAt || null,
-              updatedAt: m.updated_at || m.updatedAt || null,
-              projects_count: m.projects_count || m.projetos_count || m.projectsCount || null,
-            }));
-            // Exibe todos os mentores criados, indicando visibilidade no card
-            setMentors(normalized);
-          })
-          .catch(() => {
-            if (!isMounted) return; // Evita setState se componente foi desmontado
-            // If API fails, set empty array
-            setMentors([]);
-          });
+        if (isMounted) fetchMentors();
       }, pollMs);
     }
-    
-    return () => { 
-      isMounted = false; // Marca como desmontado
-      unsub(); 
-      if (iv) {
-        clearInterval(iv);
-        iv = null;
-      }
+
+    return () => {
+      isMounted = false;
+      unsub();
+      if (iv) clearInterval(iv);
     };
-  }, []); // Sem dependências para evitar re-execução desnecessária
+  }, [fetchMentors]);
 
   const sanitizePhone = (raw) => String(raw || '').replace(/\D/g, '');
   const buildWhatsapp = (raw) => {
@@ -139,6 +118,13 @@ export default function MentoriaPage() {
           </header>
 
           <div className="mentors-grid" aria-busy={loading}>
+            {loading && mentors.length === 0 && (
+              <>
+                <MentorSkeleton />
+                <MentorSkeleton />
+                <MentorSkeleton />
+              </>
+            )}
             {mentors.map((m) => (
               <article key={m.id || m.email || m.name} className="mentor-card" aria-label={`Mentor ${m.name}`}>
                 <div className="avatar" aria-hidden={!!(m.avatar_url || m.photo)}>
@@ -208,6 +194,24 @@ export default function MentoriaPage() {
 
       <style>{`
         .mentoria-page { min-height: 100vh; width: 100%; background: transparent; }
+
+        /* Skeleton styles para loading rapido */
+        @keyframes skeleton-shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .skeleton-card { pointer-events: none; }
+        .skeleton-avatar {
+          background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 100%);
+          background-size: 200% 100%;
+          animation: skeleton-shimmer 1.5s ease-in-out infinite;
+        }
+        .skeleton-line {
+          background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 100%);
+          background-size: 200% 100%;
+          animation: skeleton-shimmer 1.5s ease-in-out infinite;
+          border-radius: 4px;
+        }
 
         .section-block { padding: var(--espaco-3xl) var(--espaco-xl); }
 
