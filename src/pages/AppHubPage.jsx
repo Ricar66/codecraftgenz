@@ -201,39 +201,45 @@ const AppHubPage = () => {
       <Navbar />
       
       {/* Hero Section */}
-      <section className={styles.heroSection}>
+      <section className={styles.heroSection} aria-label="Apresentacao do Hub de Aplicativos">
         <div className={styles.heroContent}>
-          <h1 className={styles.heroTitle}>
-            Hub de Aplicativos
-          </h1>
-          <p className={styles.heroSubtitle}>
-            Descubra e adquira os melhores aplicativos para impulsionar seu negócio
-          </p>
-          
+          <header>
+            <h1 className={styles.heroTitle}>
+              Hub de Aplicativos
+            </h1>
+            <p className={styles.heroSubtitle}>
+              Descubra e adquira os melhores aplicativos para impulsionar seu negócio
+            </p>
+          </header>
+
           {/* Search Bar */}
-          <div className={styles.searchContainer}>
+          <div className={styles.searchContainer} role="search">
+            <label htmlFor="app-search" className={styles.srOnly}>Buscar aplicativos</label>
             <input
-              type="text"
+              type="search"
+              id="app-search"
               placeholder="Buscar aplicativos..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
               className={styles.searchInput}
             />
-            <div className={styles.searchIcon}>🔍</div>
+            <div className={styles.searchIcon} aria-hidden="true">🔍</div>
           </div>
         </div>
       </section>
 
       {/* Filter & Sort Section */}
-      <section className={styles.filterSection}>
+      <section className={styles.filterSection} aria-label="Filtros e ordenacao">
         <div className={styles.filterContainer}>
-          <h3>Filtrar por Categoria</h3>
-          <div className={styles.filterButtons}>
+          <h3 id="category-filter-label">Filtrar por Categoria</h3>
+          <div className={styles.filterButtons} role="group" aria-labelledby="category-filter-label">
             {categories.map(category => (
               <button
                 key={category}
                 onClick={() => setFilter(category)}
                 className={`${styles.filterButton} ${filter === category ? styles.active : ''}`}
+                aria-pressed={filter === category}
+                type="button"
               >
                 {category === 'all' ? 'Todos' : category}
               </button>

@@ -25,27 +25,25 @@ const ProjectsPage = () => {
       <Navbar />
       
       {/* Hero Section - limpa, usando o fundo global */}
-      <section 
-        className="hero-section"
-      >
+      <section className="hero-section" aria-label="Apresentacao dos projetos">
         <div className="hero-container">
           <div className="hero-content">
-            <div className="text-area">
+            <header className="text-area">
               <h1 className="slogan">
                 Nossos Projetos
               </h1>
               <p className="description">
-                Acompanhe o progresso dos nossos projetos em desenvolvimento. 
-                Cada projeto representa nossa dedicação em criar soluções inovadoras 
+                Acompanhe o progresso dos nossos projetos em desenvolvimento.
+                Cada projeto representa nossa dedicação em criar soluções inovadoras
                 e de alta qualidade para nossos clientes.
               </p>
-            </div>
+            </header>
           </div>
         </div>
       </section>
 
       {/* Lista de Projetos */}
-      <section className="projects-section">
+      <section className="projects-section" aria-label="Lista de projetos">
         <div className="projects-container">
           <div className="section-card">
             <ProjectsList useAdminStore={false} />
