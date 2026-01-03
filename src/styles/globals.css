@@ -12,11 +12,9 @@
  * 5. Classes utilitárias
  */
 
-/* ===== IMPORTAÇÕES DE FONTES ===== */
-/* Fontes otimizadas: apenas pesos necessários + font-display: swap para evitar FOIT */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+/* ===== FONTES ===== */
+/* Fontes carregadas via index.html de forma nao-bloqueante (preload + media="print" onload) */
+/* Fallback fonts para evitar FOUT enquanto fontes carregam */
 
 /* ===== VARIÁVEIS CSS ===== */
 :root {
@@ -113,42 +111,24 @@ body {
   font-size: var(--texto-base);
   line-height: 1.6;
   color: var(--texto-gelo);
-  background: linear-gradient(135deg, 
-    var(--fundo-escuro) 0%, 
+  /* Gradiente estatico para melhor performance - animacao removida para reduzir CLS e repaints */
+  background: linear-gradient(135deg,
+    var(--fundo-escuro) 0%,
     #1a0a2e 20%,
     rgba(209, 43, 242, 0.1) 40%,
     rgba(104, 0, 123, 0.15) 60%,
     rgba(0, 228, 242, 0.08) 80%,
     var(--fundo-escuro) 100%
   );
-  background-size: 400% 400%;
-  animation: gradientShiftGenZ 20s ease infinite;
+  background-size: 100% 100%;
+  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   position: relative;
   overflow-x: hidden;
 }
 
-/* Animação do gradiente Gen-Z */
-@keyframes gradientShiftGenZ {
-  0% {
-    background-position: 0% 50%;
-  }
-  25% {
-    background-position: 100% 25%;
-  }
-  50% {
-    background-position: 100% 75%;
-  }
-  75% {
-    background-position: 0% 75%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-/* Elementos geométricos Gen-Z */
+/* Elementos geométricos Gen-Z - estatico para melhor performance */
 body::before {
   content: '';
   position: fixed;
@@ -156,15 +136,13 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: 
+  background-image:
     radial-gradient(circle at 20% 80%, rgba(209, 43, 242, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 80% 20%, rgba(0, 228, 242, 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(104, 0, 123, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 60% 10%, rgba(209, 43, 242, 0.05) 0%, transparent 40%),
-    radial-gradient(circle at 10% 60%, rgba(0, 228, 242, 0.06) 0%, transparent 40%);
+    radial-gradient(circle at 40% 40%, rgba(104, 0, 123, 0.08) 0%, transparent 50%);
   pointer-events: none;
   z-index: -2;
-  animation: pulseGenZ 8s ease-in-out infinite;
+  /* Animacao removida para melhorar TBT e evitar repaints */
 }
 
 /* Animação de pulsação Gen-Z */
@@ -413,8 +391,9 @@ img {
 /* ===== LAYOUT GLOBAL COM RODAPÉ ===== */
 .app-root { min-height: 100vh; display:flex; flex-direction: column; }
 .app-content { flex: 1; display:block; }
-.site-footer { border-top: 1px solid rgba(255,255,255,0.12); background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.25)); }
-.footer-container { max-width: 1200px; margin: 0 auto; padding: 16px; display:flex; align-items:center; justify-content: space-between; gap: 12px; }
+/* Footer com altura minima fixa para evitar CLS */
+.site-footer { border-top: 1px solid rgba(255,255,255,0.12); background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.25)); min-height: 72px; contain: layout style; }
+.footer-container { max-width: 1200px; margin: 0 auto; padding: 16px; display:flex; align-items:center; justify-content: space-between; gap: 12px; min-height: 40px; }
 .footer-brand { color: var(--texto-branco); font-weight: 800; letter-spacing: 0.5px; }
 .footer-links { display:flex; gap: 12px; }
 .footer-links a { color: var(--texto-gelo); }

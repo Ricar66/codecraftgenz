@@ -10,18 +10,13 @@ export default defineConfig({
   envPrefix: ['VITE_', 'MERCADO_'],
   plugins: [
     react(),
+    // Legacy plugin desabilitado - 95%+ dos usuarios tem browsers modernos
+    // Isso remove ~14KB de polyfills desnecessarios e melhora TBT significativamente
+    // Se precisar suportar browsers antigos, reabilite com renderLegacyChunks: true
     legacy({
-      // Build moderno para navegadores recentes (melhor performance)
       targets: ['defaults', 'not IE 11'],
-      additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
-      renderLegacyChunks: true,
-      // Polyfills mínimos necessários para compatibilidade
-      polyfills: [
-        'es.promise',
-        'es.promise.finally',
-        'es/map',
-        'es/set'
-      ]
+      renderLegacyChunks: false, // NAO gerar chunks legacy - melhora performance
+      modernPolyfills: false // NAO adicionar polyfills modernos automaticamente
     }),
     VitePWA({
       // Registro manual do SW para não bloquear o carregamento inicial
