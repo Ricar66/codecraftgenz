@@ -11,35 +11,30 @@ export default defineConfig({
   plugins: [
     react(),
     legacy({
-      targets: ['> 1%', 'last 2 versions', 'not dead', 'not IE 11'],
+      // Build moderno para navegadores recentes (melhor performance)
+      targets: ['defaults', 'not IE 11'],
       additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
       renderLegacyChunks: true,
+      // Polyfills mínimos necessários para compatibilidade
       polyfills: [
-        'es.symbol',
-        'es.array.filter',
         'es.promise',
         'es.promise.finally',
         'es/map',
-        'es/set',
-        'es.array.for-each',
-        'es.object.define-properties',
-        'es.object.define-property',
-        'es.object.get-own-property-descriptor',
-        'es.object.get-own-property-descriptors',
-        'es.object.keys',
-        'es.object.to-string',
-        'web.dom-collections.for-each',
-        'esnext.global-this',
-        'esnext.string.match-all'
+        'es/set'
       ]
     }),
     VitePWA({
+      // Registro manual do SW para não bloquear o carregamento inicial
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      injectRegister: null, // Registramos manualmente após window.load
       devOptions: {
         enabled: false // Desabilita PWA em desenvolvimento
       },
       workbox: {
+        // Não pré-cachear arquivos grandes
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        // Ignora arquivos grandes no precache
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB max
         runtimeCaching: [
           {
             // Todas as rotas de API devem ir para a rede e nunca serem cacheadas
@@ -63,10 +58,22 @@ export default defineConfig({
             handler: 'NetworkFirst',
             options: {
               cacheName: 'pages-cache',
-              networkTimeoutSeconds: 3 // Timeout rápido para detectar offline
-              , expiration: {
+              networkTimeoutSeconds: 3, // Timeout rápido para detectar offline
+              expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24 // 24 horas apenas
+              }
+            }
+          },
+          {
+            // Cache de imagens com StaleWhileRevalidate
+            urlPattern: ({ request }) => request.destination === 'image',
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'images-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 dias
               }
             }
           }
@@ -78,8 +85,8 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/api/, /^\/downloads/],
         // Configurações menos agressivas
         cleanupOutdatedCaches: true,
-        skipWaiting: false // Não assume controle imediatamente
-        , clientsClaim: false // Não reivindica clientes existentes
+        skipWaiting: false, // Não assume controle imediatamente
+        clientsClaim: false // Não reivindica clientes existentes
       }
     })
   ],
@@ -108,22 +115,34 @@ export default defineConfig({
   },
   assetsInclude: ['**/*.svg'],
   build: {
-    assetsInlineLimit: 0, // Força todos os assets a serem copiados como arquivos separados
+    // Build moderno para melhor performance
+    target: 'es2020',
+    assetsInlineLimit: 4096, // Inline assets < 4KB para reduzir requests
+    cssCodeSplit: true, // CSS code splitting para melhor cache
     rollupOptions: {
       output: {
         assetFileNames: 'assets/[name]-[hash][extname]',
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
         manualChunks: {
+          // Core React - carrega primeiro
           vendor: ['react', 'react-dom'],
-          router: ['react-router-dom']
+          // Router - carrega junto com o app
+          router: ['react-router-dom'],
+          // MercadoPago - chunk separado, só carrega quando necessário
+          mercadopago: ['@mercadopago/sdk-react']
         }
       }
     },
     // Otimizações para produção
     minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true, // Remove console.log em produção
+        drop_debugger: true
+      }
+    },
     sourcemap: false,
-    // Removido 'build.target' para evitar override pelo plugin-legacy; targets definidos no plugin
     // Polyfills automáticos
     modulePreload: {
       polyfill: true

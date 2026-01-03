@@ -4,9 +4,11 @@ import React, { useEffect, useState } from 'react';
 
 import { useAuth } from '../context/useAuth.js';
 import { createDirectPayment } from '../services/appsAPI.js';
+import { loadMercadoPagoSDK } from '../utils/loadMercadoPagoSDK.js';
 
 const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo', onPaymentSuccess, onStatus, buyer = {}, cardholderEmail, identificationType, identificationNumber, cardholderName, deviceId }) => {
   const [ready, setReady] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { user } = useAuth();
   const buyerInfo = React.useMemo(() => ({
@@ -19,16 +21,20 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
     zip: buyer?.zip,
   }), [buyer?.email, buyer?.docType, buyer?.docNumber, buyer?.name, buyer?.phone, buyer?.streetName, buyer?.zip, cardholderEmail, identificationType, identificationNumber, cardholderName, user?.email]);
 
-  // Inicializa SDK React apenas uma vez
+  // Inicializa SDK React apenas uma vez - agora com lazy loading do SDK JS
   useEffect(() => {
     const envFlag = String(import.meta.env.VITE_MP_ENV || import.meta.env.MP_ENV || '').toLowerCase();
     const PK = (
       import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY ||
       (envFlag === 'production' ? import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_PROD : import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_SANDBOX)
     );
-    if (import.meta.env.MODE === 'test') { setReady(true); return; }
+    if (import.meta.env.MODE === 'test') { setReady(true); setLoading(false); return; }
+
     (async () => {
       try {
+        // Primeiro, carrega o SDK JS do MercadoPago de forma lazy
+        await loadMercadoPagoSDK();
+
         let key = PK;
         if (!key) {
           const resp = await fetch('/api/config/mp-public-key');
@@ -40,7 +46,11 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
         } else {
           setError('Chave pública do Mercado Pago não configurada');
         }
-      } catch { setError('Falha ao inicializar Mercado Pago'); }
+      } catch (err) {
+        setError(err?.message || 'Falha ao inicializar Mercado Pago');
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -159,13 +169,17 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
     paymentMethods: { maxInstallments: 1 },
   };
 
-  
-
   return (
     <div style={{ marginTop: 12 }}>
       <h3 className="title" style={{ fontSize:'1rem' }}>Cartão de crédito / débito</h3>
       {error && <p role="alert" style={{ color:'#FF6B6B' }}>❌ {error}</p>}
-      {ready && (
+      {loading && (
+        <div style={{ padding: '20px', textAlign: 'center', color: '#999' }}>
+          <div className="loading-spinner" style={{ margin: '0 auto 12px' }} />
+          <p>Carregando formulário de pagamento...</p>
+        </div>
+      )}
+      {ready && !loading && (
         <CardPayment
           initialization={initialization}
           customization={paymentBrickCustomization}

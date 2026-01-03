@@ -9,12 +9,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CodeCraft Gen-Z | Desenvolvimento Web Profissional</title>
     <meta name="description" content="CodeCraft Gen-Z - Soluções inovadoras em desenvolvimento web, aplicações React e tecnologias modernas para a nova geração digital." />
-    <script src="https://sdk.mercadopago.com/js/v2"></script>
+
+    <!-- Preconnect para Google Fonts (otimização de fontes) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Preconnect para MercadoPago SDK (quando necessário) -->
+    <link rel="preconnect" href="https://sdk.mercadopago.com" />
+    <link rel="dns-prefetch" href="https://sdk.mercadopago.com" />
   </head>
   <body>
     <div id="root"></div>
-    <!-- Script temporário para limpar Service Workers antigos -->
-    <script src="/clear-sw.js"></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
