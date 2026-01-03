@@ -23,17 +23,37 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <Navbar />
-      <section className="section-block">
+      <section className="section-block" aria-label="Formulario de login">
         <div className="login-card">
-          <h1 className="title">Entrar</h1>
-          <p className="subtitle">Acesse a área administrativa</p>
+          <header>
+            <h1 className="title">Entrar</h1>
+            <p className="subtitle">Acesse a área administrativa</p>
+          </header>
 
-          <form className="form" onSubmit={onSubmit}>
-            <label className="label">E-mail</label>
-            <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <form className="form" onSubmit={onSubmit} aria-label="Formulario de autenticacao">
+            <label className="label" htmlFor="login-email">E-mail</label>
+            <input
+              className="input"
+              type="email"
+              id="login-email"
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
 
-            <label className="label">Senha</label>
-            <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <label className="label" htmlFor="login-password">Senha</label>
+            <input
+              className="input"
+              type="password"
+              id="login-password"
+              name="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
 
             {error && <div className="error" role="alert">{error}</div>}
 

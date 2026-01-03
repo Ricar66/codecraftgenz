@@ -132,18 +132,30 @@ const CrafterModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className={styles.modalOverlay} onClick={handleClose}>
+    <div
+      className={styles.modalOverlay}
+      onClick={handleClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="crafter-modal-title"
+    >
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <h2>Quero ser um Crafter</h2>
-          <button className={styles.closeBtn} onClick={handleClose} disabled={loading}>
+          <h2 id="crafter-modal-title">Quero ser um Crafter</h2>
+          <button
+            className={styles.closeBtn}
+            onClick={handleClose}
+            disabled={loading}
+            aria-label="Fechar modal"
+            type="button"
+          >
             ×
           </button>
         </div>
 
         {success ? (
-          <div className={styles.successContent}>
-            <div className={styles.successIcon}>🎉</div>
+          <div className={styles.successContent} role="status" aria-live="polite">
+            <div className={styles.successIcon} aria-hidden="true">🎉</div>
             <h3>Inscrição recebida com sucesso!</h3>
             <p>Entraremos em contato em breve. Obrigado pelo seu interesse!</p>
           </div>
@@ -257,7 +269,7 @@ const CrafterModal = ({ isOpen, onClose }) => {
               />
             </div>
 
-            {error && <div className={styles.errorMessage}>{error}</div>}
+            {error && <div className={styles.errorMessage} role="alert">{error}</div>}
 
             <button type="submit" className={styles.submitBtn} disabled={loading}>
               {loading ? 'Enviando...' : 'Enviar Inscrição'}
