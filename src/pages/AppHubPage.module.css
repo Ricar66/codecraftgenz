@@ -16,8 +16,7 @@
 
 .appHubPage {
   min-height: 100vh;
-  background: radial-gradient(1200px 600px at 10% -20%, rgba(209, 43, 242, 0.15), transparent 60%),
-    radial-gradient(800px 400px at 90% -10%, rgba(0, 228, 242, 0.12), transparent 60%);
+  background: transparent; /* fundo vem do App.jsx global */
 }
 
 /* ===== HERO SECTION ===== */

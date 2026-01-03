@@ -7,7 +7,7 @@
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  background-color: var(--fundo-escuro);
+  background: transparent; /* fundo vem do App.jsx global */
   color: var(--texto-branco);
   font-family: var(--fonte-padrao);
 }
