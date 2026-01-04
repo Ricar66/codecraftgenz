@@ -1,6 +1,7 @@
 // src/pages/MentoriaPage.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 
+import Footer from '../components/Footer';
 import Navbar from '../components/Navbar/Navbar';
 import { API_BASE_URL } from '../lib/apiConfig';
 import { realtime } from '../lib/realtime';
@@ -329,6 +330,8 @@ export default function MentoriaPage() {
           .mentor-card { transition: none; }
         }
       `}</style>
+
+      <Footer />
     </div>
   );
 }

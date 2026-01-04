@@ -2,6 +2,7 @@
 // Componente individual de toast
 
 import React, { useState, useEffect } from 'react';
+
 import styles from './Toast.module.css';
 
 // Icones padrao por tipo

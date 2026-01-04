@@ -7,6 +7,7 @@ import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth.js';
 import { getAppById, getPurchaseStatus, registerDownload, submitFeedback, createPaymentPreference, downloadByEmail, activateDeviceLicense } from '../services/appsAPI.js';
 import { getAppPrice } from '../utils/appModel.js';
+
 import styles from './AppPurchasePage.module.css';
 
 // Mapeia códigos de status_detail do Mercado Pago para mensagens amigáveis

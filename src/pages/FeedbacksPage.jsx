@@ -2,6 +2,7 @@
 import React from 'react';
 
 import FeedbackForm from '../components/Feedbacks/FeedbackForm';
+import Footer from '../components/Footer';
 import Navbar from '../components/Navbar/Navbar';
 
 export default function FeedbacksPage() {
@@ -194,6 +195,8 @@ export default function FeedbacksPage() {
           }
         }
       `}</style>
+
+      <Footer />
     </div>
   );
 }

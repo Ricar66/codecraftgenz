@@ -2,6 +2,7 @@
 // Componente para capturar erros React e exibir fallback
 
 import React, { Component } from 'react';
+
 import styles from './ErrorBoundary.module.css';
 
 /**
