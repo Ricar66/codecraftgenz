@@ -1,7 +1,6 @@
 // src/pages/LoginPage.jsx
 import React, { useState } from 'react';
 
-import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth';
 
@@ -21,16 +20,8 @@ export default function LoginPage() {
     if (!res.ok) setError(res.error);
   };
 
-  const backgroundStyle = {
-    backgroundImage: `url(${heroBackground})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-    backgroundAttachment: 'fixed'
-  };
-
   return (
-    <div className="login-page" style={backgroundStyle}>
+    <div className="login-page page-with-background">
       <Navbar />
       <section className="section-block" aria-label="Formulario de login">
         <div className="login-card">

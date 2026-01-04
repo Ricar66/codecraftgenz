@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
-import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
 import { confirmPasswordReset } from '../services/userAPI.js';
 
@@ -34,16 +33,8 @@ export default function PasswordResetPage() {
     }
   };
 
-  const backgroundStyle = {
-    backgroundImage: `url(${heroBackground})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-    backgroundAttachment: 'fixed'
-  };
-
   return (
-    <div className="reset-page" style={backgroundStyle}>
+    <div className="reset-page page-with-background">
       <Navbar />
       <section className="section-block">
         <div className="card">
