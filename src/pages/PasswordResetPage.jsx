@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
+import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
 import { confirmPasswordReset } from '../services/userAPI.js';
 
@@ -33,8 +34,16 @@ export default function PasswordResetPage() {
     }
   };
 
+  const backgroundStyle = {
+    backgroundImage: `url(${heroBackground})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundAttachment: 'fixed'
+  };
+
   return (
-    <div className="reset-page">
+    <div className="reset-page" style={backgroundStyle}>
       <Navbar />
       <section className="section-block">
         <div className="card">
@@ -59,7 +68,7 @@ export default function PasswordResetPage() {
       </section>
 
       <style>{`
-        .reset-page { min-height: 100vh; background-color: transparent; }
+        .reset-page { min-height: 100vh; }
         .section-block { padding: var(--espaco-3xl) var(--espaco-xl); }
         .card { max-width: 520px; margin: 0 auto; background: #F4F4F4; border-radius: 16px; padding: 24px; box-shadow: 0 12px 32px rgba(0,0,0,0.18); border: 1px solid rgba(0,228,242,0.2); }
         .title { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 700; font-size: 1.75rem; color: #121212; }

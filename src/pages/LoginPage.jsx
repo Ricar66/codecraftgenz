@@ -1,6 +1,7 @@
 // src/pages/LoginPage.jsx
 import React, { useState } from 'react';
 
+import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth';
 
@@ -20,8 +21,16 @@ export default function LoginPage() {
     if (!res.ok) setError(res.error);
   };
 
+  const backgroundStyle = {
+    backgroundImage: `url(${heroBackground})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundAttachment: 'fixed'
+  };
+
   return (
-    <div className="login-page">
+    <div className="login-page" style={backgroundStyle}>
       <Navbar />
       <section className="section-block" aria-label="Formulario de login">
         <div className="login-card">
@@ -68,7 +77,7 @@ export default function LoginPage() {
       </section>
 
       <style>{`
-        .login-page { min-height: 100vh; background-color: transparent; }
+        .login-page { min-height: 100vh; }
         .section-block { padding: var(--espaco-3xl) var(--espaco-xl); }
         .login-card { max-width: 420px; margin: 0 auto; background: #F4F4F4; border-radius: 16px; padding: 24px; box-shadow: 0 12px 32px rgba(0,0,0,0.18); border: 1px solid rgba(0,228,242,0.2); }
         .title { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 700; font-size: 1.75rem; color: #121212; }

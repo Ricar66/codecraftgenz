@@ -16,7 +16,6 @@
 
 .appHubPage {
   min-height: 100vh;
-  background: transparent; /* fundo vem do App.jsx global */
 }
 
 /* ===== HERO SECTION ===== */

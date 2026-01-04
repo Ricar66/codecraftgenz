@@ -137,7 +137,7 @@ export default function DesafiosPage() {
       </section>
 
       <style>{`
-        .desafios-page { min-height: 100vh; width: 100%; background: transparent; }
+        .desafios-page { min-height: 100vh; width: 100%; }
         .section-block { padding: var(--espaco-3xl) var(--espaco-xl); }
         .section-card { max-width: 1200px; margin: 0 auto; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.16); border-radius: var(--raio-xl); backdrop-filter: blur(12px); box-shadow: 0 8px 28px rgba(0,0,0,0.25); padding: var(--espaco-xl); }
         .section-card { overflow: hidden; }
