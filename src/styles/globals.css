@@ -384,6 +384,21 @@ img {
   background-repeat: no-repeat;
   background-attachment: fixed;
 }
+
+/* Fallback para dispositivos móveis onde background-attachment: fixed pode não funcionar */
+@media (max-width: 768px) {
+  .page-with-background {
+    background-attachment: scroll;
+  }
+}
+
+/* Garantir que o fundo se estenda para páginas com muito conteúdo */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari fix */
+  .page-with-background {
+    background-attachment: scroll;
+  }
+}
 /* Footer com altura minima fixa para evitar CLS */
 .site-footer { border-top: 1px solid rgba(255,255,255,0.12); background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.25)); min-height: 72px; contain: layout style; }
 .footer-container { max-width: 1200px; margin: 0 auto; padding: 16px; display:flex; align-items:center; justify-content: space-between; gap: 12px; min-height: 40px; }
