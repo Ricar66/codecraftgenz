@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 import AppCard from '../components/AppCard/AppCard.jsx';
-import Footer from '../components/Footer';
 import Navbar from '../components/Navbar/Navbar.jsx';
 import { getPublicApps } from '../services/appsAPI.js';
 import { getAppImageUrl } from '../utils/appModel.js';
@@ -430,10 +429,6 @@ const AppHubPage = () => {
         </div>
       </section>
       ) : null}
-
-      
-
-      <Footer />
     </div>
   );
 };

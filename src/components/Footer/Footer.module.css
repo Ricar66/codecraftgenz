@@ -71,10 +71,33 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* Cores especificas para cada rede social */
+.instagram:hover {
+  background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+  border-color: transparent;
+}
+
+.github:hover {
+  background: #333;
+  border-color: #333;
+}
+
+.whatsapp:hover {
+  background: #25D366;
+  border-color: #25D366;
+}
+
 .note {
   color: var(--texto-gelo);
   opacity: 0.8;
   font-size: 0.85rem;
+  font-style: italic;
+}
+
+.copyright {
+  color: var(--texto-gelo);
+  opacity: 0.6;
+  font-size: 0.8rem;
 }
 
 /* Responsividade */

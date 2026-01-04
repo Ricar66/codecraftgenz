@@ -2,7 +2,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
-import Footer from '../components/Footer';
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth';
 import { apiRequest } from '../lib/apiConfig.js';
@@ -168,8 +167,6 @@ export default function DesafiosPage() {
         @media (max-width: 640px) { .section-card { padding: var(--espaco-md); } .snap { min-width: 260px; max-width: 300px; } }
         @media (prefers-reduced-motion: reduce) { .desafio-card { transition: none; } }
      `}</style>
-
-      <Footer />
     </div>
   );
 }

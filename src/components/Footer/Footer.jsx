@@ -1,5 +1,6 @@
 // src/components/Footer/Footer.jsx
 import React from 'react';
+import { FaInstagram, FaGithub, FaWhatsapp } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
 import styles from './Footer.module.css';
@@ -7,9 +8,8 @@ import styles from './Footer.module.css';
 /**
  * Footer reutilizavel para todas as paginas
  * @param {boolean} showLinks - Exibe links de navegacao (default: true)
- * @param {boolean} showSocial - Exibe icones de redes sociais (default: false)
  */
-const Footer = ({ showLinks = true, showSocial = false }) => {
+const Footer = ({ showLinks = true }) => {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -20,36 +20,45 @@ const Footer = ({ showLinks = true, showSocial = false }) => {
         {showLinks && (
           <nav className={styles.links} aria-label="Links do rodape">
             <Link to="/projetos">Projetos</Link>
-            <Link to="/apps">Apps</Link>
+            <Link to="/aplicativos">Aplicativos</Link>
             <Link to="/mentoria">Mentoria</Link>
             <Link to="/ranking">Ranking</Link>
           </nav>
         )}
 
-        {showSocial && (
-          <div className={styles.social}>
-            <a
-              href="https://github.com/codecraftgenz"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="GitHub"
-              className={styles.socialLink}
-            >
-              <span aria-hidden="true">🐙</span>
-            </a>
-            <a
-              href="https://linkedin.com/company/codecraftgenz"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="LinkedIn"
-              className={styles.socialLink}
-            >
-              <span aria-hidden="true">💼</span>
-            </a>
-          </div>
-        )}
+        <div className={styles.social} aria-label="Redes sociais">
+          <a
+            href="#"
+            aria-label="Instagram (em breve)"
+            className={`${styles.socialLink} ${styles.instagram}`}
+          >
+            <FaInstagram />
+          </a>
+          <a
+            href="https://github.com/CodeCraftgenz"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="GitHub"
+            className={`${styles.socialLink} ${styles.github}`}
+          >
+            <FaGithub />
+          </a>
+          <a
+            href="https://wa.me/5535999358856"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="WhatsApp"
+            className={`${styles.socialLink} ${styles.whatsapp}`}
+          >
+            <FaWhatsapp />
+          </a>
+        </div>
 
         <div className={styles.note}>
+          Craftando ideias em software com estilo
+        </div>
+
+        <div className={styles.copyright}>
           &copy; {currentYear} CodeCraft Gen-Z. Todos os direitos reservados.
         </div>
       </div>

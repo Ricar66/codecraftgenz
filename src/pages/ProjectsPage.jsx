@@ -1,7 +1,6 @@
 // src/pages/ProjectsPage.jsx
 import React from 'react';
 
-import Footer from '../components/Footer';
 import Navbar from '../components/Navbar/Navbar';
 import ProjectsList from '../components/Projects/ProjectsList';
 
@@ -204,8 +203,6 @@ const ProjectsPage = () => {
           }
         }
       `}</style>
-
-      <Footer />
     </div>
   );
 };
