@@ -204,13 +204,6 @@ const ProjectsPage = () => {
           .name, .role { white-space: normal; } /* permite quebrar linhas em telas pequenas */
         }
 
-        /* ===== MODO ESCURO (CONSISTENTE) ===== */
-        @media (prefers-color-scheme: dark) {
-          .projects-page {
-            background-color: var(--fundo-escuro);
-          }
-        }
-
         /* ===== REDUÇÃO DE MOVIMENTO ===== */
         @media (prefers-reduced-motion: reduce) {
           .slogan {
