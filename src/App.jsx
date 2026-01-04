@@ -1,10 +1,10 @@
 // src/App.jsx
 import React, { Suspense, lazy } from 'react';
-import { FaGithub, FaInstagram, FaWhatsapp } from 'react-icons/fa';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import ProtectedRoute from './admin/ProtectedRoute.jsx';
 import heroBackground from './assets/hero-background.svg';
+import Footer from './components/Footer';
 import { ErrorBoundary } from './components/UI/ErrorBoundary';
 import { ToastProvider } from './components/UI/Toast';
 
@@ -152,54 +152,7 @@ function App() {
               </Routes>
             </Suspense>
           </main>
-          <footer className="site-footer" aria-label="Rodape do site">
-            <div className="footer-container">
-              <div className="footer-brand">CodeCraft Gen-Z</div>
-              <nav className="footer-links" aria-label="Links do rodape">
-                <a href="/projetos">Projetos</a>
-                <a href="/aplicativos">Aplicativos</a>
-                <a href="/mentoria">Mentoria</a>
-                <a href="/ranking">Ranking</a>
-              </nav>
-              <div className="footer-social" aria-label="Redes sociais">
-                <a
-                  className="social-link instagram"
-                  href="#"
-                  onClick={(e) => e.preventDefault()}
-                  aria-label="Instagram (em breve)"
-                >
-                  <FaInstagram />
-                </a>
-                <a
-                  className="social-link github"
-                  href="https://github.com/CodeCraftgenz"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="GitHub"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.open("https://github.com/CodeCraftgenz", "_blank", "noopener,noreferrer");
-                  }}
-                >
-                  <FaGithub />
-                </a>
-                <a
-                  className="social-link whatsapp"
-                  href="https://wa.me/5535999358856"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="WhatsApp"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.open("https://wa.me/5535999358856", "_blank", "noopener,noreferrer");
-                  }}
-                >
-                  <FaWhatsapp />
-                </a>
-              </div>
-              <div className="footer-note">Craftando ideias em software com estilo</div>
-            </div>
-          </footer>
+          <Footer />
         </div>
       </ErrorBoundary>
     </ToastProvider>

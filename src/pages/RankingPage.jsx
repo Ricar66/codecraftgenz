@@ -1,7 +1,6 @@
 // src/pages/RankingPage.jsx
 import React, { useEffect, useState } from 'react';
 
-import Footer from '../components/Footer';
 import Navbar from '../components/Navbar/Navbar';
 import { realtime } from '../lib/realtime';
 import { getRanking } from '../services/rankingAPI.js';
@@ -284,8 +283,6 @@ export default function RankingPage() {
           .admin-form .form-row { grid-template-columns: 1fr; }
         }
       `}</style>
-
-      <Footer />
     </div>
   );
 }

@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import AppCard from '../components/AppCard/AppCard';
-import Footer from '../components/Footer';
 import LicenseActivator from '../components/LicenseActivator.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { API_BASE_URL, apiRequest } from '../lib/apiConfig.js';
@@ -403,7 +402,6 @@ const AppsPage = () => {
         </div>
       )}
       </div>
-      <Footer />
     </div>
   );
 };
