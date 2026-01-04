@@ -58,7 +58,6 @@ const ProjectsPage = () => {
         .projects-page {
           min-height: 100vh;
           width: 100%;
-          background: transparent; /* fundo vem do wrapper global */
         }
 
         /* ===== HERO SECTION - IDÊNTICA À PÁGINA INICIAL ===== */

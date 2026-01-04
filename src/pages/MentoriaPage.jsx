@@ -193,7 +193,7 @@ export default function MentoriaPage() {
       </section>
 
       <style>{`
-        .mentoria-page { min-height: 100vh; width: 100%; background: transparent; }
+        .mentoria-page { min-height: 100vh; width: 100%; }
 
         /* Skeleton styles para loading rapido */
         @keyframes skeleton-shimmer {

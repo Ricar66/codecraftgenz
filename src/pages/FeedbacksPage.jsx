@@ -48,7 +48,6 @@ export default function FeedbacksPage() {
         .feedback-page {
           min-height: 100vh;
           width: 100%;
-          background-color: transparent;
         }
 
         /* ===== HERO SECTION - IDÊNTICA ÀS OUTRAS PÁGINAS ===== */

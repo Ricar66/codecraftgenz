@@ -240,7 +240,7 @@ export default function RankingPage() {
       </div>
 
       <style>{`
-        .ranking-page { min-height: 100vh; width: 100%; background: transparent; }
+        .ranking-page { min-height: 100vh; width: 100%; }
         .section-block { padding: 40px 24px; }
         .section-card { max-width: 1100px; margin: 0 auto; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: var(--raio-xl); backdrop-filter: blur(10px); box-shadow: 0 6px 24px rgba(0,0,0,0.25); padding: 24px; overflow: hidden; }
         .section-header { text-align: center; margin-bottom: 16px; }
