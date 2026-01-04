@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import AppCard from '../components/AppCard/AppCard';
+import Footer from '../components/Footer';
 import LicenseActivator from '../components/LicenseActivator.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { API_BASE_URL, apiRequest } from '../lib/apiConfig.js';
@@ -402,17 +403,7 @@ const AppsPage = () => {
         </div>
       )}
       </div>
-      <footer className="apps-footer">
-        <div className="footer-container">
-          <div className="footer-brand">CodeCraft Gen-Z</div>
-          <div className="footer-links">
-            <a href="/projetos">Projetos</a>
-            <a href="/apps">Apps</a>
-            <a href="/mentoria">Mentoria</a>
-          </div>
-          <div className="footer-note">Craftando ideias em software com estilo</div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
