@@ -1,12 +1,20 @@
 // src/pages/FeedbacksPage.jsx
 import React from 'react';
- 
+
+import heroBackground from '../assets/hero-background.svg';
 import FeedbackForm from '../components/Feedbacks/FeedbackForm';
 import Navbar from '../components/Navbar/Navbar';
 
 export default function FeedbacksPage() {
   return (
-    <div className="feedback-page">
+    <div className="feedback-page" style={{
+      backgroundImage: `url(${heroBackground})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundAttachment: 'fixed',
+      minHeight: '100vh'
+    }}>
       <Navbar />
       
   {/* Hero Section - Consistente com outras páginas */}
