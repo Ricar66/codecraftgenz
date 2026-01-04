@@ -1,7 +1,6 @@
 // src/pages/ProjectsPage.jsx
 import React from 'react';
 
-import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
 import ProjectsList from '../components/Projects/ProjectsList';
 
@@ -14,14 +13,7 @@ const ProjectsPage = () => {
 
   // Removido: carregamento de mentores da página pública
   return (
-    <div className="projects-page" style={{
-      backgroundImage: `url(${heroBackground})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat',
-      backgroundAttachment: 'fixed',
-      minHeight: '100vh'
-    }}>
+    <div className="projects-page page-with-background">
       <Navbar />
       
       {/* Hero Section - limpa, usando o fundo global */}

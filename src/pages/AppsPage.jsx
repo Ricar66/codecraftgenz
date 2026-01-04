@@ -2,7 +2,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import heroBackground from '../assets/hero-background.svg';
 import AppCard from '../components/AppCard/AppCard';
 import LicenseActivator from '../components/LicenseActivator.jsx';
 import Navbar from '../components/Navbar/Navbar';
@@ -224,16 +223,8 @@ const AppsPage = () => {
     }
   };
 
-  const backgroundStyle = {
-    backgroundImage: `url(${heroBackground})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-    backgroundAttachment: 'fixed'
-  };
-
   return (
-    <div className="apps-page" style={backgroundStyle}>
+    <div className="apps-page page-with-background">
       <Navbar />
       <div className="apps-content">
       <header className="apps-header">

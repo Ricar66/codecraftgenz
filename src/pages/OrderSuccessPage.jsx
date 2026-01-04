@@ -2,20 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { FaArrowRight, FaCheckCircle, FaEnvelope, FaHome, FaSpinner, FaWindows } from 'react-icons/fa';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
-import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import { activateDeviceLicense, downloadByEmail, getAppById, getPurchaseStatus, registerDownload } from '../services/appsAPI.js';
 
 import styles from './OrderSuccessPage.module.css';
-
-const backgroundStyle = {
-  backgroundImage: `url(${heroBackground})`,
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-  backgroundRepeat: 'no-repeat',
-  backgroundAttachment: 'fixed'
-};
 
 const OrderSuccessPage = () => {
   const { id } = useParams();
@@ -188,7 +179,7 @@ const OrderSuccessPage = () => {
 
   if (loading) {
     return (
-      <div className={styles.container} style={backgroundStyle}>
+      <div className={`${styles.container} page-with-background`}>
         <div className={styles.loading}>
           <FaSpinner className="icon-spin" /> Verificando pedido...
         </div>
@@ -198,7 +189,7 @@ const OrderSuccessPage = () => {
 
   if (status === 'error') {
     return (
-      <div className={styles.container} style={backgroundStyle}>
+      <div className={`${styles.container} page-with-background`}>
         <div className={styles.card}>
           <div className={styles.iconWrapper} style={{ color: '#ff4444', borderColor: '#ff4444' }}>
             <span style={{ fontSize: '40px' }}>⚠️</span>
@@ -215,7 +206,7 @@ const OrderSuccessPage = () => {
 
   if (status === 'pending') {
     return (
-      <div className={styles.container} style={backgroundStyle}>
+      <div className={`${styles.container} page-with-background`}>
         <div className={styles.card}>
           <div className={styles.iconWrapper} style={{ color: '#ffbb33', borderColor: '#ffbb33' }}>
             <FaSpinner className="icon-spin" />
@@ -233,7 +224,7 @@ const OrderSuccessPage = () => {
   return (
     <>
       <Navbar />
-      <div className={styles.container} style={backgroundStyle}>
+      <div className={`${styles.container} page-with-background`}>
         <div className={styles.card}>
           <div className={styles.iconWrapper}>
             <FaCheckCircle />

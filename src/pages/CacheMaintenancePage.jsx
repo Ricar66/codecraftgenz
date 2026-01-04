@@ -1,8 +1,6 @@
 // src/pages/CacheMaintenancePage.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 
-import heroBackground from '../assets/hero-background.svg';
-
 const CacheMaintenancePage = () => {
   const [logs, setLogs] = useState([]);
   const [done, setDone] = useState(false);
@@ -39,17 +37,8 @@ const CacheMaintenancePage = () => {
     clearCaches();
   }, [clearCaches]);
 
-  const backgroundStyle = {
-    backgroundImage: `url(${heroBackground})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-    backgroundAttachment: 'fixed',
-    minHeight: '100vh'
-  };
-
   return (
-    <div className="cache-page" style={{ ...backgroundStyle, maxWidth: 800, margin: '24px auto', padding: 16 }}>
+    <div className="cache-page page-with-background" style={{ maxWidth: 800, margin: '24px auto', padding: 16 }}>
       <h1 style={{ color: 'var(--texto-branco)' }}>Limpeza de Cache</h1>
       <p className="muted">Executando manutenção de Service Workers e caches antigos (workbox-precache-v2, etc.).</p>
       <button className="btn btn-outline" onClick={clearCaches} disabled={done}>

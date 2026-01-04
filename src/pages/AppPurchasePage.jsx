@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 
-import heroBackground from '../assets/hero-background.svg';
 import CardDirectPayment from '../components/CardDirectPayment.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth.js';
@@ -260,16 +259,8 @@ const AppPurchasePage = () => {
     }
   };
 
-  const backgroundStyle = {
-    backgroundImage: `url(${heroBackground})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-    backgroundAttachment: 'fixed'
-  };
-
   return (
-    <div className={styles.purchasePage} style={backgroundStyle}>
+    <div className={`${styles.purchasePage} page-with-background`}>
       <Navbar />
       <div className={styles.purchaseCard}>
         {loading ? (

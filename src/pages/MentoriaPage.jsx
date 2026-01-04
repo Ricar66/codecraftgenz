@@ -1,7 +1,6 @@
 // src/pages/MentoriaPage.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 
-import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
 import { API_BASE_URL } from '../lib/apiConfig';
 import { realtime } from '../lib/realtime';
@@ -97,14 +96,7 @@ export default function MentoriaPage() {
   };
 
   return (
-    <div className="mentoria-page" style={{
-      backgroundImage: `url(${heroBackground})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat',
-      backgroundAttachment: 'fixed',
-      minHeight: '100vh'
-    }}>
+    <div className="mentoria-page page-with-background">
       <Navbar />
 
       <section className="section-block">

@@ -373,6 +373,17 @@ img {
   background-repeat: no-repeat;
   background-attachment: fixed;
 }
+
+/* Classe global para páginas com imagem de fundo hero */
+.page-with-background {
+  min-height: 100vh;
+  width: 100%;
+  background-image: url("../assets/hero-background.svg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
 /* Footer com altura minima fixa para evitar CLS */
 .site-footer { border-top: 1px solid rgba(255,255,255,0.12); background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.25)); min-height: 72px; contain: layout style; }
 .footer-container { max-width: 1200px; margin: 0 auto; padding: 16px; display:flex; align-items:center; justify-content: space-between; gap: 12px; min-height: 40px; }

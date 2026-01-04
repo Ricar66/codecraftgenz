@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 
-import heroBackground from '../assets/hero-background.svg';
 import Navbar from '../components/Navbar/Navbar';
 import { requestPasswordReset } from '../services/userAPI.js';
 
@@ -27,16 +26,8 @@ export default function ForgotPasswordPage() {
     }
   };
 
-  const backgroundStyle = {
-    backgroundImage: `url(${heroBackground})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-    backgroundAttachment: 'fixed'
-  };
-
   return (
-    <div className="forgot-page" style={backgroundStyle}>
+    <div className="forgot-page page-with-background">
       <Navbar />
       <section className="section-block">
         <div className="card">
