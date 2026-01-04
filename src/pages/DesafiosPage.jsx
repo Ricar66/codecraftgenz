@@ -1,6 +1,7 @@
 // src/pages/DesafiosPage.jsx
 import React, { useEffect, useRef, useState } from 'react';
 
+import heroBackground from '../assets/hero-background.svg';
 import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth';
@@ -83,7 +84,14 @@ export default function DesafiosPage() {
   };
 
   return (
-    <div className="desafios-page">
+    <div className="desafios-page" style={{
+      backgroundImage: `url(${heroBackground})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundAttachment: 'fixed',
+      minHeight: '100vh'
+    }}>
       <Navbar />
 
       <section className="section-block">

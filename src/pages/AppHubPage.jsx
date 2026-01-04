@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
+import heroBackground from '../assets/hero-background.svg';
 import AppCard from '../components/AppCard/AppCard.jsx';
 import Navbar from '../components/Navbar/Navbar.jsx';
 import { getPublicApps } from '../services/appsAPI.js';
@@ -169,9 +170,17 @@ const AppHubPage = () => {
     };
   }, [isAutoPlay, currentSlide, featuredApps]);
 
+  const backgroundStyle = {
+    backgroundImage: `url(${heroBackground})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundAttachment: 'fixed'
+  };
+
   if (loading) {
     return (
-      <div className={styles.appHubPage}>
+      <div className={styles.appHubPage} style={backgroundStyle}>
         <Navbar />
         <div className={styles.loadingContainer}>
           <div className={styles.spinner}></div>
@@ -183,7 +192,7 @@ const AppHubPage = () => {
 
   if (error) {
     return (
-      <div className={styles.appHubPage}>
+      <div className={styles.appHubPage} style={backgroundStyle}>
         <Navbar />
         <div className={styles.errorContainer}>
           <h2>Erro ao carregar aplicativos</h2>
@@ -197,7 +206,7 @@ const AppHubPage = () => {
   }
 
   return (
-    <div className={styles.appHubPage}>
+    <div className={styles.appHubPage} style={backgroundStyle}>
       <Navbar />
       
       {/* Hero Section */}
