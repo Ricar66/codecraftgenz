@@ -2,7 +2,6 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 
-import heroBackground from '../assets/hero-background.svg';
 import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import ProjectCard from '../components/Projects/ProjectCard.jsx';
 import { useAuth } from '../context/useAuth';
@@ -2336,13 +2335,7 @@ export default function AdminLayout() {
     return () => clearInterval(id);
   }, []);
   return (
-    <div className={`${styles.adminContainer} ${sidebarOpen ? '' : styles.collapsed}`} style={{
-      backgroundImage: `url(${heroBackground})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat',
-      backgroundAttachment: 'fixed'
-    }}>
+    <div className={`${styles.adminContainer} ${sidebarOpen ? '' : styles.collapsed} page-with-background`}>
       <aside className={styles.sidebar} aria-expanded={sidebarOpen}>
         <div className={styles.brand}>CodeCraft Gen-Z</div>
         <nav className={styles.menu}>
