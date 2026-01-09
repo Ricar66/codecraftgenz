@@ -152,17 +152,4 @@ class ErrorBoundary extends Component {
   }
 }
 
-/**
- * HOC para envolver componentes com Error Boundary
- */
-export const withErrorBoundary = (WrappedComponent, options = {}) => {
-  return function WithErrorBoundary(props) {
-    return (
-      <ErrorBoundary {...options}>
-        <WrappedComponent {...props} />
-      </ErrorBoundary>
-    );
-  };
-};
-
 export default ErrorBoundary;

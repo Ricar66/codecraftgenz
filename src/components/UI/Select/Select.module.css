@@ -1,0 +1,210 @@
+/* src/components/UI/Select/Select.module.css */
+/* Sistema completo de selects - CodeCraft Gen-Z */
+
+/* ===========================================
+   WRAPPER
+   =========================================== */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 0.25rem);
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+/* ===========================================
+   LABEL
+   =========================================== */
+.label {
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: var(--font-medium, 500);
+  color: var(--color-text-secondary, #D1D5DB);
+  margin-bottom: var(--space-1, 0.25rem);
+}
+
+.required {
+  color: var(--color-error, #EF4444);
+  margin-left: var(--space-1, 0.25rem);
+}
+
+/* ===========================================
+   SELECT WRAPPER
+   =========================================== */
+.selectWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--color-surface, rgba(255, 255, 255, 0.03));
+  border: 2px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-lg, 0.75rem);
+  transition: var(--transition-all, all 0.25s ease-in-out);
+}
+
+.selectWrapper:hover:not(.disabled) {
+  border-color: var(--color-border-hover, rgba(255, 255, 255, 0.2));
+  background: var(--color-surface-hover, rgba(255, 255, 255, 0.05));
+}
+
+.selectWrapper.focused {
+  border-color: var(--color-primary, #D12BF2);
+  box-shadow: 0 0 0 3px rgba(209, 43, 242, 0.15);
+  background: var(--color-surface-active, rgba(255, 255, 255, 0.05));
+}
+
+/* ===========================================
+   TAMANHOS
+   =========================================== */
+.sm {
+  min-height: 36px;
+}
+
+.sm .select {
+  padding: var(--space-2, 0.5rem) var(--space-8, 2rem) var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  font-size: var(--text-sm, 0.875rem);
+}
+
+.md {
+  min-height: 44px;
+}
+
+.md .select {
+  padding: var(--space-3, 0.75rem) var(--space-10, 2.5rem) var(--space-3, 0.75rem) var(--space-4, 1rem);
+  font-size: var(--text-base, 1rem);
+}
+
+.lg {
+  min-height: 52px;
+}
+
+.lg .select {
+  padding: var(--space-4, 1rem) var(--space-12, 3rem) var(--space-4, 1rem) var(--space-5, 1.25rem);
+  font-size: var(--text-lg, 1.125rem);
+}
+
+/* ===========================================
+   SELECT BASE
+   =========================================== */
+.select {
+  flex: 1;
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-body, 'Inter', sans-serif);
+  color: var(--color-text-primary, #F5F5F7);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.select:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Placeholder state */
+.placeholder .select {
+  color: var(--color-text-muted, #6B7280);
+}
+
+/* Option styling */
+.select option {
+  background: var(--color-bg-secondary, #1a1a2e);
+  color: var(--color-text-primary, #F5F5F7);
+  padding: var(--space-2, 0.5rem);
+}
+
+.select option:disabled {
+  color: var(--color-text-muted, #6B7280);
+}
+
+/* ===========================================
+   ICONE
+   =========================================== */
+.iconWrapper {
+  position: absolute;
+  right: var(--space-3, 0.75rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--color-text-muted, #6B7280);
+  transition: transform 0.2s ease;
+}
+
+.focused .iconWrapper {
+  color: var(--color-primary, #D12BF2);
+}
+
+.iconChevron {
+  transition: transform 0.2s ease;
+}
+
+.focused .iconChevron {
+  transform: rotate(180deg);
+}
+
+.iconError {
+  color: var(--color-error, #EF4444);
+}
+
+/* ===========================================
+   ESTADOS
+   =========================================== */
+/* Error */
+.error {
+  border-color: var(--color-error, #EF4444);
+}
+
+.error:hover:not(.disabled) {
+  border-color: var(--color-error, #EF4444);
+}
+
+.error.focused {
+  border-color: var(--color-error, #EF4444);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* Disabled */
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--color-surface-disabled, rgba(255, 255, 255, 0.02));
+}
+
+/* ===========================================
+   HELPER & ERROR TEXT
+   =========================================== */
+.helperWrapper {
+  min-height: 1.25rem;
+  margin-top: var(--space-1, 0.25rem);
+}
+
+.helperText {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--color-text-muted, #6B7280);
+}
+
+.errorText {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--color-error, #EF4444);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1, 0.25rem);
+}
+
+/* ===========================================
+   FOCUS VISIBLE
+   =========================================== */
+.select:focus-visible {
+  outline: none;
+}
+
+.selectWrapper:has(.select:focus-visible) {
+  border-color: var(--color-primary, #D12BF2);
+  box-shadow: 0 0 0 3px rgba(209, 43, 242, 0.15);
+}

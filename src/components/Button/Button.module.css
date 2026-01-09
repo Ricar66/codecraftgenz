@@ -1,41 +1,240 @@
 /* src/components/Button/Button.module.css */
+/* Sistema completo de botoes - CodeCraft Gen-Z */
 
-/* Estilo base do botão */
+/* ===========================================
+   BASE
+   =========================================== */
 .btn {
-  padding: 12px 24px;
-  font-family: 'Poppins', sans-serif;
-  font-weight: 700;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2, 0.5rem);
+  font-family: var(--font-heading, 'Poppins', sans-serif);
+  font-weight: var(--font-semibold, 600);
   text-transform: uppercase;
+  letter-spacing: 0.02em;
+  border: 2px solid transparent;
+  border-radius: var(--radius-lg, 0.75rem);
+  cursor: pointer;
+  transition: var(--transition-all, all 0.25s ease-in-out);
   position: relative;
-  z-index: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-decoration: none;
 }
 
-/* Variante primária (Violeta) */
+.btn:focus-visible {
+  outline: 2px solid var(--color-accent, #00E4F2);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ===========================================
+   TAMANHOS
+   =========================================== */
+.sm {
+  padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+  font-size: var(--text-sm, 0.875rem);
+  min-height: 36px;
+}
+
+.md {
+  padding: var(--space-3, 0.75rem) var(--space-6, 1.5rem);
+  font-size: var(--text-base, 1rem);
+  min-height: 44px;
+}
+
+.lg {
+  padding: var(--space-4, 1rem) var(--space-8, 2rem);
+  font-size: var(--text-lg, 1.125rem);
+  min-height: 52px;
+}
+
+/* ===========================================
+   VARIANTE: PRIMARY (Violeta - CTA principal)
+   =========================================== */
 .primary {
-  background-color: var(--cor-primaria);
-  color: var(--texto-branco);
-  box-shadow: 0 0 15px var(--cor-primaria); /* Glow inicial solicitado */
+  background: linear-gradient(135deg, var(--color-primary, #D12BF2) 0%, var(--color-secondary, #68007B) 100%);
+  color: var(--color-text-primary, #F5F5F7);
+  border-color: transparent;
+  box-shadow: var(--shadow-glow-primary, 0 0 20px rgba(209, 43, 242, 0.3));
 }
 
-.primary:hover {
-  background-color: var(--cor-secundaria);
-  box-shadow: 0 0 25px var(--cor-primaria); /* Glow intenso no hover */
+.primary:hover:not(:disabled) {
   transform: translateY(-2px);
-}
-
-/* Variante secundária (Azul Gen-Z) */
-.secondary {
-  background-color: var(--cor-terciaria);
-  color: var(--fundo-escuro); /* Texto escuro para contraste no azul neon */
-}
-
-.secondary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0 20px var(--cor-terciaria);
+  box-shadow: 0 0 30px rgba(209, 43, 242, 0.5), 0 10px 30px rgba(209, 43, 242, 0.2);
   filter: brightness(1.1);
+}
+
+.primary:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.95);
+}
+
+/* ===========================================
+   VARIANTE: SECONDARY (Azul Gen-Z)
+   =========================================== */
+.secondary {
+  background: linear-gradient(135deg, var(--color-accent, #00E4F2) 0%, #00B8C4 100%);
+  color: var(--color-bg-primary, #0a0a0f);
+  border-color: transparent;
+  box-shadow: var(--shadow-glow-accent, 0 0 20px rgba(0, 228, 242, 0.3));
+}
+
+.secondary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(0, 228, 242, 0.5), 0 10px 30px rgba(0, 228, 242, 0.2);
+  filter: brightness(1.1);
+}
+
+.secondary:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.95);
+}
+
+/* ===========================================
+   VARIANTE: OUTLINE (Borda sem fundo)
+   =========================================== */
+.outline {
+  background: transparent;
+  color: var(--color-primary, #D12BF2);
+  border-color: var(--color-primary, #D12BF2);
+}
+
+.outline:hover:not(:disabled) {
+  background: rgba(209, 43, 242, 0.1);
+  border-color: var(--color-primary-hover, #E055F5);
+  color: var(--color-primary-hover, #E055F5);
+  transform: translateY(-2px);
+}
+
+.outline:active:not(:disabled) {
+  background: rgba(209, 43, 242, 0.2);
+  transform: translateY(0);
+}
+
+/* ===========================================
+   VARIANTE: GHOST (Sem fundo nem borda)
+   =========================================== */
+.ghost {
+  background: transparent;
+  color: var(--color-text-secondary, #D1D5DB);
+  border-color: transparent;
+}
+
+.ghost:hover:not(:disabled) {
+  background: var(--color-surface-hover, rgba(255, 255, 255, 0.08));
+  color: var(--color-text-primary, #F5F5F7);
+}
+
+.ghost:active:not(:disabled) {
+  background: var(--color-surface-active, rgba(255, 255, 255, 0.12));
+}
+
+/* ===========================================
+   VARIANTE: DANGER (Vermelho)
+   =========================================== */
+.danger {
+  background: linear-gradient(135deg, var(--color-error, #EF4444) 0%, var(--color-error-dark, #DC2626) 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: var(--shadow-glow-error, 0 0 20px rgba(239, 68, 68, 0.3));
+}
+
+.danger:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+  filter: brightness(1.1);
+}
+
+.danger:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.95);
+}
+
+/* ===========================================
+   VARIANTE: SUCCESS (Verde)
+   =========================================== */
+.success {
+  background: linear-gradient(135deg, var(--color-success, #10B981) 0%, var(--color-success-dark, #059669) 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: var(--shadow-glow-success, 0 0 20px rgba(16, 185, 129, 0.3));
+}
+
+.success:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+  filter: brightness(1.1);
+}
+
+.success:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.95);
+}
+
+/* ===========================================
+   MODIFICADORES
+   =========================================== */
+.fullWidth {
+  width: 100%;
+}
+
+.loading {
+  pointer-events: none;
+}
+
+/* ===========================================
+   ELEMENTOS INTERNOS
+   =========================================== */
+.content {
+  display: inline-flex;
+  align-items: center;
+}
+
+.iconLeft {
+  display: inline-flex;
+  align-items: center;
+  margin-right: var(--space-1, 0.25rem);
+}
+
+.iconRight {
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--space-1, 0.25rem);
+}
+
+.spinnerWrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+}
+
+.loadingText {
+  opacity: 0.8;
+}
+
+/* ===========================================
+   ANIMACAO RIPPLE (opcional)
+   =========================================== */
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  opacity: 0;
+  transform: scale(0);
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+.btn:active::after {
+  opacity: 1;
+  transform: scale(2);
+  transition: transform 0s, opacity 0s;
 }

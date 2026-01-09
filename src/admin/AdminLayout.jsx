@@ -2336,7 +2336,7 @@ export default function AdminLayout() {
   }, []);
   return (
     <div className={`${styles.adminContainer} ${sidebarOpen ? '' : styles.collapsed} page-with-background`}>
-      <aside className={styles.sidebar} aria-expanded={sidebarOpen}>
+      <aside className={styles.sidebar} data-expanded={sidebarOpen}>
         <div className={styles.brand}>CodeCraft Gen-Z</div>
         <nav className={styles.menu}>
           <NavLink to="/admin" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
