@@ -1,26 +1,10 @@
 // src/components/UI/Toast/ToastContext.jsx
 // Context e Provider para gerenciar toasts globalmente
 
-import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import React, { createContext, useCallback, useReducer } from 'react';
+
+import { TOAST_POSITIONS, TOAST_TYPES } from './toastConstants';
 import ToastContainer from './ToastContainer';
-
-// Tipos de toast
-export const TOAST_TYPES = {
-  SUCCESS: 'success',
-  ERROR: 'error',
-  WARNING: 'warning',
-  INFO: 'info'
-};
-
-// Posicoes possiveis
-export const TOAST_POSITIONS = {
-  TOP_RIGHT: 'top-right',
-  TOP_LEFT: 'top-left',
-  TOP_CENTER: 'top-center',
-  BOTTOM_RIGHT: 'bottom-right',
-  BOTTOM_LEFT: 'bottom-left',
-  BOTTOM_CENTER: 'bottom-center'
-};
 
 // Context
 const ToastContext = createContext(null);
@@ -133,18 +117,7 @@ export function ToastProvider({
   );
 }
 
-/**
- * Hook para usar toasts
- * @returns {Object} Objeto com metodos para criar toasts
- */
-export function useToast() {
-  const context = useContext(ToastContext);
+// Exportar o contexto para uso no hook separado
+export { ToastContext };
 
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-
-  return context;
-}
-
-export default ToastContext;
+export default ToastProvider;

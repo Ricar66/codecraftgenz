@@ -2,6 +2,7 @@
 // Container que renderiza os toasts
 
 import React from 'react';
+
 import Toast from './Toast';
 import styles from './Toast.module.css';
 

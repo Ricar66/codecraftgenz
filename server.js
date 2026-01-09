@@ -169,6 +169,7 @@ app.use(cors({
     if (!normalizedOrigin) return callback(null, true);
     
     // Valida regex para localhost em desenvolvimento
+    // eslint-disable-next-line security/detect-unsafe-regex
     const devRegex = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
     if (!isProd && devRegex.test(normalizedOrigin)) return callback(null, true);
     

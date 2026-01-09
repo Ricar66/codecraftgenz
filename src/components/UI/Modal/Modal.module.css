@@ -1,0 +1,243 @@
+/* src/components/UI/Modal/Modal.module.css */
+/* Sistema completo de modais - CodeCraft Gen-Z */
+
+/* ===========================================
+   OVERLAY
+   =========================================== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4, 1rem);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ===========================================
+   MODAL
+   =========================================== */
+.modal {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - var(--space-8, 2rem));
+  background: var(--color-bg-secondary, #1a1a2e);
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-xl, 1rem);
+  box-shadow: var(--shadow-2xl, 0 25px 80px rgba(0, 0, 0, 0.5));
+  animation: slideIn 0.25s ease-out;
+  outline: none;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ===========================================
+   TAMANHOS
+   =========================================== */
+.sm {
+  width: 100%;
+  max-width: 400px;
+}
+
+.md {
+  width: 100%;
+  max-width: 500px;
+}
+
+.lg {
+  width: 100%;
+  max-width: 700px;
+}
+
+.xl {
+  width: 100%;
+  max-width: 900px;
+}
+
+.full {
+  width: calc(100% - var(--space-8, 2rem));
+  height: calc(100vh - var(--space-8, 2rem));
+  max-width: none;
+  max-height: none;
+}
+
+/* ===========================================
+   HEADER
+   =========================================== */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5, 1.25rem) var(--space-6, 1.5rem);
+  border-bottom: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-heading, 'Poppins', sans-serif);
+  font-size: var(--text-xl, 1.25rem);
+  font-weight: var(--font-semibold, 600);
+  color: var(--color-text-primary, #F5F5F7);
+}
+
+/* ===========================================
+   CLOSE BUTTON
+   =========================================== */
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md, 0.5rem);
+  cursor: pointer;
+  color: var(--color-text-muted, #6B7280);
+  transition: var(--transition-fast, all 0.15s ease);
+}
+
+.closeButton:hover {
+  background: var(--color-surface-hover, rgba(255, 255, 255, 0.08));
+  color: var(--color-text-primary, #F5F5F7);
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid var(--color-accent, #00E4F2);
+  outline-offset: 2px;
+}
+
+.closeButton svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ===========================================
+   BODY
+   =========================================== */
+.body {
+  flex: 1;
+  padding: var(--space-6, 1.5rem);
+  overflow-y: auto;
+  color: var(--color-text-secondary, #D1D5DB);
+}
+
+/* Scrollbar styling */
+.body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.body::-webkit-scrollbar-thumb {
+  background: var(--color-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-full, 9999px);
+}
+
+.body::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-hover, rgba(255, 255, 255, 0.2));
+}
+
+/* ===========================================
+   FOOTER
+   =========================================== */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3, 0.75rem);
+  padding: var(--space-4, 1rem) var(--space-6, 1.5rem);
+  border-top: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  flex-shrink: 0;
+}
+
+/* ===========================================
+   RESPONSIVE
+   =========================================== */
+@media (max-width: 640px) {
+  .overlay {
+    padding: var(--space-2, 0.5rem);
+    align-items: flex-end;
+  }
+
+  .modal {
+    max-height: calc(100vh - var(--space-4, 1rem));
+    border-radius: var(--radius-xl, 1rem) var(--radius-xl, 1rem) 0 0;
+    animation: slideUp 0.25s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .sm,
+  .md,
+  .lg,
+  .xl {
+    max-width: 100%;
+  }
+
+  .full {
+    height: calc(100vh - var(--space-4, 1rem));
+    border-radius: var(--radius-xl, 1rem) var(--radius-xl, 1rem) 0 0;
+  }
+
+  .header {
+    padding: var(--space-4, 1rem);
+  }
+
+  .body {
+    padding: var(--space-4, 1rem);
+  }
+
+  .footer {
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    flex-direction: column;
+  }
+
+  .footer > * {
+    width: 100%;
+  }
+}
+
+/* ===========================================
+   ACESSIBILIDADE
+   =========================================== */
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .modal {
+    animation: none;
+  }
+}

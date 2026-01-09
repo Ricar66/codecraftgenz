@@ -336,6 +336,7 @@ const AppHubPage = () => {
               <button
                 key={i}
                 type="button"
+                role="tab"
                 className={`${styles.dot} ${i === currentSlide ? styles.active : ''}`}
                 aria-label={`Ir ao destaque ${i + 1}`}
                 aria-selected={i === currentSlide}

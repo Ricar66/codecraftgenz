@@ -1,0 +1,263 @@
+/* src/components/UI/Input/Input.module.css */
+/* Sistema completo de inputs - CodeCraft Gen-Z */
+
+/* ===========================================
+   WRAPPER
+   =========================================== */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 0.25rem);
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+/* ===========================================
+   LABEL
+   =========================================== */
+.label {
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: var(--font-medium, 500);
+  color: var(--color-text-secondary, #D1D5DB);
+  margin-bottom: var(--space-1, 0.25rem);
+}
+
+.required {
+  color: var(--color-error, #EF4444);
+  margin-left: var(--space-1, 0.25rem);
+}
+
+/* ===========================================
+   INPUT WRAPPER
+   =========================================== */
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--color-surface, rgba(255, 255, 255, 0.03));
+  border: 2px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-lg, 0.75rem);
+  transition: var(--transition-all, all 0.25s ease-in-out);
+}
+
+.inputWrapper:hover:not(.disabled) {
+  border-color: var(--color-border-hover, rgba(255, 255, 255, 0.2));
+  background: var(--color-surface-hover, rgba(255, 255, 255, 0.05));
+}
+
+.inputWrapper.focused {
+  border-color: var(--color-primary, #D12BF2);
+  box-shadow: 0 0 0 3px rgba(209, 43, 242, 0.15);
+  background: var(--color-surface-active, rgba(255, 255, 255, 0.05));
+}
+
+/* ===========================================
+   TAMANHOS
+   =========================================== */
+.sm {
+  min-height: 36px;
+}
+
+.sm .input {
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  font-size: var(--text-sm, 0.875rem);
+}
+
+.md {
+  min-height: 44px;
+}
+
+.md .input {
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  font-size: var(--text-base, 1rem);
+}
+
+.lg {
+  min-height: 52px;
+}
+
+.lg .input {
+  padding: var(--space-4, 1rem) var(--space-5, 1.25rem);
+  font-size: var(--text-lg, 1.125rem);
+}
+
+/* ===========================================
+   INPUT BASE
+   =========================================== */
+.input {
+  flex: 1;
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-body, 'Inter', sans-serif);
+  color: var(--color-text-primary, #F5F5F7);
+}
+
+.input::placeholder {
+  color: var(--color-text-muted, #6B7280);
+}
+
+.input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Padding com icones */
+.hasLeftIcon .input {
+  padding-left: var(--space-10, 2.5rem);
+}
+
+.hasRightIcon .input {
+  padding-right: var(--space-10, 2.5rem);
+}
+
+/* ===========================================
+   ICONES
+   =========================================== */
+.iconLeft,
+.iconRight {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted, #6B7280);
+  pointer-events: none;
+}
+
+.iconLeft {
+  left: var(--space-3, 0.75rem);
+}
+
+.iconRight {
+  right: var(--space-3, 0.75rem);
+}
+
+.iconError {
+  color: var(--color-error, #EF4444);
+}
+
+.iconSuccess {
+  color: var(--color-success, #10B981);
+}
+
+/* ===========================================
+   ESTADOS
+   =========================================== */
+/* Error */
+.error {
+  border-color: var(--color-error, #EF4444);
+}
+
+.error:hover:not(.disabled) {
+  border-color: var(--color-error, #EF4444);
+}
+
+.error.focused {
+  border-color: var(--color-error, #EF4444);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* Success */
+.success {
+  border-color: var(--color-success, #10B981);
+}
+
+.success:hover:not(.disabled) {
+  border-color: var(--color-success, #10B981);
+}
+
+.success.focused {
+  border-color: var(--color-success, #10B981);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+/* Disabled */
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--color-surface-disabled, rgba(255, 255, 255, 0.02));
+}
+
+/* ===========================================
+   HELPER & ERROR TEXT
+   =========================================== */
+.helperWrapper {
+  min-height: 1.25rem;
+  margin-top: var(--space-1, 0.25rem);
+}
+
+.helperText {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--color-text-muted, #6B7280);
+}
+
+.errorText {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--color-error, #EF4444);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1, 0.25rem);
+}
+
+/* ===========================================
+   PASSWORD TOGGLE
+   =========================================== */
+.passwordToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted, #6B7280);
+  padding: var(--space-1, 0.25rem);
+  pointer-events: auto;
+  transition: color 0.2s ease;
+}
+
+.passwordToggle:hover {
+  color: var(--color-text-secondary, #D1D5DB);
+}
+
+.passwordToggle:focus-visible {
+  outline: 2px solid var(--color-accent, #00E4F2);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm, 0.25rem);
+}
+
+/* ===========================================
+   AUTOFILL STYLES
+   =========================================== */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-text-primary, #F5F5F7);
+  -webkit-box-shadow: 0 0 0px 1000px var(--color-surface, rgba(255, 255, 255, 0.03)) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ===========================================
+   SEARCH INPUT
+   =========================================== */
+.input[type="search"]::-webkit-search-cancel-button,
+.input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* ===========================================
+   NUMBER INPUT
+   =========================================== */
+.input[type="number"]::-webkit-outer-spin-button,
+.input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input[type="number"] {
+  -moz-appearance: textfield;
+}

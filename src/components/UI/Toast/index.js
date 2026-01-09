@@ -1,4 +1,6 @@
 // src/components/UI/Toast/index.js
-export { ToastProvider, useToast, TOAST_TYPES, TOAST_POSITIONS } from './ToastContext';
+export { ToastProvider } from './ToastContext';
+export { useToast } from './useToast';
+export { TOAST_POSITIONS, TOAST_TYPES } from './toastConstants';
 export { default as Toast } from './Toast';
 export { default as ToastContainer } from './ToastContainer';
