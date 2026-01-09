@@ -37,6 +37,7 @@
     "mssql": "^12.1.0",
     "multer": "1.4.5-lts.2",
     "nodemailer": "^7.0.11",
+    "potrace": "^2.1.8",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-helmet-async": "^2.0.5",
@@ -45,7 +46,6 @@
     "regenerator-runtime": "^0.14.1",
     "serve": "^14.2.5",
     "sharp": "^0.34.5",
-    "potrace": "^2.1.8",
     "zod": "^4.1.13"
   },
   "devDependencies": {
@@ -63,8 +63,10 @@
     "autoprefixer": "^10.4.21",
     "eslint": "^9.36.0",
     "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.22",
+    "eslint-plugin-security": "^3.0.1",
     "globals": "^16.4.0",
     "jsdom": "^27.0.1",
     "postcss": "^8.5.6",

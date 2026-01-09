@@ -5,7 +5,14 @@
       "Bash(cat:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(del \"c:\\\\Users\\\\ricardo.moretti\\\\Documents\\\\codecraft-frontend\\\\public\\\\clear-sw.js\")",
+      "Bash(npm run build:*)",
+      "Bash(copy:*)",
+      "Bash(dir:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run lint:*)",
+      "Bash(git config:*)"
     ]
   }
 }
