@@ -1,0 +1,19 @@
+# Hostinger Node.js Backend Configuration
+# Redireciona requisicoes da API para o servidor Node.js
+
+RewriteEngine On
+
+# Redirecionar todas as rotas /api/* para o Node.js
+RewriteCond %{REQUEST_URI} ^/api/ [NC]
+RewriteRule ^(.*)$ http://localhost:8080/$1 [P,L]
+
+# Redirecionar /downloads/* para o Node.js
+RewriteCond %{REQUEST_URI} ^/downloads/ [NC]
+RewriteRule ^(.*)$ http://localhost:8080/$1 [P,L]
+
+# Para SPA React - redireciona rotas nao encontradas para index.html
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/api/
+RewriteCond %{REQUEST_URI} !^/downloads/
+RewriteRule ^ /index.html [L]
