@@ -16,7 +16,6 @@ lerna-debug.log*
 debug_*.log
 
 node_modules
-dist
 dist-ssr
 *.local
 
@@ -54,7 +53,6 @@ coverage/
 
 # Build and deployment
 build/
-dist/
 .vercel
 .netlify
 
