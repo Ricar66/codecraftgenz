@@ -86,6 +86,7 @@ export default defineConfig({
     })
   ],
   server: {
+    host: true, // Aceita conexoes externas (necessario para Hostinger)
     port: 5173,
     strictPort: true,
     hmr: {
