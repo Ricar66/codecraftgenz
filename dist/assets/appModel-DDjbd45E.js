@@ -1,0 +1,1 @@
+import{a as r}from"./urlSanitize-CrXbRN09.js";function i(i){return r(i?.image||i?.thumbnail||i?.thumb_url||i?.picture_url||"/vite.svg")}function t(r){const i=Number(r?.price);return Number.isFinite(i)?i:0}export{t as a,i as g};
