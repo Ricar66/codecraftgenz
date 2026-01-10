@@ -12,6 +12,7 @@
     "preview:custom": "node preview-server.js",
     "preview:vite": "vite preview",
     "start": "node server.js",
+    "build:backend": "echo Backend ready",
     "start:azure": "node server.js",
     "test": "vitest",
     "test:ui": "vitest --ui",
