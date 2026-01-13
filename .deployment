@@ -1,2 +1,0 @@
-[config]
-command = npm ci --production=false && npm run build
