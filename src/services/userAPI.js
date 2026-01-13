@@ -184,9 +184,10 @@ export async function requestPasswordReset(email) {
 
 export async function confirmPasswordReset({ token, newPassword }) {
   try {
+    // Backend espera 'password', não 'new_password'
     const data = await apiRequest('/api/auth/password-reset/confirm', {
       method: 'POST',
-      body: JSON.stringify({ token, new_password: newPassword })
+      body: JSON.stringify({ token, password: newPassword })
     });
     return { ok: true, message: data?.message || 'Senha redefinida com sucesso' };
   } catch (error) {
