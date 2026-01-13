@@ -40,7 +40,7 @@ export async function getAllUsers() {
 export async function createUser(user) {
   try {
     // CORREÇÃO: Usa apiRequest
-    const data = await apiRequest('/api/auth/users', {
+    const response = await apiRequest('/api/auth/users', {
       method: 'POST',
       body: JSON.stringify({
         nome: user.name,
@@ -50,15 +50,21 @@ export async function createUser(user) {
       })
     });
 
+    // Backend retorna { success: true, data: { user: {...} } }
+    const userData = response?.data?.user || response?.user || response?.data;
+    if (!userData) {
+      throw new Error('Resposta inválida do servidor');
+    }
+
     // Mapear o resultado para o formato esperado
     return {
       ok: true,
       data: {
-        id: data.user.id.toString(),
-        name: data.user.nome,
-        email: data.user.email,
-        role: data.user.role,
-        status: data.user.status === 'ativo' ? 'active' : 'inactive'
+        id: String(userData.id),
+        name: userData.name || userData.nome,
+        email: userData.email,
+        role: userData.role,
+        status: userData.status === 'ativo' ? 'active' : 'inactive'
       }
     };
   } catch (error) {
@@ -89,19 +95,25 @@ export async function updateUser(id, updates) {
     if (updates.password) {
       payload.senha = updates.password;
     }
-    const data = await apiRequest(`/api/auth/users/${id}`, {
+    const response = await apiRequest(`/api/auth/users/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload)
     });
-    
+
+    // Backend retorna { success: true, data: { user: {...} } }
+    const userData = response?.data?.user || response?.user || response?.data;
+    if (!userData) {
+      throw new Error('Resposta inválida do servidor');
+    }
+
     return {
       ok: true,
       data: {
-        id: data.user.id.toString(),
-        name: data.user.nome,
-        email: data.user.email,
-        role: data.user.role,
-        status: data.user.status === 'ativo' ? 'active' : 'inactive'
+        id: String(userData.id),
+        name: userData.name || userData.nome,
+        email: userData.email,
+        role: userData.role,
+        status: userData.status === 'ativo' ? 'active' : 'inactive'
       }
     };
   } catch (error) {
@@ -121,18 +133,24 @@ export async function updateUser(id, updates) {
 export async function toggleUserStatus(id) {
   try {
     // CORREÇÃO: Usa apiRequest
-    const data = await apiRequest(`/api/auth/users/${id}/toggle-status`, {
+    const response = await apiRequest(`/api/auth/users/${id}/toggle-status`, {
       method: 'PATCH'
     });
-    
+
+    // Backend retorna { success: true, data: { user: {...} } }
+    const userData = response?.data?.user || response?.user || response?.data;
+    if (!userData) {
+      throw new Error('Resposta inválida do servidor');
+    }
+
     return {
       ok: true,
       data: {
-        id: data.user.id.toString(),
-        name: data.user.nome,
-        email: data.user.email,
-        role: data.user.role,
-        status: data.user.status === 'ativo' ? 'active' : 'inactive'
+        id: String(userData.id),
+        name: userData.name || userData.nome,
+        email: userData.email,
+        role: userData.role,
+        status: userData.status === 'ativo' ? 'active' : 'inactive'
       }
     };
   } catch (error) {
