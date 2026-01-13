@@ -26,10 +26,10 @@ export default defineConfig({
         enabled: false // Desabilita PWA em desenvolvimento
       },
       workbox: {
-        // Não pré-cachear arquivos grandes
-        globPatterns: ['**/*.{js,css,html,ico,svg,woff,woff2}'],
-        // Ignora favicons PNG no precache (evita erro 422)
-        globIgnores: ['**/favicon*.png', '**/node_modules/**'],
+        // Não pré-cachear arquivos grandes - removido PNG para evitar erro 422
+        globPatterns: ['**/*.{js,css,html,svg,woff,woff2}'],
+        // Ignora favicons e ícones no precache (evita erro 422)
+        globIgnores: ['**/favicon*', '**/apple-touch-icon*', '**/android-chrome*', '**/node_modules/**'],
         // Ignora arquivos grandes no precache
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB max
         runtimeCaching: [
