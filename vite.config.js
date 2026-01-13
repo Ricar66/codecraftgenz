@@ -80,10 +80,10 @@ export default defineConfig({
         // Garante que /downloads não caia no fallback do SPA
         navigateFallbackAllowlist: [/^(?!.*\/api\/|.*\/downloads\/).*/],
         navigateFallbackDenylist: [/^\/api/, /^\/downloads/],
-        // Configurações menos agressivas
+        // Configurações para atualização automática
         cleanupOutdatedCaches: true,
-        skipWaiting: false, // Não assume controle imediatamente
-        clientsClaim: false // Não reivindica clientes existentes
+        skipWaiting: true, // Assume controle imediatamente
+        clientsClaim: true // Reivindica clientes existentes
       }
     })
   ],

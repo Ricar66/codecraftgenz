@@ -16,11 +16,12 @@ import styles from './ProjectCard.module.css';
  * @param {number} props.maxDescriptionLength - Limite de caracteres para descrição (padrão: 150)
  *
 */
-const ProjectCard = ({ 
-  project, 
+const ProjectCard = ({
+  project,
   maxDescriptionLength = 150,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   /**
    * Formata a data para o padrão brasileiro (DD/MM/YYYY)
@@ -101,13 +102,19 @@ const ProjectCard = ({
     <article className={styles.projectCard} role="article" aria-labelledby={`project-${project.id}-title`}>
       {/* Header do Card */}
       <header className={styles.cardHeader}>
-        {project?.thumb_url ? (
-          <img src={sanitizeImageUrl(project.thumb_url)} alt="Thumb do projeto" className={styles.thumb} />
-        ) : null}
+        {project?.thumb_url && !imgError && (
+          <img
+            src={sanitizeImageUrl(project.thumb_url)}
+            alt=""
+            className={styles.thumb}
+            onError={() => setImgError(true)}
+            loading="lazy"
+          />
+        )}
         <h3 id={`project-${project.id}-title`} className={styles.projectTitle}>
           {title}
         </h3>
-        <span 
+        <span
           className={`${styles.statusBadge} ${getStatusBadgeClass(statusLabel)}`}
           aria-label={`Status: ${statusLabel || '—'}`}
         >
