@@ -4,19 +4,27 @@ import { useState, useEffect } from 'react';
 
 import { toBoolFlag } from '../utils/hooks.js';
 
+// URL do backend em produção (Render)
+const PROD_API_URL = 'https://codecraftgenz-monorepo.onrender.com';
+
 // Detecta o ambiente e configura a URL base da API
 const getApiBaseUrl = () => {
   const isDev = import.meta.env.DEV;
-  const devApiUrl = import.meta.env.VITE_API_URL;
+  const envApiUrl = import.meta.env.VITE_API_URL;
+
+  // Em desenvolvimento, usa variável de ambiente ou localhost
   if (isDev) {
-    return devApiUrl || 'http://localhost:8080';
+    return envApiUrl || 'http://localhost:8080';
   }
-  const prodApiUrl = import.meta.env.VITE_API_URL;
-  const allow = toBoolFlag(import.meta.env.VITE_ALLOW_EXTERNAL_API || 'false');
-  if (prodApiUrl && allow) {
-    return prodApiUrl;
+
+  // Em produção: usa variável de ambiente se configurada, senão usa URL hardcoded
+  const allow = toBoolFlag(import.meta.env.VITE_ALLOW_EXTERNAL_API || 'true');
+  if (envApiUrl && allow) {
+    return envApiUrl;
   }
-  return '';
+
+  // Fallback para URL de produção hardcoded (garante que sempre funciona)
+  return PROD_API_URL;
 };
 
 export const API_BASE_URL = getApiBaseUrl();
