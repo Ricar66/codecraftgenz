@@ -2,15 +2,27 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { apiRequest, API_BASE_URL, getAuthHeader } from '../lib/apiConfig.js';
+import { apiRequest } from '../lib/apiConfig.js';
 
 import { AuthContext } from './AuthCore';
 
 async function fetchMe() {
+  const isDebug = import.meta.env.DEV || localStorage.getItem('cc_debug') === '1';
   try {
     const json = await apiRequest('/api/auth/me', { method: 'GET' });
-    return json?.user || null;
-  } catch { return null; }
+    // Backend retorna { success: true, data: { user } } ou { user }
+    return json?.data?.user || json?.data || json?.user || null;
+  } catch (error) {
+    // Log apenas em desenvolvimento para debug
+    if (isDebug) {
+      console.warn('[Auth:fetchMe]', error?.status || 0, error?.message || 'Erro desconhecido');
+    }
+    // Se for erro de rede, logar separadamente
+    if (error?.status === 0 || error?.type === 'network') {
+      console.warn('[Auth] Erro de rede - usuário pode ainda estar autenticado');
+    }
+    return null;
+  }
 }
 
 function useAuthProvider() {
@@ -28,38 +40,30 @@ function useAuthProvider() {
 
   const login = useCallback(async (email, password) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const data = await apiRequest('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
-      const data = await response.json();
-      if (!response.ok) {
-        return { ok: false, error: data.error || 'Erro no login' };
+      // Backend retorna { success: true, data: { token, user } }
+      const token = data?.token || data?.data?.token;
+      if (token) {
+        localStorage.setItem('cc_session', JSON.stringify({ token }));
       }
-      // Salva token no localStorage para requests subsequentes
-      if (data.token) {
-        localStorage.setItem('cc_session', JSON.stringify({ token: data.token }));
-      }
+      // Busca dados completos do usuário
       const u = await fetchMe();
       if (u) setUser(u);
       navigate('/admin');
       return { ok: true };
     } catch (error) {
       console.error('Erro na autenticação:', error);
-      return { ok: false, error: 'Erro de conexão. Tente novamente.' };
+      return { ok: false, error: error?.message || 'Erro de conexão. Tente novamente.' };
     }
   }, [navigate]);
 
   const logout = useCallback(async () => {
     try {
-      await fetch(`${API_BASE_URL}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: getAuthHeader()
-      });
-    } catch (e) { void e }
+      await apiRequest('/api/auth/logout', { method: 'POST' });
+    } catch { /* ignora erro no logout */ }
     localStorage.removeItem('cc_session');
     setUser(null);
     navigate('/login');

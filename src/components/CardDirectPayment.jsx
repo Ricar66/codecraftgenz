@@ -3,6 +3,7 @@ import { CardPayment, initMercadoPago, getPaymentMethods } from '@mercadopago/sd
 import React, { useEffect, useState } from 'react';
 
 import { useAuth } from '../context/useAuth.js';
+import { apiRequest } from '../lib/apiConfig.js';
 import { createDirectPayment } from '../services/appsAPI.js';
 import { loadMercadoPagoSDK } from '../utils/loadMercadoPagoSDK.js';
 
@@ -37,8 +38,10 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
 
         let key = PK;
         if (!key) {
-          const resp = await fetch('/api/config/mp-public-key');
-          if (resp.ok) { const json = await resp.json(); key = json?.public_key || ''; }
+          try {
+            const json = await apiRequest('/api/config/mp-public-key', { method: 'GET' });
+            key = json?.public_key || json?.data?.public_key || '';
+          } catch { /* fallback: sem chave */ }
         }
         if (key) {
           if (!window.__MP_INIT_DONE) { initMercadoPago(key, { locale: 'pt-BR' }); window.__MP_INIT_DONE = true; }
