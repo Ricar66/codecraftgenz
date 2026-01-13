@@ -592,19 +592,12 @@ export function useFinance() {
 export const FinanceRepo = {
   async update(id, updates) {
     try {
-      const response = await fetch(`/api/financas/${id}`, {
+      const data = await apiRequest(`/api/financas/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
-      
-      if (!response.ok) {
-        throw new Error(`Erro HTTP: ${response.status}`);
-      }
-      
-      const data = await response.json();
       realtime.publish('finance_changed', { finance: null });
-      return { ok: true, item: data.item };
+      return { ok: true, item: data?.item || data?.data };
     } catch (err) {
       return { ok: false, error: err.message };
     }

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+import { apiRequest } from '../lib/apiConfig.js';
+
 export default function LicenseActivator({ appId }) {
   const [hardwareId, setHardwareId] = useState('');
   const [license, setLicense] = useState('');
@@ -12,17 +14,14 @@ export default function LicenseActivator({ appId }) {
     if (!hardwareId || !appId) { setError('Preencha o Hardware ID.'); return; }
     setLoading(true);
     try {
-      const resp = await fetch('/api/licenses/activate', {
+      const json = await apiRequest('/api/licenses/activate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ appId: Number(appId), hardwareId: String(hardwareId).trim() })
       });
-      const json = await resp.json();
-      if (!resp.ok || !json?.success) {
+      if (!json?.success) {
         setError(json?.error || 'Falha ao gerar licença');
       } else {
-        setLicense(json.license_key || '');
+        setLicense(json.license_key || json.data?.license_key || '');
       }
     } catch (e) {
       setError(e?.message || 'Erro de rede');
