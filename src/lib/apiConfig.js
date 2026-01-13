@@ -84,8 +84,16 @@ export async function apiRequest(endpoint, options = {}) {
       let errorDetails = null;
       try {
         const errorData = await response.json();
-        errorMessage = errorData.error || errorData.message || errorMessage;
-        errorDetails = errorData;
+        // Backend retorna { success: false, error: { code, message, details } }
+        // Ou formato legado { error: string } ou { message: string }
+        if (errorData.error && typeof errorData.error === 'object') {
+          errorMessage = errorData.error.message || errorData.error.code || errorMessage;
+          errorDetails = errorData.error.details;
+        } else if (typeof errorData.error === 'string') {
+          errorMessage = errorData.error;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
       } catch {
         // Se não conseguir parsear JSON, usa mensagem padrão
       }
@@ -164,8 +172,15 @@ export async function apiRequestMultipart(endpoint, formData, options = {}) {
       let errorDetails = null;
       try {
         const errorData = await response.json();
-        errorMessage = errorData.error || errorData.message || errorMessage;
-        errorDetails = errorData;
+        // Backend retorna { success: false, error: { code, message, details } }
+        if (errorData.error && typeof errorData.error === 'object') {
+          errorMessage = errorData.error.message || errorData.error.code || errorMessage;
+          errorDetails = errorData.error.details;
+        } else if (typeof errorData.error === 'string') {
+          errorMessage = errorData.error;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
       } catch (e) { void e }
       const apiError = new Error(errorMessage);
       apiError.status = response.status;
