@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { apiRequest } from '../lib/apiConfig.js';
+import { apiRequest, API_BASE_URL, getAuthHeader } from '../lib/apiConfig.js';
 
 import { AuthContext } from './AuthCore';
 
@@ -28,7 +28,7 @@ function useAuthProvider() {
 
   const login = useCallback(async (email, password) => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -37,6 +37,10 @@ function useAuthProvider() {
       const data = await response.json();
       if (!response.ok) {
         return { ok: false, error: data.error || 'Erro no login' };
+      }
+      // Salva token no localStorage para requests subsequentes
+      if (data.token) {
+        localStorage.setItem('cc_session', JSON.stringify({ token: data.token }));
       }
       const u = await fetchMe();
       if (u) setUser(u);
@@ -49,7 +53,14 @@ function useAuthProvider() {
   }, [navigate]);
 
   const logout = useCallback(async () => {
-    try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch (e) { void e }
+    try {
+      await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: getAuthHeader()
+      });
+    } catch (e) { void e }
+    localStorage.removeItem('cc_session');
     setUser(null);
     navigate('/login');
   }, [navigate]);
