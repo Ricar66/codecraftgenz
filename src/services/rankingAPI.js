@@ -19,7 +19,8 @@ export async function getRanking() {
  * @returns {Promise<Object>} Resultado da atualização
  */
 export async function updateCrafterPoints(crafterId, options = {}) {
-  return await apiRequest(`/api/ranking/points/${crafterId}`, {
+  // CORRIGIDO: Path correto é /api/crafters/points (não /api/ranking/points)
+  return await apiRequest(`/api/crafters/points/${crafterId}`, {
     method: 'PUT',
     body: JSON.stringify(options),
   });
@@ -31,7 +32,8 @@ export async function updateCrafterPoints(crafterId, options = {}) {
  * @returns {Promise<Object>} Resultado da atualização
  */
 export async function updateTop3(top3) {
-  return await apiRequest('/api/ranking/top3', {
+  // CORRIGIDO: Path correto é /api/crafters/top3 (não /api/ranking/top3)
+  return await apiRequest('/api/crafters/top3', {
     method: 'PUT',
     body: JSON.stringify({ top3 }),
   });
@@ -42,7 +44,8 @@ export async function updateTop3(top3) {
  * @returns {Promise<Array>} Lista de logs de auditoria
  */
 export async function getRankingAudit() {
-  const data = await apiRequest('/api/ranking/audit', { method: 'GET' });
+  // CORRIGIDO: Path correto é /api/crafters/audit (não /api/ranking/audit)
+  const data = await apiRequest('/api/crafters/audit', { method: 'GET' });
   return data.data || [];
 }
 
@@ -52,7 +55,8 @@ export async function getRankingAudit() {
  * @returns {Promise<Object>} Resultado da atualização
  */
 export async function updateRankingFilters(filters) {
-  return await apiRequest('/api/ranking/filters', {
+  // CORRIGIDO: Path correto é /api/crafters/filters (não /api/ranking/filters)
+  return await apiRequest('/api/crafters/filters', {
     method: 'PUT',
     body: JSON.stringify(filters),
   });

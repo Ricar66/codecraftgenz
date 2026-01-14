@@ -147,15 +147,17 @@ export async function submitFeedback(appId, { rating, comment }) {
 }
 
 // Admin – listar pagamentos do banco (app_payments)
+// CORRIGIDO: Path correto é /api/payments/admin/app-payments (não /api/admin/app-payments)
 export async function adminListAppPayments(params = {}) {
   const qp = new URLSearchParams(params).toString();
-  return apiRequest(`/api/admin/app-payments?${qp}`, { method: 'GET' });
+  return apiRequest(`/api/payments/admin/app-payments?${qp}`, { method: 'GET' });
 }
 
 // Admin – obter pagamento + auditoria por payment_id
+// CORRIGIDO: Path correto é /api/payments/admin/app-payments (não /api/admin/app-payments)
 export async function adminGetAppPayment(paymentId) {
   if (!paymentId) throw new Error('paymentId é obrigatório');
-  return apiRequest(`/api/admin/app-payments/${encodeURIComponent(String(paymentId))}`, { method: 'GET' });
+  return apiRequest(`/api/payments/admin/app-payments/${encodeURIComponent(String(paymentId))}`, { method: 'GET' });
 }
 
 // Obter último resultado de pagamento direto (cache em memória do backend)
