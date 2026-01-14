@@ -4,7 +4,7 @@
 /* ===== CONTAINER PRINCIPAL ===== */
 .purchasePage {
   min-height: 100vh;
-  padding-top: 80px; /* Espaço para a navbar */
+  padding-top: 0; /* Navbar é sticky, não precisa de padding-top */
   padding-bottom: var(--espaco-3xl);
 }
 
@@ -454,7 +454,7 @@
 /* Tablet */
 @media (max-width: 768px) {
   .purchasePage {
-    padding-top: 70px;
+    padding-top: 0;
   }
 
   .purchaseCard {
@@ -493,7 +493,7 @@
 /* Mobile pequeno */
 @media (max-width: 480px) {
   .purchasePage {
-    padding-top: 60px;
+    padding-top: 0;
     padding-bottom: var(--espaco-xl);
   }
 
