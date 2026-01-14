@@ -2504,7 +2504,14 @@ export function Apps() {
         console.log('[Admin:Apps:refresh]', { isAdmin });
       }
       const json = await getAllApps({ page: 1, pageSize: 100, publicFallback: !isAdmin });
-      const list = Array.isArray(json?.data) ? json.data : (Array.isArray(json) ? json : []);
+      const rawList = Array.isArray(json?.data) ? json.data : (Array.isArray(json) ? json : []);
+      // Normalizar campos snake_case -> camelCase para consistência
+      const list = rawList.map(a => ({
+        ...a,
+        thumbnail: a.thumbnail || a.thumb_url || a.thumbUrl || '',
+        executableUrl: a.executableUrl || a.executable_url || '',
+        mainFeature: a.mainFeature || a.main_feature || a.short_description || '',
+      }));
       setApps(list);
       if (isDebug) {
         console.log('[Admin:Apps:list]', list.length);
@@ -2529,7 +2536,16 @@ export function Apps() {
 
   const onSave = async () => {
     try {
-      const payload = { name: form.name, mainFeature: form.mainFeature, description: form.description, status: form.status, price: Number(form.price||0), thumbnail: form.thumbnail, executableUrl: form.exec_url };
+      // Backend espera snake_case: thumb_url, short_description, executable_url
+      const payload = {
+        name: form.name,
+        short_description: form.mainFeature,
+        description: form.description,
+        status: form.status,
+        price: Number(form.price||0),
+        thumb_url: form.thumbnail,
+        executable_url: form.exec_url
+      };
       const isInvalid = (s) => {
         const v = String(s || '');
         const hasDrive = /^[a-zA-Z]:\\/.test(v);
@@ -2548,7 +2564,16 @@ export function Apps() {
 
   const onCreate = async () => {
     try {
-      const payload = { name: form.name, mainFeature: form.mainFeature, description: form.description, status: form.status, price: Number(form.price||0), thumbnail: form.thumbnail, executableUrl: form.exec_url };
+      // Backend espera snake_case: thumb_url, short_description, executable_url
+      const payload = {
+        name: form.name,
+        short_description: form.mainFeature,
+        description: form.description,
+        status: form.status,
+        price: Number(form.price||0),
+        thumb_url: form.thumbnail,
+        executable_url: form.exec_url
+      };
       const isInvalid = (s) => {
         const v = String(s || '');
         const hasDrive = /^[a-zA-Z]:\\/.test(v);
