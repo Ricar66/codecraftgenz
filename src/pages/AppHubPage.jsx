@@ -299,19 +299,26 @@ const AppHubPage = () => {
             <div ref={trackRef} className={styles.highlightsTrack} onScroll={handleScroll}>
               {featuredApps.map((app, i) => (
                 <div key={app.id} className={styles.highlightCard}>
-                  <img
-                    className={styles.highlightMedia}
-                    src={getAppImageUrl(app)}
-                    alt={app.name ? `Destaque: ${app.name}` : 'Destaque do Hub'}
-                    loading="lazy"
-                    decoding="async"
-                    draggable="false"
-                    fetchpriority={i === 0 ? 'high' : 'low'}
-                    sizes="(max-width: 640px) 80vw, (max-width: 1024px) 50vw, 360px"
-                    srcSet={(app.thumbnail && app.image)
-                      ? sanitizeSrcSet(`${app.thumbnail} 480w, ${app.image} 800w, ${app.image} 1200w`)
-                      : (app.image ? sanitizeSrcSet(`${app.image} 800w, ${app.image} 1200w`) : undefined)}
-                  />
+                  {getAppImageUrl(app) ? (
+                    <img
+                      className={styles.highlightMedia}
+                      src={getAppImageUrl(app)}
+                      alt={app.name ? `Destaque: ${app.name}` : 'Destaque do Hub'}
+                      loading="lazy"
+                      decoding="async"
+                      draggable="false"
+                      fetchpriority={i === 0 ? 'high' : 'low'}
+                      sizes="(max-width: 640px) 80vw, (max-width: 1024px) 50vw, 360px"
+                      srcSet={(app.thumbnail && app.image)
+                        ? sanitizeSrcSet(`${app.thumbnail} 480w, ${app.image} 800w, ${app.image} 1200w`)
+                        : (app.image ? sanitizeSrcSet(`${app.image} 800w, ${app.image} 1200w`) : undefined)}
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <div className={styles.highlightMedia} style={{ background: 'linear-gradient(135deg, rgba(209,43,242,0.3), rgba(0,228,242,0.3))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--texto-gelo)', fontSize: '2rem', fontWeight: 700 }}>
+                      {app.name?.charAt(0) || 'A'}
+                    </div>
+                  )}
                   <div className={styles.highlightOverlay}>
                     <div className={styles.highlightInfo}>
                       <h4 className={styles.highlightTitle}>{app.name}</h4>

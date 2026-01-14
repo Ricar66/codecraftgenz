@@ -98,12 +98,15 @@
 /* ===== GRID DE PROJETOS ===== */
 .projectsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  /* Usa min(100%, 350px) para evitar overflow em telas pequenas */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   max-width: 1200px;
   margin: 0 auto;
   gap: var(--espaco-xl);
   margin-bottom: var(--espaco-3xl);
   min-width: 0; /* evita overflow horizontal em colunas flexíveis */
+  padding: 0 var(--espaco-md); /* padding lateral para evitar colagem nas bordas */
+  box-sizing: border-box;
 }
 
 /* Garantir máximo de 3 colunas */
