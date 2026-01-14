@@ -15,7 +15,7 @@ const AppCard = ({ app, onDownload, mode = 'owned' }) => {
   return (
     <article className="app-card" aria-label={`Aplicativo ${name}`}>
       <div className="app-media">
-        {(thumbnail || image) ? (
+        {getAppImageUrl(app) ? (
           <img
             src={getAppImageUrl(app)}
             alt={name}
@@ -25,6 +25,7 @@ const AppCard = ({ app, onDownload, mode = 'owned' }) => {
             width="140"
             height="100"
             fetchpriority="low"
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
           />
         ) : (
           <div className="app-thumb placeholder" aria-hidden="true">APP</div>
