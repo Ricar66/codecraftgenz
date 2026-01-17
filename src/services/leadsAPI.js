@@ -1,9 +1,31 @@
 // src/services/leadsAPI.js
-// Serviço para captura de leads via API externa
+// Serviço para captura de leads via API externa e TrackPro
 
 // URL da API de leads - configurável via variável de ambiente
-const LEADS_API_URL = import.meta.env.VITE_LEADS_API_URL || 'http://localhost:3001/api/v1/public/leads/capture';
+const LEADS_API_URL = import.meta.env.VITE_LEADS_API_URL || '';
 const LEADS_API_KEY = import.meta.env.VITE_LEADS_API_KEY || '';
+
+/**
+ * Envia evento para TrackPro (se disponível)
+ * @param {string} eventName - Nome do evento
+ * @param {Object} eventData - Dados do evento
+ */
+function trackProEvent(eventName, eventData = {}) {
+  try {
+    if (typeof window !== 'undefined' && window.tpLayer) {
+      window.tpLayer.push({
+        event: eventName,
+        ...eventData,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  } catch (e) {
+    // Silenciosamente ignora erros do TrackPro
+    if (import.meta.env.DEV) {
+      console.log('[TrackPro] Erro ao enviar evento:', e);
+    }
+  }
+}
 
 /**
  * Extrai parâmetros UTM da URL atual
@@ -88,6 +110,15 @@ export async function captureLead(leadData) {
  * @param {Object} data - Dados do formulário de Crafter
  */
 export async function captureCrafterLead(data) {
+  // Envia evento para TrackPro
+  trackProEvent('lead_capture', {
+    form_id: 'crafter-signup',
+    lead_type: 'crafter',
+    area_interesse: data.area_interesse,
+    cidade: data.cidade,
+    estado: data.estado,
+  });
+
   return captureLead({
     formId: 'crafter-signup',
     name: data.nome,
@@ -109,6 +140,20 @@ export async function captureCrafterLead(data) {
  * @param {string} appName - Nome do app
  */
 export async function captureAppPurchaseLead(data, appId, appName) {
+  // Envia evento para TrackPro
+  trackProEvent('lead_capture', {
+    form_id: 'app-purchase',
+    lead_type: 'purchase_intent',
+    app_id: String(appId),
+    app_name: appName,
+  });
+
+  // Evento específico de intenção de compra
+  trackProEvent('purchase_intent', {
+    app_id: String(appId),
+    app_name: appName,
+  });
+
   return captureLead({
     formId: 'app-purchase',
     name: data.name,
@@ -129,6 +174,13 @@ export async function captureAppPurchaseLead(data, appId, appName) {
  * @param {Object} data - Dados do feedback
  */
 export async function captureFeedbackLead(data) {
+  // Envia evento para TrackPro
+  trackProEvent('lead_capture', {
+    form_id: 'feedback',
+    lead_type: 'feedback',
+    rating: data.rating,
+  });
+
   return captureLead({
     formId: 'feedback',
     name: data.nome || data.name,
