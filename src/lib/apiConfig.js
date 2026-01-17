@@ -75,15 +75,16 @@ export async function apiRequest(endpoint, options = {}) {
       const m = String(options.method || 'GET').toUpperCase();
       console.log('[API:req]', m, endpoint);
     }
+    const { headers: optHeaders, ...restOptions } = options;
     const response = await fetch(url, {
+      ...restOptions,
+      credentials: restOptions.credentials || 'include',
       headers: {
         'Content-Type': 'application/json',
         ...authHeader,
         ...(import.meta.env.VITE_CSRF_SECRET ? { 'x-csrf-token': String(import.meta.env.VITE_CSRF_SECRET) } : {}),
-        ...options.headers,
+        ...optHeaders,
       },
-      credentials: options.credentials || 'include',
-      ...options,
     });
 
     if (!response.ok) {
