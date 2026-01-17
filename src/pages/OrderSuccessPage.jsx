@@ -72,10 +72,12 @@ const OrderSuccessPage = () => {
           if (purchaseStatus?.download_url) {
             setDownloadUrl(purchaseStatus.download_url);
           } else {
-            // Register download to generate URL
+            // Register download to generate URL - usa payment_id do retorno do MP
             try {
-              const dlData = await registerDownload(id);
+              const dlData = await registerDownload(id, { payment_id: payId });
               if (dlData?.download_url) setDownloadUrl(dlData.download_url);
+              // Se retornou email do comprador, preenche o campo
+              if (dlData?.email) setEmail(dlData.email);
             } catch (err) {
               console.warn('Auto-register download failed:', err);
             }
@@ -106,30 +108,46 @@ const OrderSuccessPage = () => {
     try {
       // Hardware ID check and license activation flow
       const hwid = await computeHardwareId();
-      
-      // If we don't have email in state, prompt user (or try to get from user context if available, 
-      // but simpler to ask if missing or just try registerDownload which might use session user)
-      // For now, try registerDownload first
-      try {
-        const json = await registerDownload(id);
-        if (json?.download_url) {
-          setDownloadUrl(json.download_url);
-          window.open(json.download_url, '_blank', 'noopener');
-          return;
+
+      // Tenta download usando payment_id primeiro (não requer autenticação)
+      if (paymentId) {
+        try {
+          const json = await registerDownload(id, { payment_id: paymentId });
+          if (json?.download_url) {
+            setDownloadUrl(json.download_url);
+            if (json?.email) setEmail(json.email);
+            window.open(json.download_url, '_blank', 'noopener');
+            return;
+          }
+        } catch (e) {
+          console.log('Download by payment_id failed, trying other methods', e);
         }
-      } catch (e) {
-        // If fails, might need email/license flow
-        console.log('Direct download failed, trying license flow', e);
       }
 
+      // Tenta download usando email se disponível
+      if (email) {
+        try {
+          const json = await registerDownload(id, { email });
+          if (json?.download_url) {
+            setDownloadUrl(json.download_url);
+            window.open(json.download_url, '_blank', 'noopener');
+            return;
+          }
+        } catch (e) {
+          console.log('Download by email failed, trying license flow', e);
+        }
+      }
+
+      // Se não tem email ainda, pede ao usuário
       if (!email) {
         alert('Por favor, informe seu e-mail abaixo para ativar a licença e baixar.');
         document.getElementById('email-input')?.focus();
         return;
       }
 
+      // Tenta ativar licença com hardware ID
       const lic = await activateDeviceLicense({ email, appId: Number(id), hardwareId: hwid });
-      if (!lic?.licensed) {
+      if (!lic?.licensed && !lic?.success) {
         alert(lic?.message || 'Erro ao validar licença.');
         return;
       }

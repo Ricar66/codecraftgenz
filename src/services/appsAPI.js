@@ -122,9 +122,16 @@ export async function getPurchaseStatus(appId, params = {}) {
   return apiRequest(`/api/apps/${appId}/purchase/status?${qp}`, { method: 'GET' });
 }
 
-// Registrar download liberado
-export async function registerDownload(appId) {
-  return apiRequest(`/api/apps/${appId}/download`, { method: 'POST' });
+// Registrar download liberado (aceita email ou payment_id opcionais)
+export async function registerDownload(appId, { email, payment_id } = {}) {
+  const body = {};
+  if (email) body.email = email;
+  if (payment_id) body.payment_id = payment_id;
+  const hasBody = Object.keys(body).length > 0;
+  return apiRequest(`/api/apps/${appId}/download`, {
+    method: 'POST',
+    ...(hasBody ? { body: JSON.stringify(body) } : {})
+  });
 }
 
 // Licenças – ativar licença do dispositivo (pública)
