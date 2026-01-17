@@ -6,6 +6,7 @@ import CardDirectPayment from '../components/CardDirectPayment.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth.js';
 import { getAppById, getPurchaseStatus, registerDownload, submitFeedback, createPaymentPreference, downloadByEmail, activateDeviceLicense } from '../services/appsAPI.js';
+import { captureAppPurchaseLead } from '../services/leadsAPI.js';
 import { getAppPrice } from '../utils/appModel.js';
 
 import styles from './AppPurchasePage.module.css';
@@ -409,6 +410,12 @@ const AppPurchasePage = () => {
                         alert('Por favor, preencha nome, e-mail e CPF.');
                         return;
                       }
+                      // Captura lead quando usuário avança para pagamento
+                      captureAppPurchaseLead(
+                        { name: n, email: em, phone: payerInfo.phone, identification: cpf, zip: payerInfo.zip, streetName: payerInfo.streetName },
+                        id,
+                        app?.name || app?.titulo
+                      ).catch(() => {});
                       setStep(2);
                       setShowCardForm(true);
                       setTimeout(() => {
@@ -450,7 +457,8 @@ const AppPurchasePage = () => {
                   deviceId={deviceId}
                   onPaymentSuccess={async (resp) => {
                     setStatus('approved');
-                    const payId = resp?.id || resp?.data?.id || '';
+                    // O backend retorna payment_id (interno) e mp_payment_id (do MP)
+                    const payId = resp?.payment_id || resp?.mp_payment_id || resp?.data?.payment_id || resp?.id || resp?.data?.id || '';
                     navigate(`/apps/${id}/sucesso?payment_id=${payId}&status=approved`);
                   }}
                 />

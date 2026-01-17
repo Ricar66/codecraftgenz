@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 
 import { submitFeedback, FeedbackValidator } from '../../services/feedbackAPI';
+import { captureFeedbackLead } from '../../services/leadsAPI.js';
 
 import styles from './FeedbackFormSimple.module.css';
 
@@ -38,6 +39,12 @@ const FeedbackFormSimple = ({ onSuccess }) => {
 
     try {
       await submitFeedback(feedbackData);
+
+      // Captura lead se tiver email (não bloqueia se falhar)
+      if (feedbackData.email) {
+        captureFeedbackLead({ nome: feedbackData.nome, email: feedbackData.email, comment: feedbackData.mensagem }).catch(() => {});
+      }
+
       setSuccess(true);
       setNome('');
       setEmail('');

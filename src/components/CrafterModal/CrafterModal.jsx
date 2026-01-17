@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 
 import { apiRequest } from '../../lib/apiConfig.js';
+import { captureCrafterLead } from '../../services/leadsAPI.js';
 
 import styles from './CrafterModal.module.css';
 
@@ -95,7 +96,11 @@ const CrafterModal = ({ isOpen, onClose }) => {
     setError(null);
 
     try {
+      // Envia para o backend interno
       await apiRequest('/api/inscricoes', { method: 'POST', body: JSON.stringify(formData) });
+
+      // Captura lead para sistema externo (não bloqueia se falhar)
+      captureCrafterLead(formData).catch(() => {});
 
       setSuccess(true);
       setFormData({
