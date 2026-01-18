@@ -2,63 +2,39 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
-import useFeedbacks from '../../hooks/useFeedbacks';
+import { useLatestFeedbacks } from '../../hooks/useFeedbacks';
 
 import styles from './FeedbackShowcase.module.css';
 
+// Dados de fallback quando não há feedbacks reais
+const FALLBACK_FEEDBACKS = [
+  { id: 1, text: "Ótimo produto, superou minhas expectativas!", author: "Ana Silva", rating: 5 },
+  { id: 2, text: "Atendimento rápido e eficiente, recomendo.", author: "Carlos Santos", rating: 5 },
+  { id: 3, text: "Qualidade excelente, vale cada centavo.", author: "Maria Oliveira", rating: 5 },
+  { id: 4, text: "Poderia melhorar no prazo de entrega.", author: "João Costa", rating: 4 },
+  { id: 5, text: "Interface intuitiva e fácil de usar.", author: "Lucia Ferreira", rating: 5 }
+];
+
 const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
-  const { items, loading } = useFeedbacks({ autoFetch: true, pageSize: 20 });
+  const { items, loading } = useLatestFeedbacks();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
-  // Usar dados reais ou fallback para exemplos fictícios
+  // Usar dados reais ou fallback
   const feedbacks = useMemo(() => {
     if (items && items.length > 0) {
       return items.map(item => ({
         id: item.id,
         text: item.mensagem,
         author: item.nome || 'Anônimo',
-        rating: 5, // Rating fixo para feedbacks da página inicial
-        avatarUrl: null, // Não temos avatars nos novos feedbacks
+        rating: item.rating || 5,
+        avatarUrl: null,
         createdAt: item.data_criacao,
         type: 'feedback'
       }));
     }
-    
-    // Fallback para dados fictícios quando não há feedbacks reais
-    return [
-      {
-        id: 1,
-        text: "Ótimo produto, superou minhas expectativas!",
-        author: "Ana Silva",
-        rating: 5
-      },
-      {
-        id: 2,
-        text: "Atendimento rápido e eficiente, recomendo.",
-        author: "Carlos Santos",
-        rating: 5
-      },
-      {
-        id: 3,
-        text: "Qualidade excelente, vale cada centavo.",
-        author: "Maria Oliveira",
-        rating: 5
-      },
-      {
-        id: 4,
-        text: "Poderia melhorar no prazo de entrega.",
-        author: "João Costa",
-        rating: 4
-      },
-      {
-        id: 5,
-        text: "Interface intuitiva e fácil de usar.",
-        author: "Lucia Ferreira",
-        rating: 5
-      }
-    ];
+    return FALLBACK_FEEDBACKS;
   }, [items]);
 
   // Detectar preferência de movimento reduzido

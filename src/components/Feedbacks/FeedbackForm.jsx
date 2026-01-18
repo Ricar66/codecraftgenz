@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import useFeedbacks from '../../hooks/useFeedbacks';
+import { captureFeedbackLead } from '../../services/leadsAPI';
 
 export default function FeedbackForm() {
   const { submit } = useFeedbacks({ autoFetch: false });
@@ -59,6 +60,18 @@ export default function FeedbackForm() {
     
     try {
       await submit({ nome, email, mensagem }, { honeypot });
+
+      // Captura lead se email fornecido
+      if (email && email.trim()) {
+        captureFeedbackLead({
+          nome,
+          email,
+          mensagem,
+        }).catch(() => {
+          // Silenciosamente ignora erros de captura de lead
+        });
+      }
+
       setSuccess('Feedback enviado com sucesso! Redirecionando...');
       setNome(''); 
       setEmail(''); 

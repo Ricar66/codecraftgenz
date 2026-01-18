@@ -4,9 +4,27 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import Navbar from '../components/Navbar/Navbar';
 import { useAnalytics } from '../hooks/useAnalytics.js';
-import { activateDeviceLicense, downloadByEmail, getAppById, getPurchaseStatus, registerDownload } from '../services/appsAPI.js';
+import { getAppById, getPurchaseStatus, registerDownload } from '../services/appsAPI.js';
+import { API_BASE_URL } from '../lib/apiConfig.js';
 
 import styles from './OrderSuccessPage.module.css';
+
+// Converte URL relativa para URL completa do backend
+const resolveDownloadUrl = (url) => {
+  if (!url) return '';
+  // Se já é URL completa (http/https), retorna como está
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  // URL relativa - precisa ser prefixada com API_BASE_URL
+  // Ex: /downloads/app-2-1.0.0.exe -> https://backend.../api/downloads/app-2-1.0.0.exe
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+  // Se começa com /downloads, adiciona /api antes
+  if (cleanUrl.startsWith('/downloads/')) {
+    return `${API_BASE_URL}/api${cleanUrl}`;
+  }
+  return `${API_BASE_URL}${cleanUrl}`;
+};
 
 const OrderSuccessPage = () => {
   const { id } = useParams();
@@ -21,21 +39,6 @@ const OrderSuccessPage = () => {
   const [emailStatus, setEmailStatus] = useState('idle'); // idle, sending, sent, error
   const [emailMessage, setEmailMessage] = useState('');
   const { trackEvent } = useAnalytics();
-
-  // Hardware ID generation for license activation
-  const computeHardwareId = async () => {
-    const src = [
-      navigator.userAgent || '',
-      navigator.language || '',
-      navigator.platform || '',
-      (screen?.width || '') + 'x' + (screen?.height || ''),
-      Intl.DateTimeFormat().resolvedOptions().timeZone || '',
-    ].join('|');
-    const enc = new TextEncoder().encode(src);
-    const digest = await crypto.subtle.digest('SHA-256', enc);
-    const arr = Array.from(new Uint8Array(digest));
-    return arr.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 64);
-  };
 
   useEffect(() => {
     const init = async () => {
@@ -70,12 +73,12 @@ const OrderSuccessPage = () => {
 
           // Try to get download URL immediately
           if (purchaseStatus?.download_url) {
-            setDownloadUrl(purchaseStatus.download_url);
+            setDownloadUrl(resolveDownloadUrl(purchaseStatus.download_url));
           } else {
             // Register download to generate URL - usa payment_id do retorno do MP
             try {
               const dlData = await registerDownload(id, { payment_id: payId });
-              if (dlData?.download_url) setDownloadUrl(dlData.download_url);
+              if (dlData?.download_url) setDownloadUrl(resolveDownloadUrl(dlData.download_url));
               // Se retornou email do comprador, preenche o campo
               if (dlData?.email) setEmail(dlData.email);
             } catch (err) {
@@ -100,98 +103,64 @@ const OrderSuccessPage = () => {
   }, [id, searchParams, trackEvent]);
 
   const handleDownload = async () => {
+    // Se já temos URL de download, abre direto
     if (downloadUrl) {
       window.open(downloadUrl, '_blank', 'noopener');
       return;
     }
 
     try {
-      // Hardware ID check and license activation flow
-      const hwid = await computeHardwareId();
-
-      // Tenta download usando payment_id primeiro (não requer autenticação)
+      // Tenta download usando payment_id (principal método após compra)
       if (paymentId) {
-        try {
-          const json = await registerDownload(id, { payment_id: paymentId });
-          if (json?.download_url) {
-            setDownloadUrl(json.download_url);
-            if (json?.email) setEmail(json.email);
-            window.open(json.download_url, '_blank', 'noopener');
-            return;
-          }
-        } catch (e) {
-          console.log('Download by payment_id failed, trying other methods', e);
+        const json = await registerDownload(id, { payment_id: paymentId });
+        if (json?.download_url) {
+          const resolvedUrl = resolveDownloadUrl(json.download_url);
+          setDownloadUrl(resolvedUrl);
+          if (json?.email) setEmail(json.email);
+          window.open(resolvedUrl, '_blank', 'noopener');
+          return;
         }
       }
 
-      // Tenta download usando email se disponível
+      // Se não tem payment_id mas tem email, tenta por email
       if (email) {
-        try {
-          const json = await registerDownload(id, { email });
-          if (json?.download_url) {
-            setDownloadUrl(json.download_url);
-            window.open(json.download_url, '_blank', 'noopener');
-            return;
-          }
-        } catch (e) {
-          console.log('Download by email failed, trying license flow', e);
+        const json = await registerDownload(id, { email });
+        if (json?.download_url) {
+          const resolvedUrl = resolveDownloadUrl(json.download_url);
+          setDownloadUrl(resolvedUrl);
+          window.open(resolvedUrl, '_blank', 'noopener');
+          return;
         }
       }
 
-      // Se não tem email ainda, pede ao usuário
-      if (!email) {
-        alert('Por favor, informe seu e-mail abaixo para ativar a licença e baixar.');
-        document.getElementById('email-input')?.focus();
-        return;
-      }
-
-      // Tenta ativar licença com hardware ID
-      const lic = await activateDeviceLicense({ email, appId: Number(id), hardwareId: hwid });
-      if (!lic?.licensed && !lic?.success) {
-        alert(lic?.message || 'Erro ao validar licença.');
-        return;
-      }
-
-      const d = await downloadByEmail(id, email);
-      if (d?.download_url) {
-        setDownloadUrl(d.download_url);
-        window.open(d.download_url, '_blank', 'noopener');
-      } else {
-        alert('Link de download não encontrado. Verifique seu e-mail.');
-      }
+      // Se chegou aqui, não conseguiu obter URL - mostra erro
+      alert('Não foi possível obter o link de download. Por favor, use o campo abaixo para receber por e-mail.');
 
     } catch (error) {
-      alert('Erro ao processar download: ' + error.message);
+      console.error('Erro no download:', error);
+      alert('Erro ao processar download: ' + (error?.message || 'Tente novamente'));
     }
   };
 
   const handleResendEmail = async (e) => {
     e.preventDefault();
     if (!email) return;
-    
+
     setEmailStatus('sending');
     try {
-      // Reusing downloadByEmail to trigger email send if implemented on backend, 
-      // or simply simulating the "Link sent" feedback if the API sends it automatically on purchase.
-      // Based on AppPurchasePage, downloadByEmail returns the URL, but doesn't explicitly say "resent email".
-      // However, usually this endpoint might trigger an email or we can use the mailto trick from AppPurchasePage.
-      
-      const d = await downloadByEmail(id, email);
+      // Usa registerDownload com email para obter o link
+      const d = await registerDownload(id, { email });
       if (d?.download_url) {
-        // Prepare mailto link as fallback/confirmation
-        // const subject = encodeURIComponent(`Link de Download - ${app?.name || 'CodeCraft App'}`);
-        // const body = encodeURIComponent(`Aqui está seu link de download: ${d.download_url}`);
-        // window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank'); // Optional: open mail client
-        
+        const resolvedUrl = resolveDownloadUrl(d.download_url);
         setEmailStatus('sent');
-        setEmailMessage('Link enviado com sucesso!');
-        setDownloadUrl(d.download_url);
+        setEmailMessage('Link recuperado com sucesso! Clique em "Baixar Executável" acima.');
+        setDownloadUrl(resolvedUrl);
       } else {
         throw new Error('Não foi possível recuperar o link.');
       }
-    } catch {
+    } catch (err) {
       setEmailStatus('error');
-      setEmailMessage('Erro ao enviar. Verifique o e-mail.');
+      setEmailMessage(err?.message || 'Erro ao enviar. Verifique o e-mail.');
     }
   };
 
