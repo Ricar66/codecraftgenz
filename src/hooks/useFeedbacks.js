@@ -1,7 +1,7 @@
 // src/hooks/useFeedbacks.js
 import { useState, useEffect, useCallback } from 'react';
 
-import { getFeedbacks, submitFeedback, FeedbackValidator, isSpamSubmission } from '../services/feedbackAPI';
+import { getFeedbacks, getLatestFeedbacks, submitFeedback, FeedbackValidator, isSpamSubmission } from '../services/feedbackAPI';
 
 export default function useFeedbacks(options = {}) {
   const {
@@ -66,4 +66,33 @@ export default function useFeedbacks(options = {}) {
     setFilters: (f) => { setFilters(f); fetchAll({ page: 1, ...f }); },
     submit,
   };
+}
+
+/**
+ * Hook para buscar os últimos feedbacks (carrossel da página inicial)
+ */
+export function useLatestFeedbacks() {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchLatest = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const feedbacks = await getLatestFeedbacks();
+      setItems(feedbacks);
+    } catch (e) {
+      setError({ message: e.message });
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLatest();
+  }, [fetchLatest]);
+
+  return { items, loading, error, refresh: fetchLatest };
 }

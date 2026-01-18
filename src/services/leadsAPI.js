@@ -1,9 +1,9 @@
 // src/services/leadsAPI.js
 // Serviço para captura de leads via API externa e TrackPro
 
-// URL da API de leads - configurável via variável de ambiente
-const LEADS_API_URL = import.meta.env.VITE_LEADS_API_URL || '';
-const LEADS_API_KEY = import.meta.env.VITE_LEADS_API_KEY || '';
+// URL da API de leads - TrackPro webhook
+const LEADS_API_URL = import.meta.env.VITE_LEADS_API_URL || 'https://app.trackpro.com.br/api/v1/public/leads/webhook';
+const LEADS_API_KEY = import.meta.env.VITE_LEADS_API_KEY || 'tp_d50cddbcae54fc3c57608ca271b2a6470b7b3a7878421a07';
 
 /**
  * Envia evento para TrackPro (se disponível)
@@ -36,16 +36,16 @@ function getUtmParams() {
 
   const params = new URLSearchParams(window.location.search);
   return {
-    utmSource: params.get('utm_source') || undefined,
-    utmMedium: params.get('utm_medium') || undefined,
-    utmCampaign: params.get('utm_campaign') || undefined,
-    utmTerm: params.get('utm_term') || undefined,
-    utmContent: params.get('utm_content') || undefined,
+    utm_source: params.get('utm_source') || '',
+    utm_medium: params.get('utm_medium') || '',
+    utm_campaign: params.get('utm_campaign') || '',
+    utm_term: params.get('utm_term') || '',
+    utm_content: params.get('utm_content') || '',
   };
 }
 
 /**
- * Captura um lead e envia para a API externa
+ * Captura um lead e envia para a API TrackPro
  * @param {Object} leadData - Dados do lead
  * @param {string} leadData.formId - Identificador do formulário (ex: 'crafter-signup', 'app-purchase')
  * @param {string} leadData.name - Nome do lead
@@ -55,27 +55,29 @@ function getUtmParams() {
  * @returns {Promise<Object>} Resposta da API
  */
 export async function captureLead(leadData) {
-  // Se não há API key configurada, apenas loga e retorna
-  if (!LEADS_API_KEY) {
-    if (import.meta.env.DEV) {
-      console.log('[LeadsAPI] API Key não configurada. Lead capturado localmente:', leadData);
-    }
-    return { success: true, local: true };
-  }
-
   try {
     const utmParams = getUtmParams();
 
+    // Formato compatível com TrackPro webhook
     const payload = {
-      formId: leadData.formId || 'unknown',
       name: leadData.name || '',
       email: leadData.email || '',
-      phone: leadData.phone || undefined,
-      pageUrl: typeof window !== 'undefined' ? window.location.href : '',
+      phone: leadData.phone || '',
+      // Campos extras vão em custom
+      custom: {
+        form_id: leadData.formId || 'unknown',
+        ...(leadData.customFields || {}),
+      },
+      // UTMs
       ...utmParams,
-      // Campos personalizados
-      ...(leadData.customFields || {}),
+      // Dados de contexto
+      page_url: typeof window !== 'undefined' ? window.location.href : '',
+      referrer: typeof document !== 'undefined' ? document.referrer : '',
     };
+
+    if (import.meta.env.DEV) {
+      console.log('[LeadsAPI] Enviando lead:', payload);
+    }
 
     const response = await fetch(LEADS_API_URL, {
       method: 'POST',
@@ -88,7 +90,7 @@ export async function captureLead(leadData) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP ${response.status}`);
+      throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
     }
 
     const result = await response.json();
@@ -100,7 +102,9 @@ export async function captureLead(leadData) {
     return { success: true, ...result };
   } catch (error) {
     // Não bloqueia o fluxo principal se a captura falhar
-    console.error('[LeadsAPI] Erro ao capturar lead:', error.message);
+    if (import.meta.env.DEV) {
+      console.error('[LeadsAPI] Erro ao capturar lead:', error.message);
+    }
     return { success: false, error: error.message };
   }
 }

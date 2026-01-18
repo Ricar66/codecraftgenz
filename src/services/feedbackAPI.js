@@ -1,8 +1,8 @@
 // src/services/feedbackAPI.js
+import { API_BASE_URL } from '../lib/apiConfig.js';
 
-// A URL base da API é a raiz do nosso próprio servidor,
-// já que o server.js está servindo tanto o frontend quanto a API.
-const API_BASE_URL = '/api'; // Aponta para o nosso próprio backend
+// A URL base da API é configurada dinamicamente no apiConfig.js
+// Em produção aponta para o backend no Render
 
 const MODERATION_ENABLED = (import.meta.env.VITE_FEEDBACK_MODERATION === 'true');
 
@@ -92,7 +92,7 @@ export async function submitFeedback(feedback, { honeypot = '' } = {}) {
   console.log('Enviando feedback para API:', sanitizedData);
 
   try {
-    const response = await fetch(`${API_BASE_URL}/feedbacks`, {
+    const response = await fetch(`${API_BASE_URL}/api/feedbacks`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -135,13 +135,12 @@ export async function getFeedbacks({ page = 1, limit = 10, origem = 'pagina_inic
   const params = new URLSearchParams({
     limit: limit.toString()
   });
-  
+
   if (origem) {
     params.append('origem', origem);
   }
 
-  const url = `${API_BASE_URL}/feedbacks?${params.toString()}`;
-  console.log('Buscando feedbacks da API:', url);
+  const url = `${API_BASE_URL}/api/feedbacks?${params.toString()}`;
 
   try {
     const response = await fetch(url, {
@@ -155,11 +154,19 @@ export async function getFeedbacks({ page = 1, limit = 10, origem = 'pagina_inic
       throw new Error(responseBody.error || `Erro ${response.status} ao buscar feedbacks.`);
     }
 
-    // A API backend retorna um array de feedbacks diretamente
-    const items = Array.isArray(responseBody) ? responseBody : [];
-    console.log(`Recebidos ${items.length} feedbacks da API.`);
+    // A API backend retorna { success: true, data: [...] }
+    const rawItems = responseBody?.data || (Array.isArray(responseBody) ? responseBody : []);
+    const items = rawItems.map(item => ({
+      id: item.id,
+      nome: item.nome || 'Anônimo',
+      email: item.email || '',
+      mensagem: item.mensagem || item.comment || '',
+      origem: item.origem || 'site',
+      rating: item.rating || 5,
+      data_criacao: item.data_criacao || item.createdAt,
+    }));
 
-    // Simulamos a paginação aqui
+    // Paginação client-side
     const total = items.length;
     const totalPages = Math.ceil(total / limit);
     const paginatedItems = items.slice((page - 1) * limit, page * limit);
@@ -180,5 +187,33 @@ export async function getFeedbacks({ page = 1, limit = 10, origem = 'pagina_inic
         throw new Error('Não foi possível conectar ao servidor. Verifique sua internet.');
     }
     throw error;
+  }
+}
+
+/**
+ * Busca os últimos 5 feedbacks para o carrossel da página inicial.
+ * @returns {Promise<Array>} Array com os últimos 5 feedbacks.
+ */
+export async function getLatestFeedbacks() {
+  const url = `${API_BASE_URL}/api/feedbacks/latest`;
+
+  try {
+    const response = await fetch(url, {
+      headers: { 'Accept': 'application/json' }
+    });
+
+    const responseBody = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(responseBody.error || `Erro ${response.status}`);
+    }
+
+    // A API retorna { success: true, data: [...] }
+    const items = responseBody?.data || [];
+    return items;
+
+  } catch (error) {
+    console.error('Falha ao buscar últimos feedbacks:', error);
+    return []; // Retorna array vazio em caso de erro
   }
 }

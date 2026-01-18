@@ -3,11 +3,11 @@ import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 
 import logoCodecraft from '../../assets/logo-codecraft.svg';
-import AppCard from '../../components/AppCard/AppCard.jsx';
 import CasesSection from '../../components/CasesSection/CasesSection';
 import CompanySection from '../../components/CompanySection/CompanySection';
 import CrafterModal from '../../components/CrafterModal/CrafterModal';
 import FeaturesSection from '../../components/FeaturesSection/FeaturesSection';
+import FeedbackShowcase from '../../components/Feedbacks/FeedbackShowcase';
 import Hero from '../../components/Hero/Hero';
 import MetricsSection from '../../components/MetricsSection/MetricsSection';
 import Navbar from '../../components/Navbar/Navbar';
@@ -76,6 +76,16 @@ const HomePage = () => {
       <div className="section-block">
         <div className="section-card">
           <CasesSection />
+        </div>
+      </div>
+
+      <div className={styles.sectionBlock}>
+        <div className={styles.sectionCard}>
+          <div className={styles.feedbackSection}>
+            <h2 className={styles.sectionTitle}>O que dizem nossos clientes</h2>
+            <p className={styles.sectionSubtitle}>Feedbacks reais de quem já usou nossos serviços</p>
+            <FeedbackShowcase autoIntervalMs={5000} showControls={true} />
+          </div>
         </div>
       </div>
 
