@@ -1,8 +1,22 @@
 // src/services/leadsAPI.js
 // Serviço para captura de leads via API externa e TrackPro
 
-// URL da API de leads - TrackPro webhook
-const LEADS_API_URL = import.meta.env.VITE_LEADS_API_URL || 'https://app.trackpro.com.br/api/v1/public/leads/webhook';
+// Detecta se está em produção (não localhost)
+const isProduction = typeof window !== 'undefined' &&
+  !window.location.hostname.includes('localhost') &&
+  !window.location.hostname.includes('127.0.0.1');
+
+// URL da API de leads - TrackPro webhook (sempre usa TrackPro em produção)
+const TRACKPRO_WEBHOOK_URL = 'https://app.trackpro.com.br/api/v1/public/leads/webhook';
+const envLeadsUrl = import.meta.env.VITE_LEADS_API_URL;
+
+// Se está em produção e a URL configurada é localhost, ignora e usa TrackPro
+const LEADS_API_URL = (() => {
+  if (!envLeadsUrl) return TRACKPRO_WEBHOOK_URL;
+  if (isProduction && envLeadsUrl.includes('localhost')) return TRACKPRO_WEBHOOK_URL;
+  return envLeadsUrl;
+})();
+
 const LEADS_API_KEY = import.meta.env.VITE_LEADS_API_KEY || 'tp_d50cddbcae54fc3c57608ca271b2a6470b7b3a7878421a07';
 
 /**
