@@ -6,14 +6,7 @@ import { useLatestFeedbacks } from '../../hooks/useFeedbacks';
 
 import styles from './FeedbackShowcase.module.css';
 
-// Dados de fallback quando não há feedbacks reais
-const FALLBACK_FEEDBACKS = [
-  { id: 1, text: "Ótimo produto, superou minhas expectativas!", author: "Ana Silva", rating: 5 },
-  { id: 2, text: "Atendimento rápido e eficiente, recomendo.", author: "Carlos Santos", rating: 5 },
-  { id: 3, text: "Qualidade excelente, vale cada centavo.", author: "Maria Oliveira", rating: 5 },
-  { id: 4, text: "Poderia melhorar no prazo de entrega.", author: "João Costa", rating: 4 },
-  { id: 5, text: "Interface intuitiva e fácil de usar.", author: "Lucia Ferreira", rating: 5 }
-];
+// Sem dados de fallback - exibimos mensagem quando não há feedbacks reais
 
 const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
   const { items, loading } = useLatestFeedbacks();
@@ -21,7 +14,7 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
   const [isPaused, setIsPaused] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
-  // Usar dados reais ou fallback
+  // Usar apenas dados reais da API
   const feedbacks = useMemo(() => {
     if (items && items.length > 0) {
       return items.map(item => ({
@@ -34,7 +27,7 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
         type: 'feedback'
       }));
     }
-    return FALLBACK_FEEDBACKS;
+    return []; // Retorna array vazio se não houver feedbacks reais
   }, [items]);
 
   // Detectar preferência de movimento reduzido
@@ -127,7 +120,10 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
         {feedbacks.length === 0 ? (
           <div className={styles.emptyState}>
             <p>
-              Nenhum feedback disponível. <Link to="/feedbacks">Seja o primeiro a enviar!</Link>
+              Em breve, depoimentos de nossos clientes aparecerão aqui.
+            </p>
+            <p>
+              <Link to="/feedbacks">Já usou nossos serviços? Deixe seu feedback!</Link>
             </p>
           </div>
         ) : (
