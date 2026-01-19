@@ -2678,7 +2678,9 @@ export function Apps() {
               try {
                 setUploadBusy(true); setUploadError('');
                 const r = await uploadAppExecutable(form.id, exeFile);
-                setForm(s=>({ ...s, exec_url: r.download_url || s.exec_url }));
+                // Backend retorna { success: true, data: { file_name, file_size, executable_url } }
+                const execUrl = r?.data?.executable_url || r?.executable_url || r?.download_url || s.exec_url;
+                setForm(s=>({ ...s, exec_url: execUrl }));
                 setExeFile(null);
               } catch (e) {
                 setUploadError(e.message || 'Falha no upload');
