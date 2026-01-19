@@ -174,6 +174,18 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
         const causeMsg = Array.isArray(details?.cause) ? (details.cause[0]?.message || details.cause[0]?.description) : '';
         setError(String(details?.message || causeMsg || 'Dados incompletos do cartão. Verifique e reenvie.'));
       }
+      else if (status === 409) {
+        // Pagamento duplicado ou idempotency conflict
+        setError('Pagamento já processado ou em andamento. Aguarde alguns segundos e verifique seu e-mail.');
+      }
+      else if (status === 422) {
+        // Dados inválidos que passaram validação do frontend
+        setError('Dados inválidos. Verifique número do cartão, validade e CVV.');
+      }
+      else if (status === 429) {
+        // Rate limit excedido
+        setError('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
+      }
       else setError(error?.message || 'Falha ao processar pagamento');
     }
   };
