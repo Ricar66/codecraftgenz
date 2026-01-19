@@ -163,7 +163,15 @@ const AppPurchasePage = () => {
   // Fluxo Wallet (Checkout Pro)
   const startWalletCheckout = async () => {
     try {
-      const pref = await createPaymentPreference(id);
+      const email = String(payerInfo.email || user?.email || '').trim();
+      const name = String(payerInfo.name || user?.name || '').trim();
+
+      if (!email) {
+        alert('Por favor, preencha seu e-mail antes de continuar.');
+        return;
+      }
+
+      const pref = await createPaymentPreference(id, { email, name });
       const init = pref?.init_point || pref?.data?.init_point || '';
       if (init) {
         window.open(init, '_blank', 'noopener');
