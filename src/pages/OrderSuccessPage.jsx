@@ -51,33 +51,41 @@ const OrderSuccessPage = () => {
         const prefId = searchParams.get('preference_id');
         const payId = searchParams.get('payment_id');
         const statusParam = searchParams.get('status');
-        
+
         if (payId) setPaymentId(payId);
 
-        const purchaseStatus = await getPurchaseStatus(id, { 
-          preference_id: prefId, 
-          payment_id: payId, 
-          status: statusParam 
+        const purchaseStatusResp = await getPurchaseStatus(id, {
+          preference_id: prefId,
+          payment_id: payId,
+          status: statusParam
         });
+
+        // Backend retorna { success: true, data: { status, download_url, ... } }
+        const purchaseStatus = purchaseStatusResp?.data || purchaseStatusResp;
+        console.log('[OrderSuccess] purchaseStatus:', purchaseStatus);
 
         const currentStatus = purchaseStatus?.status || statusParam;
 
         if (currentStatus === 'approved') {
           setStatus('approved');
-          trackEvent('purchase_success', { 
-            app_id: id, 
+          trackEvent('purchase_success', {
+            app_id: id,
             app_name: appData?.name,
             payment_id: payId,
-            price: appData?.price 
+            price: appData?.price
           }, 'conversion');
 
           // Try to get download URL immediately
           if (purchaseStatus?.download_url) {
+            console.log('[OrderSuccess] download_url from purchaseStatus:', purchaseStatus.download_url);
             setDownloadUrl(resolveDownloadUrl(purchaseStatus.download_url));
           } else {
             // Register download to generate URL - usa payment_id do retorno do MP
             try {
-              const dlData = await registerDownload(id, { payment_id: payId });
+              const dlResp = await registerDownload(id, { payment_id: payId });
+              // Backend retorna { success: true, data: { download_url, ... } }
+              const dlData = dlResp?.data || dlResp;
+              console.log('[OrderSuccess] dlData:', dlData);
               if (dlData?.download_url) setDownloadUrl(resolveDownloadUrl(dlData.download_url));
               // Se retornou email do comprador, preenche o campo
               if (dlData?.email) setEmail(dlData.email);
@@ -112,7 +120,10 @@ const OrderSuccessPage = () => {
     try {
       // Tenta download usando payment_id (principal método após compra)
       if (paymentId) {
-        const json = await registerDownload(id, { payment_id: paymentId });
+        const resp = await registerDownload(id, { payment_id: paymentId });
+        // Backend retorna { success: true, data: { download_url, ... } }
+        const json = resp?.data || resp;
+        console.log('[handleDownload] resp:', json);
         if (json?.download_url) {
           const resolvedUrl = resolveDownloadUrl(json.download_url);
           setDownloadUrl(resolvedUrl);
@@ -124,7 +135,9 @@ const OrderSuccessPage = () => {
 
       // Se não tem payment_id mas tem email, tenta por email
       if (email) {
-        const json = await registerDownload(id, { email });
+        const resp = await registerDownload(id, { email });
+        // Backend retorna { success: true, data: { download_url, ... } }
+        const json = resp?.data || resp;
         if (json?.download_url) {
           const resolvedUrl = resolveDownloadUrl(json.download_url);
           setDownloadUrl(resolvedUrl);
@@ -149,7 +162,9 @@ const OrderSuccessPage = () => {
     setEmailStatus('sending');
     try {
       // Usa registerDownload com email para obter o link
-      const d = await registerDownload(id, { email });
+      const resp = await registerDownload(id, { email });
+      // Backend retorna { success: true, data: { download_url, ... } }
+      const d = resp?.data || resp;
       if (d?.download_url) {
         const resolvedUrl = resolveDownloadUrl(d.download_url);
         setEmailStatus('sent');
