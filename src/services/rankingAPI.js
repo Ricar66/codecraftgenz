@@ -4,10 +4,32 @@ import { apiRequest } from '../lib/apiConfig.js';
 
 /**
  * Busca dados do ranking
- * @returns {Promise<Object>} Dados do ranking (actives, inactives, top3, settings)
+ * @returns {Promise<Object>} Dados do ranking (crafters, top3)
  */
 export async function getRanking() {
-  return await apiRequest('/api/ranking', { method: 'GET', headers: { 'Cache-Control': 'no-cache' } });
+  try {
+    // Busca crafters e top3 em paralelo
+    const [craftersResp, top3Resp] = await Promise.all([
+      apiRequest('/api/crafters', { method: 'GET', headers: { 'Cache-Control': 'no-cache' } }),
+      apiRequest('/api/crafters/top3', { method: 'GET', headers: { 'Cache-Control': 'no-cache' } }).catch(() => ({ data: [] }))
+    ]);
+
+    // Extrai dados da resposta (backend retorna { success: true, data: [...] })
+    const crafters = craftersResp?.data || craftersResp || [];
+    const top3Raw = top3Resp?.data || top3Resp || [];
+
+    // Formata top3 para o formato esperado pelo frontend
+    const top3 = Array.isArray(top3Raw) ? top3Raw.map((t, idx) => ({
+      crafter_id: t.crafter_id || t.crafterId || t.id,
+      position: t.position || t.posicao || (idx + 1),
+      reward: t.reward || t.recompensa || ''
+    })) : [];
+
+    return { crafters: Array.isArray(crafters) ? crafters : [], top3 };
+  } catch (error) {
+    console.error('Erro ao buscar ranking:', error);
+    throw error;
+  }
 }
 
 /**
