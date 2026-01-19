@@ -1,0 +1,157 @@
+/* src/admin/components/Pagination.module.css */
+/* Componente de Paginacao padronizado para o Admin */
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--admin-space-md, 16px);
+  padding: var(--admin-space-md, 16px) 0;
+}
+
+/* Info text */
+.info {
+  color: var(--admin-text-muted, rgba(255, 255, 255, 0.75));
+  font-size: 0.875rem;
+}
+
+/* Items per page selector */
+.perPage {
+  display: flex;
+  align-items: center;
+  gap: var(--admin-space-xs, 8px);
+  color: var(--admin-text-muted, rgba(255, 255, 255, 0.75));
+  font-size: 0.875rem;
+}
+
+.select {
+  padding: 6px 10px;
+  border: 1px solid var(--admin-border, rgba(255, 255, 255, 0.18));
+  border-radius: var(--admin-radius-sm, 8px);
+  background: transparent;
+  color: var(--admin-text, #fff);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.select:hover {
+  border-color: var(--admin-border-hover, rgba(255, 255, 255, 0.28));
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--admin-accent, #00E4F2);
+  box-shadow: 0 0 0 2px var(--admin-accent-glow, rgba(0, 228, 242, 0.18));
+}
+
+/* Navigation */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--admin-space-xs, 8px);
+}
+
+/* Page buttons container */
+.pages {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Base button style */
+.btn,
+.pageBtn {
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--admin-border, rgba(255, 255, 255, 0.18));
+  border-radius: var(--admin-radius-sm, 8px);
+  background: transparent;
+  color: var(--admin-text, #fff);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn:hover:not(:disabled),
+.pageBtn:hover:not(:disabled):not(.active) {
+  background: var(--admin-surface-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--admin-border-hover, rgba(255, 255, 255, 0.28));
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Active page */
+.pageBtn.active {
+  background: var(--admin-accent, #00E4F2);
+  border-color: var(--admin-accent, #00E4F2);
+  color: #000;
+  font-weight: 600;
+}
+
+/* Focus states */
+.btn:focus-visible,
+.pageBtn:focus-visible {
+  outline: 2px solid var(--admin-accent, #00E4F2);
+  outline-offset: 2px;
+}
+
+/* Ellipsis */
+.ellipsis {
+  padding: 0 8px;
+  color: var(--admin-text-muted, rgba(255, 255, 255, 0.5));
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .pagination {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--admin-space-sm, 12px);
+  }
+
+  .info {
+    text-align: center;
+    order: 3;
+  }
+
+  .perPage {
+    justify-content: center;
+    order: 2;
+  }
+
+  .nav {
+    justify-content: center;
+    order: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn,
+  .pageBtn {
+    min-width: 32px;
+    height: 32px;
+    font-size: 0.8125rem;
+  }
+
+  /* Esconder alguns botoes de pagina em mobile */
+  .pages {
+    max-width: 200px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .pages::-webkit-scrollbar {
+    display: none;
+  }
+}

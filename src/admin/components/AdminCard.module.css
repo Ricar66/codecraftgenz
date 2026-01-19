@@ -1,0 +1,221 @@
+/* src/admin/components/AdminCard.module.css */
+/* Card padronizado para o painel Admin */
+
+.card {
+  background: var(--admin-bg, transparent);
+  border: 1px solid var(--admin-border, rgba(255, 255, 255, 0.18));
+  border-radius: var(--admin-radius-md, 12px);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+/* ==========================================================================
+   VARIANTS
+   ========================================================================== */
+
+.default {
+  background: var(--admin-bg, transparent);
+}
+
+.elevated {
+  background: var(--admin-surface, rgba(255, 255, 255, 0.04));
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+
+.outlined {
+  background: transparent;
+  border-width: 2px;
+}
+
+/* ==========================================================================
+   PADDING SIZES
+   ========================================================================== */
+
+.paddingSm {
+  padding: var(--admin-space-sm, 12px);
+}
+
+.paddingMd {
+  padding: var(--admin-space-md, 16px);
+}
+
+.paddingLg {
+  padding: var(--admin-space-lg, 24px);
+}
+
+/* ==========================================================================
+   STATES
+   ========================================================================== */
+
+.hoverable:hover {
+  border-color: var(--admin-border-hover, rgba(255, 255, 255, 0.28));
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:active {
+  transform: scale(0.98);
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+/* ==========================================================================
+   HEADER
+   ========================================================================== */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--admin-space-md, 16px);
+  padding: var(--admin-space-md, 16px);
+  border-bottom: 1px solid var(--admin-border, rgba(255, 255, 255, 0.12));
+}
+
+.header.noBorder {
+  border-bottom: none;
+}
+
+.headerContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--admin-text, #fff);
+  line-height: 1.4;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  color: var(--admin-text-muted, rgba(255, 255, 255, 0.75));
+}
+
+.headerActions {
+  display: flex;
+  gap: var(--admin-space-xs, 8px);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   BODY
+   ========================================================================== */
+
+.body {
+  padding: var(--admin-space-md, 16px);
+}
+
+.body.noPadding {
+  padding: 0;
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+
+.footer {
+  display: flex;
+  gap: var(--admin-space-xs, 8px);
+  padding: var(--admin-space-md, 16px);
+  border-top: 1px solid var(--admin-border, rgba(255, 255, 255, 0.12));
+}
+
+.footer.noBorder {
+  border-top: none;
+}
+
+.alignLeft {
+  justify-content: flex-start;
+}
+
+.alignCenter {
+  justify-content: center;
+}
+
+.alignRight {
+  justify-content: flex-end;
+}
+
+.alignBetween {
+  justify-content: space-between;
+}
+
+/* ==========================================================================
+   SECTION
+   ========================================================================== */
+
+.section {
+  border-bottom: 1px solid var(--admin-border, rgba(255, 255, 255, 0.08));
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--admin-space-sm, 12px) var(--admin-space-md, 16px);
+  background: var(--admin-surface, rgba(255, 255, 255, 0.02));
+}
+
+.collapsible .sectionHeader {
+  cursor: pointer;
+  user-select: none;
+}
+
+.collapsible .sectionHeader:hover {
+  background: var(--admin-surface-hover, rgba(255, 255, 255, 0.04));
+}
+
+.sectionTitle {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--admin-text-muted, rgba(255, 255, 255, 0.75));
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.chevron {
+  font-size: 1rem;
+  color: var(--admin-text-muted, rgba(255, 255, 255, 0.5));
+  transition: transform 0.2s ease;
+}
+
+.chevron.open {
+  transform: rotate(90deg);
+}
+
+.sectionContent {
+  padding: var(--admin-space-md, 16px);
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .headerActions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .footer {
+    flex-wrap: wrap;
+  }
+}

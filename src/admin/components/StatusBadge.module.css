@@ -1,0 +1,116 @@
+/* src/admin/components/StatusBadge.module.css */
+/* Badge de status padronizado para o Admin */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: transform 0.15s ease;
+}
+
+/* Sizes */
+.sm {
+  padding: 2px 8px;
+  font-size: 0.6875rem;
+}
+
+.md {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+}
+
+.lg {
+  padding: 6px 14px;
+  font-size: 0.875rem;
+}
+
+/* ==========================================================================
+   VARIANTS
+   ========================================================================== */
+
+/* Success (verde) */
+.success {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10B981;
+}
+
+/* Warning (amarelo/laranja) */
+.warning {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #F59E0B;
+}
+
+/* Error (vermelho) */
+.error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #EF4444;
+}
+
+/* Info (azul) */
+.info {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #3B82F6;
+}
+
+/* Neutral (cinza) */
+.neutral {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Primary (magenta) */
+.primary {
+  background: rgba(209, 43, 242, 0.15);
+  border: 1px solid rgba(209, 43, 242, 0.3);
+  color: #D12BF2;
+}
+
+/* Accent (ciano) */
+.accent {
+  background: rgba(0, 228, 242, 0.15);
+  border: 1px solid rgba(0, 228, 242, 0.3);
+  color: #00E4F2;
+}
+
+/* ==========================================================================
+   DOT INDICATOR
+   ========================================================================== */
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* Pulse animation */
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ==========================================================================
+   HOVER EFFECTS (optional)
+   ========================================================================== */
+
+.badge:hover {
+  transform: scale(1.02);
+}

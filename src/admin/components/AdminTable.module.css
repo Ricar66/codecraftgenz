@@ -1,0 +1,157 @@
+/* src/admin/components/AdminTable.module.css */
+/* Tabela responsiva padronizada para o Admin */
+
+.tableWrapper {
+  background: var(--admin-bg, transparent);
+  border: 1px solid var(--admin-border, rgba(255, 255, 255, 0.18));
+  border-radius: var(--admin-radius-md, 12px);
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+/* Header */
+.table thead th {
+  text-align: left;
+  padding: var(--admin-space-sm, 12px) var(--admin-space-md, 16px);
+  background: var(--admin-surface, rgba(255, 255, 255, 0.04));
+  color: var(--admin-text, #fff);
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--admin-border, rgba(255, 255, 255, 0.18));
+  white-space: nowrap;
+}
+
+/* Body */
+.table tbody td {
+  padding: var(--admin-space-sm, 12px) var(--admin-space-md, 16px);
+  color: var(--admin-text, #fff);
+  font-size: 0.875rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Hoverable */
+.hoverable .table tbody tr:hover {
+  background: var(--admin-accent-glow, rgba(0, 228, 242, 0.08));
+}
+
+/* Striped */
+.striped .table tbody tr:nth-child(even) {
+  background: var(--admin-surface, rgba(255, 255, 255, 0.02));
+}
+
+/* Clickable rows */
+.clickable {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+/* Loading state */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--admin-space-sm, 12px);
+  padding: var(--admin-space-xl, 32px);
+  color: var(--admin-text-muted, rgba(255, 255, 255, 0.75));
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--admin-border, rgba(255, 255, 255, 0.18));
+  border-top-color: var(--admin-accent, #00E4F2);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Empty state */
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--admin-space-xl, 32px);
+  color: var(--admin-text-muted, rgba(255, 255, 255, 0.75));
+  font-size: 0.875rem;
+}
+
+/* ==========================================================================
+   RESPONSIVE - Mobile first
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .tableWrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table {
+    font-size: 0.8125rem;
+  }
+
+  .table thead th,
+  .table tbody td {
+    padding: var(--admin-space-xs, 8px) var(--admin-space-sm, 12px);
+  }
+}
+
+/* Mobile: transforma tabela em cards */
+@media (max-width: 640px) {
+  .table {
+    min-width: 0;
+  }
+
+  .table thead {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  .table tbody tr {
+    display: block;
+    margin-bottom: var(--admin-space-sm, 12px);
+    border: 1px solid var(--admin-border, rgba(255, 255, 255, 0.18));
+    border-radius: var(--admin-radius-sm, 8px);
+    background: var(--admin-surface, rgba(255, 255, 255, 0.02));
+  }
+
+  .table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--admin-space-xs, 8px) var(--admin-space-sm, 12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    text-align: right;
+  }
+
+  .table tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--admin-text-muted, rgba(255, 255, 255, 0.75));
+    text-align: left;
+    flex-shrink: 0;
+    margin-right: var(--admin-space-sm, 12px);
+  }
+
+  .table tbody td:last-child {
+    border-bottom: none;
+  }
+
+  .hoverable .table tbody tr:hover {
+    border-color: var(--admin-accent, #00E4F2);
+  }
+}
