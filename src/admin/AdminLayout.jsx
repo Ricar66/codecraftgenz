@@ -2678,11 +2678,18 @@ export function Apps() {
               try {
                 setUploadBusy(true); setUploadError('');
                 const r = await uploadAppExecutable(form.id, exeFile);
+                console.log('[Upload] Resposta:', r);
                 // Backend retorna { success: true, data: { file_name, file_size, executable_url } }
-                const execUrl = r?.data?.executable_url || r?.executable_url || r?.download_url || s.exec_url;
-                setForm(s=>({ ...s, exec_url: execUrl }));
+                const execUrl = r?.data?.executable_url || r?.executable_url || r?.download_url;
+                console.log('[Upload] execUrl extraído:', execUrl);
+                if (execUrl) {
+                  setForm(s=>({ ...s, exec_url: execUrl }));
+                } else {
+                  setUploadError('Upload ok mas URL não retornada');
+                }
                 setExeFile(null);
               } catch (e) {
+                console.error('[Upload] Erro:', e);
                 setUploadError(e.message || 'Falha no upload');
               } finally { setUploadBusy(false); }
             }}>{uploadBusy ? 'Enviando…' : 'Enviar executável'}</button>
