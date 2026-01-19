@@ -128,14 +128,38 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
       const extra = deviceId ? { deviceId } : (typeof window !== 'undefined' && (window.MP_DEVICE_SESSION_ID || window.__MP_DEVICE_ID)) ? { deviceId: (window.MP_DEVICE_SESSION_ID || window.__MP_DEVICE_ID) } : undefined;
       const resp = await createDirectPayment(appId, payload, extra);
       const nextStatus = resp?.status || resp?.data?.status || 'pending';
+      const statusDetail = resp?.status_detail || resp?.data?.status_detail || '';
       if (typeof onStatus === 'function') onStatus(resp);
-      if (nextStatus === 'approved' && typeof onPaymentSuccess === 'function') onPaymentSuccess(resp);
-      else if (nextStatus !== 'approved') {
+
+      if (nextStatus === 'approved' && typeof onPaymentSuccess === 'function') {
+        onPaymentSuccess(resp);
+      } else if (nextStatus === 'rejected') {
+        // Mapear status_detail para mensagem amigável
+        const rejectionMessages = {
+          'cc_rejected_bad_filled_card_number': 'Número do cartão inválido. Verifique e tente novamente.',
+          'cc_rejected_bad_filled_date': 'Data de validade inválida. Verifique e tente novamente.',
+          'cc_rejected_bad_filled_other': 'Dados do cartão incorretos. Verifique todos os campos.',
+          'cc_rejected_bad_filled_security_code': 'Código de segurança (CVV) inválido.',
+          'cc_rejected_blacklist': 'Cartão não autorizado. Use outro cartão.',
+          'cc_rejected_call_for_authorize': 'Ligue para a operadora do cartão para autorizar.',
+          'cc_rejected_card_disabled': 'Cartão desabilitado. Contate sua operadora.',
+          'cc_rejected_card_error': 'Erro no cartão. Tente outro cartão.',
+          'cc_rejected_duplicated_payment': 'Pagamento duplicado. Verifique seu extrato.',
+          'cc_rejected_high_risk': 'Pagamento recusado por segurança. Tente outro cartão.',
+          'cc_rejected_insufficient_amount': 'Saldo insuficiente no cartão.',
+          'cc_rejected_invalid_installments': 'Parcelas não permitidas para este cartão.',
+          'cc_rejected_max_attempts': 'Limite de tentativas excedido. Aguarde e tente novamente.',
+          'cc_rejected_other_reason': 'Pagamento recusado. Tente outro cartão ou forma de pagamento.',
+        };
+        const friendlyMessage = rejectionMessages[statusDetail] || `Pagamento rejeitado: ${statusDetail || 'motivo não informado'}`;
+        setError(friendlyMessage);
+      } else if (nextStatus === 'pending' || nextStatus === 'in_process') {
+        // Pagamento pendente não é erro - redireciona para sucesso
+        if (typeof onPaymentSuccess === 'function') onPaymentSuccess(resp);
+      } else {
         const friendly = resp?.friendly_message || resp?.normalized?.mensagem_usuario || '';
-        const det = resp?.status_detail || resp?.data?.status_detail || '';
-        if (String(nextStatus) === 'rejected') setError(`Pagamento rejeitado${det ? ` (${det})` : ''}`);
-        else if (friendly) setError(friendly);
-        else setError('Dados incompletos do cartão. Verifique e reenvie.');
+        if (friendly) setError(friendly);
+        else setError(`Status do pagamento: ${nextStatus}. Verifique os dados e tente novamente.`);
       }
     } catch (error) {
       const dev = import.meta.env.MODE !== 'production';
