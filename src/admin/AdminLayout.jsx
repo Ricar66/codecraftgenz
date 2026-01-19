@@ -2677,11 +2677,10 @@ export function Apps() {
               const file = e.target.files?.[0] || null;
               setExeFile(file);
               setUploadError('');
-              // Preenche exec_url com o caminho que o backend vai gerar (app-{id}-{version}.{ext})
-              if (file && form.id) {
-                const ext = file.name.split('.').pop()?.toLowerCase() || 'exe';
-                const version = form.version || '1.0.0';
-                const previewUrl = `/downloads/app-${form.id}-${version}.${ext}`;
+              // Preenche exec_url com o nome original do arquivo (sanitizado pelo backend)
+              if (file) {
+                const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/__+/g, '_');
+                const previewUrl = `/downloads/${sanitizedName}`;
                 setForm(s=>({ ...s, exec_url: previewUrl }));
                 console.log('[File] Arquivo selecionado:', file.name, '-> será salvo como:', previewUrl);
               }
