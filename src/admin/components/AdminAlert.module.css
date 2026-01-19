@@ -1,0 +1,145 @@
+/* src/admin/components/AdminAlert.module.css */
+/* Alerta/Toast padronizado para o Admin */
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--admin-space-sm, 12px);
+  padding: var(--admin-space-md, 16px);
+  border-radius: var(--admin-radius-md, 12px);
+  border: 1px solid;
+}
+
+/* ==========================================================================
+   VARIANTS
+   ========================================================================== */
+
+.success {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #10B981;
+}
+
+.success .message {
+  color: rgba(16, 185, 129, 0.9);
+}
+
+.warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.25);
+  color: #F59E0B;
+}
+
+.warning .message {
+  color: rgba(245, 158, 11, 0.9);
+}
+
+.error {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #EF4444;
+}
+
+.error .message {
+  color: rgba(239, 68, 68, 0.9);
+}
+
+.info {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.25);
+  color: #3B82F6;
+}
+
+.info .message {
+  color: rgba(59, 130, 246, 0.9);
+}
+
+/* ==========================================================================
+   ELEMENTS
+   ========================================================================== */
+
+.icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  margin-bottom: 4px;
+}
+
+.message {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Dismiss button */
+.dismiss {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: currentColor;
+  opacity: 0.6;
+  cursor: pointer;
+  border-radius: var(--admin-radius-sm, 8px);
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.dismiss:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dismiss:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   INLINE VERSION
+   ========================================================================== */
+
+.inline {
+  padding: var(--admin-space-xs, 8px) var(--admin-space-sm, 12px);
+  gap: var(--admin-space-xs, 8px);
+}
+
+.inline .title {
+  font-size: 0.875rem;
+  margin-bottom: 2px;
+}
+
+.inline .message {
+  font-size: 0.8125rem;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .alert {
+    padding: var(--admin-space-sm, 12px);
+  }
+
+  .title {
+    font-size: 0.875rem;
+  }
+
+  .message {
+    font-size: 0.8125rem;
+  }
+}

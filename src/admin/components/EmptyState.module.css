@@ -1,0 +1,84 @@
+/* src/admin/components/EmptyState.module.css */
+/* Estado vazio padronizado para o Admin */
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--admin-space-xl, 32px);
+}
+
+/* Sizes */
+.sm {
+  padding: var(--admin-space-md, 16px);
+}
+
+.sm .title {
+  font-size: 0.9375rem;
+}
+
+.sm .description {
+  font-size: 0.8125rem;
+}
+
+.md {
+  padding: var(--admin-space-xl, 32px);
+}
+
+.lg {
+  padding: var(--admin-space-xl, 32px) var(--admin-space-xl, 32px) 48px;
+}
+
+.lg .title {
+  font-size: 1.25rem;
+}
+
+.lg .description {
+  font-size: 0.9375rem;
+}
+
+/* Icon */
+.icon,
+.defaultIcon {
+  margin-bottom: var(--admin-space-md, 16px);
+  color: var(--admin-text-muted, rgba(255, 255, 255, 0.4));
+}
+
+.defaultIcon svg {
+  width: 48px;
+  height: 48px;
+}
+
+.sm .defaultIcon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.lg .defaultIcon svg {
+  width: 64px;
+  height: 64px;
+}
+
+/* Title */
+.title {
+  margin: 0 0 var(--admin-space-xs, 8px);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--admin-text, #fff);
+}
+
+/* Description */
+.description {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--admin-text-muted, rgba(255, 255, 255, 0.6));
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+/* Action */
+.action {
+  margin-top: var(--admin-space-lg, 24px);
+}

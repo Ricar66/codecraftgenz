@@ -1,8 +1,48 @@
-/* Estilos comuns para páginas do Admin */
+/* ==========================================================================
+   ADMIN DESIGN SYSTEM - CodeCraft Gen-Z
+   Estilos comuns para todas as páginas do painel administrativo
+
+   TOKENS UTILIZADOS (de /src/styles/tokens.css):
+   - Cores: --color-primary, --color-accent, --color-secondary
+   - Espaçamento: --space-{1-24}
+   - Border Radius: --radius-{sm-full}
+   - Sombras: --shadow-{sm-2xl}, --shadow-glow-{primary,accent}
+   - Breakpoints: 640px (sm), 768px (md), 1024px (lg), 1280px (xl)
+   ========================================================================== */
+
+/* Alias de tokens para facilitar uso no Admin */
+:root {
+  /* Spacing aliases */
+  --admin-space-xs: var(--space-2);   /* 8px */
+  --admin-space-sm: var(--space-3);   /* 12px */
+  --admin-space-md: var(--space-4);   /* 16px */
+  --admin-space-lg: var(--space-6);   /* 24px */
+  --admin-space-xl: var(--space-8);   /* 32px */
+
+  /* Radius aliases */
+  --admin-radius-sm: var(--radius-md);  /* 8px */
+  --admin-radius-md: var(--radius-lg);  /* 12px */
+  --admin-radius-lg: var(--radius-xl);  /* 16px */
+
+  /* Color aliases para dark theme admin */
+  --admin-bg: transparent;
+  --admin-surface: rgba(255, 255, 255, 0.04);
+  --admin-surface-hover: rgba(255, 255, 255, 0.08);
+  --admin-border: rgba(255, 255, 255, 0.18);
+  --admin-border-hover: rgba(255, 255, 255, 0.28);
+  --admin-text: var(--color-text-primary);
+  --admin-text-muted: rgba(255, 255, 255, 0.75);
+  --admin-accent: var(--color-accent);
+  --admin-accent-glow: rgba(0, 228, 242, 0.18);
+}
+
+/* ==========================================================================
+   BASE LAYOUT
+   ========================================================================== */
 
 .admin-content {
-  padding: 20px;
-  color: #fff;
+  padding: var(--admin-space-lg);
+  color: var(--admin-text);
   max-width: 100%;
   overflow-x: hidden;
   min-width: 0;
@@ -28,9 +68,9 @@
 .filters-section {
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: var(--raio-xl);
+  border-radius: var(--admin-radius-lg);
   box-shadow: none;
-  padding: var(--espaco-xl);
+  padding: var(--admin-space-lg);
   margin: 16px 0;
   display: grid;
   gap: 12px;
@@ -73,15 +113,15 @@
 .card {
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: var(--raio-xl);
+  border-radius: var(--admin-radius-lg);
   box-shadow: none;
-  padding: var(--espaco-xl);
+  padding: var(--admin-space-lg);
 }
 
 .table { 
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: var(--raio-xl); 
+  border-radius: var(--admin-radius-lg); 
   overflow: auto; 
   box-shadow: none;
 }
@@ -251,9 +291,9 @@
   margin: 0 auto; 
   background: transparent; 
   border: 1px solid rgba(255, 255, 255, 0.22); 
-  border-radius: var(--raio-xl); 
+  border-radius: var(--admin-radius-lg); 
   box-shadow: none; 
-  padding: var(--espaco-xl); 
+  padding: var(--admin-space-lg); 
   overflow: hidden; 
 }
 
@@ -313,7 +353,7 @@
    Crafters (Admin) – Cards Responsivos
    --------------------------------------------- */
 .crafterGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
-.crafterCard { display:grid; grid-template-columns: 56px 1fr auto; align-items:center; gap:12px; background: transparent; border: 1px solid rgba(255,255,255,0.22); border-radius: var(--raio-xl); padding: 12px; }
+.crafterCard { display:grid; grid-template-columns: 56px 1fr auto; align-items:center; gap:12px; background: transparent; border: 1px solid rgba(255,255,255,0.22); border-radius: var(--admin-radius-lg); padding: 12px; }
 .crafterAvatar { width:56px; height:56px; border-radius: 50%; overflow:hidden; border:1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); }
 .crafterAvatar img { width:100%; height:100%; object-fit: cover; }
 .crafterInfo { display:flex; flex-direction:column; gap:4px; }
