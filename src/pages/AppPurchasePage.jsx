@@ -172,24 +172,19 @@ const AppPurchasePage = () => {
     }
   }, [id, searchParams, navigate]);
 
-  // Fluxo Wallet (Checkout Pro)
+  // Fluxo Wallet (Checkout Pro) - usuário faz login diretamente no Mercado Pago
   const startWalletCheckout = async () => {
     try {
-      const email = String(payerInfo.email || user?.email || '').trim();
-      const name = String(payerInfo.name || user?.name || '').trim();
+      // Email e nome são opcionais - o usuário pode fazer login direto no MP
+      const email = String(payerInfo.email || user?.email || '').trim() || undefined;
+      const name = String(payerInfo.name || user?.name || '').trim() || undefined;
 
-      if (!email) {
-        // Scroll para o formulário de dados do comprador
-        setStep(1);
-        setTimeout(() => {
-          const el = document.getElementById('buyer-info-section');
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-        alert('Por favor, preencha seu e-mail antes de continuar com o Mercado Pago.');
-        return;
-      }
+      // Cria preferência (email opcional para Wallet)
+      const options = {};
+      if (email) options.email = email;
+      if (name) options.name = name;
 
-      const pref = await createPaymentPreference(id, { email, name });
+      const pref = await createPaymentPreference(id, options);
       const init = pref?.init_point || pref?.data?.init_point || pref?.sandbox_init_point || pref?.data?.sandbox_init_point || '';
       if (init) {
         window.open(init, '_blank', 'noopener');
