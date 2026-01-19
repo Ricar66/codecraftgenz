@@ -63,6 +63,7 @@ const AppPurchasePage = () => {
   const { user } = useAuth();
   const [payerInfo, setPayerInfo] = useState({ name: String(user?.name || ''), email: String(user?.email || ''), identification: '' });
   const [deviceId, setDeviceId] = useState('');
+  const [deviceIdReady, setDeviceIdReady] = useState(false);
   // Controla visibilidade do formulário de cartão via flag de ambiente
   const initialShowCard = (
     import.meta.env.VITE_ENABLE_CARD_PAYMENT_UI === 'true' ||
@@ -74,6 +75,8 @@ const AppPurchasePage = () => {
   const [emailInput, setEmailInput] = useState('');
   const [emailConfirmError, setEmailConfirmError] = useState('');
   const [confirmingDownload, setConfirmingDownload] = useState(false);
+  // Ref para prevenir múltiplos cliques (mutex)
+  const downloadLockRef = React.useRef(false);
 
   const computeHardwareId = async () => {
     const src = [
@@ -111,7 +114,10 @@ const AppPurchasePage = () => {
     );
     const tryGenerateId = () => {
       if (stopped) return false;
-      if (deviceId) return true;
+      if (deviceId) {
+        setDeviceIdReady(true);
+        return true;
+      }
       if (typeof window === 'undefined') return false;
       const mpCtor = window.MercadoPago;
       if (!mpCtor || !pk) return false;
@@ -121,6 +127,7 @@ const AppPurchasePage = () => {
         if (id) {
           const val = String(id);
           setDeviceId(val);
+          setDeviceIdReady(true);
           try { window.__MP_DEVICE_ID = val; } catch (e) { void e }
           return true;
         }
@@ -133,7 +140,12 @@ const AppPurchasePage = () => {
     const interval = setInterval(() => {
       const ok = tryGenerateId();
       if (ok) { clearInterval(interval); stopped = true; }
-      else if (Date.now() - start > 10000) { clearInterval(interval); stopped = true; }
+      else if (Date.now() - start > 10000) {
+        clearInterval(interval);
+        stopped = true;
+        // Mesmo sem device ID, permitimos continuar (fallback)
+        setDeviceIdReady(true);
+      }
     }, 500);
     return () => { stopped = true; try { clearInterval(interval); } catch (e) { void e } };
   }, [deviceId]);
@@ -222,15 +234,28 @@ const AppPurchasePage = () => {
   };
 
   const confirmEmailAndDownload = async () => {
+    // Previne múltiplos cliques usando lock
+    if (downloadLockRef.current) return;
+    downloadLockRef.current = true;
+
     const em = String(emailInput || '').trim();
     const rx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!em || !rx.test(em)) { setEmailConfirmError('Informe um e-mail válido.'); return; }
+    if (!em || !rx.test(em)) {
+      setEmailConfirmError('Informe um e-mail válido.');
+      downloadLockRef.current = false;
+      return;
+    }
     try {
       setConfirmingDownload(true);
       setEmailConfirmError('');
       const hwid = await computeHardwareId();
       const lic = await activateDeviceLicense({ email: em, appId: Number(id), hardwareId: hwid });
-      if (!lic?.licensed) { setEmailConfirmError(lic?.message || 'Licença não validada.'); setConfirmingDownload(false); return; }
+      if (!lic?.licensed) {
+        setEmailConfirmError(lic?.message || 'Licença não validada.');
+        setConfirmingDownload(false);
+        downloadLockRef.current = false;
+        return;
+      }
       const d = await downloadByEmail(id, em);
       const u = d?.download_url || '';
       if (u) {
@@ -256,6 +281,7 @@ const AppPurchasePage = () => {
       setEmailConfirmError(e.message || 'Erro ao validar e-mail para download.');
     } finally {
       setConfirmingDownload(false);
+      downloadLockRef.current = false;
     }
   };
 
