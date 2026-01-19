@@ -179,18 +179,26 @@ const AppPurchasePage = () => {
       const name = String(payerInfo.name || user?.name || '').trim();
 
       if (!email) {
-        alert('Por favor, preencha seu e-mail antes de continuar.');
+        // Scroll para o formulário de dados do comprador
+        setStep(1);
+        setTimeout(() => {
+          const el = document.getElementById('buyer-info-section');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+        alert('Por favor, preencha seu e-mail antes de continuar com o Mercado Pago.');
         return;
       }
 
       const pref = await createPaymentPreference(id, { email, name });
-      const init = pref?.init_point || pref?.data?.init_point || '';
+      const init = pref?.init_point || pref?.data?.init_point || pref?.sandbox_init_point || pref?.data?.sandbox_init_point || '';
       if (init) {
         window.open(init, '_blank', 'noopener');
       } else {
-        alert('Não foi possível iniciar o checkout (Wallet)');
+        console.error('Resposta sem init_point:', pref);
+        alert('Não foi possível iniciar o checkout (Wallet). Verifique os logs ou tente o pagamento direto.');
       }
     } catch (e) {
+      console.error('Erro ao criar preferência:', e);
       alert(e.message || 'Erro ao iniciar checkout (Wallet)');
     }
   };
