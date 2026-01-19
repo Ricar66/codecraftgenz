@@ -2474,7 +2474,7 @@ export function Apps() {
   const [apps, setApps] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
-  const [form, setForm] = React.useState({ id:null, name:'', mainFeature:'', description:'', status:'draft', price:0, thumbnail:'', exec_url:'' });
+  const [form, setForm] = React.useState({ id:null, name:'', mainFeature:'', description:'', status:'draft', price:0, thumbnail:'', exec_url:'', version:'1.0.0' });
   const [priceMask, setPriceMask] = React.useState('R$ 0,00');
   const [exeFile, setExeFile] = React.useState(null);
   const [uploadBusy, setUploadBusy] = React.useState(false);
@@ -2555,7 +2555,7 @@ export function Apps() {
       if (isInvalid(form.thumbnail)) { setError('Thumbnail URL inválida. Use http(s).'); return; }
       if (isInvalid(form.exec_url)) { setError('Exec URL inválida. Use http(s).'); return; }
       await updateApp(form.id, payload);
-      setForm({ id:null, name:'', mainFeature:'', description:'', status:'draft', price:0, thumbnail:'', exec_url:'' });
+      setForm({ id:null, name:'', mainFeature:'', description:'', status:'draft', price:0, thumbnail:'', exec_url:'', version:'1.0.0' });
       refresh();
     } catch (e) {
       alert('Erro ao atualizar app: ' + e.message);
@@ -2584,7 +2584,7 @@ export function Apps() {
       if (isInvalid(form.thumbnail)) { setError('Thumbnail URL inválida. Use http(s).'); return; }
       if (isInvalid(form.exec_url)) { setError('Exec URL inválida. Use http(s).'); return; }
       await createApp(payload);
-      setForm({ id:null, name:'', mainFeature:'', description:'', status:'draft', price:0, thumbnail:'', exec_url:'' });
+      setForm({ id:null, name:'', mainFeature:'', description:'', status:'draft', price:0, thumbnail:'', exec_url:'', version:'1.0.0' });
       refresh();
     } catch (e) {
       alert('Erro ao criar app: ' + e.message);
@@ -2641,7 +2641,7 @@ export function Apps() {
               <td data-label="Exec URL"><a href={a.executableUrl} target="_blank" rel="noopener noreferrer">exec</a></td>
               <td data-label="Ações">
                 <div className="btn-group">
-                  <button className="btn btn-secondary" onClick={()=>setForm({ id:a.id, name:a.name||'', mainFeature:a.mainFeature||'', description:a.description||'', status:a.status||'draft', price:a.price||0, thumbnail:a.thumbnail||'', exec_url:a.executableUrl||'' })}>✏️</button>
+                  <button className="btn btn-secondary" onClick={()=>setForm({ id:a.id, name:a.name||'', mainFeature:a.mainFeature||'', description:a.description||'', status:a.status||'draft', price:a.price||0, thumbnail:a.thumbnail||'', exec_url:a.executableUrl||'', version:a.version||'1.0.0' })}>✏️</button>
                   <button className="btn btn-outline" onClick={async()=>{
                     const curr = String(a.status||'').toLowerCase();
                     const next = curr==='available' ? 'draft' : 'available';
@@ -2677,11 +2677,13 @@ export function Apps() {
               const file = e.target.files?.[0] || null;
               setExeFile(file);
               setUploadError('');
-              // Preenche exec_url com preview do caminho esperado
+              // Preenche exec_url com o caminho que o backend vai gerar (app-{id}-{version}.{ext})
               if (file && form.id) {
                 const ext = file.name.split('.').pop()?.toLowerCase() || 'exe';
-                const previewUrl = `/downloads/app-${form.id}-1.0.0.${ext}`;
+                const version = form.version || '1.0.0';
+                const previewUrl = `/downloads/app-${form.id}-${version}.${ext}`;
                 setForm(s=>({ ...s, exec_url: previewUrl }));
+                console.log('[File] Arquivo selecionado:', file.name, '-> será salvo como:', previewUrl);
               }
             }} />
             <button className="btn btn-outline" disabled={uploadBusy || !exeFile} onClick={async()=>{
