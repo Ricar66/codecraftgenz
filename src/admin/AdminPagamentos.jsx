@@ -115,39 +115,69 @@ export default function AdminPagamentos() {
   const fetchPayments = React.useCallback(async () => {
     setLoading(true); setError(''); setErrorDetails(null);
     try {
+      // Parâmetros para o backend (formato diferente do MP)
       const params = {};
-      if (filters.sort) params.sort = filters.sort;
-      if (filters.criteria) params.criteria = filters.criteria;
-      if (filters.range) params.range = filters.range;
-      if (filters.begin_date) params.begin_date = filters.begin_date;
-      if (filters.end_date) params.end_date = filters.end_date;
-      if (filters.external_reference) params.external_reference = filters.external_reference;
       if (filters.status) params.status = filters.status;
-      // Nota: payment_method_id pode não ser suportado na busca; aplicamos filtro client-side
-      if (filters.collectorId) params['collector.id'] = filters.collectorId;
-      if (filters.payerId) params['payer.id'] = filters.payerId;
-      if (limit) params.limit = String(limit);
-      const offset = (Math.max(1, page) - 1) * Number(limit || 30);
-      params.offset = String(offset);
+      if (filters.begin_date) params.from_date = filters.begin_date.split('T')[0]; // apenas data
+      if (filters.end_date) params.to_date = filters.end_date.split('T')[0];
+      if (emailQuery) params.email = emailQuery;
+      params.limit = String(limit);
+      params.page = String(page);
 
+      console.log('[Pagamentos] Buscando com params:', params);
       const resp = await searchPayments(params);
-      const data = resp?.data?.data || resp?.data || resp; // backend retorna { success, data }
-      const items = Array.isArray(data?.results) ? data.results : [];
-      const clientFiltered = items.filter(p => {
+      console.log('[Pagamentos] Resposta:', resp);
+
+      // Backend retorna { success, data: { items, page, limit, total, totalPages } }
+      // ou formato paginado: { success, data, page, limit, total }
+      const data = resp?.data || resp;
+
+      // Extrai items do formato correto
+      let items = [];
+      if (Array.isArray(data?.items)) {
+        items = data.items;
+      } else if (Array.isArray(data?.results)) {
+        items = data.results;
+      } else if (Array.isArray(data)) {
+        items = data;
+      }
+
+      // Normaliza os dados para exibição (mapeia campos do backend)
+      const normalizedItems = items.map(p => ({
+        id: p.id || p.payment_id,
+        status: p.status,
+        status_detail: p.statusDetail || p.status_detail,
+        payment_method_id: p.paymentMethodId || p.payment_method_id || p.paymentTypeId || p.payment_type_id,
+        transaction_amount: p.amount || p.transaction_amount,
+        installments: p.installments || 1,
+        payer: { email: p.payerEmail || p.payer_email || p.payer?.email },
+        external_reference: p.externalReference || p.external_reference || p.preferenceId || p.preference_id,
+        description: p.description || (p.app?.name ? `App: ${p.app.name}` : ''),
+        date_created: p.createdAt || p.created_at || p.date_created,
+        last_modified: p.updatedAt || p.updated_at || p.last_modified,
+        app: p.app,
+        user: p.user,
+      }));
+
+      // Filtro client-side adicional
+      const clientFiltered = normalizedItems.filter(p => {
         const matchQuery = !query ||
           String(p?.id||'').includes(query) ||
           String(p?.external_reference||'').toLowerCase().includes(query.toLowerCase()) ||
           String(p?.description||'').toLowerCase().includes(query.toLowerCase()) ||
           String(p?.payer?.email||'').toLowerCase().includes(query.toLowerCase());
-        const matchEmail = !emailQuery || String(p?.payer?.email||'').toLowerCase().includes(emailQuery.toLowerCase());
         const matchMethod = !filters.payment_method_id || String(p?.payment_method_id||'') === String(filters.payment_method_id);
-        return matchQuery && matchEmail && matchMethod;
+        return matchQuery && matchMethod;
       });
+
       setResults(clientFiltered);
-      const apiPaging = data?.paging || { total: clientFiltered.length, limit: Number(limit||30), offset };
-      setPaging(apiPaging);
+
+      // Paginação
+      const total = data?.total || resp?.total || clientFiltered.length;
+      const offset = (Math.max(1, page) - 1) * Number(limit || 30);
+      setPaging({ total, limit: Number(limit || 30), offset });
     } catch (e) {
-      // Mensagens amigáveis para casos comuns
+      console.error('[Pagamentos] Erro:', e);
       const msg = String(e?.message || '').toLowerCase();
       if (e?.status === 503 || msg.includes('no_access_token') || msg.includes('sem access token')) {
         setError('Credenciais do Mercado Pago ausentes. Configure MERCADO_PAGO_ACCESS_TOKEN ou OAuth e tente novamente.');

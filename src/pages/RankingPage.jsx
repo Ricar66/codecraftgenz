@@ -26,30 +26,53 @@ export default function RankingPage() {
       setLoading(true);
       setError('');
       const json = await getRanking();
+      console.log('[Ranking] Dados recebidos:', json);
+
       // Montar top3 unindo com crafters para obter nome e pontos
       const crafters = Array.isArray(json?.crafters) ? json.crafters : [];
+
+      // Normalizar campos dos crafters (backend pode usar nomes diferentes)
+      const normalizedCrafters = crafters.map(c => ({
+        ...c,
+        id: c.id,
+        nome: c.nome || c.name || c.nome_completo || '',
+        points: c.points ?? c.pontos ?? c.score ?? 0,
+        area: c.area_interesse || c.area || c.stack || c.especialidade || '',
+        avatar_url: c.avatar_url || c.avatarUrl || c.foto || c.photo || null,
+      }));
+
       const t3 = Array.isArray(json?.top3) ? json.top3.map(t => {
-        const c = crafters.find(c => c.id === t.crafter_id) || {};
+        const crafterId = t.crafter_id || t.crafterId || t.id;
+        const c = normalizedCrafters.find(cr => cr.id === crafterId) || {};
         return {
-          place: t.position,
-          name: c.nome || c.name || '—',
+          place: t.position || t.posicao,
+          name: c.nome || '—',
           score: c.points ?? 0,
-          reward: t.reward || '',
+          reward: t.reward || t.recompensa || '',
           avatar: c.avatar_url || null,
         };
       }) : [];
+
       // Tabela a partir da lista de crafters
-      const tb = crafters.map(c => ({
+      const tb = normalizedCrafters.map(c => ({
         id: c.id,
-        name: c.nome || c.name || '—',
+        name: c.nome || '—',
         score: Number.isFinite(c.points) ? c.points : 0,
-        area: c.area_interesse || c.area || c.stack || '',
+        area: c.area || '',
         avatar: c.avatar_url || null,
       }));
       setTop3(t3);
       setTable(tb);
-    } catch {
-      setError('Ranking em processamento. Volte em instantes 🚀');
+    } catch (err) {
+      console.error('Erro ao carregar ranking:', err);
+      const msg = String(err?.message || '').toLowerCase();
+      if (msg.includes('conexão') || msg.includes('fetch') || msg.includes('network') || msg.includes('failed')) {
+        setError('Erro de conexão: Verifique sua internet e tente novamente');
+      } else if (msg.includes('401') || msg.includes('403')) {
+        setError('Acesso não autorizado ao ranking');
+      } else {
+        setError('Ranking em processamento. Volte em instantes 🚀');
+      }
       setTop3([]);
       setTable([]);
     } finally {
