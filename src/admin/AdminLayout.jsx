@@ -2669,7 +2669,10 @@ export function Apps() {
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginTop:12 }}>
           <input placeholder="Thumbnail URL" value={form.thumbnail} onChange={e=>setForm({ ...form, thumbnail:e.target.value })} />
-          <input placeholder="Exec URL (download)" value={form.exec_url} onChange={e=>setForm({ ...form, exec_url:e.target.value })} />
+          <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+            <input placeholder="URL do executável (ex: https://codecraftgenz.com.br/downloads/app.exe)" value={form.exec_url} onChange={e=>setForm({ ...form, exec_url:e.target.value })} />
+            <small style={{ color:'rgba(255,255,255,0.6)', fontSize:'11px' }}>Use URL completa da Hostinger ou /downloads/arquivo.exe do backend</small>
+          </div>
         </div>
         {form.id && (
           <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:12, marginTop:12 }}>
