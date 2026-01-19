@@ -2673,19 +2673,33 @@ export function Apps() {
         </div>
         {form.id && (
           <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:12, marginTop:12 }}>
-            <input type="file" accept=".exe" onChange={e=>{ setExeFile(e.target.files?.[0] || null); setUploadError(''); }} />
+            <input type="file" accept=".exe" onChange={e=>{
+              const file = e.target.files?.[0] || null;
+              setExeFile(file);
+              setUploadError('');
+              // Preenche exec_url com preview do caminho esperado
+              if (file && form.id) {
+                const ext = file.name.split('.').pop()?.toLowerCase() || 'exe';
+                const previewUrl = `/downloads/app-${form.id}-1.0.0.${ext}`;
+                setForm(s=>({ ...s, exec_url: previewUrl }));
+              }
+            }} />
             <button className="btn btn-outline" disabled={uploadBusy || !exeFile} onClick={async()=>{
               try {
                 setUploadBusy(true); setUploadError('');
                 const r = await uploadAppExecutable(form.id, exeFile);
-                console.log('[Upload] Resposta:', r);
+                console.log('[Upload] Resposta completa:', JSON.stringify(r, null, 2));
                 // Backend retorna { success: true, data: { file_name, file_size, executable_url } }
-                const execUrl = r?.data?.executable_url || r?.executable_url || r?.download_url;
+                const execUrl = r?.data?.executable_url || r?.executable_url || r?.download_url || r?.url;
                 console.log('[Upload] execUrl extraído:', execUrl);
                 if (execUrl) {
                   setForm(s=>({ ...s, exec_url: execUrl }));
+                  setUploadError(''); // Limpa erro anterior
+                  // Atualiza lista para refletir mudança no backend
+                  refresh();
                 } else {
-                  setUploadError('Upload ok mas URL não retornada');
+                  console.warn('[Upload] Campos disponíveis na resposta:', Object.keys(r || {}), Object.keys(r?.data || {}));
+                  setUploadError('Upload ok mas URL não retornada. Verifique console.');
                 }
                 setExeFile(null);
               } catch (e) {
