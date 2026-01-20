@@ -5,7 +5,7 @@ import { FaUser, FaShoppingBag, FaDownload, FaCalendar, FaCheckCircle, FaClock, 
 
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth';
-import { apiRequest } from '../services/api';
+import { apiRequest } from '../lib/apiConfig';
 
 export default function MyAccountPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
