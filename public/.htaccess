@@ -138,4 +138,18 @@
   AddType application/font-woff .woff
   AddType application/font-woff2 .woff2
   AddType application/manifest+json .webmanifest
+  # Executáveis para download
+  AddType application/octet-stream .exe
+  AddType application/zip .zip
+  AddType application/x-rar-compressed .rar
+  AddType application/x-7z-compressed .7z
+  AddType application/x-msdownload .msi
+</IfModule>
+
+# Forçar download de executáveis (não abrir no navegador)
+<IfModule mod_headers.c>
+  <FilesMatch "\.(exe|msi|zip|rar|7z)$">
+    Header set Content-Disposition "attachment"
+    Header set X-Content-Type-Options "nosniff"
+  </FilesMatch>
 </IfModule>
