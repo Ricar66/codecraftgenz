@@ -4,7 +4,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import Navbar from '../components/Navbar/Navbar';
 import { useAnalytics } from '../hooks/useAnalytics.js';
-import { getAppById, getPurchaseStatus, registerDownload } from '../services/appsAPI.js';
+import { getAppById, getPurchaseStatus, registerDownload, resendPurchaseEmail } from '../services/appsAPI.js';
 import { API_BASE_URL } from '../lib/apiConfig.js';
 
 import styles from './OrderSuccessPage.module.css';
@@ -17,9 +17,13 @@ const resolveDownloadUrl = (url) => {
     return url;
   }
   // URL relativa - precisa ser prefixada com API_BASE_URL
-  // Ex: /downloads/app-2-1.0.0.exe -> https://backend.../api/downloads/app-2-1.0.0.exe
+  // Ex: /api/downloads/app.exe -> https://backend.../api/downloads/app.exe
   const cleanUrl = url.startsWith('/') ? url : `/${url}`;
-  // Se começa com /downloads, adiciona /api antes
+  // Se já começa com /api, apenas adiciona o base URL
+  if (cleanUrl.startsWith('/api/')) {
+    return `${API_BASE_URL}${cleanUrl}`;
+  }
+  // Se começa com /downloads (legado), adiciona /api antes
   if (cleanUrl.startsWith('/downloads/')) {
     return `${API_BASE_URL}/api${cleanUrl}`;
   }
@@ -161,21 +165,25 @@ const OrderSuccessPage = () => {
 
     setEmailStatus('sending');
     try {
-      // Usa registerDownload com email para obter o link
-      const resp = await registerDownload(id, { email });
-      // Backend retorna { success: true, data: { download_url, ... } }
+      // Chama endpoint para reenviar email de confirmação com link de download
+      const resp = await resendPurchaseEmail(id, email);
+      // Backend retorna { success: true, data: { sent: true, download_url, ... } }
       const d = resp?.data || resp;
-      if (d?.download_url) {
-        const resolvedUrl = resolveDownloadUrl(d.download_url);
+
+      if (d?.sent || d?.success) {
         setEmailStatus('sent');
-        setEmailMessage('Link recuperado com sucesso! Clique em "Baixar Executável" acima.');
-        setDownloadUrl(resolvedUrl);
+        setEmailMessage('Email enviado com sucesso! Verifique sua caixa de entrada.');
+        // Se retornou download_url, atualiza também
+        if (d?.download_url) {
+          setDownloadUrl(resolveDownloadUrl(d.download_url));
+        }
       } else {
-        throw new Error('Não foi possível recuperar o link.');
+        throw new Error(d?.message || 'Não foi possível enviar o email.');
       }
     } catch (err) {
       setEmailStatus('error');
-      setEmailMessage(err?.message || 'Erro ao enviar. Verifique o e-mail.');
+      const errorMsg = err?.response?.data?.error?.message || err?.message || 'Erro ao enviar. Verifique o e-mail.';
+      setEmailMessage(errorMsg);
     }
   };
 
