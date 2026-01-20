@@ -11,12 +11,14 @@ import { loadMercadoPagoSDK } from '../utils/loadMercadoPagoSDK.js';
 const PaymentBrick = ({
   appId,
   amount,
+  quantity = 1,
   description = 'Compra de aplicativo',
   onPaymentSuccess,
   onStatus,
   onError,
   buyer = {},
   preferenceId: externalPreferenceId,
+  maxInstallments = 4,
 }) => {
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -128,6 +130,8 @@ const PaymentBrick = ({
       ticket: 'all',
       // Mercado Pago (wallet, créditos)
       mercadoPago: preferenceId ? 'all' : [],
+      // Limita parcelas
+      maxInstallments: maxInstallments,
     },
     visual: {
       style: {
@@ -165,11 +169,16 @@ const PaymentBrick = ({
         throw new Error('E-mail do pagador é obrigatório');
       }
 
+      // Limita parcelas ao máximo configurado
+      const requestedInstallments = Number(formData?.installments || 1);
+      const finalInstallments = Math.min(Math.max(1, requestedInstallments), maxInstallments);
+
       const payload = {
         token: formData?.token,
         payment_method_id: formData?.payment_method_id || selectedPaymentMethod,
         issuer_id: formData?.issuer_id,
-        installments: Number(formData?.installments || 1),
+        installments: finalInstallments,
+        quantity: quantity, // Quantidade de licenças
         transaction_amount: txAmount,
         description: String(description || ''),
         payer: {
