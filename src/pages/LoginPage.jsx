@@ -1,5 +1,6 @@
 // src/pages/LoginPage.jsx
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth';
@@ -61,7 +62,11 @@ export default function LoginPage() {
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
             <div className="actions">
-              <a className="link" href="/forgot-password">Esqueci minha senha</a>
+              <Link className="link" to="/forgot-password">Esqueci minha senha</Link>
+            </div>
+            <div className="register-link">
+              <span className="text">Nao tem uma conta?</span>
+              <Link className="link" to="/register">Criar conta</Link>
             </div>
           </form>
         </div>
@@ -80,6 +85,8 @@ export default function LoginPage() {
         .btnPrimary { background: #D12BF2; color: white; border: none; border-radius: 10px; padding: 10px 14px; font-weight: 600; cursor: pointer; }
         .btnPrimary:hover { filter: brightness(1.05); }
         .actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+        .register-link { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #ddd; }
+        .text { font-family: 'Inter', system-ui, sans-serif; font-size: 0.9rem; color: #555; }
         .link { font-family: 'Inter', system-ui, sans-serif; font-size: 0.9rem; color: #004A54; text-decoration: underline; cursor: pointer; }
         .error { background: rgba(209,43,242,0.1); border: 1px solid rgba(209,43,242,0.3); padding: 8px 10px; border-radius: 8px; color: #68007B; }
         @media (max-width: 480px) { .login-card { margin: 0 16px; } }

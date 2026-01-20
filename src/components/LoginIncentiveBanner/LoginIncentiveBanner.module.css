@@ -93,6 +93,26 @@
   box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
 }
 
+.registerButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.25rem;
+  background: transparent;
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  color: #38bdf8;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.registerButton:hover {
+  transform: translateY(-1px);
+  background: rgba(56, 189, 248, 0.1);
+}
+
 .orText {
   font-size: 0.813rem;
   color: var(--text-muted, #64748b);
@@ -154,7 +174,8 @@
     gap: 0.5rem;
   }
 
-  .loginButton {
+  .loginButton,
+  .registerButton {
     text-align: center;
   }
 
