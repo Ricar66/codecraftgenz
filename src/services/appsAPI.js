@@ -153,6 +153,13 @@ export async function submitFeedback(appId, { rating, comment }) {
   return apiRequest(`/api/apps/${appId}/feedback`, { method: 'POST', body: JSON.stringify({ rating, comment }) });
 }
 
+// Reenviar email de confirmação de compra
+export async function resendPurchaseEmail(appId, email) {
+  if (!appId) throw new Error('appId é obrigatório');
+  if (!email) throw new Error('email é obrigatório');
+  return apiRequest(`/api/apps/${appId}/resend-email`, { method: 'POST', body: JSON.stringify({ email }) });
+}
+
 // Admin – listar pagamentos do banco (app_payments)
 // CORRIGIDO: Path correto é /api/payments/admin/app-payments (não /api/admin/app-payments)
 export async function adminListAppPayments(params = {}) {
