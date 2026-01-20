@@ -23,7 +23,15 @@
       "Bash(powershell -Command \"Invoke-RestMethod -Uri ''http://localhost:8080/health'' -Method GET\")",
       "Bash(cmd.exe /c \"curl -s http://127.0.0.1:8080/health\")",
       "Bash(curl.exe:*)",
-      "Bash(wsl cat /mnt/c/Users/RICARD~1.MOR/AppData/Local/Temp/claude/c--Users-ricardo-moretti-Documents-codecraft-frontend/tasks/bee9744.output)"
+      "Bash(wsl cat /mnt/c/Users/RICARD~1.MOR/AppData/Local/Temp/claude/c--Users-ricardo-moretti-Documents-codecraft-frontend/tasks/bee9744.output)",
+      "Bash(gh api:*)",
+      "Bash(gh auth status:*)",
+      "Bash(DATABASE_URL=\"mysql://u984096926_codecraftgenz:Dedecdmm1902%4066@193.203.175.202:3306/u984096926_codecraftgenz\" npx prisma db push:*)",
+      "Bash(DATABASE_URL=\"mysql://u984096926_codecraftgenz:admin123@srv1889.hstgr.io:3306/u984096926_codecraftgenz\" npx prisma db push:*)",
+      "Bash(DATABASE_URL=\"mysql://u984096926_codecraftgenz:admin123@193.203.175.202:3306/u984096926_codecraftgenz\" npx prisma db push:*)",
+      "Bash(git restore:*)",
+      "Bash(node generate-license.js:*)",
+      "Bash(node test-license.js:*)"
     ]
   }
 }
