@@ -6,6 +6,11 @@
   RewriteEngine On
   RewriteBase /
 
+  # IMPORTANTE: Não processar arquivos na pasta downloads
+  # Esses arquivos são enviados via FTP pelo backend
+  RewriteCond %{REQUEST_URI} ^/downloads/ [NC]
+  RewriteRule ^ - [L]
+
   # Redirecionar todas as requisições não-arquivo para index.html
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
