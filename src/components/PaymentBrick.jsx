@@ -35,16 +35,40 @@ const PaymentBrick = ({
 
   // Inicializa SDK e cria preferência
   useEffect(() => {
+    const dev = import.meta.env.MODE !== 'production';
+    let cancelled = false;
+    let initCompleted = false;
+
     if (import.meta.env.MODE === 'test') {
       setReady(true);
       setLoading(false);
       return;
     }
 
+    // Timeout de segurança para não ficar carregando infinitamente
+    const timeout = setTimeout(() => {
+      if (!cancelled && !initCompleted) {
+        console.warn('[PaymentBrick] Timeout de inicialização (15s). Tentando continuar...');
+        setLoading(false);
+        setReady(true); // Tenta renderizar mesmo assim
+      }
+    }, 15000);
+
     const init = async () => {
       try {
+        if (dev) console.log('[PaymentBrick] Iniciando inicialização...');
+
         // Carrega o SDK JS do MercadoPago
-        await loadMercadoPagoSDK();
+        if (dev) console.log('[PaymentBrick] Carregando SDK...');
+        try {
+          await loadMercadoPagoSDK();
+          if (dev) console.log('[PaymentBrick] SDK carregado.');
+        } catch (sdkError) {
+          console.error('[PaymentBrick] Erro ao carregar SDK:', sdkError);
+          // Continua mesmo com erro - o componente Payment pode ter fallback
+        }
+
+        if (cancelled) return;
 
         // Obtém a public key
         const envFlag = String(import.meta.env.VITE_MP_ENV || '').toLowerCase();
@@ -55,54 +79,105 @@ const PaymentBrick = ({
             : import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_SANDBOX)
         );
 
-        if (!publicKey) {
+        if (dev) console.log('[PaymentBrick] Public key from env:', publicKey ? 'presente' : 'ausente');
+
+        // Verifica se a chave local parece ser placeholder
+        const isLocalPlaceholder = !publicKey || publicKey.includes('xxxx') || publicKey.includes('XXXX');
+
+        // Se não tem chave ou parece placeholder, tenta buscar do backend
+        if (!publicKey || isLocalPlaceholder) {
           try {
+            if (dev) console.log('[PaymentBrick] Buscando public key da API...');
             const json = await apiRequest('/api/config/mp-public-key', { method: 'GET' });
-            publicKey = json?.public_key || json?.data?.public_key || '';
-          } catch {
-            // fallback: sem chave
+            // Backend retorna: { success: true, data: { publicKey: '...' } }
+            const apiKey = json?.data?.publicKey || json?.publicKey || json?.public_key || json?.data?.public_key || '';
+            if (apiKey && !apiKey.includes('xxxx') && !apiKey.includes('XXXX')) {
+              publicKey = apiKey;
+              if (dev) console.log('[PaymentBrick] Public key obtida da API.');
+            } else {
+              if (dev) console.log('[PaymentBrick] Public key da API também é inválida:', apiKey ? 'presente' : 'ausente');
+            }
+          } catch (apiErr) {
+            if (dev) console.warn('[PaymentBrick] Erro ao buscar public key:', apiErr);
           }
         }
 
-        if (!publicKey) {
-          setError('Chave pública do Mercado Pago não configurada');
+        if (cancelled) return;
+
+        // Verifica se a chave é válida (não é placeholder)
+        const isPlaceholder = !publicKey || publicKey.includes('xxxx') || publicKey.includes('XXXX') || publicKey.length < 20;
+        if (isPlaceholder) {
+          if (dev) console.warn('[PaymentBrick] Chave pública parece ser placeholder ou inválida:', publicKey);
+          setError('Chave pública do Mercado Pago não configurada corretamente. Em desenvolvimento, configure VITE_MERCADO_PAGO_PUBLIC_KEY no arquivo .env');
           setLoading(false);
           return;
         }
 
         // Inicializa SDK React apenas uma vez
         if (!window.__MP_INIT_DONE) {
-          initMercadoPago(publicKey, { locale: 'pt-BR' });
-          window.__MP_INIT_DONE = true;
+          if (dev) console.log('[PaymentBrick] Inicializando SDK React...');
+          try {
+            initMercadoPago(publicKey, { locale: 'pt-BR' });
+            window.__MP_INIT_DONE = true;
+            if (dev) console.log('[PaymentBrick] SDK React inicializado.');
+          } catch (initErr) {
+            console.error('[PaymentBrick] Erro ao inicializar SDK React:', initErr);
+            // Continua - pode já estar inicializado
+          }
+        } else {
+          if (dev) console.log('[PaymentBrick] SDK React já estava inicializado.');
         }
+
+        if (cancelled) return;
 
         // Cria preferência se não foi passada externamente
         // A preferência é necessária para métodos como Mercado Pago Wallet e Parcelamento sem cartão
         if (!externalPreferenceId && buyerInfo.email) {
           try {
+            if (dev) console.log('[PaymentBrick] Criando preferência para:', buyerInfo.email);
             const pref = await createPaymentPreference(appId, {
               email: buyerInfo.email,
               name: buyerInfo.name,
             });
+            if (cancelled) return;
+            if (dev) console.log('[PaymentBrick] Preferência criada:', pref);
             const prefId = pref?.id || pref?.data?.id || pref?.preference_id || '';
             if (prefId) {
               setPreferenceId(prefId);
+              if (dev) console.log('[PaymentBrick] Preference ID:', prefId);
             }
           } catch (prefError) {
-            console.warn('Não foi possível criar preferência:', prefError);
+            console.warn('[PaymentBrick] Não foi possível criar preferência:', prefError);
             // Continua sem preferência - alguns métodos não funcionarão
           }
+        } else {
+          if (dev) console.log('[PaymentBrick] Pulando criação de preferência. ExternalPrefId:', externalPreferenceId, 'Email:', buyerInfo.email);
         }
 
+        if (cancelled) return;
+
+        if (dev) console.log('[PaymentBrick] Marcando como ready.');
         setReady(true);
       } catch (err) {
-        setError(err?.message || 'Falha ao inicializar Mercado Pago');
+        console.error('[PaymentBrick] Erro na inicialização:', err);
+        if (!cancelled) {
+          setError(err?.message || 'Falha ao inicializar Mercado Pago');
+        }
       } finally {
-        setLoading(false);
+        initCompleted = true;
+        if (!cancelled) {
+          if (dev) console.log('[PaymentBrick] Finalizando loading.');
+          setLoading(false);
+        }
       }
     };
 
     init();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [appId, buyerInfo.email, buyerInfo.name, externalPreferenceId]);
 
   const initialization = {
