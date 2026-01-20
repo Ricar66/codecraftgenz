@@ -3,14 +3,27 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 
 import CardDirectPayment from '../components/CardDirectPayment.jsx';
+import PaymentBrick from '../components/PaymentBrick.jsx';
+import WalletBrick from '../components/WalletBrick.jsx';
 import LoginIncentiveBanner from '../components/LoginIncentiveBanner';
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth.js';
 import { getAppById, getPurchaseStatus, registerDownload, submitFeedback, createPaymentPreference, downloadByEmail, activateDeviceLicense } from '../services/appsAPI.js';
 import { captureAppPurchaseLead } from '../services/leadsAPI.js';
 import { getAppPrice } from '../utils/appModel.js';
+import { API_BASE_URL } from '../lib/apiConfig.js';
 
 import styles from './AppPurchasePage.module.css';
+
+// Converte URL relativa para URL completa do backend
+const resolveDownloadUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+  if (cleanUrl.startsWith('/api/')) return `${API_BASE_URL}${cleanUrl}`;
+  if (cleanUrl.startsWith('/downloads/')) return `${API_BASE_URL}/api${cleanUrl}`;
+  return `${API_BASE_URL}${cleanUrl}`;
+};
 
 // Mapeia códigos de status_detail do Mercado Pago para mensagens amigáveis
 function mapStatusDetail(detail) {
@@ -71,6 +84,8 @@ const AppPurchasePage = () => {
     (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('showCard') === '1')
   );
   const [showCardForm, setShowCardForm] = useState(initialShowCard);
+  // Controla qual método de pagamento está ativo: 'card' | 'payment' | 'wallet'
+  const [paymentMethod, setPaymentMethod] = useState('card');
 
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailInput, setEmailInput] = useState('');
@@ -203,7 +218,7 @@ const AppPurchasePage = () => {
     try {
       let json = null;
       try { json = await registerDownload(id); } catch { json = null; }
-      const url = json?.download_url || downloadUrl;
+      const url = resolveDownloadUrl(json?.download_url || downloadUrl);
       if (url) { window.open(url, '_blank', 'noopener'); return; }
       const existingEmail = String(payerInfo.email || user?.email || '').trim();
       if (!existingEmail) {
@@ -216,7 +231,7 @@ const AppPurchasePage = () => {
       const lic = await activateDeviceLicense({ email: existingEmail, appId: Number(id), hardwareId: hwid });
       if (!lic?.licensed) { alert(lic?.message || 'Licença não validada.'); return; }
       const d = await downloadByEmail(id, existingEmail);
-      const u = d?.download_url || '';
+      const u = resolveDownloadUrl(d?.download_url || '');
       if (u) window.open(u, '_blank', 'noopener');
       else alert('Download ainda não liberado para este e-mail.');
       const subject = encodeURIComponent(`Ativação de licença - ${app?.name || app?.titulo || 'Aplicativo'}`);
@@ -261,7 +276,7 @@ const AppPurchasePage = () => {
         return;
       }
       const d = await downloadByEmail(id, em);
-      const u = d?.download_url || '';
+      const u = resolveDownloadUrl(d?.download_url || '');
       if (u) {
         setShowEmailModal(false);
         window.open(u, '_blank', 'noopener');
@@ -327,26 +342,38 @@ const AppPurchasePage = () => {
             <LoginIncentiveBanner />
 
             <p className={styles.muted} style={{ marginTop: 8 }}>
-              Metodo disponivel: Cartao de credito/debito (via Mercado Pago).
+              Metodos disponiveis: Cartao de credito/debito, PIX, Boleto e Conta Mercado Pago.
             </p>
 
+            {/* Seletor de método de pagamento */}
+            <div className={styles.paymentMethodSelector} style={{ marginTop: 16, marginBottom: 16 }}>
+              <p style={{ marginBottom: 8, fontSize: '0.9rem', color: '#aaa' }}>Escolha como deseja pagar:</p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  className={`${styles.btn} ${paymentMethod === 'payment' ? styles.btnPrimary : styles.btnOutline}`}
+                  onClick={() => { setPaymentMethod('payment'); setStep(1); }}
+                  style={{ flex: '1 1 auto', minWidth: 140 }}
+                >
+                  Todos os Métodos
+                </button>
+                <button
+                  className={`${styles.btn} ${paymentMethod === 'card' ? styles.btnPrimary : styles.btnOutline}`}
+                  onClick={() => { setPaymentMethod('card'); setStep(1); }}
+                  style={{ flex: '1 1 auto', minWidth: 140 }}
+                >
+                  Cartão de Crédito
+                </button>
+                <button
+                  className={`${styles.btn} ${paymentMethod === 'wallet' ? styles.btnPrimary : styles.btnOutline}`}
+                  onClick={() => { setPaymentMethod('wallet'); setStep(1); }}
+                  style={{ flex: '1 1 auto', minWidth: 140 }}
+                >
+                  Conta Mercado Pago
+                </button>
+              </div>
+            </div>
+
             <div className={styles.btnGroup}>
-              <button
-                className={`${styles.btn} ${styles.btnOutline}`}
-                onClick={startWalletCheckout}
-              >
-                Pagar com Mercado Pago (Wallet)
-              </button>
-              <button
-                className={`${styles.btn} ${styles.btnPrimary}`}
-                onClick={() => {
-                  setStep(1);
-                  const el = document.getElementById('buyer-info-section');
-                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }}
-              >
-                Pagar com Cartão de Crédito
-              </button>
               <button
                 className={`${styles.btn} ${styles.btnOutline}`}
                 onClick={handleDownload}
@@ -465,7 +492,7 @@ const AppPurchasePage = () => {
                       }, 100);
                     }}
                   >
-                    Continuar para pagamento com cartão
+                    Continuar para pagamento
                   </button>
                 </div>
               </div>
@@ -477,7 +504,35 @@ const AppPurchasePage = () => {
               </p>
             )}
 
-            {showCardForm && step === 2 && (
+            {/* Payment Brick - Todos os métodos (PIX, Boleto, Cartão, MP) */}
+            {step === 2 && paymentMethod === 'payment' && (
+              <div id="card-payment-section" className={styles.cardPaymentSection}>
+                <PaymentBrick
+                  appId={id}
+                  amount={app?.price || 0}
+                  description={(app?.name || app?.titulo) ? `Compra de ${app?.name || app?.titulo}` : 'Compra de aplicativo'}
+                  buyer={{
+                    name: payerInfo.name,
+                    email: payerInfo.email,
+                    docType: 'CPF',
+                    docNumber: payerInfo.identification,
+                  }}
+                  onPaymentSuccess={async (resp) => {
+                    setStatus('approved');
+                    const payId = resp?.payment_id || resp?.mp_payment_id || resp?.data?.payment_id || resp?.id || resp?.data?.id || '';
+                    navigate(`/apps/${id}/sucesso?payment_id=${payId}&status=approved`);
+                  }}
+                  onStatus={(resp) => {
+                    const s = resp?.status || resp?.data?.status;
+                    if (s) setStatus(s);
+                  }}
+                  onError={(err) => console.error('Payment error:', err)}
+                />
+              </div>
+            )}
+
+            {/* Card Payment Brick - Apenas cartão de crédito/débito */}
+            {showCardForm && step === 2 && paymentMethod === 'card' && (
               <div id="card-payment-section" className={styles.cardPaymentSection}>
                 <CardDirectPayment
                   appId={id}
@@ -498,11 +553,40 @@ const AppPurchasePage = () => {
                   deviceId={deviceId}
                   onPaymentSuccess={async (resp) => {
                     setStatus('approved');
-                    // O backend retorna payment_id (interno) e mp_payment_id (do MP)
                     const payId = resp?.payment_id || resp?.mp_payment_id || resp?.data?.payment_id || resp?.id || resp?.data?.id || '';
                     navigate(`/apps/${id}/sucesso?payment_id=${payId}&status=approved`);
                   }}
                 />
+              </div>
+            )}
+
+            {/* Wallet Brick - Pagamento com conta Mercado Pago */}
+            {step === 2 && paymentMethod === 'wallet' && (
+              <div id="card-payment-section" className={styles.cardPaymentSection}>
+                <div style={{ marginBottom: 16 }}>
+                  <h3 className={styles.subtitle}>Pagar com sua conta Mercado Pago</h3>
+                  <p className={styles.muted}>
+                    Clique no botão abaixo para pagar usando sua conta Mercado Pago, créditos ou saldo disponível.
+                  </p>
+                </div>
+                <WalletBrick
+                  appId={id}
+                  amount={app?.price || 0}
+                  buyer={{
+                    email: payerInfo.email,
+                    name: payerInfo.name,
+                  }}
+                  onError={(err) => console.error('Wallet error:', err)}
+                />
+                <div style={{ marginTop: 16, textAlign: 'center' }}>
+                  <button
+                    className={`${styles.btn} ${styles.btnOutline}`}
+                    onClick={startWalletCheckout}
+                    style={{ fontSize: '0.9rem' }}
+                  >
+                    Ou clique aqui para abrir em nova aba
+                  </button>
+                </div>
               </div>
             )}
 
