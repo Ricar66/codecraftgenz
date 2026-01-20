@@ -4,7 +4,6 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 
 import CardDirectPayment from '../components/CardDirectPayment.jsx';
 import PaymentBrick from '../components/PaymentBrick.jsx';
-import WalletBrick from '../components/WalletBrick.jsx';
 import LoginIncentiveBanner from '../components/LoginIncentiveBanner';
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth.js';
@@ -560,31 +559,22 @@ const AppPurchasePage = () => {
               </div>
             )}
 
-            {/* Wallet Brick - Pagamento com conta Mercado Pago */}
+            {/* Wallet - Pagamento com conta Mercado Pago */}
             {step === 2 && paymentMethod === 'wallet' && (
               <div id="card-payment-section" className={styles.cardPaymentSection}>
-                <div style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 20 }}>
                   <h3 className={styles.subtitle}>Pagar com sua conta Mercado Pago</h3>
                   <p className={styles.muted}>
-                    Clique no botão abaixo para pagar usando sua conta Mercado Pago, créditos ou saldo disponível.
+                    Clique no botão abaixo para ser redirecionado ao Mercado Pago e pagar com sua conta, créditos ou saldo disponível.
                   </p>
                 </div>
-                <WalletBrick
-                  appId={id}
-                  amount={app?.price || 0}
-                  buyer={{
-                    email: payerInfo.email,
-                    name: payerInfo.name,
-                  }}
-                  onError={(err) => console.error('Wallet error:', err)}
-                />
-                <div style={{ marginTop: 16, textAlign: 'center' }}>
+                <div style={{ textAlign: 'center' }}>
                   <button
-                    className={`${styles.btn} ${styles.btnOutline}`}
+                    className={`${styles.btn} ${styles.btnPrimary}`}
                     onClick={startWalletCheckout}
-                    style={{ fontSize: '0.9rem' }}
+                    style={{ fontSize: '1rem', padding: '14px 32px', minWidth: 280 }}
                   >
-                    Ou clique aqui para abrir em nova aba
+                    Continuar com Mercado Pago
                   </button>
                 </div>
               </div>
