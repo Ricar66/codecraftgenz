@@ -24,6 +24,7 @@ const AppsPage = lazy(() => import('./pages/AppsPage.jsx'));
 const AppPurchasePage = lazy(() => import('./pages/AppPurchasePage.jsx'));
 const OrderSuccessPage = lazy(() => import('./pages/OrderSuccessPage.jsx'));
 const CacheMaintenancePage = lazy(() => import('./pages/CacheMaintenancePage.jsx'));
+const MyAccountPage = lazy(() => import('./pages/MyAccountPage.jsx'));
 
 // Admin pages - lazy loaded
 const AdminLayout = lazy(() => import('./admin/AdminLayout.jsx'));
@@ -121,6 +122,7 @@ function App() {
                 } />
                 <Route path="/apps/:id/compra" element={<AppPurchasePage />} />
                 <Route path="/apps/:id/sucesso" element={<OrderSuccessPage />} />
+                <Route path="/minha-conta" element={<MyAccountPage />} />
                 <Route path="/admin" element={
                   <ProtectedRoute allowed={["admin","editor"]}>
                     <AdminLayout />
