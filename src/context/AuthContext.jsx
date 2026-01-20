@@ -1,5 +1,6 @@
 // src/context/AuthContext.jsx
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 
 import { apiRequest } from '../lib/apiConfig.js';
@@ -22,8 +23,12 @@ async function fetchMe(retryCount = 0) {
   const isDebug = import.meta.env.DEV || localStorage.getItem('cc_debug') === '1';
   try {
     const json = await apiRequest('/api/auth/me', { method: 'GET' });
-    // Backend retorna { success: true, data: { user } } ou { user }
-    return json?.data?.user || json?.data || json?.user || null;
+    // Backend retorna { success: true, data: { id, email, name, role, ... } }
+    const userData = json?.data || json?.user || null;
+    if (isDebug && userData) {
+      console.log('[Auth:fetchMe] Usuario carregado:', userData.email, userData.role);
+    }
+    return userData;
   } catch (error) {
     // Log apenas em desenvolvimento para debug
     if (isDebug) {
@@ -62,9 +67,16 @@ function useAuthProvider() {
     if (initRef.current) return;
     initRef.current = true;
 
+    const isDebug = import.meta.env.DEV || localStorage.getItem('cc_debug') === '1';
+
     (async () => {
       // Só tenta buscar se tem token
-      if (hasStoredToken()) {
+      const hasToken = hasStoredToken();
+      if (isDebug) {
+        console.log('[Auth:init] Token presente:', hasToken);
+      }
+
+      if (hasToken) {
         const u = await fetchMe();
         if (u) {
           setUser(u);
@@ -72,40 +84,82 @@ function useAuthProvider() {
           try {
             sessionStorage.setItem('cc_user_cache', JSON.stringify(u));
           } catch { /* ignore */ }
+          if (isDebug) {
+            console.log('[Auth:init] Usuario autenticado:', u.email);
+          }
         } else if (!hasStoredToken()) {
           // Token foi removido (401) - limpa cache
           sessionStorage.removeItem('cc_user_cache');
           setUser(null);
+          if (isDebug) {
+            console.log('[Auth:init] Token invalido, usuario limpo');
+          }
         }
+      } else if (isDebug) {
+        console.log('[Auth:init] Sem token, usuario nao autenticado');
       }
       setLoading(false);
     })();
   }, []);
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, redirectTo = null) => {
+    const isDebug = import.meta.env.DEV || localStorage.getItem('cc_debug') === '1';
     try {
       const data = await apiRequest('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
+
+      if (isDebug) {
+        console.log('[Auth:login] Resposta do backend:', data);
+      }
+
       // Backend retorna { success: true, data: { token, user } }
       const token = data?.token || data?.data?.token;
       const userData = data?.user || data?.data?.user;
+
+      if (isDebug) {
+        console.log('[Auth:login] Token extraido:', !!token);
+        console.log('[Auth:login] Usuario extraido:', userData);
+      }
+
       if (token) {
         localStorage.setItem('cc_session', JSON.stringify({ token }));
       }
+
       // Usa dados do login se disponíveis, senão busca
       let u = userData;
       if (!u) {
+        if (isDebug) {
+          console.log('[Auth:login] Usuario nao veio no login, buscando via fetchMe...');
+        }
         u = await fetchMe();
       }
+
       if (u) {
-        setUser(u);
+        if (isDebug) {
+          console.log('[Auth:login] Definindo usuario no estado:', u.email, u.role);
+        }
+
+        // Usa flushSync para garantir que o estado seja atualizado antes do navigate
+        flushSync(() => {
+          setUser(u);
+        });
+
         try {
           sessionStorage.setItem('cc_user_cache', JSON.stringify(u));
         } catch { /* ignore */ }
+
+        // Determina o destino baseado no role do usuario ou redirectTo
+        const isAdmin = ['admin', 'administrator', 'superadmin', 'owner', 'editor'].includes(
+          String(u.role || '').toLowerCase()
+        );
+        const destination = redirectTo || (isAdmin ? '/admin' : '/');
+        if (isDebug) {
+          console.log('[Auth:login] Redirecionando para:', destination);
+        }
+        navigate(destination);
       }
-      navigate('/admin');
       return { ok: true };
     } catch (error) {
       console.error('Erro na autenticação:', error);
