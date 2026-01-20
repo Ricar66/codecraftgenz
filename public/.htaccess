@@ -1,0 +1,141 @@
+# CodeCraft Gen-Z - Configuração Apache (Hostinger)
+# ================================================
+
+# Habilitar rewrite engine para SPA routing
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Redirecionar todas as requisições não-arquivo para index.html
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# Headers de segurança
+<IfModule mod_headers.c>
+  # Prevenir MIME type sniffing
+  Header set X-Content-Type-Options "nosniff"
+
+  # Prevenir clickjacking
+  Header set X-Frame-Options "SAMEORIGIN"
+
+  # XSS Protection
+  Header set X-XSS-Protection "1; mode=block"
+
+  # Referrer Policy
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Cache Control Headers
+<IfModule mod_expires.c>
+  ExpiresActive On
+
+  # HTML - sem cache (sempre buscar versão mais recente)
+  ExpiresByType text/html "access plus 0 seconds"
+
+  # CSS e JavaScript com hash no nome - cache longo (1 ano)
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType text/javascript "access plus 1 year"
+
+  # Imagens - cache médio (1 mês)
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/gif "access plus 1 month"
+  ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType image/x-icon "access plus 1 month"
+
+  # Fontes - cache longo (1 ano)
+  ExpiresByType font/woff "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType application/font-woff "access plus 1 year"
+  ExpiresByType application/font-woff2 "access plus 1 year"
+
+  # JSON e XML - sem cache
+  ExpiresByType application/json "access plus 0 seconds"
+  ExpiresByType application/xml "access plus 0 seconds"
+
+  # Manifests - cache curto (1 hora)
+  ExpiresByType application/manifest+json "access plus 1 hour"
+  ExpiresByType text/cache-manifest "access plus 0 seconds"
+</IfModule>
+
+# Cache-Control específico por tipo de arquivo
+<IfModule mod_headers.c>
+  # HTML e index - sem cache
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  # Service Worker - sem cache
+  <FilesMatch "sw\.js$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  # Manifest - cache curto
+  <FilesMatch "manifest\.webmanifest$">
+    Header set Cache-Control "public, max-age=3600"
+  </FilesMatch>
+
+  # Assets com hash - cache imutável
+  <FilesMatch "\.[a-f0-9]{8}\.(js|css)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # Imagens - cache médio
+  <FilesMatch "\.(jpg|jpeg|png|gif|webp|svg|ico)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+
+  # Fontes - cache longo
+  <FilesMatch "\.(woff|woff2|ttf|otf|eot)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+# Compressão GZIP
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html
+  AddOutputFilterByType DEFLATE text/css
+  AddOutputFilterByType DEFLATE text/javascript
+  AddOutputFilterByType DEFLATE application/javascript
+  AddOutputFilterByType DEFLATE application/json
+  AddOutputFilterByType DEFLATE application/xml
+  AddOutputFilterByType DEFLATE image/svg+xml
+  AddOutputFilterByType DEFLATE font/woff
+  AddOutputFilterByType DEFLATE font/woff2
+</IfModule>
+
+# Prevenir acesso a arquivos sensíveis
+<FilesMatch "^\.">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+<FilesMatch "\.(env|log|bak|sql|md)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# CORS para assets (se necessário)
+<IfModule mod_headers.c>
+  <FilesMatch "\.(ttf|ttc|otf|eot|woff|woff2|font\.css|css|js)$">
+    Header set Access-Control-Allow-Origin "*"
+  </FilesMatch>
+</IfModule>
+
+# Tipos MIME corretos
+<IfModule mod_mime.c>
+  AddType application/javascript .js .mjs
+  AddType text/css .css
+  AddType image/svg+xml .svg
+  AddType application/font-woff .woff
+  AddType application/font-woff2 .woff2
+  AddType application/manifest+json .webmanifest
+</IfModule>
