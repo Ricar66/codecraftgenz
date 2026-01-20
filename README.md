@@ -34,10 +34,229 @@
 - Downloads seguros: rotas protegidas e URLs de integridade
 
 ## Destaques
-- 💳 Checkout com Mercado Pago, verificação de status e webhooks de confirmação.
+- 💳 Checkout com Mercado Pago (Bricks), verificação de status e webhooks de confirmação.
 - 🔐 Ativação de licença por hardware e trilha de auditoria de eventos.
 - 📦 Upload de executáveis com entrega via `/downloads/:file` e checagem de integridade.
 - 📈 Telemetria opcional com Application Insights.
+- 📧 Emails transacionais personalizados com template da marca.
+
+---
+
+## Fluxo de Compra e Pagamentos
+
+### Arquitetura do Sistema de Pagamentos
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   Frontend      │     │    Backend      │     │  Mercado Pago   │
+│   (React)       │────▶│   (Express)     │────▶│     API         │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+        │                       │                       │
+        │   PaymentBrick        │   /api/apps/:id/      │
+        │   (MP Bricks SDK)     │   payment/direct      │
+        │                       │                       │
+        ▼                       ▼                       ▼
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  Formulário de  │     │  Processa e     │     │  Webhook POST   │
+│  Pagamento      │     │  Salva Payment  │◀────│  /api/apps/     │
+└─────────────────┘     └─────────────────┘     │  webhook        │
+                                │               └─────────────────┘
+                                ▼
+                        ┌─────────────────┐
+                        │  Email Service  │
+                        │  (Nodemailer)   │
+                        └─────────────────┘
+```
+
+### Métodos de Pagamento Suportados
+
+| Método | Descrição | Status |
+|--------|-----------|--------|
+| Cartão de Crédito | Até 4x sem juros | ✅ Ativo |
+| Cartão de Débito | Débito Virtual Caixa | ✅ Ativo |
+| PIX | QR Code na tela + Copia e Cola | ✅ Ativo |
+| Boleto | Boleto bancário | ✅ Ativo |
+| Mercado Pago | Saldo MP, créditos | ✅ Ativo |
+
+### Componentes Principais
+
+#### Frontend
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `src/components/PaymentBrick.jsx` | Brick de pagamento do Mercado Pago |
+| `src/pages/OrderSuccessPage.jsx` | Página de sucesso pós-compra |
+| `src/pages/AppCheckoutPage.jsx` | Página de checkout do app |
+| `src/services/appsAPI.js` | Funções de API para pagamentos |
+
+#### Backend
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `src/services/payment.service.ts` | Lógica de pagamentos e integração MP |
+| `src/services/email.service.ts` | Envio de emails transacionais |
+| `src/services/license.service.ts` | Provisionamento de licenças |
+| `src/controllers/payment.controller.ts` | Controllers de pagamento |
+| `src/routes/apps.ts` | Rotas de apps e pagamentos |
+
+### Endpoints de Pagamento
+
+```
+POST   /api/apps/:id/purchase          # Criar preferência MP (redirect)
+GET    /api/apps/:id/purchase/status   # Status da compra
+POST   /api/apps/:id/payment/direct    # Pagamento direto (cartão/PIX/boleto)
+GET    /api/apps/:id/payment/last      # Último pagamento do app
+POST   /api/apps/webhook               # Webhook do Mercado Pago
+POST   /api/apps/:id/resend-email      # Reenviar email de confirmação
+```
+
+### Fluxo de Pagamento Direto
+
+```
+1. Usuário seleciona método (cartão/PIX/boleto)
+2. PaymentBrick coleta dados e gera token
+3. Frontend chama POST /api/apps/:id/payment/direct
+4. Backend processa via Mercado Pago API
+5. Se aprovado:
+   - Cria registro em app_payments
+   - Provisiona licença(s)
+   - Envia email de confirmação
+6. Frontend redireciona para OrderSuccessPage
+```
+
+### Fluxo PIX
+
+```
+1. Usuário seleciona PIX no PaymentBrick
+2. Backend cria pagamento PIX no MP
+3. Retorna: qr_code, qr_code_base64, ticket_url
+4. Frontend exibe QR Code na tela
+5. Usuário escaneia ou copia código
+6. Webhook confirma pagamento
+7. Email enviado com link de download
+```
+
+---
+
+## Sistema de Emails
+
+### Configuração
+
+```ini
+# .env do Backend
+EMAIL_USER=seu-email@gmail.com      # ou email@hostinger.com
+EMAIL_PASS=sua-senha-de-app         # App Password do Gmail
+FRONTEND_URL=https://codecraftgenz.com.br
+```
+
+### Template de Email
+
+O email de confirmação usa tema escuro com as cores da marca:
+- **Ciano**: `#00E4F2` (destaques, links)
+- **Magenta**: `#D12BF2` (acentos, botões)
+- **Fundo escuro**: `#0d0d1a`, `#1a1a2e`
+
+**Elementos do email:**
+- Logo da empresa no header e footer
+- Nome do cliente personalizado
+- Detalhes do app (nome, versão, preço)
+- Botão de download destacado
+- ID do pedido e data
+- Chave de licença (se aplicável)
+- Dicas de instalação
+
+### Endpoints de Email
+
+```
+POST /api/apps/:id/resend-email
+Body: { "email": "cliente@email.com" }
+Response: { "success": true, "data": { "sent": true, "payment_id": "..." } }
+```
+
+---
+
+## Sistema de Licenças
+
+### Modelo de Licença
+
+```sql
+app_licenses (
+  id            INT PRIMARY KEY,
+  app_id        INT,
+  user_id       INT,
+  license_key   VARCHAR(255),    -- Chave única
+  email         VARCHAR(255),    -- Email do comprador
+  hardware_id   VARCHAR(255),    -- ID do dispositivo ativado
+  status        ENUM('active', 'revoked', 'expired'),
+  activated_at  DATETIME,
+  expires_at    DATETIME,
+  created_at    DATETIME
+)
+```
+
+### Fluxo de Ativação
+
+```
+1. Compra aprovada → Licença provisionada (status: active)
+2. App instalado → Usuário informa email
+3. App envia hardware_id + email para API
+4. Backend valida licença e registra hardware_id
+5. App ativado no dispositivo
+```
+
+### Endpoints de Licença
+
+```
+POST /api/public/license/activate-device
+Body: { "email": "...", "app_id": 1, "hardware_id": "..." }
+
+POST /api/apps/:id/download/by-email
+Body: { "email": "..." }
+
+POST /api/apps/:id/download/by-payment
+Body: { "payment_id": "..." }
+```
+
+---
+
+## Múltiplas Licenças
+
+O sistema suporta compra de múltiplas licenças (1-10) em uma única transação:
+
+```javascript
+// Frontend - AppCheckoutPage
+const [quantity, setQuantity] = useState(1);
+const totalPrice = app.price * quantity;
+
+// Backend - payment.service.ts
+for (let i = 0; i < quantity; i++) {
+  await licenseService.provisionLicense(appId, email, userId, {
+    paymentId,
+    price: unitPrice,
+  });
+}
+```
+
+---
+
+## Parcelamento
+
+Suporte a parcelamento em até 4x sem juros:
+
+```javascript
+// PaymentBrick.jsx
+customization: {
+  paymentMethods: {
+    maxInstallments: 4,  // Máximo de parcelas
+  }
+}
+
+// Cálculo no checkout
+const installmentOptions = [1, 2, 3, 4].map(n => ({
+  installments: n,
+  value: (totalPrice / n).toFixed(2)
+}));
+```
 
 ## Como Executar
 ```bash
