@@ -249,18 +249,40 @@ const PaymentBrick = ({
                 if (dev) console.log('[PaymentBrick] Resposta do pagamento:', resp);
 
                 const nextStatus = resp?.status || resp?.data?.status || 'pending';
+                const paymentMethodId = formData?.payment_method_id || selectedPaymentMethod || '';
+
+                if (dev) console.log('[PaymentBrick] Status:', nextStatus, 'Method:', paymentMethodId);
 
                 // Se for PIX, mostra o QR Code
-                if (selectedPaymentMethod === 'pix' && (nextStatus === 'pending' || nextStatus === 'in_process')) {
+                // Verifica multiplas formas de identificar PIX
+                const isPix = paymentMethodId === 'pix' ||
+                              paymentMethodId?.toLowerCase()?.includes('pix') ||
+                              selectedPaymentMethod === 'pix' ||
+                              selectedPaymentMethod === 'bank_transfer';
+
+                if (isPix && (nextStatus === 'pending' || nextStatus === 'in_process')) {
+                  // Tenta extrair dados PIX de varias estruturas possiveis da resposta
                   const pixInfo = resp?.point_of_interaction?.transaction_data ||
                                   resp?.data?.point_of_interaction?.transaction_data ||
-                                  resp?.transaction_data;
-                  if (pixInfo) {
+                                  resp?.result?.point_of_interaction?.transaction_data ||
+                                  resp?.transaction_data ||
+                                  {
+                                    qr_code: resp?.qr_code || resp?.data?.qr_code,
+                                    qr_code_base64: resp?.qr_code_base64 || resp?.data?.qr_code_base64,
+                                    ticket_url: resp?.ticket_url || resp?.data?.ticket_url,
+                                  };
+
+                  if (dev) console.log('[PaymentBrick] PIX Info:', pixInfo);
+
+                  if (pixInfo && (pixInfo.qr_code || pixInfo.qr_code_base64)) {
                     setPixData({
                       qrCode: pixInfo.qr_code,
                       qrCodeBase64: pixInfo.qr_code_base64,
                       ticketUrl: pixInfo.ticket_url,
                     });
+                    if (dev) console.log('[PaymentBrick] QR Code PIX definido com sucesso');
+                  } else {
+                    console.warn('[PaymentBrick] PIX selecionado mas QR Code não encontrado na resposta:', resp);
                   }
                 }
 

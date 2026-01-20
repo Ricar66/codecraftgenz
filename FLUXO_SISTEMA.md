@@ -644,4 +644,112 @@ src/
 
 ---
 
+## 12. Troubleshooting - Problemas Comuns
+
+### Email Nao Enviado Apos Compra
+
+**Sintoma:** Compra aprovada mas cliente nao recebe email.
+
+**Verificar:**
+
+1. **Variaveis de ambiente no backend:**
+```bash
+# Verificar se estao configuradas
+echo $EMAIL_USER
+echo $EMAIL_PASS
+```
+
+2. **Logs do backend:**
+```bash
+# Procurar por erros de email
+grep -i "email" logs/app.log
+grep -i "ERRO CRITICO" logs/app.log
+```
+
+3. **Configuracao necessaria no `.env` do backend:**
+```ini
+# Para Gmail (requer App Password, nao senha normal)
+EMAIL_USER=seu-email@gmail.com
+EMAIL_PASS=sua-app-password-16-chars
+
+# Para Hostinger
+EMAIL_USER=contato@seudominio.com.br
+EMAIL_PASS=sua-senha-hostinger
+```
+
+4. **Testar conexao SMTP:**
+```typescript
+// No backend, chamar:
+await emailService.testConnection();
+```
+
+---
+
+### QR Code PIX Nao Aparece
+
+**Sintoma:** Pagamento PIX iniciado mas QR Code nao exibido.
+
+**Verificar:**
+
+1. **Console do navegador (F12):**
+```javascript
+// Deve aparecer logs como:
+// [PaymentBrick] Status: pending Method: pix
+// [PaymentBrick] PIX Info: { qr_code: "...", qr_code_base64: "..." }
+```
+
+2. **Se o log mostrar `PIX Info: undefined`:**
+   - Problema na resposta do Mercado Pago
+   - Verificar se `MP_ACCESS_TOKEN` e de producao/sandbox correto
+
+3. **Estrutura esperada da resposta do backend:**
+```json
+{
+  "status": "pending",
+  "qr_code": "00020126...",
+  "qr_code_base64": "iVBORw0KGgo...",
+  "ticket_url": "https://..."
+}
+```
+
+---
+
+### Webhook Nao Processa Pagamento
+
+**Sintoma:** Pagamento PIX/Boleto confirmado no MP mas status nao atualiza.
+
+**Verificar:**
+
+1. **URL do webhook no Mercado Pago:**
+   - Deve ser: `https://seu-backend.com/api/apps/webhook`
+   - Verificar se esta acessivel publicamente
+
+2. **Logs do webhook:**
+```bash
+grep -i "webhook" logs/app.log
+```
+
+3. **Testar endpoint manualmente:**
+```bash
+curl -X POST https://seu-backend.com/api/apps/webhook \
+  -H "Content-Type: application/json" \
+  -d '{"type":"payment","data":{"id":"123456"}}'
+```
+
+---
+
+### Checklist de Deploy
+
+```
+[ ] EMAIL_USER configurado
+[ ] EMAIL_PASS configurado (App Password para Gmail)
+[ ] MP_ACCESS_TOKEN configurado
+[ ] MERCADO_PAGO_PUBLIC_KEY configurado
+[ ] MP_WEBHOOK_URL configurado e acessivel
+[ ] FRONTEND_URL configurado
+[ ] Banco de dados com tabelas: app_payments, app_licenses
+```
+
+---
+
 *Documentacao gerada em Janeiro/2026 - CodeCraft Gen-Z*
