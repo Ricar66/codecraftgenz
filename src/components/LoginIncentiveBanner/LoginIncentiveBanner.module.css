@@ -1,0 +1,164 @@
+/* src/components/LoginIncentiveBanner/LoginIncentiveBanner.module.css */
+
+.banner {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.iconLarge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #38bdf8 0%, #8b5cf6 100%);
+  color: white;
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #f1f5f9);
+}
+
+.subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.benefits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.benefit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.benefit svg {
+  color: #22c55e;
+  flex-shrink: 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.loginButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.25rem;
+  background: linear-gradient(135deg, #38bdf8 0%, #8b5cf6 100%);
+  color: white;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.loginButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+}
+
+.orText {
+  font-size: 0.813rem;
+  color: var(--text-muted, #64748b);
+}
+
+.disclaimer {
+  margin: 0.75rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748b);
+}
+
+/* Versao compacta */
+.bannerCompact {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.icon {
+  display: flex;
+  color: #38bdf8;
+}
+
+.compactText {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.link {
+  color: #38bdf8;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+/* Responsivo */
+@media (max-width: 480px) {
+  .banner {
+    padding: 1rem;
+  }
+
+  .header {
+    flex-direction: column;
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .loginButton {
+    text-align: center;
+  }
+
+  .orText {
+    text-align: center;
+  }
+}

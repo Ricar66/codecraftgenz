@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 
 import CardDirectPayment from '../components/CardDirectPayment.jsx';
+import LoginIncentiveBanner from '../components/LoginIncentiveBanner';
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth.js';
 import { getAppById, getPurchaseStatus, registerDownload, submitFeedback, createPaymentPreference, downloadByEmail, activateDeviceLicense } from '../services/appsAPI.js';
@@ -319,11 +320,14 @@ const AppPurchasePage = () => {
               })()}
             </p>
             <p className={styles.muted}>
-              Preço final do produto. Taxas de processamento do pagamento são absorvidas pela plataforma.
+              Preco final do produto. Taxas de processamento do pagamento sao absorvidas pela plataforma.
             </p>
 
+            {/* Banner de incentivo ao login */}
+            <LoginIncentiveBanner />
+
             <p className={styles.muted} style={{ marginTop: 8 }}>
-              Método disponível: Cartão de crédito/débito (via Mercado Pago).
+              Metodo disponivel: Cartao de credito/debito (via Mercado Pago).
             </p>
 
             <div className={styles.btnGroup}>
