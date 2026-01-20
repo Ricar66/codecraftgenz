@@ -77,8 +77,11 @@ export default function LoginIncentiveBanner({ className, compact = false }) {
           <Link to="/login" className={styles.loginButton}>
             Fazer Login
           </Link>
-          <span className={styles.orText}>ou continue sem login</span>
+          <Link to="/register" className={styles.registerButton}>
+            Criar Conta
+          </Link>
         </div>
+        <span className={styles.orText}>ou continue sem login abaixo</span>
       </div>
 
       <p className={styles.disclaimer}>

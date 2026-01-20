@@ -16,6 +16,7 @@ const MentoriaPage = lazy(() => import('./pages/MentoriaPage.jsx'));
 const RankingPage = lazy(() => import('./pages/RankingPage.jsx'));
 const DesafiosPage = lazy(() => import('./pages/DesafiosPage.jsx'));
 const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
 const PasswordResetPage = lazy(() => import('./pages/PasswordResetPage.jsx'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage.jsx'));
 const AppHubPage = lazy(() => import('./pages/AppHubPage.jsx'));
@@ -108,6 +109,7 @@ function App() {
                 <Route path="/ranking" element={<RankingPage />} />
                 <Route path="/desafios" element={<DesafiosPage />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
                 <Route path="/reset-password" element={<PasswordResetPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/aplicativos" element={<AppHubPage />} />
