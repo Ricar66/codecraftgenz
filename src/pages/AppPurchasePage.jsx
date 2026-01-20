@@ -85,6 +85,8 @@ const AppPurchasePage = () => {
   const [showCardForm, setShowCardForm] = useState(initialShowCard);
   // Controla qual método de pagamento está ativo: 'card' | 'payment' | 'wallet'
   const [paymentMethod, setPaymentMethod] = useState('card');
+  // Quantidade de licenças (1-10)
+  const [licenseQuantity, setLicenseQuantity] = useState(1);
 
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailInput, setEmailInput] = useState('');
@@ -327,14 +329,62 @@ const AppPurchasePage = () => {
           <>
             <h1 className={styles.title}>{app?.name || app?.titulo}</h1>
             <p className={styles.muted}>{app?.description || app?.mainFeature}</p>
+            {/* Seletor de quantidade de licenças */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 8, fontSize: '0.9rem', color: '#aaa' }}>
+                Quantidade de licenças:
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button
+                  className={styles.btn}
+                  onClick={() => setLicenseQuantity(q => Math.max(1, q - 1))}
+                  disabled={licenseQuantity <= 1}
+                  style={{ padding: '8px 16px', fontSize: '1.2rem' }}
+                >
+                  −
+                </button>
+                <span style={{ fontSize: '1.5rem', fontWeight: 'bold', minWidth: 40, textAlign: 'center' }}>
+                  {licenseQuantity}
+                </span>
+                <button
+                  className={styles.btn}
+                  onClick={() => setLicenseQuantity(q => Math.min(10, q + 1))}
+                  disabled={licenseQuantity >= 10}
+                  style={{ padding: '8px 16px', fontSize: '1.2rem' }}
+                >
+                  +
+                </button>
+                <span style={{ fontSize: '0.85rem', color: '#888' }}>
+                  (máx. 10 por compra)
+                </span>
+              </div>
+              {licenseQuantity > 1 && (
+                <p style={{ marginTop: 8, fontSize: '0.85rem', color: '#00e4f2' }}>
+                  Cada licença permite instalar em 1 máquina diferente.
+                </p>
+              )}
+            </div>
+
             <p className={styles.price}>
               {(() => {
-                const p = getAppPrice(app || {});
-                return p > 0 ? `R$ ${p.toLocaleString('pt-BR')}` : 'A definir';
+                const unitPrice = getAppPrice(app || {});
+                const total = unitPrice * licenseQuantity;
+                if (unitPrice <= 0) return 'A definir';
+                if (licenseQuantity === 1) return `R$ ${unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+                return (
+                  <>
+                    <span style={{ fontSize: '0.9rem', color: '#aaa', fontWeight: 'normal' }}>
+                      {licenseQuantity}x R$ {unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ={' '}
+                    </span>
+                    R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </>
+                );
               })()}
             </p>
             <p className={styles.muted}>
-              Preco final do produto. Taxas de processamento do pagamento sao absorvidas pela plataforma.
+              {licenseQuantity > 1
+                ? `Total para ${licenseQuantity} licenças. Parcele em até 4x sem juros!`
+                : 'Preço final do produto. Parcele em até 4x sem juros!'}
             </p>
 
             {/* Banner de incentivo ao login */}
@@ -508,8 +558,9 @@ const AppPurchasePage = () => {
               <div id="card-payment-section" className={styles.cardPaymentSection}>
                 <PaymentBrick
                   appId={id}
-                  amount={app?.price || 0}
-                  description={(app?.name || app?.titulo) ? `Compra de ${app?.name || app?.titulo}` : 'Compra de aplicativo'}
+                  amount={getAppPrice(app || {}) * licenseQuantity}
+                  quantity={licenseQuantity}
+                  description={(app?.name || app?.titulo) ? `Compra de ${app?.name || app?.titulo}${licenseQuantity > 1 ? ` (${licenseQuantity} licenças)` : ''}` : 'Compra de aplicativo'}
                   buyer={{
                     name: payerInfo.name,
                     email: payerInfo.email,
@@ -519,7 +570,7 @@ const AppPurchasePage = () => {
                   onPaymentSuccess={async (resp) => {
                     setStatus('approved');
                     const payId = resp?.payment_id || resp?.mp_payment_id || resp?.data?.payment_id || resp?.id || resp?.data?.id || '';
-                    navigate(`/apps/${id}/sucesso?payment_id=${payId}&status=approved`);
+                    navigate(`/apps/${id}/sucesso?payment_id=${payId}&status=approved&quantity=${licenseQuantity}`);
                   }}
                   onStatus={(resp) => {
                     const s = resp?.status || resp?.data?.status;
@@ -535,8 +586,9 @@ const AppPurchasePage = () => {
               <div id="card-payment-section" className={styles.cardPaymentSection}>
                 <CardDirectPayment
                   appId={id}
-                  amount={app?.price || 0}
-                  description={(app?.name || app?.titulo) ? `Compra de ${app?.name || app?.titulo}` : 'Compra de aplicativo'}
+                  amount={getAppPrice(app || {}) * licenseQuantity}
+                  quantity={licenseQuantity}
+                  description={(app?.name || app?.titulo) ? `Compra de ${app?.name || app?.titulo}${licenseQuantity > 1 ? ` (${licenseQuantity} licenças)` : ''}` : 'Compra de aplicativo'}
                   buyer={{
                     name: payerInfo.name,
                     email: payerInfo.email,
@@ -550,10 +602,11 @@ const AppPurchasePage = () => {
                   identificationType="CPF"
                   identificationNumber={payerInfo.identification}
                   deviceId={deviceId}
+                  maxInstallments={4}
                   onPaymentSuccess={async (resp) => {
                     setStatus('approved');
                     const payId = resp?.payment_id || resp?.mp_payment_id || resp?.data?.payment_id || resp?.id || resp?.data?.id || '';
-                    navigate(`/apps/${id}/sucesso?payment_id=${payId}&status=approved`);
+                    navigate(`/apps/${id}/sucesso?payment_id=${payId}&status=approved&quantity=${licenseQuantity}`);
                   }}
                 />
               </div>

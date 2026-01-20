@@ -7,7 +7,7 @@ import { apiRequest } from '../lib/apiConfig.js';
 import { createDirectPayment } from '../services/appsAPI.js';
 import { loadMercadoPagoSDK } from '../utils/loadMercadoPagoSDK.js';
 
-const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo', onPaymentSuccess, onStatus, buyer = {}, cardholderEmail, identificationType, identificationNumber, cardholderName, deviceId }) => {
+const CardDirectPayment = ({ appId, amount, quantity = 1, description = 'Compra de aplicativo', onPaymentSuccess, onStatus, buyer = {}, cardholderEmail, identificationType, identificationNumber, cardholderName, deviceId, maxInstallments = 4 }) => {
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -96,11 +96,16 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
       if (!firstName) throw { status: 400, details: { message: 'Nome do titular do cartão é obrigatório' } };
       if (!number) throw { status: 400, details: { message: 'CPF/CNPJ do titular é obrigatório' } };
 
+      // Limita parcelas ao máximo configurado (default 4)
+      const requestedInstallments = Number(formData?.installments || 1);
+      const finalInstallments = Math.min(Math.max(1, requestedInstallments), maxInstallments);
+
       const payload = {
         token: formData?.token,
         payment_method_id: paymentMethodId,
         ...(formData?.issuer_id ? { issuer_id: formData.issuer_id } : {}),
-        installments: Number(formData?.installments || 1),
+        installments: finalInstallments,
+        quantity: quantity, // Quantidade de licenças
         binary_mode: false,
         capture: true,
         transaction_amount: txAmount,
@@ -112,7 +117,7 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
           identification: { type, number },
         },
         additional_info: {
-          items: [{ id: String(appId || ''), title: String(description || ''), quantity: 1, unit_price: txAmount }],
+          items: [{ id: String(appId || ''), title: String(description || ''), quantity: quantity, unit_price: txAmount / quantity }],
           payer: {
             phone: buyerInfo.phone ? { number: String(buyerInfo.phone) } : undefined,
             address: (buyerInfo.zip || buyerInfo.streetName) ? { zip_code: String(buyerInfo.zip || ''), street_name: String(buyerInfo.streetName || '') } : undefined,
@@ -122,6 +127,7 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
           cardholder_name: holderNameRaw || undefined,
           cardholder_identification_type: (type ? String(type) : undefined),
           cardholder_identification_number: (number ? String(number) : undefined),
+          license_quantity: quantity,
         }
       };
       if (dev) { try { console.log('Direct payment payload', payload); } catch { /* noop */ } }
@@ -196,16 +202,16 @@ const CardDirectPayment = ({ appId, amount, description = 'Compra de aplicativo'
   const paymentBrickCustomization = {
     texts: {
       formTitle: 'Dados do Cartão',
-      installmentsSectionTitle: 'Escolha as parcelas',
+      installmentsSectionTitle: `Parcele em até ${maxInstallments}x`,
       cardholderName: { label: 'Nome impresso no cartão', placeholder: 'Ex: João M. da Silva' },
       cardholderIdentification: { label: 'CPF do titular do cartão' },
       cardNumber: { label: 'Número do cartão' },
       expirationDate: { label: 'Vencimento (MM/AA)' },
       securityCode: { label: 'Cód. de segurança (CVV)' },
-      formSubmit: 'Pagar Agora',
+      formSubmit: quantity > 1 ? `Pagar ${quantity} licenças` : 'Pagar Agora',
     },
     visual: { style: { theme: 'dark' } },
-    paymentMethods: { maxInstallments: 1 },
+    paymentMethods: { maxInstallments: maxInstallments },
   };
 
   return (
