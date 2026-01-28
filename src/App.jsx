@@ -33,6 +33,10 @@ const AdminCrafters = lazy(() => import('./admin/AdminCrafters.jsx'));
 const AdminEquipes = lazy(() => import('./admin/AdminEquipes.jsx'));
 const AdminIdeias = lazy(() => import('./admin/AdminIdeias.jsx'));
 const AdminMentores = lazy(() => import('./admin/AdminMentores.jsx'));
+const AdminRanking = lazy(() => import('./admin/AdminRanking.jsx'));
+const AdminProjetos = lazy(() => import('./admin/AdminProjetos.jsx'));
+const AdminApps = lazy(() => import('./admin/AdminApps.jsx'));
+const AdminDesafios = lazy(() => import('./admin/AdminDesafios.jsx'));
 const AdminProposals = lazy(() => import('./admin/AdminProposals.jsx'));
 const AdminInscricoes = lazy(() => import('./admin/AdminInscricoes'));
 const AdminPagamentos = lazy(() => import('./admin/AdminPagamentos.jsx'));
@@ -40,12 +44,8 @@ const AdminPagamentos = lazy(() => import('./admin/AdminPagamentos.jsx'));
 // Admin sub-pages (imported dynamically from AdminLayout)
 const Dashboard = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Dashboard })));
 const Usuarios = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Usuarios })));
-const Ranking = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Ranking })));
-const Projetos = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Projetos })));
-const Desafios = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Desafios })));
 const Financas = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Financas })));
 const Config = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Config })));
-const Apps = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Apps })));
 
 /**
  * Componente de fallback leve para carregamento de paginas
@@ -140,10 +140,10 @@ function App() {
                   <Route path="mentores" element={<AdminMentores />} />
                   <Route path="equipes" element={<AdminEquipes />} />
                   <Route path="crafters" element={<AdminCrafters />} />
-                  <Route path="ranking" element={<Ranking />} />
-                  <Route path="projetos" element={<Projetos />} />
-                  <Route path="apps" element={<Apps />} />
-                  <Route path="desafios" element={<Desafios />} />
+                  <Route path="ranking" element={<AdminRanking />} />
+                  <Route path="projetos" element={<AdminProjetos />} />
+                  <Route path="apps" element={<AdminApps />} />
+                  <Route path="desafios" element={<AdminDesafios />} />
                   <Route path="inscricoes" element={<AdminInscricoes />} />
                   <Route path="ideias" element={<AdminIdeias />} />
                   <Route path="propostas" element={<AdminProposals />} />
