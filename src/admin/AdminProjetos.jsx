@@ -29,6 +29,7 @@ export default function AdminProjetos() {
     status: 'rascunho',
     preco: 0,
     progresso: 0,
+    visivel: false,
     thumb_url: '',
     tags: []
   });
@@ -62,8 +63,8 @@ export default function AdminProjetos() {
 
   const onSave = async () => {
     try {
-      if (!String(form.titulo || '').trim() || !String(form.owner || '').trim()) {
-        showNotice('error', 'Preencha título e owner.');
+      if (!String(form.titulo || '').trim() || !String(form.owner || '').trim() || !String(form.status || '').trim()) {
+        showNotice('error', 'Preencha título, owner e status.');
         return;
       }
       if (String(form.descricao || '').length < 10) {
@@ -71,7 +72,7 @@ export default function AdminProjetos() {
         return;
       }
       if (isInvalidUrl(form.thumb_url)) {
-        showNotice('error', 'URL de imagem inválida. Use http(s).');
+        showNotice('error', 'URL de imagem inválida. Use http(s) ou carregue um link público.');
         return;
       }
 
@@ -80,30 +81,32 @@ export default function AdminProjetos() {
       // Auto-create app when project is finished
       if ((form.status || '').toLowerCase() === 'finalizado') {
         try {
+          const inferredOwnerId = String(form.owner || '').toLowerCase().includes('admin') ? 1 : 2;
           const appPayload = {
             name: form.titulo,
             mainFeature: (form.descricao || '').split('.').shift(),
             price: Number(form.preco || 0),
             thumbnail: form.thumb_url || '',
-            project_id: savedProject.id || form.id
+            project_id: savedProject.id || form.id,
+            ownerId: inferredOwnerId
           };
           await apiRequest(`/api/apps/from-project/${savedProject.id || form.id}`, {
             method: 'POST',
             body: JSON.stringify(appPayload)
           });
         } catch (appErr) {
-          console.warn('Erro ao criar app:', appErr);
+          console.warn('Erro ao criar app a partir do projeto:', appErr);
         }
       }
 
       setForm({
         titulo: '', owner: '', descricao: '', data_inicio: '',
-        status: 'rascunho', preco: 0, progresso: 0, thumb_url: '', tags: []
+        status: 'rascunho', preco: 0, progresso: 0, visivel: false, thumb_url: '', tags: []
       });
-      showNotice('success', form.id ? 'Projeto atualizado!' : 'Projeto criado!');
+      showNotice('success', form.id ? 'Projeto atualizado com sucesso.' : 'Projeto criado com sucesso.');
       refresh();
     } catch (err) {
-      showNotice('error', 'Erro ao salvar: ' + (err.message || 'Falha desconhecida'));
+      showNotice('error', 'Erro ao salvar projeto: ' + (err.message || 'Falha desconhecida'));
     }
   };
 
@@ -117,6 +120,7 @@ export default function AdminProjetos() {
       status: p.status || 'rascunho',
       preco: p.price ?? 0,
       progresso: p.progress ?? p.progresso ?? 0,
+      visivel: p.visivel ?? p.visible ?? false,
       thumb_url: p.thumb_url || '',
       tags: p.tags || []
     });
@@ -162,7 +166,7 @@ export default function AdminProjetos() {
   const cancelEdit = () => {
     setForm({
       titulo: '', owner: '', descricao: '', data_inicio: '',
-      status: 'rascunho', preco: 0, progresso: 0, thumb_url: '', tags: []
+      status: 'rascunho', preco: 0, progresso: 0, visivel: false, thumb_url: '', tags: []
     });
   };
 

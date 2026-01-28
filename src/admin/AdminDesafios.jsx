@@ -9,6 +9,7 @@ import {
 
 import { useDesafios, DesafiosRepo } from '../hooks/useAdminRepo';
 import { apiRequest } from '../lib/apiConfig';
+import { realtime } from '../lib/realtime';
 
 import AdminCard from './components/AdminCard';
 import StatusBadge from './components/StatusBadge';
@@ -106,6 +107,15 @@ export default function AdminDesafios() {
     setDetails(null);
     if (next) await fetchDetails(next);
   };
+
+  // Realtime subscription for updates
+  useEffect(() => {
+    const unsub = realtime.subscribe('desafios_changed', () => {
+      refresh();
+      if (detailsOpen) fetchDetails(detailsOpen);
+    });
+    return () => unsub();
+  }, [detailsOpen, refresh]);
 
   const onSave = async () => {
     setBusy(true);
@@ -392,6 +402,7 @@ export default function AdminDesafios() {
                 <option value="draft">Rascunho</option>
                 <option value="active">Ativo</option>
                 <option value="closed">Encerrado</option>
+                <option value="archived">Arquivado</option>
               </select>
             </div>
           </div>
