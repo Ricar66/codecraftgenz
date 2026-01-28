@@ -1,41 +1,71 @@
 /* src/components/Footer/Footer.module.css */
+/* Footer profissional B2B - Mobile First */
 
 .footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.25));
-  min-height: 72px;
-  contain: layout style;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(10, 10, 15, 0.95) 0%, rgba(26, 10, 46, 0.98) 100%);
   margin-top: auto;
+  contain: layout style;
 }
 
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 40px;
-  flex-wrap: wrap;
+  padding: 32px 16px 24px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
 }
 
+/* Colunas */
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.columnTitle {
+  color: var(--cor-terciaria);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+/* Brand */
 .brand {
   color: var(--texto-branco);
   font-family: var(--fonte-titulos);
+  font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: 0.5px;
 }
 
+.brandDescription {
+  color: var(--texto-gelo);
+  opacity: 0.8;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+/* Links */
 .links {
   display: flex;
-  gap: 16px;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .links a {
   color: var(--texto-gelo);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  padding: 8px 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   transition: color 0.2s ease;
 }
 
@@ -43,35 +73,45 @@
   color: var(--cor-terciaria);
 }
 
+.links a:focus-visible {
+  outline: 2px solid var(--cor-terciaria);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Redes Sociais */
 .social {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
 }
 
 .socialLink {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--texto-branco);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
   text-decoration: none;
-  font-size: 1.2rem;
+  font-size: 1.25rem;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .socialLink:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
-/* Cores especificas para cada rede social */
+.socialLink:focus-visible {
+  outline: 2px solid var(--cor-terciaria);
+  outline-offset: 2px;
+}
+
+/* Cores específicas para cada rede social */
 .instagram:hover {
   background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
   border-color: transparent;
@@ -87,29 +127,55 @@
   border-color: #25D366;
 }
 
-.note {
-  color: var(--texto-gelo);
-  opacity: 0.8;
-  font-size: 0.85rem;
-  font-style: italic;
+/* Copyright */
+.copyright {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 24px;
 }
 
-.copyright {
+.copyrightInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+  text-align: center;
   color: var(--texto-gelo);
   opacity: 0.6;
   font-size: 0.8rem;
 }
 
-/* Responsividade */
-@media (max-width: 768px) {
+/* Tablet (2 colunas) */
+@media (min-width: 640px) {
   .container {
-    flex-direction: column;
-    text-align: center;
-    gap: 16px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+    padding: 40px 24px 32px;
+  }
+}
+
+/* Desktop (5 colunas) */
+@media (min-width: 1024px) {
+  .container {
+    grid-template-columns: 1.5fr repeat(4, 1fr);
+    gap: 40px;
+    padding: 48px 32px 40px;
   }
 
-  .links {
-    flex-wrap: wrap;
-    justify-content: center;
+  .links a {
+    padding: 6px 0;
+    min-height: auto;
+  }
+
+  .socialLink {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
+}
+
+/* Reduz animações em mobile para performance */
+@media (prefers-reduced-motion: reduce) {
+  .links a,
+  .socialLink {
+    transition: none;
   }
 }
