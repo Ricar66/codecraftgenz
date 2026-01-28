@@ -2,7 +2,7 @@
 import React, { useState, useCallback, memo } from 'react';
 import { FaBuilding, FaUser, FaEnvelope, FaLaptopCode, FaMoneyBillWave, FaFileAlt, FaCheckCircle, FaRocket } from 'react-icons/fa';
 
-import Navbar from '../components/Navbar';
+import Navbar from '../components/Navbar/Navbar';
 import styles from './ForCompaniesPage.module.css';
 
 /**
