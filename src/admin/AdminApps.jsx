@@ -6,7 +6,7 @@ import {
   FaSave, FaTimes, FaSync, FaShoppingCart, FaUpload, FaDownload
 } from 'react-icons/fa';
 
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/useAuth';
 import { getAllApps, updateApp, createApp, deleteApp, uploadAppExecutable } from '../services/appsAPI';
 import { sanitizeImageUrl } from '../utils/urlSanitize';
 
