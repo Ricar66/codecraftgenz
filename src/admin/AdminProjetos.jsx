@@ -47,8 +47,8 @@ export default function AdminProjetos() {
 
   const filtered = useMemo(() =>
     (list || []).filter(p =>
-      (p.title || p.titulo || '').toLowerCase().includes(query.toLowerCase()) ||
-      (p.owner || '').toLowerCase().includes(query.toLowerCase()) ||
+      (p.title || p.titulo || p.nome || '').toLowerCase().includes(query.toLowerCase()) ||
+      (p.owner || p.responsavel || '').toLowerCase().includes(query.toLowerCase()) ||
       (p.status || '').toLowerCase().includes(query.toLowerCase())
     ), [list, query]
   );
@@ -113,12 +113,12 @@ export default function AdminProjetos() {
   const onEdit = (p) => {
     setForm({
       id: p.id,
-      titulo: p.title || p.titulo || '',
-      owner: p.owner || '',
+      titulo: p.title || p.titulo || p.nome || '',
+      owner: p.owner || p.responsavel || '',
       descricao: p.description || p.descricao || '',
       data_inicio: p.startDate || p.data_inicio || '',
       status: p.status || 'rascunho',
-      preco: p.price ?? 0,
+      preco: p.price ?? p.preco ?? 0,
       progresso: p.progress ?? p.progresso ?? 0,
       visivel: p.visivel ?? p.visible ?? false,
       thumb_url: p.thumb_url || '',
@@ -149,9 +149,9 @@ export default function AdminProjetos() {
   };
 
   const exportCSV = () => {
-    const headers = 'id,title,status,price,startDate,progress\n';
+    const headers = 'id,title,owner,status,price,startDate,progress\n';
     const rows = filtered.map(p =>
-      `${p.id},"${p.title || p.titulo}",${p.status},${p.price || 0},${p.startDate || ''},${p.progress ?? p.progresso ?? 0}`
+      `${p.id},"${p.title || p.titulo || p.nome || ''}","${p.owner || p.responsavel || ''}",${p.status},${p.price ?? p.preco ?? 0},${p.startDate || p.data_inicio || ''},${p.progress ?? p.progresso ?? 0}`
     ).join('\n');
     const csv = headers + rows;
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -284,9 +284,9 @@ export default function AdminProjetos() {
               ) : pageItems.map(p => (
                 <tr key={p.id}>
                   <td data-label="Título">
-                    <strong>{p.title || p.titulo}</strong>
+                    <strong>{p.title || p.titulo || p.nome || '—'}</strong>
                   </td>
-                  <td data-label="Owner">{p.owner}</td>
+                  <td data-label="Owner">{p.owner || p.responsavel || '—'}</td>
                   <td data-label="Status">
                     <StatusBadge variant={getStatusVariant(p.status)}>
                       {p.status}
