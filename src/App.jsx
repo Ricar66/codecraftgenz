@@ -32,6 +32,7 @@ const AdminLayout = lazy(() => import('./admin/AdminLayout.jsx'));
 const AdminCrafters = lazy(() => import('./admin/AdminCrafters.jsx'));
 const AdminEquipes = lazy(() => import('./admin/AdminEquipes.jsx'));
 const AdminIdeias = lazy(() => import('./admin/AdminIdeias.jsx'));
+const AdminMentores = lazy(() => import('./admin/AdminMentores.jsx'));
 const AdminProposals = lazy(() => import('./admin/AdminProposals.jsx'));
 const AdminInscricoes = lazy(() => import('./admin/AdminInscricoes'));
 const AdminPagamentos = lazy(() => import('./admin/AdminPagamentos.jsx'));
@@ -39,7 +40,6 @@ const AdminPagamentos = lazy(() => import('./admin/AdminPagamentos.jsx'));
 // Admin sub-pages (imported dynamically from AdminLayout)
 const Dashboard = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Dashboard })));
 const Usuarios = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Usuarios })));
-const Mentores = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Mentores })));
 const Ranking = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Ranking })));
 const Projetos = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Projetos })));
 const Desafios = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Desafios })));
@@ -137,7 +137,7 @@ function App() {
                       <Usuarios />
                     </ProtectedRoute>
                   } />
-                  <Route path="mentores" element={<Mentores />} />
+                  <Route path="mentores" element={<AdminMentores />} />
                   <Route path="equipes" element={<AdminEquipes />} />
                   <Route path="crafters" element={<AdminCrafters />} />
                   <Route path="ranking" element={<Ranking />} />
