@@ -1,6 +1,6 @@
 // src/components/Navbar/Navbar.jsx
-import React, { useState, useRef, useEffect } from 'react';
-import { FaBars, FaTimes, FaUser, FaSignOutAlt, FaShoppingBag, FaChevronDown } from 'react-icons/fa';
+import React, { useState, useRef, useEffect, memo, useCallback } from 'react';
+import { FaBars, FaTimes, FaUser, FaSignOutAlt, FaShoppingBag, FaChevronDown, FaBuilding } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
 
 import logo from '../../assets/logo-codecraft.svg';
@@ -10,9 +10,9 @@ import styles from './Navbar.module.css';
 
 /**
  * Componente da Barra de Navegacao
- * Inclui o logo, links de navegacao, menu mobile e area do usuario logado.
+ * Otimizado com memo e useCallback para performance mobile
  */
-const Navbar = () => {
+const Navbar = memo(() => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
@@ -31,23 +31,23 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
+  const toggleMobileMenu = useCallback(() => {
+    setIsMobileMenuOpen(prev => !prev);
+  }, []);
 
-  const closeMobileMenu = () => {
+  const closeMobileMenu = useCallback(() => {
     setIsMobileMenuOpen(false);
-  };
+  }, []);
 
-  const isActiveLink = (path) => {
+  const isActiveLink = useCallback((path) => {
     return location.pathname === path;
-  };
+  }, [location.pathname]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     setIsUserMenuOpen(false);
     closeMobileMenu();
     await logout();
-  };
+  }, [closeMobileMenu, logout]);
 
   // Pega o primeiro nome do usuario
   const firstName = user?.name ? user.name.split(' ')[0] : 'Usuario';
@@ -125,6 +125,15 @@ const Navbar = () => {
               onClick={closeMobileMenu}
             >
               Aplicativos
+            </Link>
+          </li>
+          <li className={styles.navItem}>
+            <Link
+              to="/para-empresas"
+              className={`${styles.navLink} ${styles.navLinkB2B} ${isActiveLink('/para-empresas') ? styles.navLinkActive : ''}`}
+              onClick={closeMobileMenu}
+            >
+              <FaBuilding aria-hidden="true" /> Para Empresas
             </Link>
           </li>
 
@@ -227,6 +236,8 @@ const Navbar = () => {
       </div>
     </nav>
   );
-};
+});
+
+Navbar.displayName = 'Navbar';
 
 export default Navbar;

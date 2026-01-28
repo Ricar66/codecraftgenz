@@ -12,6 +12,16 @@ import { getAppPrice } from '../utils/appModel.js';
 import { appsCache } from '../utils/dataCache.js';
 import { globalPerformanceMonitor } from '../utils/performanceMonitor.js';
 
+// Converte URL relativa para URL completa do backend
+const resolveDownloadUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+  if (cleanUrl.startsWith('/api/')) return `${API_BASE_URL}${cleanUrl}`;
+  if (cleanUrl.startsWith('/downloads/')) return `${API_BASE_URL}/api${cleanUrl}`;
+  return `${API_BASE_URL}${cleanUrl}`;
+};
+
 const AppsPage = () => {
   const navigate = useNavigate();
   const [apps, setApps] = useState([]);
@@ -178,14 +188,14 @@ const AppsPage = () => {
         const statusResp = await fetch(`${API_BASE_URL}/api/apps/${encodeURIComponent(app.id)}/purchase/status?status=approved`);
         if (!statusResp.ok) throw new Error(`Falha no download (HTTP ${resp.status})`);
         const js = await statusResp.json().catch(()=>({}));
-        const directUrl = js?.download_url || js?.data?.download_url || null;
+        const directUrl = resolveDownloadUrl(js?.download_url || js?.data?.download_url || null);
         if (!directUrl) throw new Error('Download não liberado. Pagamento não aprovado.');
         window.location.href = directUrl;
         setPayModal(s => ({ ...s, status: 'done', progress: 100 }));
         return;
       }
       const js = await resp.json().catch(()=>({}));
-      const directUrl = js?.download_url || null;
+      const directUrl = resolveDownloadUrl(js?.download_url || null);
       if (!directUrl) throw new Error('Aplicativo sem URL de executável configurada');
       window.location.href = directUrl;
       setPayModal(s => ({ ...s, status: 'done', progress: 100 }));

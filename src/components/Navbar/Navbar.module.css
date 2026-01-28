@@ -97,6 +97,20 @@
   border-radius: 1px;
 }
 
+/* B2B Button - Destaque Para Empresas */
+.navLinkB2B {
+  border: 1px solid var(--cor-primaria);
+  background: rgba(209, 43, 242, 0.1);
+  color: var(--cor-primaria) !important;
+  font-weight: 600;
+}
+
+.navLinkB2B:hover {
+  background: rgba(209, 43, 242, 0.2);
+  color: #fff !important;
+  border-color: var(--cor-primaria);
+}
+
 /* CTA Button - Destaque principal */
 .navLinkCta {
   background: linear-gradient(135deg, var(--cor-terciaria) 0%, var(--cor-primaria) 100%);

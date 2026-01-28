@@ -25,12 +25,14 @@ const AppPurchasePage = lazy(() => import('./pages/AppPurchasePage.jsx'));
 const OrderSuccessPage = lazy(() => import('./pages/OrderSuccessPage.jsx'));
 const CacheMaintenancePage = lazy(() => import('./pages/CacheMaintenancePage.jsx'));
 const MyAccountPage = lazy(() => import('./pages/MyAccountPage.jsx'));
+const ForCompaniesPage = lazy(() => import('./pages/ForCompaniesPage.jsx'));
 
 // Admin pages - lazy loaded
 const AdminLayout = lazy(() => import('./admin/AdminLayout.jsx'));
 const AdminCrafters = lazy(() => import('./admin/AdminCrafters.jsx'));
 const AdminEquipes = lazy(() => import('./admin/AdminEquipes.jsx'));
 const AdminIdeias = lazy(() => import('./admin/AdminIdeias.jsx'));
+const AdminProposals = lazy(() => import('./admin/AdminProposals.jsx'));
 const AdminInscricoes = lazy(() => import('./admin/AdminInscricoes'));
 const AdminPagamentos = lazy(() => import('./admin/AdminPagamentos.jsx'));
 
@@ -114,6 +116,7 @@ function App() {
                 <Route path="/reset-password" element={<PasswordResetPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/aplicativos" element={<AppHubPage />} />
+                <Route path="/para-empresas" element={<ForCompaniesPage />} />
                 <Route path="/cache/clear" element={<CacheMaintenancePage />} />
                 <Route path="/apps" element={
                   <ProtectedRoute allowed={["admin","user","editor","viewer"]}>
@@ -143,6 +146,7 @@ function App() {
                   <Route path="desafios" element={<Desafios />} />
                   <Route path="inscricoes" element={<AdminInscricoes />} />
                   <Route path="ideias" element={<AdminIdeias />} />
+                  <Route path="propostas" element={<AdminProposals />} />
                   <Route path="financas" element={<Financas />} />
                   <Route path="pagamentos" element={
                     <ProtectedRoute allowed={["admin"]}>

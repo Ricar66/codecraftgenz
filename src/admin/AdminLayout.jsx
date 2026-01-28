@@ -14,11 +14,19 @@ import { getAppPrice, getAppImageUrl } from '../utils/appModel.js';
 import { sanitizeImageUrl } from '../utils/urlSanitize.js';
 
 import AdminIdeias from './AdminIdeias.jsx';
+import AdminProposals from './AdminProposals.jsx';
+import SuperDashboard from './SuperDashboard.jsx';
 import styles from './AdminLayout.module.css';
 
 import './AdminCommon.css';
 
+// Dashboard usa o novo SuperDashboard com gráficos Recharts
 export function Dashboard() {
+  return <SuperDashboard />;
+}
+
+// Dashboard antigo (backup) - removido para usar SuperDashboard
+function DashboardLegacy() {
   const [periodo, setPeriodo] = React.useState('30d');
   const [tipo, setTipo] = React.useState('all');
   const [statusFiltro, setStatusFiltro] = React.useState('');
@@ -2392,6 +2400,10 @@ export default function AdminLayout() {
           <NavLink to="/admin/ideias" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
             <span className={styles.menuIcon}>💡</span>
             <span className={styles.menuText}>Ideias</span>
+          </NavLink>
+          <NavLink to="/admin/propostas" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>💼</span>
+            <span className={styles.menuText}>Propostas B2B</span>
           </NavLink>
           <NavLink to="/admin/config" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
             <span className={styles.menuIcon}>⚙️</span>
