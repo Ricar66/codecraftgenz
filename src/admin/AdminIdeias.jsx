@@ -1,11 +1,15 @@
+// src/admin/AdminIdeias.jsx
+// Refatorado para usar Design System CodeCraft
 import React, { useState, useEffect } from 'react';
-import './AdminIdeias.css';
-import './AdminCommon.css';
+import { FaLightbulb, FaPlus, FaThumbsUp, FaComment, FaTimes, FaSave } from 'react-icons/fa';
 
-// Simulação de API - será substituída por chamadas reais
+import AdminCard from './components/AdminCard';
+import StatusBadge from './components/StatusBadge';
+import styles from './AdminIdeias.module.css';
+
+// Simulação de API
 const IdeiasRepo = {
   async getAll() {
-    // Simular chamada API
     return [
       {
         id: 1,
@@ -29,19 +33,13 @@ const IdeiasRepo = {
       }
     ];
   },
-
   async create(ideia) {
-    // Simular criação
     return { ...ideia, id: Date.now(), data_criacao: new Date().toISOString(), votos: 0, comentarios: [] };
   },
-
-  async vote(ideiaId) { // eslint-disable-line no-unused-vars
-    // Simular voto
+  async vote(ideiaId) {
     return { success: true };
   },
-
-  async addComment(ideiaId, comentario) { // eslint-disable-line no-unused-vars
-    // Simular comentário
+  async addComment(ideiaId, comentario) {
     return { success: true };
   }
 };
@@ -78,7 +76,6 @@ export default function AdminIdeias() {
       alert('Preencha todos os campos obrigatórios');
       return;
     }
-
     try {
       const novaIdeia = await IdeiasRepo.create(form);
       setIdeias([novaIdeia, ...ideias]);
@@ -93,9 +90,9 @@ export default function AdminIdeias() {
   const handleVotar = async (ideiaId) => {
     try {
       await IdeiasRepo.vote(ideiaId);
-      setIdeias(ideias.map(ideia => 
-        ideia.id === ideiaId 
-          ? { ...ideia, votos: ideia.votos + 1 } 
+      setIdeias(ideias.map(ideia =>
+        ideia.id === ideiaId
+          ? { ...ideia, votos: ideia.votos + 1 }
           : ideia
       ));
     } catch (err) {
@@ -108,31 +105,28 @@ export default function AdminIdeias() {
       alert('Digite um comentário');
       return;
     }
-
     try {
       await IdeiasRepo.addComment(ideiaId, {
-        autor: 'Admin', // Será substituído pelo usuário logado
+        autor: 'Admin',
         texto: novoComentario,
         data: new Date().toISOString()
       });
-
-      setIdeias(ideias.map(ideia => 
-        ideia.id === ideiaId 
-          ? { 
-              ...ideia, 
+      setIdeias(ideias.map(ideia =>
+        ideia.id === ideiaId
+          ? {
+              ...ideia,
               comentarios: [
                 ...ideia.comentarios,
-                { 
-                  id: Date.now(), 
-                  autor: 'Admin', 
-                  texto: novoComentario, 
-                  data: new Date().toISOString() 
+                {
+                  id: Date.now(),
+                  autor: 'Admin',
+                  texto: novoComentario,
+                  data: new Date().toISOString()
                 }
-              ] 
-            } 
+              ]
+            }
           : ideia
       ));
-
       setNovoComentario('');
       setComentarioAberto(null);
     } catch (err) {
@@ -152,9 +146,9 @@ export default function AdminIdeias() {
 
   if (loading) {
     return (
-      <div className="admin-content">
-        <div className="loading-state">
-          <div className="spinner"></div>
+      <div className={styles.page}>
+        <div className={styles.loadingState}>
+          <div className={styles.spinner} />
           <p>Carregando ideias...</p>
         </div>
       </div>
@@ -163,39 +157,45 @@ export default function AdminIdeias() {
 
   if (error) {
     return (
-      <div className="admin-content">
-        <div className="error-state">
-          <h3>Erro ao carregar ideias</h3>
-          <p>{error}</p>
-          <button onClick={carregarIdeias} className="retry-button">
-            Tentar novamente
-          </button>
-        </div>
+      <div className={styles.page}>
+        <AdminCard variant="outlined">
+          <div className={styles.errorState}>
+            <h3>Erro ao carregar ideias</h3>
+            <p>{error}</p>
+            <button onClick={carregarIdeias} className={styles.retryBtn}>
+              Tentar novamente
+            </button>
+          </div>
+        </AdminCard>
       </div>
     );
   }
 
   return (
-    <div className="admin-content">
-      <div className="admin-ideias-header">
-        <h1 className="title">💡 Ideias de Projeto</h1>
-        <p className="muted">Compartilhe e colabore em ideias para novos projetos</p>
-      </div>
-
-      <div className="filters-section">
-        <button 
-          className="btn btn-primary"
+    <div className={styles.page}>
+      {/* Header */}
+      <header className={styles.header}>
+        <div className={styles.headerTitle}>
+          <FaLightbulb className={styles.headerIcon} />
+          <div>
+            <h1>Ideias de Projeto</h1>
+            <p>Compartilhe e colabore em ideias para novos projetos</p>
+          </div>
+        </div>
+        <button
+          className={styles.newIdeaBtn}
           onClick={() => setFormAberto(!formAberto)}
         >
-          {formAberto ? '❌ Cancelar' : '➕ Nova Ideia'}
+          {formAberto ? <><FaTimes /> Cancelar</> : <><FaPlus /> Nova Ideia</>}
         </button>
-      </div>
+      </header>
 
+      {/* Formulário Nova Ideia */}
       {formAberto && (
-        <div className="nova-ideia-form card">
-          <h3>Adicionar Nova Ideia</h3>
-          <form onSubmit={handleCriarIdeia}>
-            <div className="form-group">
+        <AdminCard variant="elevated" className={styles.formCard}>
+          <h3 className={styles.formTitle}>Adicionar Nova Ideia</h3>
+          <form onSubmit={handleCriarIdeia} className={styles.form}>
+            <div className={styles.formGroup}>
               <label htmlFor="titulo">Título *</label>
               <input
                 id="titulo"
@@ -203,101 +203,108 @@ export default function AdminIdeias() {
                 placeholder="Título da ideia"
                 value={form.titulo}
                 onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+                className={styles.input}
                 required
               />
             </div>
 
-            <div className="form-group">
+            <div className={styles.formGroup}>
               <label htmlFor="descricao">Descrição Detalhada *</label>
               <textarea
                 id="descricao"
                 placeholder="Descreva sua ideia em detalhes..."
                 value={form.descricao}
                 onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                className={styles.textarea}
                 rows="4"
                 required
               />
             </div>
 
-            <div className="form-actions">
-              <button type="submit" className="btn btn-primary">
-                💾 Salvar Ideia
+            <div className={styles.formActions}>
+              <button type="submit" className={styles.saveBtn}>
+                <FaSave /> Salvar Ideia
               </button>
-              <button 
-                type="button" 
-                className="btn btn-outline"
+              <button
+                type="button"
+                className={styles.cancelBtn}
                 onClick={() => setFormAberto(false)}
               >
-                ❌ Cancelar
+                <FaTimes /> Cancelar
               </button>
             </div>
           </form>
-        </div>
+        </AdminCard>
       )}
 
-      <div className="ideias-list">
+      {/* Lista de Ideias */}
+      <div className={styles.ideiasList}>
         {ideias.length === 0 ? (
-          <div className="no-ideias">
-            <p>📭 Nenhuma ideia cadastrada ainda.</p>
-            <p>Seja o primeiro a compartilhar uma ideia!</p>
-          </div>
+          <AdminCard variant="outlined" className={styles.emptyCard}>
+            <div className={styles.emptyState}>
+              <FaLightbulb className={styles.emptyIcon} />
+              <p>Nenhuma ideia cadastrada ainda.</p>
+              <p>Seja o primeiro a compartilhar uma ideia!</p>
+            </div>
+          </AdminCard>
         ) : (
           ideias.map((ideia) => (
-            <div key={ideia.id} className="ideia-card card">
-              <div className="ideia-header">
-                <h3>{ideia.titulo}</h3>
-                <div className="ideia-meta">
-                  <span className="autor">por {ideia.autor}</span>
-                  <span className="data">{formatarData(ideia.data_criacao)}</span>
+            <AdminCard key={ideia.id} variant="elevated" className={styles.ideiaCard}>
+              <div className={styles.ideiaHeader}>
+                <h3 className={styles.ideiaTitulo}>{ideia.titulo}</h3>
+                <div className={styles.ideiaMeta}>
+                  <StatusBadge variant="info">por {ideia.autor}</StatusBadge>
+                  <span className={styles.ideiaData}>{formatarData(ideia.data_criacao)}</span>
                 </div>
               </div>
 
-              <div className="ideia-content">
+              <div className={styles.ideiaContent}>
                 <p>{ideia.descricao}</p>
               </div>
 
-              <div className="ideia-actions">
-                <button 
-                  className="btn btn-outline"
+              <div className={styles.ideiaActions}>
+                <button
+                  className={styles.voteBtn}
                   onClick={() => handleVotar(ideia.id)}
                   title="Votar nesta ideia"
                 >
-                  👍 {ideia.votos}
+                  <FaThumbsUp /> {ideia.votos}
                 </button>
 
-                <button 
-                  className="btn btn-outline"
+                <button
+                  className={`${styles.commentBtn} ${comentarioAberto === ideia.id ? styles.active : ''}`}
                   onClick={() => setComentarioAberto(comentarioAberto === ideia.id ? null : ideia.id)}
                 >
-                  💬 {ideia.comentarios.length}
+                  <FaComment /> {ideia.comentarios.length}
                 </button>
               </div>
 
               {comentarioAberto === ideia.id && (
-                <div className="comentario-section">
-                  <div className="comentario-form">
+                <div className={styles.comentarioSection}>
+                  <div className={styles.comentarioForm}>
                     <textarea
                       placeholder="Deixe seu comentário..."
                       value={novoComentario}
                       onChange={(e) => setNovoComentario(e.target.value)}
+                      className={styles.comentarioInput}
                       rows="2"
                     />
-                    <button 
-                      className="btn btn-primary"
+                    <button
+                      className={styles.addCommentBtn}
                       onClick={() => handleAdicionarComentario(ideia.id)}
                     >
-                      ➕ Adicionar Comentário
+                      <FaPlus /> Adicionar
                     </button>
                   </div>
 
                   {ideia.comentarios.length > 0 && (
-                    <div className="comentarios-list">
+                    <div className={styles.comentariosList}>
                       <h4>Comentários:</h4>
                       {ideia.comentarios.map((comentario) => (
-                        <div key={comentario.id} className="comentario-item">
-                          <div className="comentario-header">
+                        <div key={comentario.id} className={styles.comentarioItem}>
+                          <div className={styles.comentarioHeader}>
                             <strong>{comentario.autor}</strong>
-                            <span className="comentario-data">
+                            <span className={styles.comentarioData}>
                               {formatarData(comentario.data)}
                             </span>
                           </div>
@@ -308,7 +315,7 @@ export default function AdminIdeias() {
                   )}
                 </div>
               )}
-            </div>
+            </AdminCard>
           ))
         )}
       </div>
