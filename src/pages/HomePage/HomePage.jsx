@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 
-import logoCodecraft from '../../assets/logo-codecraft.svg';
+import logoCodecraft from '../../assets/logo-principal.png';
 import CasesSection from '../../components/CasesSection/CasesSection';
 import CompanySection from '../../components/CompanySection/CompanySection';
 import CrafterModal from '../../components/CrafterModal/CrafterModal';

@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, memo, useCallback } from 'react';
 import { FaBars, FaTimes, FaUser, FaSignOutAlt, FaShoppingBag, FaChevronDown, FaBuilding } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
 
-import logo from '../../assets/logo-codecraft.svg';
+import logo from '../../assets/logo-principal.png';
 import { useAuth } from '../../context/useAuth';
 
 import styles from './Navbar.module.css';
