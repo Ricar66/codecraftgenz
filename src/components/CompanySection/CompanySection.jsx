@@ -1,7 +1,7 @@
 // src/components/CompanySection/CompanySection.jsx
 import React from 'react';
 
-import logoCodeCraft from '../../assets/logo-codecraft.svg';
+import logoCodeCraft from '../../assets/logo-principal.png';
 
 import styles from './CompanySection.module.css';
 

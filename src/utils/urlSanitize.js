@@ -16,7 +16,7 @@ export function sanitizeImageUrl(input) {
     const isLocalhost = u.hostname === 'localhost' || u.hostname.endsWith('.local');
     if (isHttpsPage && isLocalhost) {
       // Evita mixed content e retorna fallback
-      return '/logo-codecraft.png';
+      return '/logo-principal.png';
     }
 
     // Se a página é HTTPS e a imagem é HTTP em host externo, tenta upgrade para HTTPS
@@ -26,13 +26,13 @@ export function sanitizeImageUrl(input) {
 
   const allowed = ['https:', 'http:', 'data:', 'blob:'];
   if (!allowed.includes(u.protocol)) {
-    return '/logo-codecraft.png';
+    return '/logo-principal.png';
   }
 
   return u.href;
   } catch {
     // Em falha de parse, usa fallback seguro
-    return '/logo-codecraft.png';
+    return '/logo-principal.png';
   }
 }
 
