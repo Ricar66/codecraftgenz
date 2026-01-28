@@ -1,8 +1,13 @@
+// src/admin/AdminCrafters.jsx
+// Refatorado para usar Design System CodeCraft
 import React, { useState, useEffect, useMemo } from 'react';
+import { FaUsers, FaSearch, FaEdit, FaTrash, FaStar } from 'react-icons/fa';
 
 import { useCrafters, CraftersRepo } from '../hooks/useAdminRepo';
-import './AdminCrafters.css';
-import './AdminCommon.css';
+
+import AdminCard from './components/AdminCard';
+import StatusBadge from './components/StatusBadge';
+import styles from './AdminCrafters.module.css';
 
 export default function AdminCrafters() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -10,9 +15,8 @@ export default function AdminCrafters() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState('nome');
   const [sortDirection, setSortDirection] = useState('asc');
-  const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'active', 'inactive'
-  
-  // Hook otimizado com opções de busca
+  const [activeFilter, setActiveFilter] = useState('all');
+
   const searchOptions = useMemo(() => ({
     page: currentPage,
     limit: itemsPerPage,
@@ -21,9 +25,9 @@ export default function AdminCrafters() {
     order_by: sortBy,
     order_direction: sortDirection
   }), [currentPage, itemsPerPage, searchTerm, activeFilter, sortBy, sortDirection]);
-  
+
   const { crafters, pagination, loading, error, reload, loadPage } = useCrafters(searchOptions);
-  // Resetar página quando filtros mudarem
+
   useEffect(() => {
     if (currentPage !== 1) {
       setCurrentPage(1);
@@ -59,10 +63,9 @@ export default function AdminCrafters() {
     if (!window.confirm('Tem certeza que deseja excluir este crafter?')) {
       return;
     }
-
     try {
       await CraftersRepo.delete(crafterId);
-      reload(); // Recarregar a lista
+      reload();
     } catch (error) {
       console.error('Erro ao excluir crafter:', error);
       alert('Erro ao excluir crafter: ' + error.message);
@@ -76,9 +79,9 @@ export default function AdminCrafters() {
 
   if (loading && crafters.length === 0) {
     return (
-      <div className="admin-content">
-        <div className="loading-state">
-          <div className="spinner"></div>
+      <div className={styles.page}>
+        <div className={styles.loadingState}>
+          <div className={styles.spinner} />
           <p>Carregando crafters...</p>
         </div>
       </div>
@@ -87,48 +90,51 @@ export default function AdminCrafters() {
 
   if (error) {
     return (
-      <div className="admin-content">
-        <div className="error-state">
-          <h3>Erro ao carregar crafters</h3>
-          <p>{error}</p>
-          <button onClick={reload} className="retry-button">
-            Tentar novamente
-          </button>
-        </div>
+      <div className={styles.page}>
+        <AdminCard variant="outlined">
+          <div className={styles.errorState}>
+            <h3>Erro ao carregar crafters</h3>
+            <p>{error}</p>
+            <button onClick={reload} className={styles.retryBtn}>
+              Tentar novamente
+            </button>
+          </div>
+        </AdminCard>
       </div>
     );
   }
 
   return (
-    <div className="admin-content">
-      <div className="admin-crafters-header">
-        <h1 className="title">Gerenciar Crafters</h1>
-        <div className="header-stats muted">
-          <span className="stat-item">
-            Total: <strong>{pagination.total}</strong>
-          </span>
-          <span className="stat-item">
-            Página: <strong>{pagination.page} de {pagination.totalPages}</strong>
-          </span>
+    <div className={styles.page}>
+      {/* Header */}
+      <header className={styles.header}>
+        <div className={styles.headerTitle}>
+          <FaUsers className={styles.headerIcon} />
+          <div>
+            <h1>Gerenciar Crafters</h1>
+            <p>Total: {pagination.total} | Página {pagination.page} de {pagination.totalPages}</p>
+          </div>
         </div>
-      </div>
+      </header>
 
-      <div className="filters-section">
-        <div className="filter-group">
+      {/* Filtros */}
+      <section className={styles.filters}>
+        <div className={styles.searchBox}>
+          <FaSearch className={styles.searchIcon} />
           <input
             type="text"
             placeholder="Buscar por nome ou email..."
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
-            className="search-input"
+            className={styles.searchInput}
           />
         </div>
 
-        <div style={{ display:'flex', gap:12, alignItems:'center' }}>
+        <div className={styles.filterGroup}>
           <select
             value={activeFilter}
             onChange={(e) => setActiveFilter(e.target.value)}
-            className="filter-select"
+            className={styles.filterSelect}
           >
             <option value="all">Todos os crafters</option>
             <option value="active">Apenas ativos</option>
@@ -138,122 +144,124 @@ export default function AdminCrafters() {
           <select
             value={itemsPerPage}
             onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-            className="items-per-page-select"
+            className={styles.filterSelect}
           >
             <option value={5}>5 por página</option>
             <option value={10}>10 por página</option>
             <option value={25}>25 por página</option>
             <option value={50}>50 por página</option>
           </select>
-        </div>
-      </div>
 
-      <div className="crafters-toolbar">
-        <div className="toolbar-left">
-          <label htmlFor="sort-field" className="toolbar-label">Ordenar por</label>
           <select
-            id="sort-field"
             value={sortBy}
             onChange={(e) => handleSort(e.target.value)}
-            className="sort-select"
-            aria-label="Selecionar campo de ordenação"
+            className={styles.filterSelect}
           >
-            <option value="nome">Nome</option>
-            <option value="email">Email</option>
-            <option value="points">Pontos</option>
-            <option value="active">Status</option>
+            <option value="nome">Ordenar: Nome</option>
+            <option value="email">Ordenar: Email</option>
+            <option value="points">Ordenar: Pontos</option>
+            <option value="active">Ordenar: Status</option>
           </select>
+
           <button
-            type="button"
             onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
-            className="sort-button btn btn-outline"
-            aria-label={`Alternar direção da ordenação (${sortDirection === 'asc' ? 'ascendente' : 'descendente'})`}
-            title={`Direção: ${sortDirection === 'asc' ? 'Ascendente' : 'Descendente'}`}
+            className={styles.sortBtn}
           >
             {getSortIcon(sortBy)} {sortDirection === 'asc' ? 'Asc' : 'Desc'}
           </button>
         </div>
-      </div>
+      </section>
 
-      <div className="crafter-grid">
+      {/* Grid de Cards */}
+      <section className={styles.craftersGrid}>
         {crafters.length === 0 ? (
-          <div className="no-data" style={{ gridColumn: '1 / -1' }}>
-            {searchTerm || activeFilter !== 'all' 
-              ? 'Nenhum crafter encontrado com os filtros aplicados.' 
-              : 'Nenhum crafter cadastrado.'}
-          </div>
+          <AdminCard variant="outlined" className={styles.emptyCard}>
+            <div className={styles.emptyState}>
+              <p>
+                {searchTerm || activeFilter !== 'all'
+                  ? 'Nenhum crafter encontrado com os filtros aplicados.'
+                  : 'Nenhum crafter cadastrado.'}
+              </p>
+            </div>
+          </AdminCard>
         ) : (
           crafters.map((crafter) => (
-            <div key={crafter.id} className="crafter-card">
-              <div className="card-header">
-                <div className="crafter-name">
-                  {crafter.avatar_url && (
+            <AdminCard key={crafter.id} variant="elevated" hoverable className={styles.crafterCard}>
+              <div className={styles.cardHeader}>
+                <div className={styles.crafterInfo}>
+                  {crafter.avatar_url ? (
                     <img
                       src={crafter.avatar_url}
                       alt={crafter.nome}
-                      className="crafter-avatar"
+                      className={styles.avatar}
                     />
+                  ) : (
+                    <div className={styles.avatarPlaceholder}>
+                      {crafter.nome?.charAt(0).toUpperCase()}
+                    </div>
                   )}
-                  <span>{crafter.nome}</span>
+                  <span className={styles.crafterName}>{crafter.nome}</span>
                 </div>
-                <span className={`status-badge ${crafter.active ? 'active' : 'inactive'}`}>
+                <StatusBadge
+                  variant={crafter.active ? 'success' : 'error'}
+                  dot
+                  pulse={crafter.active}
+                >
                   {crafter.active ? 'Ativo' : 'Inativo'}
-                </span>
+                </StatusBadge>
               </div>
 
-              <div className="card-body">
-                <div className="info-row">
-                  <span className="info-label">Email</span>
-                  <span className="info-value">{crafter.email || '-'}</span>
+              <div className={styles.cardBody}>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Email</span>
+                  <span className={styles.infoValue}>{crafter.email || '-'}</span>
                 </div>
-                <div className="info-row">
-                  <span className="info-label">Pontos</span>
-                  <span className="points-badge">{crafter.points || 0}</span>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Pontos</span>
+                  <span className={styles.pointsBadge}>
+                    <FaStar className={styles.starIcon} /> {crafter.points || 0}
+                  </span>
                 </div>
               </div>
 
-              <div className="card-footer">
-                <div className="action-buttons">
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => {/* TODO: Edição */}}
-                    title="Editar crafter"
-                    aria-label="Editar crafter"
-                  >
-                    ✏️ Editar
-                  </button>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => handleDeleteCrafter(crafter.id)}
-                    title="Excluir crafter"
-                    aria-label="Excluir crafter"
-                  >
-                    🗑️ Excluir
-                  </button>
-                </div>
+              <div className={styles.cardFooter}>
+                <button
+                  className={styles.editBtn}
+                  onClick={() => {/* TODO: Edição */}}
+                  title="Editar crafter"
+                >
+                  <FaEdit /> Editar
+                </button>
+                <button
+                  className={styles.deleteBtn}
+                  onClick={() => handleDeleteCrafter(crafter.id)}
+                  title="Excluir crafter"
+                >
+                  <FaTrash /> Excluir
+                </button>
               </div>
-            </div>
+            </AdminCard>
           ))
         )}
-      </div>
+      </section>
 
+      {/* Paginação */}
       {pagination.totalPages > 1 && (
-        <div className="pagination-container card" style={{ marginTop:16 }}>
-          <div className="pagination-info">
-            Mostrando {((pagination.page - 1) * itemsPerPage) + 1} a {Math.min(pagination.page * itemsPerPage, pagination.total)} de {pagination.total} crafters
+        <AdminCard variant="outlined" className={styles.pagination}>
+          <div className={styles.paginationInfo}>
+            Mostrando {((pagination.page - 1) * itemsPerPage) + 1} a {Math.min(pagination.page * itemsPerPage, pagination.total)} de {pagination.total}
           </div>
-          
-          <div className="pagination-controls">
+
+          <div className={styles.paginationControls}>
             <button
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={!pagination.hasPrev || loading}
-              className="btn btn-outline"
-              aria-label="Página anterior"
+              className={styles.pageBtn}
             >
               ← Anterior
             </button>
-            
-            <div className="pagination-numbers">
+
+            <div className={styles.pageNumbers}>
               {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                 let pageNum;
                 if (pagination.totalPages <= 5) {
@@ -265,40 +273,37 @@ export default function AdminCrafters() {
                 } else {
                   pageNum = pagination.page - 2 + i;
                 }
-                
+
                 return (
                   <button
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
                     disabled={loading}
-                    className={`btn btn-outline ${pageNum === pagination.page ? 'active' : ''}`}
-                    aria-label={`Ir para página ${pageNum}`}
+                    className={`${styles.pageBtn} ${pageNum === pagination.page ? styles.active : ''}`}
                   >
                     {pageNum}
                   </button>
                 );
               })}
             </div>
-            
+
             <button
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={!pagination.hasNext || loading}
-              className="btn btn-outline"
-              aria-label="Página seguinte"
+              className={styles.pageBtn}
             >
               Próxima →
             </button>
           </div>
-        </div>
+        </AdminCard>
       )}
 
+      {/* Loading overlay */}
       {loading && crafters.length > 0 && (
-        <div className="loading-overlay">
-          <div className="spinner-small"></div>
+        <div className={styles.loadingOverlay}>
+          <div className={styles.spinnerSmall} />
         </div>
       )}
-
-
     </div>
   );
 }
