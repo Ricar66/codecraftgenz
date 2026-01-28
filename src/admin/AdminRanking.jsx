@@ -7,7 +7,7 @@ import {
 } from 'react-icons/fa';
 
 import { useRanking, RankingRepo, useCrafters } from '../hooks/useAdminRepo';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/useAuth';
 import { apiRequest } from '../lib/apiConfig';
 
 import AdminCard from './components/AdminCard';
