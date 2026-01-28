@@ -40,11 +40,11 @@ const AdminDesafios = lazy(() => import('./admin/AdminDesafios.jsx'));
 const AdminProposals = lazy(() => import('./admin/AdminProposals.jsx'));
 const AdminInscricoes = lazy(() => import('./admin/AdminInscricoes'));
 const AdminPagamentos = lazy(() => import('./admin/AdminPagamentos.jsx'));
+const AdminFinancas = lazy(() => import('./admin/AdminFinancas.jsx'));
 
 // Admin sub-pages (imported dynamically from AdminLayout)
 const Dashboard = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Dashboard })));
 const Usuarios = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Usuarios })));
-const Financas = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Financas })));
 const Config = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Config })));
 
 /**
@@ -147,7 +147,7 @@ function App() {
                   <Route path="inscricoes" element={<AdminInscricoes />} />
                   <Route path="ideias" element={<AdminIdeias />} />
                   <Route path="propostas" element={<AdminProposals />} />
-                  <Route path="financas" element={<Financas />} />
+                  <Route path="financas" element={<AdminFinancas />} />
                   <Route path="pagamentos" element={
                     <ProtectedRoute allowed={["admin"]}>
                       <AdminPagamentos />
