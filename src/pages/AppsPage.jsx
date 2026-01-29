@@ -1,4 +1,5 @@
 // src/pages/AppsPage.jsx
+// Loja de Aplicativos - Cyberpunk/Glassmorphism Design
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,6 +12,7 @@ import { getProjects } from '../services/projectsAPI.js';
 import { getAppPrice } from '../utils/appModel.js';
 import { appsCache } from '../utils/dataCache.js';
 import { globalPerformanceMonitor } from '../utils/performanceMonitor.js';
+import styles from './AppsPage.module.css';
 
 // Converte URL relativa para URL completa do backend
 const resolveDownloadUrl = (url) => {
@@ -34,7 +36,7 @@ const AppsPage = () => {
   const [publishMessage, setPublishMessage] = useState('');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('todas');
-  const [sortMode, setSortMode] = useState('categoria'); // 'categoria' | 'uso'
+  const [sortMode, setSortMode] = useState('categoria');
   const [payModal, setPayModal] = useState({ open: false, app: null, loading: false, error: '' });
   const [expandedLicenses, setExpandedLicenses] = useState({});
 
@@ -43,11 +45,9 @@ const AppsPage = () => {
     (async () => {
       try {
         setLoading(true);
-        // Métrica de carregamento
         const metricId = `apps-load-${Date.now()}`;
         globalPerformanceMonitor.startMeasure(metricId, { page: 1, pageSize: 24 });
 
-        // Cache em memória
         const cacheKey = appsCache.generateKey('public-apps', { page: 1, pageSize: 24 });
         const cached = appsCache.get(cacheKey);
         let jsonApps;
@@ -59,13 +59,13 @@ const AppsPage = () => {
         }
         const list = Array.isArray(jsonApps?.data) ? jsonApps.data : (Array.isArray(jsonApps) ? jsonApps : []);
         if (mounted) setApps(list);
-        const jsonHist = await getHistory({ page: 1, pageSize: 10 }).catch(()=>({ data: [] }));
+        const jsonHist = await getHistory({ page: 1, pageSize: 10 }).catch(() => ({ data: [] }));
         const histList = Array.isArray(jsonHist?.data) ? jsonHist.data : (Array.isArray(jsonHist) ? jsonHist : []);
         if (mounted) setHistory(histList);
         globalPerformanceMonitor.endMeasure(metricId, { success: true, count: list.length });
       } catch (e) {
         if (e.status === 401) {
-          setError('Não autenticado');
+          setError('Nao autenticado');
           navigate('/login?redirect=/apps');
         } else {
           setError(e.message || 'Erro ao carregar aplicativos');
@@ -77,7 +77,7 @@ const AppsPage = () => {
     return () => { mounted = false; };
   }, [navigate]);
 
-  // Carrega projetos para publicação quando modal abre
+  // Carrega projetos para publicacao quando modal abre
   useEffect(() => {
     if (!showPublish) return;
     let mounted = true;
@@ -87,7 +87,7 @@ const AppsPage = () => {
         const list = Array.isArray(res?.data) ? res.data : [];
         if (mounted) setProjects(list);
       } catch (e) {
-        console.warn('Erro ao carregar projetos para publicação:', e);
+        console.warn('Erro ao carregar projetos para publicacao:', e);
       }
     })();
     return () => { mounted = false; };
@@ -113,15 +113,15 @@ const AppsPage = () => {
     let list = [...apps];
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter(a => String(a.name||'').toLowerCase().includes(q) || String(a.mainFeature||'').toLowerCase().includes(q));
+      list = list.filter(a => String(a.name || '').toLowerCase().includes(q) || String(a.mainFeature || '').toLowerCase().includes(q));
     }
     if (category !== 'todas') {
       list = list.filter(a => (a.category || 'outros') === category);
     }
     if (sortMode === 'uso') {
-      list.sort((a,b)=> (usageByApp.get(b.id)||0) - (usageByApp.get(a.id)||0));
+      list.sort((a, b) => (usageByApp.get(b.id) || 0) - (usageByApp.get(a.id) || 0));
     } else {
-      list.sort((a,b)=> String(a.category||'outros').localeCompare(String(b.category||'outros')) || String(a.name||'').localeCompare(String(b.name||'')));
+      list.sort((a, b) => String(a.category || 'outros').localeCompare(String(b.category || 'outros')) || String(a.name || '').localeCompare(String(b.name || '')));
     }
     return list;
   }, [apps, search, category, sortMode, usageByApp]);
@@ -138,7 +138,7 @@ const AppsPage = () => {
       setPayModal(s => ({ ...s, loading: true, error: '' }));
       const { init_point } = await apiRequest(`/api/apps/${encodeURIComponent(payModal.app.id)}/purchase`, { method: 'POST' });
       if (init_point) window.open(init_point, '_blank', 'noopener');
-      else setPayModal(s => ({ ...s, error: 'Não foi possível iniciar o checkout' }));
+      else setPayModal(s => ({ ...s, error: 'Nao foi possivel iniciar o checkout' }));
     } catch (e) {
       setPayModal(s => ({ ...s, error: e.message || 'Erro ao iniciar pagamento' }));
     } finally {
@@ -184,19 +184,18 @@ const AppsPage = () => {
         body: '{}'
       });
       if (!resp.ok) {
-        // Fallback: se não autenticado ou erro, tenta obter URL pelo status
         const statusResp = await fetch(`${API_BASE_URL}/api/apps/${encodeURIComponent(app.id)}/purchase/status?status=approved`);
         if (!statusResp.ok) throw new Error(`Falha no download (HTTP ${resp.status})`);
-        const js = await statusResp.json().catch(()=>({}));
+        const js = await statusResp.json().catch(() => ({}));
         const directUrl = resolveDownloadUrl(js?.download_url || js?.data?.download_url || null);
-        if (!directUrl) throw new Error('Download não liberado. Pagamento não aprovado.');
+        if (!directUrl) throw new Error('Download nao liberado. Pagamento nao aprovado.');
         window.location.href = directUrl;
         setPayModal(s => ({ ...s, status: 'done', progress: 100 }));
         return;
       }
-      const js = await resp.json().catch(()=>({}));
+      const js = await resp.json().catch(() => ({}));
       const directUrl = resolveDownloadUrl(js?.download_url || null);
-      if (!directUrl) throw new Error('Aplicativo sem URL de executável configurada');
+      if (!directUrl) throw new Error('Aplicativo sem URL de executavel configurada');
       window.location.href = directUrl;
       setPayModal(s => ({ ...s, status: 'done', progress: 100 }));
     } catch (e) {
@@ -216,13 +215,12 @@ const AppsPage = () => {
   const handlePublish = async (project) => {
     try {
       setPublishing(true);
-      setPublishMessage('Publicando…');
+      setPublishMessage('Publicando...');
       await upsertAppFromProject(project.id, {
         price: project.price ?? 0,
         mainFeature: project.description ?? project.title
       });
       setPublishMessage('Projeto publicado com sucesso!');
-      // Recarrega lista de apps
       const jsonApps = await getPublicApps({ page: 1, pageSize: 24, sortBy: 'updatedAt' });
       const list = Array.isArray(jsonApps?.data) ? jsonApps.data : (Array.isArray(jsonApps) ? jsonApps : []);
       setApps(list);
@@ -234,184 +232,234 @@ const AppsPage = () => {
   };
 
   return (
-    <div className="apps-page page-with-background">
+    <div className={styles.page}>
       <Navbar />
-      <div className="apps-content">
-      <header className="apps-header">
-        <h1>Meus Aplicativos</h1>
-        <p>Baixe e compre seus apps com visual profissional.</p>
-        <div className="apps-actions">
-          <button className="btn btn-primary" onClick={() => setShowPublish(v=>!v)}>
-            {showPublish ? 'Fechar publicação' : 'Publicar projeto'}
-          </button>
-        </div>
-        <div className="apps-filters" role="search">
-          <input aria-label="Buscar aplicativos" className="input" placeholder="Buscar aplicativos" value={search} onChange={e=>setSearch(e.target.value)} />
-          <select aria-label="Filtrar por categoria" className="select" value={category} onChange={e=>setCategory(e.target.value)}>
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select aria-label="Ordenar" className="select" value={sortMode} onChange={e=>setSortMode(e.target.value)}>
-            <option value="categoria">Categoria</option>
-            <option value="uso">Uso frequente</option>
-          </select>
-        </div>
-      </header>
 
-      {loading && <p className="muted">🔄 Carregando seus apps…</p>}
-      {error && <p role="alert" style={{ color: '#FF6B6B' }}>❌ {error}</p>}
+      <div className={styles.content}>
+        {/* Hero Section */}
+        <header className={styles.hero}>
+          <h1 className={styles.heroTitle}>Meus Aplicativos</h1>
+          <p className={styles.heroSubtitle}>
+            Baixe e compre seus apps com visual profissional.
+            Explore nossa colecao de aplicativos desenvolvidos pela comunidade CodeCraft.
+          </p>
 
-      <section className="apps-grid">
-        {apps.length === 0 && !loading ? (
-          <div className="card-empty">Nenhum aplicativo disponível no momento.</div>
-        ) : (
-          filteredApps.map(app => (
-            <div key={app.id}>
-              <AppCard app={app} onDownload={openPaymentModal} />
-              {needsLicense(app) && (
-                <div style={{ marginTop: 12 }}>
-                  <button className="btn btn-outline" onClick={() => toggleLicense(app.id)}>
-                    {expandedLicenses[app.id] ? 'Ocultar Ativação' : 'Ativar Licença'}
-                  </button>
-                  {expandedLicenses[app.id] && (
-                    <div style={{ marginTop: 8 }}>
-                      <LicenseActivator appId={app.id} />
-                    </div>
+          <div className={styles.actionsBar}>
+            <button
+              className={`${styles.publishBtn} ${showPublish ? styles.publishBtnActive : ''}`}
+              onClick={() => setShowPublish(v => !v)}
+            >
+              {showPublish ? 'Fechar publicacao' : 'Publicar projeto'}
+            </button>
+          </div>
+        </header>
+
+        {/* Filters Section */}
+        <section className={styles.filtersSection}>
+          <div className={styles.filtersContainer}>
+            <input
+              type="text"
+              placeholder="Buscar aplicativos..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className={styles.searchInput}
+              aria-label="Buscar aplicativos"
+            />
+            <select
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              className={styles.filterSelect}
+              aria-label="Filtrar por categoria"
+            >
+              {categories.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <select
+              value={sortMode}
+              onChange={e => setSortMode(e.target.value)}
+              className={styles.filterSelect}
+              aria-label="Ordenar por"
+            >
+              <option value="categoria">Categoria</option>
+              <option value="uso">Uso frequente</option>
+            </select>
+          </div>
+        </section>
+
+        {/* Loading State */}
+        {loading && <p className={styles.loadingState}>Carregando seus apps...</p>}
+
+        {/* Error State */}
+        {error && <p className={styles.errorState}>{error}</p>}
+
+        {/* Apps Grid */}
+        <section className={styles.appsSection}>
+          {apps.length === 0 && !loading ? (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>📦</div>
+              <h3 className={styles.emptyTitle}>Nenhum aplicativo disponivel</h3>
+              <p className={styles.emptyText}>
+                Volte em breve para conferir novos aplicativos da comunidade.
+              </p>
+            </div>
+          ) : (
+            <div className={styles.appsGrid}>
+              {filteredApps.map(app => (
+                <div key={app.id} className={styles.appCardWrapper}>
+                  <AppCard app={app} onDownload={openPaymentModal} />
+                  {needsLicense(app) && (
+                    <>
+                      <button
+                        className={styles.licenseToggleBtn}
+                        onClick={() => toggleLicense(app.id)}
+                      >
+                        {expandedLicenses[app.id] ? 'Ocultar Ativacao' : 'Ativar Licenca'}
+                      </button>
+                      {expandedLicenses[app.id] && (
+                        <div className={styles.licenseExpanded}>
+                          <LicenseActivator appId={app.id} />
+                        </div>
+                      )}
+                    </>
                   )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Publish Section */}
+        {showPublish && (
+          <section className={styles.publishSection}>
+            <div className={styles.publishCard}>
+              <h2 className={styles.publishTitle}>Publicar a partir de projetos</h2>
+              {publishMessage && <p className={styles.publishMessage}>{publishMessage}</p>}
+
+              {projects.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <div className={styles.emptyIcon}>📁</div>
+                  <h3 className={styles.emptyTitle}>Nenhum projeto disponivel</h3>
+                  <p className={styles.emptyText}>Crie um projeto primeiro para poder publica-lo.</p>
+                </div>
+              ) : (
+                <div className={styles.projectsGrid}>
+                  {projects.map(p => (
+                    <div key={p.id} className={styles.projectCard}>
+                      <div className={styles.projectInfo}>
+                        <h3 className={styles.projectTitle}>{p.title}</h3>
+                        <p className={styles.projectDesc}>{p.description}</p>
+                      </div>
+                      <div className={styles.projectActions}>
+                        <button
+                          className={styles.projectPublishBtn}
+                          disabled={publishing}
+                          onClick={() => handlePublish(p)}
+                        >
+                          Publicar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
-          ))
+          </section>
         )}
-      </section>
 
-      {showPublish && (
-        <section className="publish-section">
-          <h2 className="publish-title">Publicar a partir de projetos</h2>
-          {publishMessage && <p className="muted">{publishMessage}</p>}
-          <div className="projects-grid">
-            {projects.length === 0 ? (
-              <div className="card-empty">Nenhum projeto disponível para publicar.</div>
+        {/* History Section */}
+        <section className={styles.historySection}>
+          <div className={styles.historyCard}>
+            <h2 className={styles.historyTitle}>Historico de compras e downloads</h2>
+
+            {history.length === 0 ? (
+              <p className={styles.historyEmpty}>Sem historico de compras ou downloads.</p>
             ) : (
-              projects.map(p => (
-                <div key={p.id} className="project-card">
-                  <div>
-                    <h3 className="project-title">{p.title}</h3>
-                    <p className="project-desc">{p.description}</p>
-                  </div>
-                  <div className="project-actions">
-                    <button className="btn btn-primary" disabled={publishing} onClick={() => handlePublish(p)}>
-                      Publicar
-                    </button>
-                  </div>
-                </div>
-              ))
+              <table className={styles.historyTable}>
+                <thead>
+                  <tr>
+                    <th>App</th>
+                    <th>Tipo</th>
+                    <th>Data</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.map((h, i) => (
+                    <tr key={i}>
+                      <td>{h.app_name || h.appId}</td>
+                      <td>{h.type}</td>
+                      <td>{h.date ? new Date(h.date).toLocaleString('pt-BR') : '—'}</td>
+                      <td>{h.status || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </section>
-      )}
+      </div>
 
-      <section className="apps-history">
-        <h2 className="history-title">Histórico de compras e downloads</h2>
-        <div className="table">
-          <table>
-            <thead><tr><th>App</th><th>Tipo</th><th>Data</th><th>Status</th></tr></thead>
-            <tbody>
-              {history.length === 0 ? (
-                <tr><td colSpan="4">Sem histórico</td></tr>
-              ) : history.map((h,i)=> (
-                <tr key={i}>
-                  <td data-label="App">{h.app_name || h.appId}</td>
-                  <td data-label="Tipo">{h.type}</td>
-                  <td data-label="Data">{h.date ? new Date(h.date).toLocaleString('pt-BR') : '—'}</td>
-                  <td data-label="Status">{h.status || '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <style>{`
-        .apps-page { min-height: 100vh; display:flex; flex-direction:column; }
-        .apps-content { flex:1; display:block; }
-        .apps-header { max-width: 1200px; margin: 24px auto; padding: 0 16px; text-align: center; }
-        .apps-header h1 { color: var(--texto-branco); margin: 0; font-size: 2rem; }
-        .apps-header p { color: var(--texto-gelo); margin-top: 6px; font-size: 1rem; }
-        .apps-actions { margin-top: 16px; display:flex; justify-content:center; }
-        .apps-filters { margin-top: 16px; display:flex; gap: 8px; justify-content:center; flex-wrap: wrap; }
-        .input, .select { padding: 10px 12px; border-radius: 10px; border:1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); color: var(--texto-branco); }
-        .apps-grid { max-width: 1200px; margin: 20px auto; padding: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-        @media (max-width: 992px) { .apps-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 640px) { .apps-grid { grid-template-columns: 1fr; } }
-        .card-empty { background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04)); border: 1px solid rgba(255,255,255,0.14); border-radius: 16px; padding: 28px; text-align: center; color: var(--texto-gelo); }
-        .apps-history { max-width: 1200px; margin: 16px auto; padding: 16px; }
-        .history-title { color: var(--texto-branco); margin: 0 0 8px; }
-        .publish-section { max-width: 1200px; margin: 24px auto; padding: 16px; }
-        .publish-title { color: var(--texto-branco); margin: 0 0 12px; }
-        .projects-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-        @media (max-width: 992px) { .projects-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 640px) { .projects-grid { grid-template-columns: 1fr; } }
-        .project-card { background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04)); border: 1px solid rgba(255,255,255,0.14); border-radius: 16px; padding: 16px; display: grid; grid-template-columns: 1fr auto; gap: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
-        .project-title { margin: 0; color: var(--texto-branco); font-size: 1rem; }
-        .project-desc { color: var(--texto-gelo); font-size: 0.9rem; }
-        .project-actions { display:flex; align-items:center; }
-        .btn { padding: 10px 14px; border-radius: 10px; border:1px solid rgba(255,255,255,0.18); cursor:pointer; transition: transform .2s ease, box-shadow .2s ease; }
-        .btn-primary { background: linear-gradient(90deg, #D12BF2, #00E4F2); color: #000; border:none; }
-        .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 18px rgba(0,0,0,0.25); }
-        .btn-outline { background: transparent; color: var(--texto-branco); }
-        .apps-footer { border-top: 1px solid rgba(255,255,255,0.12); background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.25)); }
-        .footer-container { max-width: 1200px; margin: 0 auto; padding: 16px; display:flex; align-items:center; justify-content: space-between; gap: 12px; }
-        .footer-brand { color: var(--texto-branco); font-weight: 800; letter-spacing: 0.5px; }
-        .footer-links { display:flex; gap: 12px; }
-        .footer-links a { color: var(--texto-gelo); }
-        .footer-links a:hover { color: var(--cor-terciaria); }
-        .footer-note { color: var(--texto-gelo); opacity: 0.8; }
-        @media (max-width: 640px) { .footer-container { flex-direction: column; align-items: flex-start; } }
-      `}</style>
-
+      {/* Payment Modal */}
       {payModal.open && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Pagamento do aplicativo">
-          <div className="modal">
-            <h3 className="title">{payModal.app?.name}</h3>
-            <p className="muted">{payModal.app?.mainFeature}</p>
-            <p className="price">Preço: {(() => { const p = getAppPrice(payModal.app||{}); return p > 0 ? `R$ ${p.toLocaleString('pt-BR')}` : 'a definir'; })()}</p>
-            {payModal.error && <p role="alert" style={{ color: '#FF6B6B' }}>❌ {payModal.error}</p>}
-            <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
-              <button className="btn btn-primary" onClick={startCheckout} disabled={payModal.loading}>
-                {payModal.loading ? 'Iniciando...' : 'Pagar com Mercado Livre'}
+        <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label="Pagamento do aplicativo">
+          <div className={styles.modal}>
+            <h3 className={styles.modalTitle}>{payModal.app?.name}</h3>
+            <p className={styles.modalDescription}>{payModal.app?.mainFeature}</p>
+            <p className={styles.modalPrice}>
+              Preco: {(() => {
+                const p = getAppPrice(payModal.app || {});
+                return p > 0 ? `R$ ${p.toLocaleString('pt-BR')}` : 'a definir';
+              })()}
+            </p>
+
+            {payModal.error && <div className={styles.modalError}>{payModal.error}</div>}
+
+            <div className={styles.modalActions}>
+              <button
+                className={styles.btnPrimary}
+                onClick={startCheckout}
+                disabled={payModal.loading}
+              >
+                {payModal.loading ? 'Iniciando...' : 'Pagar com Mercado Pago'}
               </button>
-              <button className="btn btn-outline" onClick={checkPaymentStatus} disabled={payModal.checking}>
-                {payModal.checking ? 'Verificando…' : 'Verificar pagamento'}
+              <button
+                className={styles.btnOutline}
+                onClick={checkPaymentStatus}
+                disabled={payModal.checking}
+              >
+                {payModal.checking ? 'Verificando...' : 'Verificar pagamento'}
               </button>
-              <button className="btn btn-outline" onClick={()=>window.open(`/apps/${payModal.app?.id}/compra`, '_blank', 'noopener')}>Ir para tela de pagamento</button>
-              <button className="btn btn-outline" onClick={closePaymentModal}>Fechar</button>
+              <button
+                className={styles.btnOutline}
+                onClick={() => window.open(`/apps/${payModal.app?.id}/compra`, '_blank', 'noopener')}
+              >
+                Tela de pagamento
+              </button>
+              <button className={styles.btnOutline} onClick={closePaymentModal}>
+                Fechar
+              </button>
             </div>
+
             {payModal.status === 'approved' && (
               <LicenseActivator appId={payModal.app?.id} />
             )}
+
             {(payModal.status === 'downloading' || payModal.status === 'done') && (
-              <div aria-live="polite" className="progress-wrap">
-                <div className="progress-bar"><div className="progress" style={{ width: `${payModal.progress}%` }} /></div>
-                <p className="muted">{payModal.status === 'done' ? 'Download concluído!' : `Baixando… ${payModal.progress}%`}</p>
+              <div className={styles.progressContainer} aria-live="polite">
+                <div className={styles.progressBar}>
+                  <div className={styles.progressFill} style={{ width: `${payModal.progress}%` }} />
+                </div>
+                <p className={styles.progressText}>
+                  {payModal.status === 'done' ? 'Download concluido!' : `Baixando... ${payModal.progress}%`}
+                </p>
               </div>
             )}
-            {payModal.downloadError && <p role="alert" style={{ color: '#FF6B6B' }}>❌ {payModal.downloadError}</p>}
+
+            {payModal.downloadError && <div className={styles.modalError}>{payModal.downloadError}</div>}
           </div>
-          <style>{`
-            .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; padding:16px; }
-            .modal { width: 100%; max-width: 520px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 16px; }
-            .title { color: var(--texto-branco); margin: 0 0 6px; }
-            .price { color: var(--texto-branco); font-weight: 600; }
-            .btn { padding: 8px 12px; border-radius: 8px; border:1px solid rgba(255,255,255,0.18); }
-            .btn-primary { background: #00E4F2; color: #000; }
-            .btn-outline { background: transparent; color: var(--texto-branco); }
-            .progress-wrap { margin-top: 12px; }
-            .progress-bar { width: 100%; height: 8px; background: rgba(255,255,255,0.12); border-radius: 999px; overflow: hidden; }
-            .progress { height: 100%; background: linear-gradient(90deg, #D12BF2, #00E4F2); }
-          `}</style>
         </div>
       )}
-      </div>
     </div>
   );
 };
