@@ -17,6 +17,11 @@
   opacity: 0;
   transform: translateY(30px);
   transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  /* TESTE: Plano de fundo */
+  background-image: url('../../assets/PlanodefundoTeste.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 /* Estado visivel com animacao */
