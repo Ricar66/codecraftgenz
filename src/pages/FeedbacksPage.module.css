@@ -1,0 +1,264 @@
+/* src/pages/FeedbacksPage.module.css */
+/* Cyberpunk/Glassmorphism - Feedback Page */
+
+/* ===== CONTAINER PRINCIPAL ===== */
+.page {
+  min-height: 100vh;
+  width: 100%;
+  background: #0a0a12;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Background Glow Effects */
+.page::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at 30% 20%, rgba(209, 43, 242, 0.1) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 80%, rgba(0, 228, 242, 0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.05) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== HERO SECTION ===== */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 24px 60px;
+  z-index: 1;
+}
+
+.heroContainer {
+  position: relative;
+  max-width: 1000px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  align-items: center;
+}
+
+/* ===== TEXT AREA ===== */
+.textArea {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.heroTitle {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0;
+  background: linear-gradient(135deg, #D12BF2 0%, #00E4F2 50%, #fff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% 200%;
+  animation: gradientShift 4s ease-in-out infinite alternate;
+  text-shadow: 0 0 60px rgba(209, 43, 242, 0.3);
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+.heroDescription {
+  font-size: clamp(1rem, 2.5vw, 1.375rem);
+  font-weight: 400;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* ===== FORM CONTAINER ===== */
+.formContainer {
+  width: 100%;
+  max-width: 600px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 80px rgba(209, 43, 242, 0.1);
+  transition: all 0.4s ease;
+}
+
+.formContainer:hover {
+  border-color: rgba(209, 43, 242, 0.3);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 100px rgba(209, 43, 242, 0.15);
+}
+
+/* Neon border effect */
+.formContainer::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 26px;
+  padding: 2px;
+  background: linear-gradient(135deg, rgba(209, 43, 242, 0.4), rgba(0, 228, 242, 0.4), rgba(209, 43, 242, 0.4));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.formContainer:hover::before {
+  opacity: 1;
+}
+
+/* ===== FEATURES SECTION ===== */
+.featuresSection {
+  position: relative;
+  z-index: 1;
+  padding: 0 24px 80px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.featureCard {
+  position: relative;
+  padding: 32px 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  text-align: center;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.featureCard:hover {
+  transform: translateY(-6px);
+  border-color: rgba(0, 228, 242, 0.4);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
+              0 0 30px rgba(0, 228, 242, 0.1);
+}
+
+.featureIcon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  background: linear-gradient(135deg, rgba(0, 228, 242, 0.2) 0%, rgba(209, 43, 242, 0.2) 100%);
+  border-radius: 16px;
+  font-size: 28px;
+}
+
+.featureTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 8px;
+}
+
+.featureDesc {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .featuresGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .featureCard {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-align: left;
+    padding: 20px;
+  }
+
+  .featureIcon {
+    margin: 0;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    min-height: auto;
+    padding: 100px 20px 60px;
+  }
+
+  .heroContainer {
+    gap: 36px;
+  }
+
+  .heroTitle {
+    font-size: clamp(2rem, 6vw, 3rem);
+  }
+
+  .heroDescription {
+    font-size: clamp(0.875rem, 2vw, 1.125rem);
+  }
+
+  .formContainer {
+    padding: 28px;
+    border-radius: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 80px 16px 40px;
+  }
+
+  .formContainer {
+    padding: 24px;
+    border-radius: 16px;
+  }
+}
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  .heroTitle {
+    animation: none;
+  }
+
+  .formContainer:hover {
+    transform: none;
+  }
+
+  .featureCard:hover {
+    transform: none;
+  }
+}
