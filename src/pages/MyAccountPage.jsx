@@ -23,7 +23,8 @@ export default function MyAccountPage() {
   const fetchPurchases = async () => {
     try {
       setLoading(true);
-      const response = await apiRequest(`/api/licenses/user?email=${encodeURIComponent(user.email)}`);
+      // Usa a rota correta do backend: /api/purchases/by-email
+      const response = await apiRequest(`/api/purchases/by-email?email=${encodeURIComponent(user.email)}`);
       if (response.ok) {
         setPurchases(response.data || []);
       } else {
