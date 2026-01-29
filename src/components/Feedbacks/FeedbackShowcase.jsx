@@ -17,15 +17,34 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
   // Usar apenas dados reais da API
   const feedbacks = useMemo(() => {
     if (items && items.length > 0) {
-      return items.map(item => ({
-        id: item.id,
-        text: item.mensagem,
-        author: item.nome || 'Anônimo',
-        rating: item.rating || 5,
-        avatarUrl: null,
-        createdAt: item.data_criacao,
-        type: 'feedback'
-      }));
+      return items.map(item => {
+        // Tenta fazer parse do campo mensagem caso seja um JSON string
+        let text = item.mensagem;
+        let author = item.nome || 'Anônimo';
+
+        // Se mensagem parece ser um JSON string, faz o parse
+        if (typeof text === 'string' && text.trim().startsWith('{')) {
+          try {
+            const parsed = JSON.parse(text);
+            text = parsed.mensagem || text;
+            // Se o nome não veio diretamente, tenta pegar do JSON
+            if (!item.nome && parsed.nome) {
+              author = parsed.nome;
+            }
+          } catch {
+            // Se falhar o parse, usa o texto original
+          }
+        }
+
+        return {
+          id: item.id,
+          text: text,
+          author: author,
+          avatarUrl: null,
+          createdAt: item.data_criacao,
+          type: 'feedback'
+        };
+      });
     }
     return []; // Retorna array vazio se não houver feedbacks reais
   }, [items]);
@@ -72,17 +91,6 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
       nextSlide();
     }
   }, [prevSlide, nextSlide]);
-
-  const renderStars = (rating) => {
-    return Array.from({ length: 5 }, (_, index) => (
-      <span 
-        key={index} 
-        className={`${styles.star} ${index < rating ? styles.filled : styles.empty}`}
-      >
-        ★
-      </span>
-    ));
-  };
 
   const getInitials = (name) => {
     if (!name) return '😊';
@@ -166,9 +174,6 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
                                 </span>
                               )}
                             </div>
-                          </div>
-                          <div className={styles.feedbackRating}>
-                            {renderStars(feedback.rating)}
                           </div>
                         </div>
                       </div>
