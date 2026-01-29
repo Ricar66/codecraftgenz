@@ -3,7 +3,6 @@ import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 
 import logoCodecraft from '../../assets/logo-principal.png';
-import CasesSection from '../../components/CasesSection/CasesSection';
 import CompanySection from '../../components/CompanySection/CompanySection';
 import CrafterModal from '../../components/CrafterModal/CrafterModal';
 import FeaturesSection from '../../components/FeaturesSection/FeaturesSection';
@@ -73,17 +72,11 @@ const HomePage = () => {
         </div>
       </div>
 
-      <div className="section-block">
-        <div className="section-card">
-          <CasesSection />
-        </div>
-      </div>
-
       <div className={styles.sectionBlock}>
         <div className={styles.sectionCard}>
           <div className={styles.feedbackSection}>
-            <h2 className={styles.sectionTitle}>O que dizem nossos clientes</h2>
-            <p className={styles.sectionSubtitle}>Feedbacks reais de quem já usou nossos serviços</p>
+            <h2 className={styles.sectionTitle}>O que dizem sobre nos</h2>
+            <p className={styles.sectionSubtitle}>Feedbacks reais de quem ja usou nossos servicos</p>
             <FeedbackShowcase autoIntervalMs={5000} showControls={true} />
           </div>
         </div>

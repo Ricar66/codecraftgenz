@@ -46,24 +46,6 @@ const CompanySection = () => {
         </ul>
       </div>
 
-      <div className={styles.partners}>
-        <h3 className={styles.partnersTitle}>Parceiros e Clientes</h3>
-        <div className={styles.partnersRow} role="list">
-          <div role="listitem" className={styles.partnerItem}>
-            <img src={logoCodeCraft} alt="Parceiro" />
-          </div>
-          <div role="listitem" className={styles.partnerItem}>
-            <img src={logoCodeCraft} alt="Parceiro" />
-          </div>
-          <div role="listitem" className={styles.partnerItem}>
-            <img src={logoCodeCraft} alt="Parceiro" />
-          </div>
-          <div role="listitem" className={styles.partnerItem}>
-            <img src={logoCodeCraft} alt="Parceiro" />
-          </div>
-        </div>
-      </div>
-
       <div className={styles.cta}>
         <a className={styles.ctaBtn} href="/mentoria">Conheça nossa mentoria</a>
         <a className={`${styles.ctaBtn} ${styles.ctaBtnSecondary}`} href="/projetos">Veja nossos projetos</a>

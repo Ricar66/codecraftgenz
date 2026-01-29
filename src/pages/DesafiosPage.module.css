@@ -1,0 +1,382 @@
+/* src/pages/DesafiosPage.module.css */
+/* Cyberpunk/Glassmorphism - Desafios Epicos */
+
+/* ===== CONTAINER PRINCIPAL ===== */
+.page {
+  min-height: 100vh;
+  width: 100%;
+  background: #0a0a12;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Background Glow Effects */
+.page::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at 20% 20%, rgba(104, 0, 123, 0.12) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 80%, rgba(0, 228, 242, 0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 50%, rgba(209, 43, 242, 0.06) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== HERO SECTION ===== */
+.hero {
+  position: relative;
+  padding: 120px 24px 40px;
+  text-align: center;
+  max-width: 1000px;
+  margin: 0 auto;
+  z-index: 1;
+}
+
+.heroTitle {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin: 0 0 12px;
+  background: linear-gradient(135deg, #68007B 0%, #D12BF2 40%, #00E4F2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 60px rgba(104, 0, 123, 0.4);
+}
+
+.heroSubtitle {
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 12px;
+}
+
+.heroLead {
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  font-weight: 400;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.6);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* ===== CHALLENGES SECTION ===== */
+.challengesSection {
+  position: relative;
+  z-index: 1;
+  padding: 0 24px 60px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Carousel Container */
+.carouselContainer {
+  position: relative;
+  padding: 0 50px;
+}
+
+.carouselTrack {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px 10px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 228, 242, 0.35) transparent;
+}
+
+.carouselTrack::-webkit-scrollbar {
+  height: 8px;
+}
+
+.carouselTrack::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.carouselTrack::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #D12BF2, #00E4F2);
+  border-radius: 4px;
+}
+
+/* Navigation Buttons */
+.navBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #D12BF2 0%, #68007B 100%);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(209, 43, 242, 0.3);
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.navBtn:hover {
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 12px 32px rgba(209, 43, 242, 0.4);
+}
+
+.navBtnLeft {
+  left: 0;
+}
+
+.navBtnRight {
+  right: 0;
+}
+
+/* Challenge Card Wrapper */
+.challengeSnap {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+  min-width: 340px;
+  max-width: 380px;
+}
+
+/* Challenge Actions */
+.challengeActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.participateBtn {
+  width: 100%;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #00E4F2 0%, #0099A8 100%);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 228, 242, 0.3);
+  transition: all 0.3s ease;
+}
+
+.participateBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 228, 242, 0.4);
+}
+
+.participateBtn:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Delivery Form */
+.deliveryForm {
+  display: flex;
+  gap: 10px;
+}
+
+.deliveryInput {
+  flex: 1;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.deliveryInput::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.deliveryInput:focus {
+  outline: none;
+  border-color: rgba(0, 228, 242, 0.5);
+}
+
+.deliveryBtn {
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #D12BF2 0%, #9C1AE1 100%);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.deliveryBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(209, 43, 242, 0.3);
+}
+
+.deliveryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== EMPTY & ERROR STATES ===== */
+.emptyState {
+  text-align: center;
+  padding: 80px 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+}
+
+.emptyIcon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.emptyTitle {
+  font-size: 1.4rem;
+  color: #fff;
+  margin: 0 0 12px;
+}
+
+.emptyText {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1rem;
+}
+
+.errorState {
+  text-align: center;
+  padding: 40px 24px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 16px;
+  color: #ef4444;
+}
+
+/* ===== LOADING STATE ===== */
+.loadingState {
+  text-align: center;
+  padding: 60px 24px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(104, 0, 123, 0.2);
+  border-top-color: #68007B;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== FOOTER SECTION ===== */
+.footerSection {
+  position: relative;
+  z-index: 1;
+  padding: 0 24px 80px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.footerCard {
+  padding: 32px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(104, 0, 123, 0.3);
+  border-radius: 20px;
+  text-align: center;
+}
+
+.footerText {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.8;
+  margin: 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .carouselContainer {
+    padding: 0 40px;
+  }
+
+  .navBtn {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .challengeSnap {
+    min-width: 300px;
+    max-width: 340px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 100px 20px 30px;
+  }
+
+  .heroTitle {
+    font-size: clamp(2rem, 7vw, 3rem);
+  }
+
+  .carouselContainer {
+    padding: 0;
+  }
+
+  .navBtn {
+    display: none;
+  }
+
+  .challengeSnap {
+    min-width: 280px;
+    max-width: 320px;
+  }
+
+  .deliveryForm {
+    flex-direction: column;
+  }
+
+  .deliveryBtn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .challengesSection {
+    padding: 0 16px 40px;
+  }
+
+  .challengeSnap {
+    min-width: 260px;
+    max-width: 300px;
+  }
+}
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  .participateBtn:hover,
+  .deliveryBtn:hover,
+  .navBtn:hover {
+    transform: none;
+  }
+
+  .spinner {
+    animation: none;
+  }
+}
