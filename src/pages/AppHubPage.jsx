@@ -171,7 +171,7 @@ const AppHubPage = () => {
 
   if (loading) {
     return (
-      <div className={`${styles.appHubPage} page-with-background`}>
+      <div className={styles.appHubPage}>
         <Navbar />
         <div className={styles.loadingContainer}>
           <div className={styles.spinner}></div>
@@ -183,7 +183,7 @@ const AppHubPage = () => {
 
   if (error) {
     return (
-      <div className={`${styles.appHubPage} page-with-background`}>
+      <div className={styles.appHubPage}>
         <Navbar />
         <div className={styles.errorContainer}>
           <h2>Erro ao carregar aplicativos</h2>
@@ -197,7 +197,7 @@ const AppHubPage = () => {
   }
 
   return (
-    <div className={`${styles.appHubPage} page-with-background`}>
+    <div className={styles.appHubPage}>
       <Navbar />
 
       {/* Hero Section */}
