@@ -82,16 +82,30 @@ const ProjectCard = ({
         return styles.statusDefault;
     }
   };
+  // Mapeamento de campos do Prisma (nome, descricao, progresso, thumbUrl, createdAt)
+  // com fallback para nomes em inglês e formatos alternativos
   const descRaw = project?.description ?? project?.descricao;
   const desc = String(descRaw ?? '').trim();
   const shouldShowReadMore = desc.length > maxDescriptionLength;
   const displayDescription = desc.length === 0 ? 'Sem descrição cadastrada.' : (isExpanded ? desc : truncateText(desc, maxDescriptionLength));
   const progressValue = typeof project?.progress === 'number' ? project.progress : (typeof project?.progresso === 'number' ? project.progresso : 0);
-  const title = project?.title ?? project?.titulo ?? 'Projeto sem título';
-  const startDate = project?.startDate ?? project?.data_inicio ?? null;
-  const statusLabel = project?.status || '—';
-  
-  // Informações do mentor
+
+  // Título: aceita title, titulo, nome (Prisma)
+  const title = project?.title ?? project?.titulo ?? project?.nome ?? 'Projeto sem título';
+
+  // Data: aceita startDate, data_inicio, createdAt (Prisma)
+  const startDate = project?.startDate ?? project?.data_inicio ?? project?.createdAt ?? null;
+
+  // Status do projeto
+  const statusLabel = project?.status || 'ativo';
+
+  // Imagem: aceita thumb_url, thumbUrl (Prisma), imageUrl
+  const thumbUrl = project?.thumb_url ?? project?.thumbUrl ?? project?.imageUrl ?? null;
+
+  // Placeholder para quando não há imagem
+  const PLACEHOLDER_IMAGE = 'https://placehold.co/400x200/1a1a2e/00E4F2?text=Projeto';
+
+  // Informações do mentor (da relação Prisma ou campos diretos)
   const mentorName = project?.mentorName || project?.mentor_nome || project?.mentor?.nome || null;
   const mentorEmail = project?.mentorEmail || project?.mentor_email || project?.mentor?.email || null;
   const hasMentor = mentorName && mentorEmail;
@@ -102,15 +116,14 @@ const ProjectCard = ({
     <article className={styles.projectCard} role="article" aria-labelledby={`project-${project.id}-title`}>
       {/* Header do Card */}
       <header className={styles.cardHeader}>
-        {project?.thumb_url && !imgError && (
-          <img
-            src={sanitizeImageUrl(project.thumb_url)}
-            alt=""
-            className={styles.thumb}
-            onError={() => setImgError(true)}
-            loading="lazy"
-          />
-        )}
+        {/* Imagem do projeto com placeholder fallback */}
+        <img
+          src={!imgError && thumbUrl ? sanitizeImageUrl(thumbUrl) : PLACEHOLDER_IMAGE}
+          alt={`Imagem do projeto ${title}`}
+          className={styles.thumb}
+          onError={() => setImgError(true)}
+          loading="lazy"
+        />
         <h3 id={`project-${project.id}-title`} className={styles.projectTitle}>
           {title}
         </h3>
