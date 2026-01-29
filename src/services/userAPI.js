@@ -9,9 +9,12 @@ import { apiRequest } from '../lib/apiConfig.js'; // Importa a função central
 export async function getUsers() {
   try {
     const res = await apiRequest('/api/auth/users', { method: 'GET' });
-    const list = Array.isArray(res?.data) ? res.data : (
-      Array.isArray(res?.users) ? res.users : (
-        Array.isArray(res) ? res : []
+    // Backend retorna { success: true, data: { users: [...] } }
+    const list = Array.isArray(res?.data?.users) ? res.data.users : (
+      Array.isArray(res?.data) ? res.data : (
+        Array.isArray(res?.users) ? res.users : (
+          Array.isArray(res) ? res : []
+        )
       )
     );
     return list.map(user => ({
@@ -29,7 +32,8 @@ export async function getUsers() {
 
 export async function getAllUsers() {
   const json = await apiRequest('/api/auth/users', { method: 'GET' });
-  return json.data;
+  // Backend retorna { success: true, data: { users: [...] } }
+  return json?.data?.users ?? json?.data ?? [];
 }
 
 /**
