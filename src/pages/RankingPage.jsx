@@ -1,37 +1,143 @@
 // src/pages/RankingPage.jsx
-import React, { useEffect, useState } from 'react';
+// Leaderboard Estilo Game - Cyberpunk/Glassmorphism Design
+import React, { useEffect, useState, useMemo } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
 import { realtime } from '../lib/realtime';
 import { getRanking } from '../services/rankingAPI.js';
+import styles from './RankingPage.module.css';
 
+/**
+ * Componente do Pódio - Top 3
+ */
+const PodiumItem = ({ data, position }) => {
+  if (!data) return null;
 
+  const positionClass = position === 1
+    ? styles.firstPlace
+    : position === 2
+      ? styles.secondPlace
+      : styles.thirdPlace;
+
+  const positionLabels = {
+    1: '1º Lugar',
+    2: '2º Lugar',
+    3: '3º Lugar'
+  };
+
+  const medals = {
+    1: null, // Crown for first
+    2: '🥈',
+    3: '🥉'
+  };
+
+  return (
+    <div className={`${styles.podiumItem} ${positionClass}`}>
+      {position === 1 && (
+        <div className={styles.crownBadge} title="Campeão">
+          👑
+        </div>
+      )}
+
+      <div className={styles.avatarFrame}>
+        {data.avatar ? (
+          <img
+            src={data.avatar}
+            alt={data.name}
+            className={styles.avatarImage}
+            loading="lazy"
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          />
+        ) : (
+          <div className={styles.avatarPlaceholder}>👤</div>
+        )}
+        {medals[position] && (
+          <span className={styles.medalBadge}>{medals[position]}</span>
+        )}
+      </div>
+
+      <div className={styles.podiumInfo}>
+        <span className={styles.podiumPosition}>{positionLabels[position]}</span>
+        <h3 className={styles.podiumName}>{data.name || '—'}</h3>
+        <span className={styles.podiumScore}>
+          ⭐ {data.score ?? 0} pts
+        </span>
+        {data.reward && (
+          <span className={styles.podiumReward}>🎁 {data.reward}</span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Componente do Card de Rank
+ */
+const RankCard = ({ data, position }) => {
+  const isTop10 = position <= 10;
+
+  return (
+    <li className={styles.rankCard}>
+      <div className={`${styles.rankPosition} ${isTop10 ? styles.rankTop10 : ''}`}>
+        #{position}
+      </div>
+
+      <div className={styles.rankAvatar}>
+        {data.avatar ? (
+          <img
+            src={data.avatar}
+            alt={data.name}
+            className={styles.rankAvatarImg}
+            loading="lazy"
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          />
+        ) : (
+          <div className={styles.rankAvatarPlaceholder}>👤</div>
+        )}
+      </div>
+
+      <div className={styles.rankInfo}>
+        <h4 className={styles.rankName}>{data.name}</h4>
+        {data.area && <span className={styles.rankArea}>{data.area}</span>}
+      </div>
+
+      <div className={styles.rankScore}>
+        <span className={styles.scoreIcon}>⭐</span>
+        {data.score} pts
+      </div>
+    </li>
+  );
+};
+
+/**
+ * Página de Ranking - Game-style Leaderboard
+ */
 export default function RankingPage() {
   const params = new URLSearchParams(window.location.search);
   const isAdmin = params.get('admin') === '1';
+
   const [top3, setTop3] = useState([]);
   const [table, setTable] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Filters & Pagination
   const [query, setQuery] = useState('');
-  const [page, setPage] = useState(1);
-  const pageSize = 50;
   const [areaFilter, setAreaFilter] = useState('');
   const [sortBy, setSortBy] = useState('score');
   const [sortDir, setSortDir] = useState('desc');
   const [minScore, setMinScore] = useState(0);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
 
   const fetchRanking = async () => {
     try {
       setLoading(true);
       setError('');
       const json = await getRanking();
-      console.log('[Ranking] Dados recebidos:', json);
 
-      // Montar top3 unindo com crafters para obter nome e pontos
+      // Normalize crafters data
       const crafters = Array.isArray(json?.crafters) ? json.crafters : [];
-
-      // Normalizar campos dos crafters (backend pode usar nomes diferentes)
       const normalizedCrafters = crafters.map(c => ({
         ...c,
         id: c.id,
@@ -41,6 +147,7 @@ export default function RankingPage() {
         avatar_url: c.avatar_url || c.avatarUrl || c.foto || c.photo || null,
       }));
 
+      // Build Top 3
       const t3 = Array.isArray(json?.top3) ? json.top3.map(t => {
         const crafterId = t.crafter_id || t.crafterId || t.id;
         const c = normalizedCrafters.find(cr => cr.id === crafterId) || {};
@@ -53,7 +160,7 @@ export default function RankingPage() {
         };
       }) : [];
 
-      // Tabela a partir da lista de crafters
+      // Build table from crafters
       const tb = normalizedCrafters.map(c => ({
         id: c.id,
         name: c.nome || '—',
@@ -61,6 +168,7 @@ export default function RankingPage() {
         area: c.area || '',
         avatar: c.avatar_url || null,
       }));
+
       setTop3(t3);
       setTable(tb);
     } catch (err) {
@@ -71,7 +179,7 @@ export default function RankingPage() {
       } else if (msg.includes('401') || msg.includes('403')) {
         setError('Acesso não autorizado ao ranking');
       } else {
-        setError('Ranking em processamento. Volte em instantes 🚀');
+        setError('Ranking em processamento. Volte em instantes!');
       }
       setTop3([]);
       setTable([]);
@@ -82,230 +190,246 @@ export default function RankingPage() {
 
   useEffect(() => {
     fetchRanking();
-    // Agora usando a importação estática
     const unsub = realtime.subscribe('ranking_changed', () => { fetchRanking(); });
     return () => unsub();
   }, []);
 
-  const areas = Array.from(new Set((table || []).map(r => r.area).filter(Boolean))).sort();
-  const filtered = (table || [])
-    .filter(r => r.name.toLowerCase().includes(query.toLowerCase()))
-    .filter(r => !areaFilter || r.area === areaFilter)
-    .filter(r => (r.score ?? 0) >= (Number(minScore) || 0))
-    .sort((a, b) => {
-      const dir = sortDir === 'asc' ? 1 : -1;
-      if (sortBy === 'name') return a.name.localeCompare(b.name) * dir;
-      if (sortBy === 'area') return (a.area || '').localeCompare(b.area || '') * dir;
-      const sa = a.score ?? 0; const sb = b.score ?? 0; return (sa - sb) * dir;
-    });
+  // Get unique areas for filter
+  const areas = useMemo(() => {
+    return Array.from(new Set((table || []).map(r => r.area).filter(Boolean))).sort();
+  }, [table]);
+
+  // Filter and sort table data
+  const filtered = useMemo(() => {
+    return (table || [])
+      .filter(r => r.name.toLowerCase().includes(query.toLowerCase()))
+      .filter(r => !areaFilter || r.area === areaFilter)
+      .filter(r => (r.score ?? 0) >= (Number(minScore) || 0))
+      .sort((a, b) => {
+        const dir = sortDir === 'asc' ? 1 : -1;
+        if (sortBy === 'name') return a.name.localeCompare(b.name) * dir;
+        if (sortBy === 'area') return (a.area || '').localeCompare(b.area || '') * dir;
+        return ((a.score ?? 0) - (b.score ?? 0)) * dir;
+      });
+  }, [table, query, areaFilter, minScore, sortBy, sortDir]);
+
+  // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const pageItems = filtered.slice((page-1)*pageSize, page*pageSize);
+  const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  // Get podium data by place
+  const getPodiumData = (place) => (top3 || []).find(p => p.place === place);
 
   return (
-    <div className="ranking-page page-with-background" style={{
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
+    <div className={styles.page}>
       <Navbar />
 
-      <div className="ranking-content" style={{ flex: 1 }}>
+      {/* Hero Section */}
+      <section className={styles.hero}>
+        <div className={styles.heroContent}>
+          <h1 className={styles.heroTitle}>Ranking dos Crafters</h1>
+          <p className={styles.heroSubtitle}>
+            Os maiores destaques da semana nos projetos CodeCraft.
+            Conquiste pontos, suba no ranking e ganhe recompensas!
+          </p>
+        </div>
+      </section>
 
-      <section className="section-block">
-        <div className="section-card">
-          <header className="section-header">
-            <h1 className="title">Ranking dos Crafters</h1>
-            <h2 className="subtitle">Top Crafters 🔥</h2>
-            <p className="lead">Os maiores destaques da semana nos projetos CodeCraft.</p>
-          </header>
+      {/* Loading State */}
+      {loading && (
+        <div className={styles.loadingContainer}>
+          <div className={styles.spinner} />
+          <span className={styles.loadingText}>Carregando ranking...</span>
+        </div>
+      )}
 
-          {loading && (
-            <div className="empty" role="status">Carregando ranking...</div>
+      {/* Error State */}
+      {error && !loading && (
+        <div className={styles.errorContainer}>
+          <div className={styles.errorIcon}>⚠️</div>
+          <p className={styles.errorText}>{error}</p>
+          <button className={styles.retryBtn} onClick={fetchRanking}>
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
+      {/* Content */}
+      {!loading && !error && (
+        <>
+          {/* Podium Section - Top 3 */}
+          {top3.length > 0 && (
+            <section className={styles.podiumSection}>
+              <div className={styles.podiumContainer}>
+                <PodiumItem data={getPodiumData(2)} position={2} />
+                <PodiumItem data={getPodiumData(1)} position={1} />
+                <PodiumItem data={getPodiumData(3)} position={3} />
+              </div>
+            </section>
           )}
-          {error && (
-            <div className="error" role="alert">{error}</div>
-          )}
-          {!loading && (top3 || []).length > 0 ? (
-            <div className="podium" aria-label="Pódio dos três melhores" aria-live="polite">
-              <div className="podium-item second">
-                <span className="medal medal-silver" aria-hidden="true">🥈</span>
-                <div className="photo" aria-hidden="true" style={{
-                  backgroundImage: ((top3 || []).find(p=>p.place===2)?.avatar ? `url(${(top3 || []).find(p=>p.place===2)?.avatar})` : undefined),
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }} />
-                <div className="label">
-                  <span className="place">2º</span>
-                  <span className="name">{(top3 || []).find(p=>p.place===2)?.name || '—'}</span>
-                  <span className="score">{(top3 || []).find(p=>p.place===2)?.score ?? 0} pts</span>
-                  {(top3 || []).find(p=>p.place===2)?.reward ? (
-                    <span className="reward" title="Recompensa">🎁 {(top3 || []).find(p=>p.place===2)?.reward}</span>
-                  ) : null}
-                </div>
-              </div>
-              <div className="podium-item first">
-                <div className="photo" aria-hidden="true" style={{
-                  backgroundImage: ((top3 || []).find(p=>p.place===1)?.avatar ? `url(${(top3 || []).find(p=>p.place===1)?.avatar})` : undefined),
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }} />
-                <span className="medal medal-gold" aria-hidden="true">🥇</span>
-                <div className="crown" title="Campeão" />
-                <div className="label">
-                  <span className="place">1º</span>
-                  <span className="name">{(top3 || []).find(p=>p.place===1)?.name || '—'}</span>
-                  <span className="score">{(top3 || []).find(p=>p.place===1)?.score ?? 0} pts</span>
-                  {(top3 || []).find(p=>p.place===1)?.reward ? (
-                    <span className="reward" title="Recompensa">🎁 {(top3 || []).find(p=>p.place===1)?.reward}</span>
-                  ) : null}
-                </div>
-              </div>
-              <div className="podium-item third">
-                <span className="medal medal-bronze" aria-hidden="true">🥉</span>
-                <div className="photo" aria-hidden="true" style={{
-                  backgroundImage: ((top3 || []).find(p=>p.place===3)?.avatar ? `url(${(top3 || []).find(p=>p.place===3)?.avatar})` : undefined),
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }} />
-                <div className="label">
-                  <span className="place">3º</span>
-                  <span className="name">{(top3 || []).find(p=>p.place===3)?.name || '—'}</span>
-                  <span className="score">{(top3 || []).find(p=>p.place===3)?.score ?? 0} pts</span>
-                  {(top3 || []).find(p=>p.place===3)?.reward ? (
-                    <span className="reward" title="Recompensa">🎁 {(top3 || []).find(p=>p.place===3)?.reward}</span>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-          ) : (!loading ? (
-            <div className="empty" role="status">Ranking em processamento. Volte em instantes 🚀</div>
-          ) : null)}
 
-          <div className="ranking-list">
-            <div className="list-header" style={{ display:'flex', gap:12, alignItems:'center' }}>
-              <h3 className="list-title" style={{ margin: 0 }}>Demais participantes</h3>
-              <input aria-label="Buscar por nome" placeholder="Buscar por nome" value={query} onChange={e=>{setQuery(e.target.value); setPage(1);}} className="rank-search" />
-              <select aria-label="Filtrar por área" value={areaFilter} onChange={e=>{setAreaFilter(e.target.value); setPage(1);}} className="rank-filter">
+          {/* Filters Section */}
+          <section className={styles.filtersSection}>
+            <div className={styles.filtersContainer}>
+              <input
+                type="text"
+                placeholder="Buscar por nome..."
+                value={query}
+                onChange={(e) => { setQuery(e.target.value); setPage(1); }}
+                className={styles.searchInput}
+                aria-label="Buscar por nome"
+              />
+
+              <select
+                value={areaFilter}
+                onChange={(e) => { setAreaFilter(e.target.value); setPage(1); }}
+                className={styles.filterSelect}
+                aria-label="Filtrar por área"
+              >
                 <option value="">Todas as áreas</option>
                 {areas.map(a => (
                   <option key={a} value={a}>{a}</option>
                 ))}
               </select>
-              <div className="rank-min-score">
-                <label htmlFor="minScore" style={{ color:'var(--texto-gelo)', marginRight:6 }}>Mín. pontos</label>
-                <input id="minScore" type="number" min="0" value={minScore} onChange={e=>{setMinScore(e.target.value); setPage(1);}} className="rank-input" />
+
+              <div className={styles.minScoreWrapper}>
+                <label htmlFor="minScore" className={styles.minScoreLabel}>Mín. pontos</label>
+                <input
+                  id="minScore"
+                  type="number"
+                  min="0"
+                  value={minScore}
+                  onChange={(e) => { setMinScore(e.target.value); setPage(1); }}
+                  className={styles.minScoreInput}
+                />
               </div>
-              <select aria-label="Ordenar por" value={sortBy} onChange={e=>{setSortBy(e.target.value);}} className="rank-filter">
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className={styles.filterSelect}
+                aria-label="Ordenar por"
+              >
                 <option value="score">Pontuação</option>
                 <option value="name">Nome</option>
                 <option value="area">Área</option>
               </select>
-              <select aria-label="Direção" value={sortDir} onChange={e=>{setSortDir(e.target.value);}} className="rank-filter">
-                <option value="desc">Desc</option>
-                <option value="asc">Asc</option>
+
+              <select
+                value={sortDir}
+                onChange={(e) => setSortDir(e.target.value)}
+                className={styles.filterSelect}
+                aria-label="Direção da ordenação"
+              >
+                <option value="desc">Maior → Menor</option>
+                <option value="asc">Menor → Maior</option>
               </select>
-              {filtered.length > pageSize ? (
-                <div className="pager" style={{ marginLeft:'auto', display:'flex', gap:8 }}>
-                  <button onClick={()=>setPage(Math.max(1, page-1))}>◀</button>
-                  <span>Página {page} / {totalPages}</span>
-                  <button onClick={()=>setPage(Math.min(totalPages, page+1))}>▶</button>
-                </div>
-              ) : null}
             </div>
-            <ul aria-live="polite">
-              {pageItems.length === 0 ? (
-                <li className="rank-row"><span className="rank-name">Nenhum participante</span></li>
-              ) : pageItems.map((o, idx) => (
-                <li key={`${o.id || o.name}-${idx}`} className="rank-row">
-                  <div className="rank-left">
-                    <span className="rank-name">{o.name}</span>
-                    {o.area ? <span className="rank-area">{o.area}</span> : null}
+          </section>
+
+          {/* Leaderboard List */}
+          <section className={styles.leaderboardSection}>
+            <div className={styles.leaderboardHeader}>
+              <h2 className={styles.leaderboardTitle}>Leaderboard</h2>
+              <span className={styles.leaderboardCount}>
+                {filtered.length} participante{filtered.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            {pageItems.length === 0 ? (
+              <div className={styles.emptyState}>
+                <div className={styles.emptyIcon}>🏆</div>
+                <h3 className={styles.emptyTitle}>Nenhum participante encontrado</h3>
+                <p className={styles.emptyText}>
+                  Ajuste os filtros ou volte em breve para ver os rankings.
+                </p>
+              </div>
+            ) : (
+              <>
+                <ul className={styles.rankCardsList} aria-live="polite">
+                  {pageItems.map((data, idx) => (
+                    <RankCard
+                      key={data.id || `${data.name}-${idx}`}
+                      data={data}
+                      position={(page - 1) * pageSize + idx + 1}
+                    />
+                  ))}
+                </ul>
+
+                {totalPages > 1 && (
+                  <div className={styles.pagination}>
+                    <button
+                      className={styles.paginationBtn}
+                      onClick={() => setPage(Math.max(1, page - 1))}
+                      disabled={page === 1}
+                      aria-label="Página anterior"
+                    >
+                      ◀
+                    </button>
+                    <span className={styles.paginationInfo}>
+                      Página {page} de {totalPages}
+                    </span>
+                    <button
+                      className={styles.paginationBtn}
+                      onClick={() => setPage(Math.min(totalPages, page + 1))}
+                      disabled={page === totalPages}
+                      aria-label="Próxima página"
+                    >
+                      ▶
+                    </button>
                   </div>
-                  <span className="rank-score">{o.score} pts</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+                )}
+              </>
+            )}
+          </section>
 
+          {/* Admin Panel */}
           {isAdmin && (
-            <aside className="admin-panel" aria-label="Área administrativa">
-              <h3>Administração</h3>
-              <form className="admin-form" onSubmit={(e) => { e.preventDefault(); console.log('Salvar pontuação'); }}>
-                <div className="form-row">
-                  <input type="text" placeholder="Nome" />
-                  <input type="number" placeholder="Pontuação" />
-                </div>
-                <div className="form-row">
-                  <select defaultValue="badge">
-                    <option value="badge">Badge</option>
-                    <option value="moeda">Moedas</option>
-                    <option value="certificado">Certificado</option>
-                  </select>
-                  <input type="text" placeholder="Descrição da recompensa" />
-                </div>
-                <div className="form-actions">
-                  <button type="submit" className="btn-primary">Salvar</button>
-                </div>
-              </form>
-              <p className="hint">Para exibir esta área: adicionar "?admin=1" à URL.</p>
-            </aside>
+            <section className={styles.leaderboardSection}>
+              <aside className={styles.adminPanel} aria-label="Área administrativa">
+                <h3 className={styles.adminTitle}>Administração</h3>
+                <form
+                  className={styles.adminForm}
+                  onSubmit={(e) => { e.preventDefault(); console.log('Salvar pontuação'); }}
+                >
+                  <div className={styles.formRow}>
+                    <input
+                      type="text"
+                      placeholder="Nome do participante"
+                      className={styles.adminInput}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Pontuação"
+                      className={styles.adminInput}
+                    />
+                  </div>
+                  <div className={styles.formRow}>
+                    <select defaultValue="badge" className={styles.adminSelect}>
+                      <option value="badge">Badge</option>
+                      <option value="moeda">Moedas</option>
+                      <option value="certificado">Certificado</option>
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Descrição da recompensa"
+                      className={styles.adminInput}
+                    />
+                  </div>
+                  <div className={styles.adminActions}>
+                    <button type="submit" className={styles.btnPrimary}>
+                      Salvar
+                    </button>
+                  </div>
+                </form>
+                <p className={styles.adminHint}>
+                  Para exibir esta área: adicionar "?admin=1" à URL.
+                </p>
+              </aside>
+            </section>
           )}
-
-          
-        </div>
-      </section>
-      </div>
-
-      <style>{`
-        .ranking-page { min-height: 100vh; width: 100%; }
-        .section-block { padding: 40px 24px; }
-        .section-card { max-width: 1100px; margin: 0 auto; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: var(--raio-xl); backdrop-filter: blur(10px); box-shadow: 0 6px 24px rgba(0,0,0,0.25); padding: 24px; overflow: hidden; }
-        .section-header { text-align: center; margin-bottom: 16px; }
-        .title { font-family: var(--fonte-titulos); font-size: clamp(2rem, 4vw, 3rem); color: var(--texto-branco); }
-        .subtitle { font-size: clamp(1.25rem, 2.5vw, 1.5rem); color: var(--texto-gelo); margin-top: 8px; }
-        .lead { font-size: 1.05rem; color: var(--texto-gelo); margin-top: 12px; }
-
-        .podium { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: end; margin-top: 24px; position: relative; }
-        .podium::before { content: ''; position: absolute; top: -8px; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, rgba(255,255,255,0.2), rgba(255,255,255,0.06)); }
-        .podium-item { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.18); border-radius: var(--raio-lg); padding: 16px; text-align: center; position: relative; }
-        .podium-item .medal { position:absolute; top:-10px; right:-10px; font-size: 22px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
-        .medal-gold { color: #FFD700; }
-        .medal-silver { color: #C0C0C0; }
-        .medal-bronze { color: #CD7F32; }
-        .podium-item .photo { width: 80px; height: 80px; border-radius: 999px; margin: 0 auto 10px; background: radial-gradient(circle, rgba(255,255,255,0.18), rgba(255,255,255,0.06)); border: 1px solid rgba(255,255,255,0.18); }
-        .podium-item .label { display: grid; gap: 6px; }
-        .podium-item .place { font-weight: 800; color: var(--texto-branco); }
-        .podium-item .name { color: var(--texto-gelo); }
-        .podium-item .score { color: var(--texto-branco); font-weight: 700; }
-        .podium-item .reward { color: #FFD966; font-weight: 600; }
-
-        .first { transform: translateY(-12px); box-shadow: 0 8px 24px rgba(0,0,0,0.25); border-color: #D12BF2; }
-        .first .crown { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 28px; height: 28px; background: #D12BF2; border-radius: 6px; box-shadow: 0 0 12px rgba(209,43,242,0.6); }
-        .second, .third { opacity: 0.9; }
-
-        .ranking-list { margin-top: 24px; }
-        .list-title { color: var(--texto-branco); margin-bottom: 8px; }
-        .rank-row { display: flex; justify-content: space-between; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
-        .rank-name { color: var(--texto-gelo); }
-        .rank-search { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 10px; color: var(--texto-branco); }
-        .rank-filter, .rank-input { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 10px; color: var(--texto-branco); }
-        .rank-left { display:flex; gap:8px; align-items:center; }
-        .rank-area { color: var(--texto-gelo); font-size: 0.9rem; background: rgba(209,43,242,0.15); border: 1px solid rgba(209,43,242,0.4); border-radius: 6px; padding: 2px 6px; }
-        .rank-score { color: var(--texto-branco); font-weight: 700; }
-        .ranking-list ul { max-height: 50vh; overflow-y: auto; }
-
-        .admin-panel { margin-top: 24px; background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.18); border-radius: var(--raio-lg); padding: 16px; }
-        .admin-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-        .admin-form input, .admin-form select { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 10px; color: var(--texto-branco); }
-        .btn-primary { background: #D12BF2; color: #fff; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; }
-        .btn-primary:hover { filter: brightness(1.1); }
-        .hint { color: var(--texto-gelo); margin-top: 8px; }
-
-        @media (max-width: 768px) {
-          .section-card { padding: 16px; }
-          .podium { gap: 10px; }
-          .admin-form .form-row { grid-template-columns: 1fr; }
-        }
-      `}</style>
+        </>
+      )}
     </div>
   );
 }

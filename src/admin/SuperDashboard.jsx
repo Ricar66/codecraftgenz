@@ -1,7 +1,7 @@
 // src/admin/SuperDashboard.jsx
-// Dashboard Executivo com KPIs, Gráficos e Atividades Recentes
+// Dashboard Executivo com KPIs, Gráficos e Atividades Recentes - DADOS REAIS
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   LineChart, Line, AreaChart, Area, PieChart, Pie, Cell,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -9,18 +9,12 @@ import {
 } from 'recharts';
 import {
   FaDollarSign, FaBriefcase, FaUsers, FaShoppingCart,
-  FaArrowUp, FaArrowDown, FaUserPlus, FaFileInvoiceDollar,
-  FaClock
+  FaArrowUp, FaArrowDown, FaUserPlus, FaProjectDiagram,
+  FaClock, FaSync, FaExclamationTriangle
 } from 'react-icons/fa';
 
 import AdminCard from './components/AdminCard';
-import {
-  mockKPIs,
-  mockRevenueData,
-  mockProjectDistribution,
-  mockSalesFunnel,
-  mockRecentActivities
-} from './data/mockDashboardData';
+import { getDashboardStats } from '../services/dashboardAPI';
 import styles from './SuperDashboard.module.css';
 
 // Cores do tema
@@ -31,9 +25,13 @@ const COLORS = {
   dark: '#68007B',
   success: '#10B981',
   warning: '#F59E0B',
+  danger: '#ef4444',
   text: '#e0e0e0',
   muted: '#a0a0a0',
 };
+
+// Cores para gráfico de pizza
+const PROJECT_COLORS = [COLORS.secondary, COLORS.primary, COLORS.purple, COLORS.success, COLORS.warning];
 
 // Custom Tooltip para gráficos
 const CustomTooltip = ({ active, payload, label }) => {
@@ -43,7 +41,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         <p className={styles.tooltipLabel}>{label}</p>
         {payload.map((entry, index) => (
           <p key={index} style={{ color: entry.color }}>
-            {entry.name}: R$ {entry.value.toLocaleString('pt-BR')}
+            {entry.name}: R$ {Number(entry.value).toLocaleString('pt-BR')}
           </p>
         ))}
       </div>
@@ -53,13 +51,94 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 /**
- * Super Dashboard - Centro de Comando
+ * Super Dashboard - Centro de Comando com Dados Reais
  */
 const SuperDashboard = () => {
   const [periodo, setPeriodo] = useState('30d');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [data, setData] = useState(null);
 
-  // KPIs calculados
-  const kpis = useMemo(() => mockKPIs, []);
+  // Carregar dados do dashboard
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const stats = await getDashboardStats(periodo);
+      setData(stats);
+    } catch (err) {
+      console.error('Erro ao carregar dashboard:', err);
+      setError(err.message || 'Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
+  }, [periodo]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // KPIs calculados a partir dos dados reais
+  const kpis = useMemo(() => {
+    if (!data) return null;
+    return {
+      faturamentoTotal: data.finance?.paid || 0,
+      receitaPendente: data.finance?.pending || 0,
+      pipelineB2B: data.proposals?.total || 0,
+      novosUsuarios30d: data.users?.total || 0,
+      craftersTotal: data.users?.crafters || 0,
+      projetosAtivos: data.projects?.active || 0,
+      projetosTotal: data.projects?.total || 0,
+      appsTotal: data.apps?.total || 0,
+      novasPropostas: data.proposals?.new || 0,
+    };
+  }, [data]);
+
+  // Dados do gráfico de receita
+  const chartData = useMemo(() => {
+    if (!data?.chartData) return [];
+    return data.chartData.map(item => ({
+      mes: item.month,
+      receita: item.revenue,
+      pendente: item.expenses,
+    }));
+  }, [data]);
+
+  // Dados do funil de vendas B2B
+  const salesFunnel = useMemo(() => {
+    if (!data?.proposals?.byStatus) return [];
+    const byStatus = data.proposals.byStatus;
+    return [
+      { fase: 'Novos', quantidade: byStatus.new || 0, color: COLORS.secondary },
+      { fase: 'Contatados', quantidade: byStatus.contacted || 0, color: COLORS.purple },
+      { fase: 'Negociando', quantidade: byStatus.negotiating || 0, color: COLORS.warning },
+      { fase: 'Aprovados', quantidade: byStatus.approved || 0, color: COLORS.success },
+      { fase: 'Rejeitados', quantidade: byStatus.rejected || 0, color: COLORS.danger },
+    ];
+  }, [data]);
+
+  // Distribuição de projetos
+  const projectDistribution = useMemo(() => {
+    if (!data?.projects) return [];
+    const projects = data.projects;
+    return [
+      { name: 'Ativos', value: projects.active || 0, color: COLORS.success },
+      { name: 'Finalizados', value: projects.completed || 0, color: COLORS.secondary },
+      { name: 'Outros', value: Math.max(0, (projects.total || 0) - (projects.active || 0) - (projects.completed || 0)), color: COLORS.muted },
+    ].filter(item => item.value > 0);
+  }, [data]);
+
+  // Propostas recentes
+  const recentProposals = useMemo(() => {
+    if (!data?.proposals?.recent) return [];
+    return data.proposals.recent.map(p => ({
+      id: p.id,
+      descricao: `${p.companyName} - ${p.projectType}`,
+      tipo: 'proposta',
+      tempo: new Date(p.createdAt).toLocaleDateString('pt-BR'),
+      status: p.status,
+    }));
+  }, [data]);
 
   // Ícone para atividades
   const getActivityIcon = (tipo) => {
@@ -71,6 +150,30 @@ const SuperDashboard = () => {
     }
   };
 
+  // Loading state
+  if (loading && !data) {
+    return (
+      <div className={styles.loadingState}>
+        <div className={styles.spinner} />
+        <span>Carregando dashboard...</span>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error && !data) {
+    return (
+      <div className={styles.errorState}>
+        <FaExclamationTriangle size={48} color={COLORS.danger} />
+        <h2>Erro ao carregar dashboard</h2>
+        <p>{error}</p>
+        <button onClick={fetchData} className={styles.retryBtn}>
+          <FaSync /> Tentar novamente
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.dashboard}>
       {/* Header */}
@@ -80,6 +183,14 @@ const SuperDashboard = () => {
           <p className={styles.subtitle}>Visão executiva da CodeCraft Gen-Z</p>
         </div>
         <div className={styles.headerActions}>
+          <button
+            onClick={fetchData}
+            className={styles.refreshBtn}
+            disabled={loading}
+            title="Atualizar dados"
+          >
+            <FaSync className={loading ? styles.spinning : ''} />
+          </button>
           <select
             value={periodo}
             onChange={(e) => setPeriodo(e.target.value)}
@@ -88,7 +199,7 @@ const SuperDashboard = () => {
             <option value="7d">Últimos 7 dias</option>
             <option value="30d">Últimos 30 dias</option>
             <option value="90d">Últimos 90 dias</option>
-            <option value="1y">Este ano</option>
+            <option value="365d">Este ano</option>
           </select>
         </div>
       </header>
@@ -102,61 +213,66 @@ const SuperDashboard = () => {
               <FaDollarSign style={{ color: COLORS.success }} />
             </div>
             <div className={styles.kpiInfo}>
-              <span className={styles.kpiLabel}>Faturamento Total</span>
+              <span className={styles.kpiLabel}>Faturamento Pago</span>
               <span className={styles.kpiValue}>
-                R$ {kpis.faturamentoTotal.toLocaleString('pt-BR')}
+                R$ {(kpis?.faturamentoTotal || 0).toLocaleString('pt-BR')}
               </span>
-              <span className={styles.kpiTrend}>
-                <FaArrowUp className={styles.trendUp} />
-                +{kpis.crescimentoUsuarios}% vs mês anterior
-              </span>
+              {kpis?.receitaPendente > 0 && (
+                <span className={styles.kpiMuted}>
+                  + R$ {kpis.receitaPendente.toLocaleString('pt-BR')} pendente
+                </span>
+              )}
             </div>
           </div>
         </AdminCard>
 
-        {/* Pipeline B2B */}
+        {/* Propostas B2B */}
         <AdminCard variant="elevated" className={styles.kpiCard}>
           <div className={styles.kpiContent}>
             <div className={styles.kpiIcon} style={{ background: 'rgba(209, 43, 242, 0.15)' }}>
               <FaBriefcase style={{ color: COLORS.primary }} />
             </div>
             <div className={styles.kpiInfo}>
-              <span className={styles.kpiLabel}>Pipeline B2B</span>
-              <span className={styles.kpiValue}>
-                R$ {kpis.pipelineB2B.toLocaleString('pt-BR')}
-              </span>
-              <span className={styles.kpiMuted}>Em propostas abertas</span>
+              <span className={styles.kpiLabel}>Propostas B2B</span>
+              <span className={styles.kpiValue}>{kpis?.pipelineB2B || 0}</span>
+              {kpis?.novasPropostas > 0 && (
+                <span className={styles.kpiTrend}>
+                  <FaArrowUp className={styles.trendUp} />
+                  +{kpis.novasPropostas} novas (7d)
+                </span>
+              )}
             </div>
           </div>
         </AdminCard>
 
-        {/* Novos Usuários */}
+        {/* Usuários e Crafters */}
         <AdminCard variant="elevated" className={styles.kpiCard}>
           <div className={styles.kpiContent}>
             <div className={styles.kpiIcon} style={{ background: 'rgba(0, 228, 242, 0.15)' }}>
               <FaUsers style={{ color: COLORS.secondary }} />
             </div>
             <div className={styles.kpiInfo}>
-              <span className={styles.kpiLabel}>Novos Usuários (30d)</span>
-              <span className={styles.kpiValue}>{kpis.novosUsuarios30d}</span>
-              <span className={styles.kpiTrend}>
-                <FaArrowUp className={styles.trendUp} />
-                +{kpis.crescimentoUsuarios}% crescimento
+              <span className={styles.kpiLabel}>Usuários / Crafters</span>
+              <span className={styles.kpiValue}>
+                {kpis?.novosUsuarios30d || 0} / {kpis?.craftersTotal || 0}
               </span>
+              <span className={styles.kpiMuted}>Total cadastrados</span>
             </div>
           </div>
         </AdminCard>
 
-        {/* Apps Vendidos */}
+        {/* Projetos */}
         <AdminCard variant="elevated" className={styles.kpiCard}>
           <div className={styles.kpiContent}>
             <div className={styles.kpiIcon} style={{ background: 'rgba(122, 62, 245, 0.15)' }}>
-              <FaShoppingCart style={{ color: COLORS.purple }} />
+              <FaProjectDiagram style={{ color: COLORS.purple }} />
             </div>
             <div className={styles.kpiInfo}>
-              <span className={styles.kpiLabel}>Apps Vendidos</span>
-              <span className={styles.kpiValue}>{kpis.appsVendidos}</span>
-              <span className={styles.kpiMuted}>+{kpis.appsVendidosMes} este mês</span>
+              <span className={styles.kpiLabel}>Projetos</span>
+              <span className={styles.kpiValue}>{kpis?.projetosTotal || 0}</span>
+              <span className={styles.kpiMuted}>
+                {kpis?.projetosAtivos || 0} ativos | {kpis?.appsTotal || 0} apps
+              </span>
             </div>
           </div>
         </AdminCard>
@@ -169,143 +285,160 @@ const SuperDashboard = () => {
           <AdminCard.Header title="Evolução de Receita" subtitle="Últimos 6 meses" noBorder />
           <AdminCard.Body noPadding>
             <div className={styles.chartContainer}>
-              <ResponsiveContainer width="100%" height={280}>
-                <AreaChart data={mockRevenueData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorReceita" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={COLORS.secondary} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={COLORS.secondary} stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorApps" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                  <XAxis dataKey="mes" stroke={COLORS.muted} fontSize={12} />
-                  <YAxis stroke={COLORS.muted} fontSize={12} tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend wrapperStyle={{ color: COLORS.text }} />
-                  <Area
-                    type="monotone"
-                    dataKey="receita"
-                    name="Receita Total"
-                    stroke={COLORS.secondary}
-                    fillOpacity={1}
-                    fill="url(#colorReceita)"
-                    strokeWidth={2}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="apps"
-                    name="Apps"
-                    stroke={COLORS.primary}
-                    strokeWidth={2}
-                    dot={{ fill: COLORS.primary, strokeWidth: 2 }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={280}>
+                  <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorReceita" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={COLORS.success} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={COLORS.success} stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorPendente" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={COLORS.warning} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={COLORS.warning} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                    <XAxis dataKey="mes" stroke={COLORS.muted} fontSize={12} />
+                    <YAxis stroke={COLORS.muted} fontSize={12} tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ color: COLORS.text }} />
+                    <Area
+                      type="monotone"
+                      dataKey="receita"
+                      name="Receita Paga"
+                      stroke={COLORS.success}
+                      fillOpacity={1}
+                      fill="url(#colorReceita)"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="pendente"
+                      name="Pendente"
+                      stroke={COLORS.warning}
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      dot={{ fill: COLORS.warning, strokeWidth: 2 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className={styles.noData}>Sem dados de receita no período</div>
+              )}
             </div>
           </AdminCard.Body>
         </AdminCard>
 
         {/* Distribuição de Projetos (Pizza) */}
         <AdminCard variant="elevated" className={styles.chartCard}>
-          <AdminCard.Header title="Distribuição de Projetos" subtitle="Por tipo de desenvolvimento" noBorder />
+          <AdminCard.Header title="Distribuição de Projetos" subtitle="Por status" noBorder />
           <AdminCard.Body noPadding>
             <div className={styles.chartContainer}>
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={mockProjectDistribution}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelLine={{ stroke: COLORS.muted }}
-                  >
-                    {mockProjectDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value) => [`${value}%`, 'Participação']}
-                    contentStyle={{
-                      background: 'rgba(10, 10, 15, 0.95)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '8px'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              {projectDistribution.length > 0 ? (
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={projectDistribution}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={2}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      labelLine={{ stroke: COLORS.muted }}
+                    >
+                      {projectDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value) => [value, 'Projetos']}
+                      contentStyle={{
+                        background: 'rgba(10, 10, 15, 0.95)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '8px'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className={styles.noData}>Sem dados de projetos</div>
+              )}
             </div>
           </AdminCard.Body>
         </AdminCard>
 
         {/* Funil de Vendas B2B */}
         <AdminCard variant="elevated" className={styles.chartCard}>
-          <AdminCard.Header title="Funil de Vendas B2B" subtitle="Propostas por fase" noBorder />
+          <AdminCard.Header title="Funil de Propostas B2B" subtitle="Por status" noBorder />
           <AdminCard.Body noPadding>
             <div className={styles.chartContainer}>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart
-                  data={mockSalesFunnel}
-                  layout="vertical"
-                  margin={{ top: 10, right: 30, left: 60, bottom: 10 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                  <XAxis type="number" stroke={COLORS.muted} fontSize={12} />
-                  <YAxis type="category" dataKey="fase" stroke={COLORS.muted} fontSize={12} />
-                  <Tooltip
-                    formatter={(value) => [value, 'Propostas']}
-                    contentStyle={{
-                      background: 'rgba(10, 10, 15, 0.95)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Bar dataKey="quantidade" radius={[0, 4, 4, 0]}>
-                    {mockSalesFunnel.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              {salesFunnel.some(item => item.quantidade > 0) ? (
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart
+                    data={salesFunnel}
+                    layout="vertical"
+                    margin={{ top: 10, right: 30, left: 80, bottom: 10 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                    <XAxis type="number" stroke={COLORS.muted} fontSize={12} />
+                    <YAxis type="category" dataKey="fase" stroke={COLORS.muted} fontSize={12} />
+                    <Tooltip
+                      formatter={(value) => [value, 'Propostas']}
+                      contentStyle={{
+                        background: 'rgba(10, 10, 15, 0.95)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Bar dataKey="quantidade" radius={[0, 4, 4, 0]}>
+                      {salesFunnel.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className={styles.noData}>Sem propostas registradas</div>
+              )}
             </div>
           </AdminCard.Body>
         </AdminCard>
 
-        {/* Últimas Atividades */}
+        {/* Propostas Recentes */}
         <AdminCard variant="elevated" className={styles.chartCard}>
           <AdminCard.Header
-            title="Últimas Atividades"
-            subtitle="Tempo real"
+            title="Propostas Recentes"
+            subtitle="Últimas solicitações"
             actions={
               <span className={styles.liveBadge}>
-                <span className={styles.liveDot} /> LIVE
+                <span className={styles.liveDot} /> B2B
               </span>
             }
             noBorder
           />
           <AdminCard.Body noPadding>
             <div className={styles.activitiesList}>
-              {mockRecentActivities.slice(0, 6).map((activity) => (
-                <div key={activity.id} className={styles.activityItem}>
-                  <div className={styles.activityIcon}>
-                    {getActivityIcon(activity.tipo)}
+              {recentProposals.length > 0 ? (
+                recentProposals.map((proposal) => (
+                  <div key={proposal.id} className={styles.activityItem}>
+                    <div className={styles.activityIcon}>
+                      {getActivityIcon(proposal.tipo)}
+                    </div>
+                    <div className={styles.activityContent}>
+                      <span className={styles.activityDesc}>{proposal.descricao}</span>
+                      <span className={styles.activityTime}>{proposal.tempo}</span>
+                    </div>
+                    <span className={`${styles.activityStatus} ${styles[`status_${proposal.status}`]}`}>
+                      {proposal.status}
+                    </span>
                   </div>
-                  <div className={styles.activityContent}>
-                    <span className={styles.activityDesc}>{activity.descricao}</span>
-                    <span className={styles.activityTime}>{activity.tempo}</span>
-                  </div>
-                  {activity.valor && (
-                    <span className={styles.activityValue}>{activity.valor}</span>
-                  )}
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className={styles.noData}>Nenhuma proposta recente</div>
+              )}
             </div>
           </AdminCard.Body>
         </AdminCard>

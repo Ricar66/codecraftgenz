@@ -337,3 +337,131 @@
 .activitiesList::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
+
+/* Loading & Error States */
+.loadingState, .errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+  color: var(--texto-gelo, #a0a0a0);
+}
+
+.loadingState .spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(0, 228, 242, 0.2);
+  border-top-color: var(--cor-terciaria, #00E4F2);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.errorState h2 {
+  color: #ef4444;
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.errorState p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.retryBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--cor-terciaria, #00E4F2);
+  border: none;
+  border-radius: 8px;
+  color: var(--fundo-escuro, #0a0a0f);
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.retryBtn:hover {
+  opacity: 0.9;
+}
+
+/* Refresh Button */
+.refreshBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--texto-gelo, #a0a0a0);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.refreshBtn:hover:not(:disabled) {
+  background: rgba(0, 228, 242, 0.15);
+  border-color: rgba(0, 228, 242, 0.3);
+  color: var(--cor-terciaria, #00E4F2);
+}
+
+.refreshBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+/* No Data State */
+.noData {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--texto-gelo, #a0a0a0);
+  font-size: 0.9rem;
+}
+
+/* Activity Status */
+.activityStatus {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.status_new {
+  background: rgba(0, 228, 242, 0.15);
+  color: #00E4F2;
+}
+
+.status_contacted {
+  background: rgba(122, 62, 245, 0.15);
+  color: #7A3EF5;
+}
+
+.status_negotiating {
+  background: rgba(245, 158, 11, 0.15);
+  color: #F59E0B;
+}
+
+.status_approved {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10B981;
+}
+
+.status_rejected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
