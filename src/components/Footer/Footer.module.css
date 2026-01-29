@@ -2,8 +2,10 @@
 /* Footer profissional B2B - Mobile First */
 
 .footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(180deg, rgba(10, 10, 15, 0.95) 0%, rgba(26, 10, 46, 0.98) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(10, 10, 18, 0.75) 0%, rgba(26, 10, 46, 0.85) 100%);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   margin-top: auto;
   contain: layout style;
 }
