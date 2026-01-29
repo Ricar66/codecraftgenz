@@ -14,8 +14,15 @@ const FILTER_CATEGORIES = [
   { id: 'rascunho', label: 'Rascunhos', icon: '📝' },
 ];
 
-// Tecnologias mock (pode ser expandido para vir da API)
+// Retorna tecnologias do banco ou fallback para extração da descrição
 const getTechBadges = (project) => {
+  // Prioridade: tecnologias do banco de dados
+  const dbTechs = project.tecnologias || project.tags || [];
+  if (Array.isArray(dbTechs) && dbTechs.length > 0) {
+    return dbTechs.slice(0, 3);
+  }
+
+  // Fallback: extrai tecnologias da descrição/nome
   const techs = [];
   const desc = (project.descricao || project.description || '').toLowerCase();
   const name = (project.nome || project.titulo || project.title || '').toLowerCase();
@@ -24,9 +31,11 @@ const getTechBadges = (project) => {
   if (desc.includes('node') || name.includes('node')) techs.push('Node.js');
   if (desc.includes('python') || name.includes('python')) techs.push('Python');
   if (desc.includes('typescript') || desc.includes('ts')) techs.push('TypeScript');
+  if (desc.includes('.net') || desc.includes('c#') || desc.includes('csharp')) techs.push('.NET');
   if (desc.includes('api') || desc.includes('backend')) techs.push('API');
   if (desc.includes('mobile') || desc.includes('app')) techs.push('Mobile');
   if (desc.includes('ia') || desc.includes('ai') || desc.includes('inteligência')) techs.push('AI');
+  if (desc.includes('windows') || desc.includes('desktop')) techs.push('Desktop');
 
   if (techs.length === 0) techs.push('Full-Stack');
   return techs.slice(0, 3);
