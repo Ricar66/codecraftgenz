@@ -1,6 +1,6 @@
 // src/components/FeaturesSection/FeaturesSection.jsx
 import React from 'react';
-import { FaTrophy, FaProjectDiagram, FaUsers, FaChartLine } from 'react-icons/fa';
+import { FaTrophy, FaProjectDiagram, FaUsers, FaChartLine, FaRocket, FaComments } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
 import styles from './FeaturesSection.module.css';
@@ -64,6 +64,28 @@ const FeaturesSection = () => {
             <h3 className={styles.cardTitle}>Ranking</h3>
             <p className={styles.cardText}>
               Gamifique seu aprendizado, ganhe pontos e se destaque para os recrutadores.
+            </p>
+          </Link>
+
+          {/* Card 5: Aplicativos */}
+          <Link to="/aplicativos" className={styles.featureCard} style={{ textDecoration: 'none', display: 'block' }} aria-label="Ir para Aplicativos">
+            <div className={styles.iconWrapper} aria-hidden="true">
+              <FaRocket />
+            </div>
+            <h3 className={styles.cardTitle}>Aplicativos</h3>
+            <p className={styles.cardText}>
+              Explore ferramentas e soluções desenvolvidas pela comunidade CodeCraft.
+            </p>
+          </Link>
+
+          {/* Card 6: Feedbacks */}
+          <Link to="/feedback" className={styles.featureCard} style={{ textDecoration: 'none', display: 'block' }} aria-label="Ir para Feedbacks">
+            <div className={styles.iconWrapper} aria-hidden="true">
+              <FaComments />
+            </div>
+            <h3 className={styles.cardTitle}>Feedbacks</h3>
+            <p className={styles.cardText}>
+              Compartilhe sua experiência e ajude a melhorar nossa plataforma.
             </p>
           </Link>
 
