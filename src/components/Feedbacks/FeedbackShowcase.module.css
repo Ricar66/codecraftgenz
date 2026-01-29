@@ -162,19 +162,22 @@
 
 .feedbackText {
   font-family: var(--fonte-corpo);
-  font-size: clamp(1.125rem, 2.5vw, 1.375rem);
+  font-size: clamp(1rem, 2.5vw, 1.375rem);
   line-height: 1.7;
   color: var(--texto-branco);
   font-style: italic;
   flex-grow: 1;
   margin: 0;
   text-align: center;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 /* ===== RODAPÉ DO CARD ===== */
 .feedbackFooter {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   margin-top: auto;
 }
@@ -220,9 +223,11 @@
 
 .authorName {
   font-family: var(--fonte-subtitulos);
-  font-size: 1rem;
+  font-size: clamp(0.875rem, 2vw, 1rem);
   font-weight: 600;
   color: var(--texto-branco);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .feedbackDate {
@@ -366,15 +371,41 @@
   }
 
   .showcaseContainer {
-    padding: 0 var(--espaco-md);
+    padding: 0 16px;
   }
 
   .feedbackCard {
-    padding: var(--espaco-lg);
+    padding: 20px 16px;
+    max-width: 100%;
   }
 
   .feedbackText {
-    font-size: 1rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .feedbackAuthor {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .authorAvatar {
+    width: 44px;
+    height: 44px;
+    font-size: 0.9rem;
+  }
+
+  .authorInfo {
+    align-items: center;
+  }
+
+  .authorName {
+    font-size: 0.9rem;
+  }
+
+  .feedbackDate {
+    font-size: 0.75rem;
   }
 
   .carouselBtn {
@@ -382,7 +413,7 @@
   }
 
   .carouselSlide {
-    padding: 0;
+    padding: 0 8px;
   }
 }
 
