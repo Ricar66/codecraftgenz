@@ -1,94 +1,65 @@
 /**
  * ESTILOS DO COMPONENTE HERO
- * 
- * Seção principal da página com banner, slogan e call-to-action.
- * Utiliza as variáveis CSS globais para consistência visual.
- * IDÊNTICO À PÁGINA DE PROJETOS para manter uniformidade.
- * 
- * Estrutura:
- * 1. Container principal (.heroWrapper)
- * 2. Overlay para legibilidade (.overlay)
- * 3. Conteúdo (.heroContent)
- * 4. Áreas de texto e ação
- * 5. Animações e estados
- * 6. Responsividade
+ * Cyberpunk/Glassmorphism Design System
  */
 
 /* ===== CONTAINER PRINCIPAL ===== */
 .heroWrapper {
-  /* Dimensões e posicionamento */
   min-height: 100vh;
   width: 100%;
   position: relative;
-  
-  /* Layout flexbox */
   display: flex;
   align-items: center;
   justify-content: center;
-  
-  /* Background - IDÊNTICO À PÁGINA DE PROJETOS */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  /* background-attachment: fixed; */
-  
-  /* Transições para animações */
+  padding-top: 80px;
   opacity: 0;
-  transform: translateY(var(--espaco-lg));
-  transition: all var(--transicao-lenta);
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Estado visível com animação */
+/* Estado visivel com animacao */
 .heroWrapper.visible {
   opacity: 1;
   transform: translateY(0);
 }
 
-/* Overlay removido: a Home usa um fundo único e transparente por seção */
-
-/* ===== CONTEÚDO PRINCIPAL ===== */
+/* ===== CONTEUDO PRINCIPAL ===== */
 .heroContent {
   position: relative;
   z-index: 2;
   max-width: 1000px;
   width: 100%;
-  padding: var(--espaco-3xl) var(--espaco-xl);
+  padding: 80px 24px;
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: var(--espaco-2xl);
+  gap: 32px;
 }
 
-/* ===== ÁREA DE TEXTO ===== */
+/* ===== AREA DE TEXTO ===== */
 .textArea {
   display: flex;
   flex-direction: column;
-  gap: var(--espaco-xl);
+  gap: 24px;
 }
 
-/* Slogan - IDÊNTICO À PÁGINA DE PROJETOS */
+/* Slogan Principal - Gradient Cyberpunk */
 .slogan {
-  font-family: var(--fonte-titulos);
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
   font-size: clamp(2.5rem, 8vw, 5rem);
   font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  color: var(--texto-branco);
-  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  margin-bottom: var(--espaco-lg);
-  background: linear-gradient(
-    135deg,
-    var(--cor-primaria) 0%,
-    var(--cor-terciaria) 50%,
-    var(--texto-branco) 100%
-  );
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin: 0 0 16px;
+  background: linear-gradient(135deg, #68007B 0%, #D12BF2 35%, #00E4F2 70%, #fff 100%);
+  background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: gradientShift 3s ease-in-out infinite alternate;
+  text-shadow: 0 0 80px rgba(104, 0, 123, 0.5);
+  animation: gradientShift 4s ease-in-out infinite alternate;
 }
 
-/* Animação do gradiente - IDÊNTICA À PÁGINA DE PROJETOS */
 @keyframes gradientShift {
   0% {
     background-position: 0% 50%;
@@ -98,50 +69,53 @@
   }
 }
 
-/* Subtitle - IDÊNTICO À PÁGINA DE PROJETOS */
+/* Subtitle */
 .subtitle {
-  font-family: var(--fonte-subtitulos);
-  font-size: clamp(1rem, 2.5vw, 1.375rem);
+  font-size: clamp(1rem, 2.5vw, 1.35rem);
   font-weight: 400;
   line-height: 1.7;
-  color: var(--texto-gelo);
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.7);
   max-width: 700px;
   margin: 0 auto;
 }
 
+/* Hashtags */
 .hashtags {
-  font-family: var(--fonte-subtitulos);
-  font-size: var(--texto-base);
-  color: var(--cor-terciaria);
+  font-size: 1rem;
   font-weight: 500;
-  letter-spacing: 1px;
-  margin-top: var(--espaco-md);
-  text-shadow: 0 0 10px rgba(0, 228, 242, 0.3);
+  letter-spacing: 1.5px;
+  margin-top: 8px;
+  background: linear-gradient(90deg, #00E4F2, #D12BF2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 20px rgba(0, 228, 242, 0.4);
 }
 
-/* ===== ÁREA DE AÇÃO ===== */
+/* ===== AREA DE ACAO ===== */
 .actionArea {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--espaco-lg);
-  margin-top: var(--espaco-xl);
+  gap: 20px;
+  margin-top: 24px;
 }
 
+/* Botao CTA Principal */
 .ctaButton {
-  font-family: var(--fonte-subtitulos);
-  font-size: var(--texto-xl);
-  font-weight: 600;
-  padding: var(--espaco-lg) var(--espaco-3xl);
-  border-radius: var(--raio-xl);
-  box-shadow: 0 8px 25px rgba(0, 228, 242, 0.3);
-  transition: all var(--transicao-normal);
-  border: 2px solid transparent;
-  background: linear-gradient(135deg, var(--cor-terciaria), var(--cor-primaria)) padding-box,
-              linear-gradient(135deg, var(--cor-terciaria), var(--cor-primaria)) border-box;
+  font-size: 1.15rem;
+  font-weight: 700;
+  padding: 18px 40px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, #00E4F2 0%, #D12BF2 100%);
+  color: #fff;
+  cursor: pointer;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 228, 242, 0.35),
+              0 0 60px rgba(209, 43, 242, 0.2);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .ctaButton::before {
@@ -151,8 +125,8 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
 }
 
 .ctaButton:hover::before {
@@ -160,76 +134,57 @@
 }
 
 .ctaButton:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 35px rgba(0, 228, 242, 0.4);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 16px 48px rgba(0, 228, 242, 0.45),
+              0 0 80px rgba(209, 43, 242, 0.3);
 }
 
+/* Click Counter */
 .clickCounter {
   background: rgba(0, 228, 242, 0.1);
-  color: var(--cor-terciaria);
-  padding: var(--espaco-sm) var(--espaco-md);
-  border-radius: var(--raio-md);
-  font-size: var(--texto-sm);
+  color: #00E4F2;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.85rem;
   font-weight: 500;
   border: 1px solid rgba(0, 228, 242, 0.3);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
-}
-
-/* ===== RESPONSIVIDADE - CONSISTENTE COM PÁGINA DE PROJETOS ===== */
-@media (max-width: 768px) {
-  .heroContent {
-    padding: var(--espaco-2xl) var(--espaco-lg);
-  }
-
-  .slogan {
-    font-size: clamp(2rem, 6vw, 3rem);
-  }
-
-  .subtitle {
-    font-size: clamp(0.875rem, 2vw, 1.125rem);
-  }
-}
-
-@media (max-width: 480px) {
-  .heroContent {
-    padding: var(--espaco-xl) var(--espaco-md);
-  }
 }
 
 /* ===== SCROLL INDICATOR ===== */
 .scrollIndicator {
   position: relative;
-  top: 8px;
+  top: 24px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
-  opacity: 0.7;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 0.6;
+  transition: all 0.3s ease;
   z-index: 10;
 }
 
 .scrollIndicator:hover {
   opacity: 1;
-  transform: translateX(-50%) translateY(-3px);
+  transform: translateX(-50%) translateY(-4px);
 }
 
 .scrollText {
-  font-family: var(--fonte-subtitulos);
-  font-size: var(--texto-xs);
-  font-weight: 500;
+  font-size: 0.7rem;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: var(--texto-gelo);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .scrollMouse {
   width: 26px;
   height: 42px;
-  border: 2px solid var(--texto-gelo);
+  border: 2px solid rgba(255, 255, 255, 0.4);
   border-radius: 13px;
   position: relative;
   display: flex;
@@ -239,7 +194,7 @@
 .scrollWheel {
   width: 4px;
   height: 10px;
-  background: var(--cor-terciaria);
+  background: linear-gradient(180deg, #00E4F2, #D12BF2);
   border-radius: 2px;
   margin-top: 8px;
   animation: scrollBounce 2s ease-in-out infinite;
@@ -251,20 +206,46 @@
     opacity: 1;
   }
   50% {
-    transform: translateY(10px);
-    opacity: 0.3;
+    transform: translateY(12px);
+    opacity: 0.2;
   }
 }
 
-/* Ocultar scroll indicator em telas pequenas */
+/* ===== RESPONSIVIDADE ===== */
 @media (max-width: 768px) {
+  .heroWrapper {
+    padding-top: 60px;
+  }
+
+  .heroContent {
+    padding: 60px 20px;
+    gap: 24px;
+  }
+
+  .slogan {
+    font-size: clamp(2rem, 7vw, 3rem);
+  }
+
+  .subtitle {
+    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+  }
+
+  .hashtags {
+    font-size: 0.9rem;
+  }
+
+  .ctaButton {
+    padding: 16px 32px;
+    font-size: 1rem;
+  }
+
   .scrollIndicator {
-    bottom: 20px;
+    top: 16px;
   }
 
   .scrollText {
-    font-size: 10px;
-    letter-spacing: 1px;
+    font-size: 9px;
+    letter-spacing: 1.5px;
   }
 
   .scrollMouse {
@@ -274,15 +255,47 @@
 }
 
 @media (max-width: 480px) {
+  .heroContent {
+    padding: 50px 16px;
+    gap: 20px;
+  }
+
+  .slogan {
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+  }
+
+  .ctaButton {
+    padding: 14px 28px;
+    font-size: 0.95rem;
+    width: 100%;
+    max-width: 280px;
+  }
+
   .scrollIndicator {
     display: none;
   }
 }
 
-/* ===== REDUÇÃO DE MOVIMENTO ===== */
+/* ===== REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {
+  .heroWrapper {
+    transition: none;
+  }
+
   .slogan {
     animation: none;
+  }
+
+  .ctaButton:hover {
+    transform: none;
+  }
+
+  .ctaButton::before {
+    display: none;
   }
 
   .scrollWheel {
