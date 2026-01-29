@@ -1,30 +1,164 @@
 // src/pages/MentoriaPage.jsx
+// Mentoria Page - Cyberpunk/Glassmorphism Design
 import React, { useEffect, useState, useCallback } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
 import { API_BASE_URL } from '../lib/apiConfig';
 import { realtime } from '../lib/realtime';
+import styles from './MentoriaPage.module.css';
+
+// Feature cards data
+const FEATURES = [
+  {
+    icon: '🎯',
+    title: 'Mentoria Personalizada',
+    description: 'Acompanhamento individual focado nos seus objetivos e desafios específicos.',
+  },
+  {
+    icon: '🚀',
+    title: 'Aceleração de Carreira',
+    description: 'Desenvolva habilidades técnicas e soft skills essenciais para o mercado.',
+  },
+  {
+    icon: '🤝',
+    title: 'Network Exclusivo',
+    description: 'Conecte-se com profissionais experientes e outros talentos em crescimento.',
+  },
+];
 
 /**
- * Skeleton loader para cards de mentores - renderiza imediatamente
+ * Skeleton loader para cards de mentores
  */
 const MentorSkeleton = () => (
-  <div className="mentor-card skeleton-card" aria-hidden="true">
-    <div className="avatar skeleton-avatar" />
-    <div className="info">
-      <div className="skeleton-line" style={{ width: '70%', height: '20px' }} />
-      <div className="skeleton-line" style={{ width: '50%', height: '16px', marginTop: '8px' }} />
-      <div className="skeleton-line" style={{ width: '90%', height: '14px', marginTop: '12px' }} />
-      <div className="skeleton-line" style={{ width: '80%', height: '14px', marginTop: '4px' }} />
+  <article className={`${styles.mentorCard} ${styles.skeletonCard}`} aria-hidden="true">
+    <div className={styles.avatarContainer}>
+      <div className={`${styles.avatar} ${styles.skeletonAvatar}`} />
     </div>
-  </div>
+    <div className={styles.mentorInfo}>
+      <div className={styles.skeletonLine} style={{ width: '70%', height: '24px' }} />
+      <div className={styles.skeletonLine} style={{ width: '50%', height: '18px', marginTop: '8px' }} />
+      <div className={styles.skeletonLine} style={{ width: '90%', height: '16px', marginTop: '16px' }} />
+      <div className={styles.skeletonLine} style={{ width: '80%', height: '16px', marginTop: '6px' }} />
+    </div>
+  </article>
 );
 
+/**
+ * Componente de Card de Mentor
+ */
+const MentorCard = ({ mentor, buildWhatsapp, formatMonthYear }) => {
+  const photo = mentor.avatar_url || mentor.photo;
+  const name = mentor.name;
+  const role = mentor.cargo || mentor.specialty;
+  const specialty = mentor.specialty;
+  const cargo = mentor.cargo;
+  const phone = mentor.phone;
+  const email = mentor.email;
+  const bio = mentor.bio;
+  const projectsCount = mentor.projects_count;
+  const createdAt = mentor.created_at || mentor.createdAt;
+
+  return (
+    <article className={styles.mentorCard} aria-label={`Mentor ${name}`}>
+      <div className={styles.avatarContainer}>
+        <div className={styles.avatar}>
+          {photo ? (
+            <img
+              src={photo}
+              alt={`Foto de ${name}`}
+              className={styles.avatarImage}
+              loading="lazy"
+              decoding="async"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+          ) : (
+            <div className={styles.avatarPlaceholder}>👤</div>
+          )}
+        </div>
+      </div>
+
+      <div className={styles.mentorInfo}>
+        <div className={styles.mentorHeader}>
+          <h3 className={styles.mentorName}>{name}</h3>
+          {role && <p className={styles.mentorRole}>{role}</p>}
+        </div>
+
+        <div className={styles.chipContainer}>
+          {specialty && (
+            <span className={`${styles.chip} ${styles.chipSpecialty}`}>
+              {specialty}
+            </span>
+          )}
+          {cargo && cargo !== specialty && (
+            <span className={`${styles.chip} ${styles.chipRole}`}>
+              {cargo}
+            </span>
+          )}
+        </div>
+
+        <div className={styles.contactRow}>
+          {phone && (
+            <span className={styles.contactItem} title={phone}>
+              📞 {phone}
+            </span>
+          )}
+          {email && (
+            <span className={styles.contactItem} title={email}>
+              📧 {email}
+            </span>
+          )}
+        </div>
+
+        {bio && <p className={styles.bio}>{bio}</p>}
+
+        <div className={styles.statsRow}>
+          <span className={styles.statItem}>
+            Projetos: {projectsCount ?? '—'}
+          </span>
+          {createdAt && (
+            <span className={styles.statItem}>
+              Mentor desde {formatMonthYear(createdAt)}
+            </span>
+          )}
+        </div>
+
+        <div className={styles.actionsRow}>
+          {phone && (
+            <a
+              className={`${styles.btn} ${styles.btnWhatsapp}`}
+              href={buildWhatsapp(phone)}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Abrir WhatsApp de ${name}`}
+            >
+              📱 WhatsApp
+            </a>
+          )}
+          {email && (
+            <a
+              className={`${styles.btn} ${styles.btnEmail}`}
+              href={`mailto:${email}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Enviar email para ${name}`}
+            >
+              ✉️ Email
+            </a>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+};
+
+/**
+ * Página de Mentoria - Design Cyberpunk/Glassmorphism
+ */
 export default function MentoriaPage() {
   const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Função normalizada para processar dados de mentores
+  // Normalize mentor data from API
   const normalizeMentor = useCallback((m) => ({
     ...m,
     photo: m.avatar_url || m.foto_url || m.photo || null,
@@ -66,7 +200,7 @@ export default function MentoriaPage() {
       if (isMounted) fetchMentors();
     });
 
-    // Polling reduzido para 60s (era 5s) - melhora performance significativamente
+    // Polling interval (60s default)
     const isTest = !!import.meta.env?.VITEST_WORKER_ID;
     const pollMs = Number(import.meta.env.VITE_MENTORS_POLL_MS || (isTest ? 0 : 60000));
     let iv = null;
@@ -83,252 +217,107 @@ export default function MentoriaPage() {
     };
   }, [fetchMentors]);
 
+  // Helper functions
   const sanitizePhone = (raw) => String(raw || '').replace(/\D/g, '');
+
   const buildWhatsapp = (raw) => {
     const digits = sanitizePhone(raw);
     const hasCountry = digits.length > 11 && digits.startsWith('55');
-    const withCountry = hasCountry ? digits : (`55${digits}`);
+    const withCountry = hasCountry ? digits : `55${digits}`;
     return `https://wa.me/${withCountry}`;
   };
+
   const formatMonthYear = (iso) => {
-    try { return new Date(iso).toLocaleDateString('pt-BR', { month:'2-digit', year:'numeric' }); }
-    catch { return '—'; }
+    try {
+      return new Date(iso).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' });
+    } catch {
+      return '—';
+    }
   };
 
   return (
-    <div className="mentoria-page page-with-background">
+    <div className={styles.page}>
       <Navbar />
 
-      <section className="section-block">
-        <div className="section-card">
-          <header className="section-header">
-            <h1 className="title">Mentoria CodeCraft</h1>
-            <h2 className="subtitle">Aprenda com quem já está construindo o futuro 🚀</h2>
-            <p className="lead">
-              Nosso programa de mentoria conecta você a profissionais experientes que vão guiar sua jornada de crescimento.
-            </p>
-          </header>
-
-          <div className="mentors-grid" aria-busy={loading}>
-            {loading && mentors.length === 0 && (
-              <>
-                <MentorSkeleton />
-                <MentorSkeleton />
-                <MentorSkeleton />
-              </>
-            )}
-            {mentors.map((m) => (
-              <article key={m.id || m.email || m.name} className="mentor-card" aria-label={`Mentor ${m.name}`}>
-                <div className="avatar" aria-hidden={!!(m.avatar_url || m.photo)}>
-                  {m.avatar_url || m.photo ? (
-                    <img
-                      src={m.avatar_url || m.photo}
-                      alt={`Foto de ${m.name}`}
-                      style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }}
-                      loading="lazy"
-                      decoding="async"
-                      fetchpriority="low"
-                      width="160"
-                      height="160"
-                      onError={(e)=>{ e.currentTarget.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='; }}
-                    />
-                  ) : null}
-                </div>
-                <div className="info">
-                  <div className="header">
-                    <h3 className="name">{m.name}</h3>
-                    <p className="role">{m.cargo || m.specialty}</p>
-                    <div className="chips">
-                      {m.specialty ? (<span className="chip" aria-label="Especialidade">{m.specialty}</span>) : null}
-                      {m.cargo ? (<span className="chip alt" aria-label="Cargo">{m.cargo}</span>) : null}
-                    </div>
-                  </div>
-                  <div className="details">
-                    <div className="contact">
-                      {m.phone ? (<span className="contact-item" title={m.phone}>📞 {m.phone}</span>) : null}
-                      {m.email ? (<span className="contact-item" title={m.email}>📧 {m.email}</span>) : null}
-                    </div>
-                    <p className="bio">{m.bio}</p>
-                    <div className="stats">
-                      <span className="stat-item">Projetos orientados: {m.projects_count ?? '—'}</span>
-                      {m.created_at || m.createdAt ? (<span className="stat-item">Mentor desde {formatMonthYear(m.created_at || m.createdAt)}</span>) : null}
-                      {m.updated_at || m.updatedAt ? (<span className="stat-item">Atualizado {formatMonthYear(m.updated_at || m.updatedAt)}</span>) : null}
-                    </div>
-                    <div className="actions">
-                      {m.phone ? (
-                        <a className="btn btn-whatsapp" href={buildWhatsapp(m.phone)} target="_blank" rel="noopener noreferrer" aria-label={`Abrir WhatsApp de ${m.name}`}>
-                          WhatsApp
-                        </a>
-                      ) : null}
-                      {m.email ? (
-                        <a className="btn btn-email" href={`mailto:${m.email}`} target="_blank" rel="noopener noreferrer" aria-label={`Enviar email para ${m.name}`}>
-                          Email
-                        </a>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              </article>
-            ))}
-            {!loading && mentors.length === 0 && (
-              <div className="empty" role="status">Nenhum mentor cadastrado no momento. Em breve, novos profissionais inspiradores estarão aqui 🚀</div>
-            )}
-          </div>
-
-          <div className="section-footer">
-            <p className="helper-text">
-              A mentoria CodeCraft é um espaço de troca e aprendizado contínuo. Nossos mentores compartilham experiências reais de mercado,
-              te ajudam a definir metas claras e a transformar ideias em projetos de impacto.
-            </p>
-          </div>
+      {/* Hero Section */}
+      <section className={styles.hero}>
+        <div className={styles.heroContent}>
+          <h1 className={styles.heroTitle}>Mentoria CodeCraft</h1>
+          <p className={styles.heroSubtitle}>
+            Aprenda com quem já está construindo o futuro
+          </p>
+          <p className={styles.heroLead}>
+            Nosso programa de mentoria conecta você a profissionais experientes
+            que vão guiar sua jornada de crescimento técnico e profissional.
+          </p>
         </div>
       </section>
 
-      <style>{`
-        .mentoria-page { min-height: 100vh; width: 100%; }
+      {/* Features Section */}
+      <section className={styles.featuresSection}>
+        <div className={styles.featuresGrid}>
+          {FEATURES.map((feature, idx) => (
+            <div key={idx} className={styles.featureCard}>
+              <div className={styles.featureIcon}>{feature.icon}</div>
+              <div>
+                <h3 className={styles.featureTitle}>{feature.title}</h3>
+                <p className={styles.featureDesc}>{feature.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        /* Skeleton styles para loading rapido */
-        @keyframes skeleton-shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        .skeleton-card { pointer-events: none; }
-        .skeleton-avatar {
-          background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 100%);
-          background-size: 200% 100%;
-          animation: skeleton-shimmer 1.5s ease-in-out infinite;
-        }
-        .skeleton-line {
-          background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 100%);
-          background-size: 200% 100%;
-          animation: skeleton-shimmer 1.5s ease-in-out infinite;
-          border-radius: 4px;
-        }
+      {/* Mentors Section */}
+      <section className={styles.mentorsSection}>
+        <header className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>Nossos Mentores</h2>
+          <p className={styles.sectionSubtitle}>
+            Conheça os profissionais que fazem parte do nosso programa de mentoria
+          </p>
+        </header>
 
-        .section-block { padding: var(--espaco-3xl) var(--espaco-xl); }
+        <div className={styles.mentorsGrid} aria-busy={loading}>
+          {loading && mentors.length === 0 && (
+            <>
+              <MentorSkeleton />
+              <MentorSkeleton />
+              <MentorSkeleton />
+            </>
+          )}
 
-        .section-card {
-          max-width: 1200px;
-          margin: 0 auto;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.16);
-          border-radius: var(--raio-xl);
-          backdrop-filter: blur(12px);
-          box-shadow: 0 8px 28px rgba(0,0,0,0.25);
-          padding: var(--espaco-xl);
-          overflow: hidden; /* garante que pseudo-elementos e conteúdos não escapem do container */
-        }
+          {mentors.map((mentor) => (
+            <MentorCard
+              key={mentor.id || mentor.email || mentor.name}
+              mentor={mentor}
+              buildWhatsapp={buildWhatsapp}
+              formatMonthYear={formatMonthYear}
+            />
+          ))}
 
-        .section-header { text-align: center; margin-bottom: var(--espaco-lg); }
-        .title { font-family: var(--fonte-titulos); font-size: clamp(2.5rem, 8vw, 4rem); color: var(--texto-branco); }
-        .subtitle { font-size: clamp(1.25rem, 2.5vw, 1.5rem); color: var(--texto-gelo); margin-top: var(--espaco-xs); }
-        .lead { font-size: 1.05rem; color: var(--texto-gelo); margin-top: var(--espaco-sm); }
+          {!loading && mentors.length === 0 && (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>🎓</div>
+              <h3 className={styles.emptyTitle}>Em breve, novos mentores!</h3>
+              <p className={styles.emptyText}>
+                Estamos preparando uma equipe de profissionais inspiradores
+                para guiar sua jornada. Volte em breve!
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
 
-        .mentors-grid {
-          position: relative;
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-          gap: var(--espaco-lg);
-          margin-top: var(--espaco-lg);
-          padding-top: var(--espaco-md);
-          align-items: start; /* não força a altura dos itens */
-          /* remove altura forçada das linhas para evitar conteúdo desalinhado */
-        }
-
-        /* linha de conexão minimalista */
-        .mentors-grid::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 2px;
-          background: linear-gradient(90deg, rgba(255,255,255,0.2), rgba(255,255,255,0.06));
-          margin: 0 var(--espaco-md); /* respeita o padding interno e evita tocar bordas arredondadas */
-        }
-
-        .mentor-card {
-          display: grid;
-          grid-template-columns: 120px 1fr; /* dá mais espaço para texto */
-          gap: var(--espaco-md);
-          align-items: start; /* conteúdo começa no topo, permitindo descer com margem */
-          background: rgba(255,255,255,0.06);
-          border: 1px solid rgba(255,255,255,0.18);
-          border-radius: var(--raio-lg);
-          padding: var(--espaco-md);
-          box-shadow: 0 4px 18px rgba(0,0,0,0.22);
-          transition: transform 180ms ease, box-shadow 180ms ease;
-          /* não força altura do card para evitar empurrar conteúdo */
-          overflow: hidden; /* previne que conteúdos internos ultrapassem os limites do card */
-        }
-
-        .mentor-card:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(0,0,0,0.26); }
-        .mentor-card:focus-within { outline: 2px solid rgba(139, 92, 246, 0.6); outline-offset: 2px; }
-
-        .avatar {
-          width: 100px;
-          height: 100px; /* foto ajustada para liberar espaço */
-          border-radius: 50%;
-          background: linear-gradient(135deg, #D12BF2 0%, #68007B 100%);
-          border: 2px solid rgba(244,244,244,0.6);
-          box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-          overflow: hidden;
-        }
-
-        .info { display: flex; flex-direction: column; gap: var(--espaco-xs); min-width: 0; }
-        .header { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-      .details { margin-top: var(--espaco-xs); text-align: left; }
-      .details .bio { margin-top: var(--espaco-sm); }
-      .contact { justify-content: flex-start; min-width: 0; }
-
-        .chips { display:flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
-        .chip { display:inline-block; padding: 6px 10px; border-radius: 999px; font-size: 0.8rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); color: var(--texto-branco); }
-        .chip.alt { background: rgba(209,43,242,0.12); border-color: rgba(209,43,242,0.35); }
-
-        .name { font-weight: 700; color: var(--texto-branco); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; }
-        .role { color: var(--texto-gelo); font-size: 0.95rem; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; }
-        .contact { display: flex; flex-wrap: wrap; gap: var(--espaco-sm); margin-top: var(--espaco-xs); color: var(--texto-gelo); }
-        .contact-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 6px 10px; max-width: 100%; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: anywhere; word-break: break-word; }
-        .mentor-card:hover .contact-item { border-color: #00E4F2; }
-        .bio { margin-top: var(--espaco-sm); color: var(--texto-gelo); line-height: 1.5; word-break: break-word; overflow-wrap: anywhere; hyphens: auto; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
-        .stats { display:flex; flex-wrap: wrap; gap: 10px; margin-top: var(--espaco-sm); color: var(--texto-gelo); }
-        .stat-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 8px; }
-        .actions { display:flex; gap: 8px; margin-top: var(--espaco-sm); }
-        .btn { padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.18); cursor: pointer; transition: transform .2s ease, box-shadow .2s ease; }
-        .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 18px rgba(0,0,0,0.25); }
-        .btn-whatsapp { background: #25D366; color: #000; border: none; font-weight: 700; }
-        .btn-email { background: linear-gradient(90deg, #00E4F2, #7CF6FF); color: #000; border: none; font-weight: 700; }
-
-        .section-footer { margin-top: 20px; }
-        .helper-text { color: var(--texto-gelo); text-align: center; }
-
-        /* Responsividade */
-        @media (max-width: 1200px) {
-          .section-card { max-width: 1000px; }
-        }
-        @media (max-width: 992px) {
-          .mentors-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-          .mentors-grid::before { left: 8%; right: 8%; }
-        }
-        @media (max-width: 768px) {
-          .section-card { padding: var(--espaco-lg); }
-          .mentors-grid { gap: var(--espaco-md); }
-          .mentor-card { grid-template-columns: 100px 1fr; }
-          .avatar { width: 95px; height: 95px; }
-        }
-        @media (max-width: 640px) {
-          .section-card { padding: var(--espaco-md); }
-          .mentors-grid { grid-template-columns: 1fr; }
-          .mentors-grid::before { display: none; }
-          .mentor-card { grid-template-columns: 90px 1fr; }
-          .avatar { width: 90px; height: 90px; }
-          .bio { -webkit-line-clamp: 5; }
-          .name, .role { white-space: normal; } /* permite quebrar linhas em telas pequenas */
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .mentor-card { transition: none; }
-        }
-      `}</style>
+      {/* Footer Section */}
+      <section className={styles.footerSection}>
+        <div className={styles.footerCard}>
+          <p className={styles.footerText}>
+            A mentoria CodeCraft é um espaço de troca e aprendizado contínuo.
+            Nossos mentores compartilham experiências reais de mercado,
+            te ajudam a definir metas claras e a transformar ideias em projetos de impacto.
+          </p>
+        </div>
+      </section>
     </div>
   );
 }

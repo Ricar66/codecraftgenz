@@ -8,7 +8,6 @@ import {
 
 import { useProjects, ProjectsRepo } from '../hooks/useAdminRepo';
 import { deleteProject as deleteProjectApi } from '../services/projectsAPI';
-import { apiRequest } from '../lib/apiConfig';
 
 import AdminCard from './components/AdminCard';
 import StatusBadge from './components/StatusBadge';
@@ -76,28 +75,7 @@ export default function AdminProjetos() {
         return;
       }
 
-      const savedProject = await ProjectsRepo.upsert(form);
-
-      // Auto-create app when project is finished
-      if ((form.status || '').toLowerCase() === 'finalizado') {
-        try {
-          const inferredOwnerId = String(form.owner || '').toLowerCase().includes('admin') ? 1 : 2;
-          const appPayload = {
-            name: form.titulo,
-            mainFeature: (form.descricao || '').split('.').shift(),
-            price: Number(form.preco || 0),
-            thumbnail: form.thumb_url || '',
-            project_id: savedProject.id || form.id,
-            ownerId: inferredOwnerId
-          };
-          await apiRequest(`/api/apps/from-project/${savedProject.id || form.id}`, {
-            method: 'POST',
-            body: JSON.stringify(appPayload)
-          });
-        } catch (appErr) {
-          console.warn('Erro ao criar app a partir do projeto:', appErr);
-        }
-      }
+      await ProjectsRepo.upsert(form);
 
       setForm({
         titulo: '', owner: '', descricao: '', data_inicio: '',
