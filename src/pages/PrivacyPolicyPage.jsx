@@ -13,7 +13,6 @@ import {
   FaBalanceScale
 } from 'react-icons/fa';
 import Navbar from '../components/Navbar/Navbar';
-import Footer from '../components/Footer/Footer';
 import styles from './LegalPage.module.css';
 
 function PrivacyPolicyPage() {
@@ -245,8 +244,6 @@ function PrivacyPolicyPage() {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }
