@@ -16,7 +16,6 @@ import {
   FaArrowLeft
 } from 'react-icons/fa';
 import Navbar from '../components/Navbar/Navbar';
-import Footer from '../components/Footer/Footer';
 import styles from './LegalPage.module.css';
 
 const faqCategories = [
@@ -243,8 +242,6 @@ function HelpPage() {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }
