@@ -23,14 +23,19 @@ export default function MyAccountPage() {
   const fetchPurchases = async () => {
     try {
       setLoading(true);
+      setError('');
       // Usa a rota correta do backend: /api/purchases/by-email
       const response = await apiRequest(`/api/purchases/by-email?email=${encodeURIComponent(user.email)}`);
-      if (response.ok) {
+      // Backend retorna { success: true, data: [...] }
+      if (response.success) {
         setPurchases(response.data || []);
       } else {
-        setError('Erro ao carregar compras');
+        // Se retornou mas sem sucesso, trata como lista vazia
+        setPurchases([]);
       }
     } catch (err) {
+      // Apenas mostra erro se realmente foi problema de conexão
+      console.error('Erro ao carregar compras:', err);
       setError('Erro ao conectar com o servidor');
     } finally {
       setLoading(false);

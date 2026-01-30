@@ -40,9 +40,9 @@ const Footer = memo(({ showLinks = true }) => {
         <div className={styles.column}>
           <h4 className={styles.columnTitle}>Suporte</h4>
           <nav className={styles.links}>
-            <a href="#faq" aria-label="Central de Ajuda">
+            <Link to="/ajuda" aria-label="Central de Ajuda">
               <FaHeadset aria-hidden="true" /> Central de Ajuda
-            </a>
+            </Link>
             <a href="mailto:suporte@codecraftgenz.com.br" aria-label="Email de suporte">
               <FaEnvelope aria-hidden="true" /> suporte@codecraftgenz.com.br
             </a>
@@ -63,8 +63,10 @@ const Footer = memo(({ showLinks = true }) => {
           <h4 className={styles.columnTitle}>Conecte-se</h4>
           <div className={styles.social} aria-label="Redes sociais">
             <a
-              href="#"
-              aria-label="Instagram (em breve)"
+              href="https://www.instagram.com/codecraftgenz/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
               className={`${styles.socialLink} ${styles.instagram}`}
             >
               <FaInstagram aria-hidden="true" />
