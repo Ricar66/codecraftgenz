@@ -27,6 +27,11 @@ const CacheMaintenancePage = lazy(() => import('./pages/CacheMaintenancePage.jsx
 const MyAccountPage = lazy(() => import('./pages/MyAccountPage.jsx'));
 const ForCompaniesPage = lazy(() => import('./pages/ForCompaniesPage.jsx'));
 
+// Legal pages
+const HelpPage = lazy(() => import('./pages/HelpPage.jsx'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage.jsx'));
+const TermsOfUsePage = lazy(() => import('./pages/TermsOfUsePage.jsx'));
+
 // Admin pages - lazy loaded
 const AdminLayout = lazy(() => import('./admin/AdminLayout.jsx'));
 const AdminCrafters = lazy(() => import('./admin/AdminCrafters.jsx'));
@@ -117,6 +122,9 @@ function App() {
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/aplicativos" element={<AppHubPage />} />
                 <Route path="/para-empresas" element={<ForCompaniesPage />} />
+                <Route path="/ajuda" element={<HelpPage />} />
+                <Route path="/politica-privacidade" element={<PrivacyPolicyPage />} />
+                <Route path="/termos-uso" element={<TermsOfUsePage />} />
                 <Route path="/cache/clear" element={<CacheMaintenancePage />} />
                 <Route path="/apps" element={
                   <ProtectedRoute allowed={["admin","user","editor","viewer"]}>
