@@ -31,17 +31,38 @@
   display: flex;
   align-items: center;
   text-decoration: none;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition: transform 0.3s ease, filter 0.3s ease;
+  padding: 6px 12px;
+  margin: -6px -12px;
+  border-radius: 12px;
+  background: linear-gradient(
+    135deg,
+    rgba(209, 43, 242, 0.08) 0%,
+    rgba(0, 228, 242, 0.05) 100%
+  );
+  border: 1px solid rgba(209, 43, 242, 0.15);
 }
 
 .logoWrapper:hover {
-  transform: scale(1.02);
-  opacity: 0.9;
+  transform: scale(1.03);
+  background: linear-gradient(
+    135deg,
+    rgba(209, 43, 242, 0.12) 0%,
+    rgba(0, 228, 242, 0.08) 100%
+  );
+  border-color: rgba(209, 43, 242, 0.25);
 }
 
 .logo {
-  height: 40px;
+  height: 44px;
   width: auto;
+  /* Aumenta brilho e contraste para melhor visibilidade */
+  filter: brightness(1.15) contrast(1.05) drop-shadow(0 0 8px rgba(209, 43, 242, 0.3));
+  transition: filter 0.3s ease;
+}
+
+.logoWrapper:hover .logo {
+  filter: brightness(1.25) contrast(1.1) drop-shadow(0 0 12px rgba(0, 228, 242, 0.4));
 }
 
 /* Menu Desktop */
@@ -196,8 +217,13 @@
     padding: 0 16px;
   }
 
+  .logoWrapper {
+    padding: 4px 10px;
+    margin: -4px -10px;
+  }
+
   .logo {
-    height: 36px;
+    height: 38px;
   }
 
   .navMenu {
@@ -278,8 +304,13 @@
     height: 60px;
   }
 
+  .logoWrapper {
+    padding: 4px 8px;
+    margin: -4px -8px;
+  }
+
   .logo {
-    height: 32px;
+    height: 34px;
   }
 
   .navMenu {
