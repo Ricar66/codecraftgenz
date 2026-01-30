@@ -1,9 +1,9 @@
 // src/admin/AdminProjetos.jsx
 // Refatorado para usar Design System CodeCraft
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   FaProjectDiagram, FaPlus, FaEdit, FaTrash, FaEye, FaEyeSlash,
-  FaSearch, FaSave, FaTimes, FaDownload, FaChevronLeft, FaChevronRight
+  FaSearch, FaSave, FaTimes, FaDownload, FaChevronLeft, FaChevronRight, FaTag
 } from 'react-icons/fa';
 
 import { useProjects, ProjectsRepo } from '../hooks/useAdminRepo';
@@ -35,7 +35,27 @@ export default function AdminProjetos() {
   const [notice, setNotice] = useState({ type: '', msg: '' });
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
+  const [newTag, setNewTag] = useState('');
   const pageSize = 6;
+
+  const addTag = () => {
+    const tag = newTag.trim().toUpperCase();
+    if (tag && !form.tags.includes(tag)) {
+      setForm({ ...form, tags: [...form.tags, tag] });
+    }
+    setNewTag('');
+  };
+
+  const removeTag = (tagToRemove) => {
+    setForm({ ...form, tags: form.tags.filter(t => t !== tagToRemove) });
+  };
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag();
+    }
+  };
 
   const isInvalidUrl = (s) => {
     const v = String(s || '');
@@ -99,8 +119,8 @@ export default function AdminProjetos() {
       preco: p.price ?? p.preco ?? 0,
       progresso: p.progress ?? p.progresso ?? 0,
       visivel: p.visivel ?? p.visible ?? false,
-      thumb_url: p.thumb_url || '',
-      tags: p.tags || []
+      thumb_url: p.thumb_url || p.thumbUrl || '',
+      tags: p.tags || p.tecnologias || []
     });
     document.getElementById('project-form')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -400,6 +420,39 @@ export default function AdminProjetos() {
               className={styles.textarea}
               rows="3"
             />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label><FaTag style={{ marginRight: 6 }} />Tecnologias</label>
+            <div className={styles.tagsContainer}>
+              {form.tags.map((tag, idx) => (
+                <span key={idx} className={styles.tag}>
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    className={styles.tagRemove}
+                    title="Remover"
+                  >
+                    <FaTimes />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className={styles.tagInput}>
+              <input
+                type="text"
+                placeholder="Ex: React, Node.js, Python..."
+                value={newTag}
+                onChange={e => setNewTag(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                className={styles.input}
+              />
+              <button type="button" onClick={addTag} className={styles.addTagBtn}>
+                <FaPlus /> Adicionar
+              </button>
+            </div>
+            <small className={styles.hint}>Pressione Enter ou clique em Adicionar para incluir uma tecnologia</small>
           </div>
         </div>
 
