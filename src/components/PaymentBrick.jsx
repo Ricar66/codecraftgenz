@@ -388,108 +388,143 @@ const PaymentBrick = ({
   // Renderiza QR Code do PIX se disponível
   if (pixData) {
     return (
-      <div style={{ marginTop: 16, textAlign: 'center' }}>
-        <h3 style={{ fontSize: '1.1rem', marginBottom: 12, color: '#fff' }}>
+      <div style={{
+        marginTop: 24,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        maxWidth: 480,
+        margin: '24px auto 0',
+        padding: '32px 24px',
+        backgroundColor: 'rgba(26, 26, 46, 0.6)',
+        border: '1px solid rgba(0, 228, 242, 0.15)',
+        borderRadius: 16,
+      }}>
+        <h3 style={{ fontSize: '1.2rem', marginBottom: 4, color: '#fff', fontWeight: 600 }}>
           Pague com PIX
         </h3>
-        <p style={{ color: '#00e4f2', marginBottom: 16 }}>
-          Escaneie o QR Code abaixo ou copie o código PIX
+        <p style={{ color: '#00e4f2', marginBottom: 20, fontSize: '0.9rem' }}>
+          Escaneie o QR Code ou copie o codigo abaixo
         </p>
 
+        {/* QR Code centralizado */}
         {pixData.qrCodeBase64 && (
-          <div style={{ marginBottom: 16 }}>
+          <div style={{
+            padding: 16,
+            backgroundColor: '#fff',
+            borderRadius: 12,
+            marginBottom: 24,
+            display: 'inline-block',
+          }}>
             <img
               src={`data:image/png;base64,${pixData.qrCodeBase64}`}
               alt="QR Code PIX"
-              style={{ maxWidth: 250, border: '4px solid #fff', borderRadius: 8 }}
+              style={{ width: 220, height: 220, display: 'block' }}
             />
           </div>
         )}
 
+        {/* Codigo PIX copia e cola */}
         {pixData.qrCode && (
-          <div style={{ marginBottom: 16 }}>
-            <p style={{ fontSize: '0.85rem', color: '#888', marginBottom: 8 }}>Código PIX (Copia e Cola):</p>
-            <textarea
-              readOnly
-              value={pixData.qrCode}
-              style={{
-                width: '100%',
-                maxWidth: 400,
-                padding: 12,
-                fontSize: '0.75rem',
-                backgroundColor: '#1a1a2e',
-                color: '#fff',
-                border: '1px solid #333',
-                borderRadius: 4,
-                resize: 'none',
-                height: 80,
-              }}
-              onClick={(e) => {
-                e.target.select();
-                navigator.clipboard?.writeText(pixData.qrCode);
-              }}
-            />
-            <button
-              onClick={() => {
-                navigator.clipboard?.writeText(pixData.qrCode);
-                alert('Código PIX copiado!');
-              }}
-              style={{
-                marginTop: 8,
-                padding: '10px 20px',
-                backgroundColor: '#00e4f2',
-                color: '#000',
-                border: 'none',
-                borderRadius: 4,
-                cursor: 'pointer',
-                fontWeight: 'bold',
-              }}
-            >
-              Copiar código PIX
-            </button>
+          <div style={{ width: '100%', marginBottom: 20 }}>
+            <p style={{ fontSize: '0.8rem', color: '#999', marginBottom: 8, textAlign: 'center' }}>
+              Codigo PIX (Copia e Cola)
+            </p>
+            <div style={{
+              display: 'flex',
+              alignItems: 'stretch',
+              gap: 0,
+              borderRadius: 8,
+              overflow: 'hidden',
+              border: '1px solid rgba(0, 228, 242, 0.2)',
+            }}>
+              <input
+                readOnly
+                value={pixData.qrCode}
+                style={{
+                  flex: 1,
+                  padding: '12px 14px',
+                  fontSize: '0.75rem',
+                  fontFamily: 'monospace',
+                  backgroundColor: '#0d0d1a',
+                  color: '#ccc',
+                  border: 'none',
+                  outline: 'none',
+                  minWidth: 0,
+                }}
+                onClick={(e) => {
+                  e.target.select();
+                  navigator.clipboard?.writeText(pixData.qrCode);
+                }}
+              />
+              <button
+                onClick={() => {
+                  navigator.clipboard?.writeText(pixData.qrCode);
+                  alert('Codigo PIX copiado!');
+                }}
+                style={{
+                  padding: '12px 20px',
+                  backgroundColor: '#00e4f2',
+                  color: '#000',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '0.85rem',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Copiar
+              </button>
+            </div>
           </div>
         )}
 
+        {/* Indicador de aguardando pagamento */}
         <div style={{
-          marginTop: 16,
-          padding: '12px 16px',
-          backgroundColor: 'rgba(0, 228, 242, 0.08)',
-          border: '1px solid rgba(0, 228, 242, 0.2)',
-          borderRadius: 8,
+          width: '100%',
+          padding: '14px 16px',
+          backgroundColor: 'rgba(0, 228, 242, 0.06)',
+          border: '1px solid rgba(0, 228, 242, 0.15)',
+          borderRadius: 10,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 8,
+          gap: 10,
+          marginBottom: 8,
         }}>
           <div style={{
-            width: 12,
-            height: 12,
+            width: 10,
+            height: 10,
             borderRadius: '50%',
             backgroundColor: '#00e4f2',
-            animation: 'pulse 1.5s ease-in-out infinite',
+            animation: 'pixPulse 1.5s ease-in-out infinite',
+            flexShrink: 0,
           }} />
           <p style={{ fontSize: '0.85rem', color: '#00e4f2', margin: 0 }}>
             Aguardando pagamento... Verificando automaticamente.
           </p>
         </div>
-        <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
-        <p style={{ fontSize: '0.8rem', color: '#666', marginTop: 8 }}>
+        <style>{`@keyframes pixPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.85); } }`}</style>
+        <p style={{ fontSize: '0.78rem', color: '#555', marginTop: 4, marginBottom: 16, textAlign: 'center' }}>
           Assim que o pagamento for confirmado, voce sera redirecionado automaticamente.
         </p>
 
         <button
           onClick={() => setPixData(null)}
           style={{
-            marginTop: 16,
-            padding: '8px 16px',
+            padding: '10px 24px',
             backgroundColor: 'transparent',
-            color: '#00e4f2',
-            border: '1px solid #00e4f2',
-            borderRadius: 4,
+            color: 'rgba(0, 228, 242, 0.7)',
+            border: '1px solid rgba(0, 228, 242, 0.25)',
+            borderRadius: 8,
             cursor: 'pointer',
+            fontSize: '0.85rem',
+            transition: 'all 0.2s',
           }}
+          onMouseEnter={(e) => { e.target.style.borderColor = '#00e4f2'; e.target.style.color = '#00e4f2'; }}
+          onMouseLeave={(e) => { e.target.style.borderColor = 'rgba(0, 228, 242, 0.25)'; e.target.style.color = 'rgba(0, 228, 242, 0.7)'; }}
         >
-          Escolher outro método
+          Escolher outro metodo
         </button>
       </div>
     );
