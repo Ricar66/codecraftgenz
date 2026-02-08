@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 
 import { useAuth } from '../context/useAuth.js';
 import { apiRequest } from '../lib/apiConfig.js';
-import { createDirectPayment, createPaymentPreference } from '../services/appsAPI.js';
+import { createDirectPayment, createPaymentPreference, getPurchaseStatus } from '../services/appsAPI.js';
 import { loadMercadoPagoSDK } from '../utils/loadMercadoPagoSDK.js';
 
 const PaymentBrick = ({
@@ -260,11 +260,14 @@ const PaymentBrick = ({
                               selectedPaymentMethod === 'pix' ||
                               selectedPaymentMethod === 'bank_transfer';
 
+                let pixDataSet = false;
+
                 if (isPix && (nextStatus === 'pending' || nextStatus === 'in_process')) {
                   // Tenta extrair dados PIX de varias estruturas possiveis da resposta
                   const pixInfo = resp?.point_of_interaction?.transaction_data ||
                                   resp?.data?.point_of_interaction?.transaction_data ||
                                   resp?.result?.point_of_interaction?.transaction_data ||
+                                  resp?.data?.result?.point_of_interaction?.transaction_data ||
                                   resp?.transaction_data ||
                                   {
                                     qr_code: resp?.qr_code || resp?.data?.qr_code,
@@ -275,12 +278,15 @@ const PaymentBrick = ({
                   if (dev) console.log('[PaymentBrick] PIX Info:', pixInfo);
 
                   if (pixInfo && (pixInfo.qr_code || pixInfo.qr_code_base64)) {
+                    const payId = resp?.data?.payment_id || resp?.payment_id || resp?.data?.mp_payment_id || '';
                     setPixData({
                       qrCode: pixInfo.qr_code,
                       qrCodeBase64: pixInfo.qr_code_base64,
                       ticketUrl: pixInfo.ticket_url,
+                      paymentId: payId,
                     });
-                    if (dev) console.log('[PaymentBrick] QR Code PIX definido com sucesso');
+                    pixDataSet = true;
+                    if (dev) console.log('[PaymentBrick] QR Code PIX definido com sucesso, paymentId:', payId);
                   } else {
                     console.warn('[PaymentBrick] PIX selecionado mas QR Code não encontrado na resposta:', resp);
                   }
@@ -291,7 +297,11 @@ const PaymentBrick = ({
                 if (nextStatus === 'approved') {
                   if (typeof onPaymentSuccess === 'function') onPaymentSuccess(resp);
                 } else if (nextStatus === 'pending' || nextStatus === 'in_process') {
-                  if (typeof onPaymentSuccess === 'function') onPaymentSuccess(resp);
+                  // Para PIX com QR Code: NÃO navega - exibe QR Code para o usuário escanear
+                  // O polling (useEffect abaixo) detectará quando o pagamento for aprovado
+                  if (!pixDataSet) {
+                    if (typeof onPaymentSuccess === 'function') onPaymentSuccess(resp);
+                  }
                 } else if (nextStatus === 'rejected') {
                   const statusDetail = resp?.status_detail || '';
                   const rejectionMessages = {
@@ -346,6 +356,34 @@ const PaymentBrick = ({
       clearTimeout(timeout);
     };
   }, [appId, amount, quantity, description, buyerInfo.email, buyerInfo.name, buyerInfo.docType, buyerInfo.docNumber, externalPreferenceId, maxInstallments, onPaymentSuccess, onStatus, onError]);
+
+  // Polling para verificar status do pagamento PIX
+  useEffect(() => {
+    if (!pixData?.paymentId || !appId) return;
+
+    const dev = import.meta.env.MODE !== 'production';
+    if (dev) console.log('[PaymentBrick] Iniciando polling PIX para paymentId:', pixData.paymentId);
+
+    const interval = setInterval(async () => {
+      try {
+        const result = await getPurchaseStatus(appId, { payment_id: pixData.paymentId });
+        const s = result?.data?.status || result?.status;
+        if (dev) console.log('[PaymentBrick] Poll PIX status:', s);
+
+        if (s === 'approved') {
+          clearInterval(interval);
+          setPixData(null);
+          if (typeof onPaymentSuccess === 'function') {
+            onPaymentSuccess({ status: 'approved', payment_id: pixData.paymentId, data: result?.data || result });
+          }
+        }
+      } catch (err) {
+        console.warn('[PaymentBrick] Erro ao verificar status PIX:', err);
+      }
+    }, 5000); // Verifica a cada 5 segundos
+
+    return () => clearInterval(interval);
+  }, [pixData?.paymentId, appId, onPaymentSuccess]);
 
   // Renderiza QR Code do PIX se disponível
   if (pixData) {
@@ -412,8 +450,31 @@ const PaymentBrick = ({
           </div>
         )}
 
-        <p style={{ fontSize: '0.85rem', color: '#888', marginTop: 16 }}>
-          Após o pagamento, a confirmação pode levar alguns minutos.
+        <div style={{
+          marginTop: 16,
+          padding: '12px 16px',
+          backgroundColor: 'rgba(0, 228, 242, 0.08)',
+          border: '1px solid rgba(0, 228, 242, 0.2)',
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+        }}>
+          <div style={{
+            width: 12,
+            height: 12,
+            borderRadius: '50%',
+            backgroundColor: '#00e4f2',
+            animation: 'pulse 1.5s ease-in-out infinite',
+          }} />
+          <p style={{ fontSize: '0.85rem', color: '#00e4f2', margin: 0 }}>
+            Aguardando pagamento... Verificando automaticamente.
+          </p>
+        </div>
+        <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
+        <p style={{ fontSize: '0.8rem', color: '#666', marginTop: 8 }}>
+          Assim que o pagamento for confirmado, voce sera redirecionado automaticamente.
         </p>
 
         <button
