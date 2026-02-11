@@ -216,6 +216,49 @@
 
 .deleteBtn:hover { background: rgba(239, 68, 68, 0.2); }
 
+/* Platform Badges (cards) */
+.platformBadges {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.platformBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  background: rgba(0, 228, 242, 0.08);
+  border: 1px solid rgba(0, 228, 242, 0.2);
+  color: var(--cor-terciaria, #00E4F2);
+}
+
+/* Platform Checkboxes (form) */
+.platformChecks {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+}
+
+.platformCheck {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--texto-gelo, #a0a0a0);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.platformCheck input[type="checkbox"] {
+  accent-color: var(--cor-terciaria, #00E4F2);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
 /* Form Card */
 .formCard {
   background: rgba(255, 255, 255, 0.03) !important;

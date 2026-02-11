@@ -1,11 +1,20 @@
 // src/components/AppCard/AppCard.jsx
 import React from 'react';
+import { FaWindows, FaApple, FaLinux } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
 import { getAppImageUrl, getAppPrice } from '../../utils/appModel.js';
 
+const parsePlatforms = (p) => {
+  if (!p) return ['windows'];
+  if (Array.isArray(p)) return p;
+  if (typeof p === 'string') { try { return JSON.parse(p); } catch { return [p]; } }
+  return ['windows'];
+};
+
 const AppCard = ({ app, onDownload, mode = 'owned' }) => {
   const { id, name, mainFeature, thumbnail, image, status, version, size, category } = app;
+  const platforms = parsePlatforms(app.platforms);
   const finalized = status === 'finalizado' || status === 'available' || status === 'ready';
   const safePrice = getAppPrice(app);
   const displayPrice = safePrice > 0 ? `R$ ${safePrice.toLocaleString('pt-BR')}` : 'Gratuito';
@@ -44,6 +53,13 @@ const AppCard = ({ app, onDownload, mode = 'owned' }) => {
           <span className="app-version">{displayVersion}</span>
           <span className="app-size">{displaySize}</span>
         </div>
+        {platforms.length > 0 && (
+          <div className="app-platforms" aria-label="Plataformas disponíveis">
+            {platforms.includes('windows') && <span className="platform-tag"><FaWindows /> Windows</span>}
+            {platforms.includes('macos') && <span className="platform-tag"><FaApple /> macOS</span>}
+            {platforms.includes('linux') && <span className="platform-tag"><FaLinux /> Linux</span>}
+          </div>
+        )}
         <div className="app-actions">
           {mode === 'public' ? (
             <>
@@ -107,6 +123,9 @@ const AppCard = ({ app, onDownload, mode = 'owned' }) => {
         .app-submeta { display:flex; gap:12px; align-items:center; color: var(--texto-gelo); font-size: 0.85rem; }
         .app-version { color: #b0e1ff; }
         .app-size { color: #d6d6d6; }
+
+        .app-platforms { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+        .platform-tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; background: rgba(0, 228, 242, 0.08); border: 1px solid rgba(0, 228, 242, 0.15); color: #00E4F2; }
 
         .app-actions { margin-top: 10px; display:flex; gap: 8px; flex-wrap: wrap; }
         .btn { display:inline-block; padding: 10px 14px; border-radius: 10px; border:1px solid rgba(255,255,255,0.18); cursor:pointer; transition: transform .12s ease, box-shadow .12s ease, filter .12s ease; min-width: 140px; }
