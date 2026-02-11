@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   FaCube, FaPlus, FaEdit, FaEye, FaEyeSlash, FaTrash,
-  FaSave, FaTimes, FaSync, FaShoppingCart, FaUpload, FaDownload
+  FaSave, FaTimes, FaSync, FaShoppingCart, FaUpload, FaDownload,
+  FaWindows, FaApple, FaLinux
 } from 'react-icons/fa';
 
 import { useAuth } from '../context/useAuth';
@@ -32,7 +33,8 @@ export default function AdminApps() {
   const [error, setError] = useState('');
   const [form, setForm] = useState({
     id: null, name: '', mainFeature: '', description: '',
-    status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0'
+    status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0',
+    platforms: ['windows']
   });
   const [priceMask, setPriceMask] = useState('R$ 0,00');
   const [exeFile, setExeFile] = useState(null);
@@ -66,6 +68,11 @@ export default function AdminApps() {
         thumbnail: a.thumbnail || a.thumb_url || a.thumbUrl || '',
         executableUrl: a.executableUrl || a.executable_url || '',
         mainFeature: a.mainFeature || a.main_feature || a.short_description || '',
+        platforms: (() => {
+          let p = a.platforms || ['windows'];
+          if (typeof p === 'string') { try { p = JSON.parse(p); } catch { p = [p]; } }
+          return Array.isArray(p) ? p : ['windows'];
+        })(),
       }));
       setApps(list);
     } catch (e) {
@@ -89,12 +96,13 @@ export default function AdminApps() {
         status: form.status,
         price: Number(form.price || 0),
         thumb_url: form.thumbnail,
-        executable_url: form.exec_url
+        executable_url: form.exec_url,
+        platforms: form.platforms
       };
       if (isInvalidUrl(form.thumbnail)) { setError('Thumbnail URL inválida. Use http(s).'); return; }
       if (isInvalidUrl(form.exec_url)) { setError('Exec URL inválida. Use http(s).'); return; }
       await updateApp(form.id, payload);
-      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0' });
+      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'] });
       showToast('App atualizado!');
       refresh();
     } catch (e) {
@@ -111,13 +119,14 @@ export default function AdminApps() {
         status: form.status,
         price: Number(form.price || 0),
         thumb_url: form.thumbnail,
-        executable_url: form.exec_url
+        executable_url: form.exec_url,
+        platforms: form.platforms
       };
       if (!payload.name) { setError('Nome é obrigatório'); return; }
       if (isInvalidUrl(form.thumbnail)) { setError('Thumbnail URL inválida. Use http(s).'); return; }
       if (isInvalidUrl(form.exec_url)) { setError('Exec URL inválida. Use http(s).'); return; }
       await createApp(payload);
-      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0' });
+      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'] });
       showToast('App criado!');
       refresh();
     } catch (e) {
@@ -126,6 +135,12 @@ export default function AdminApps() {
   };
 
   const onEdit = (a) => {
+    // Normaliza platforms: pode vir como array, JSON string, ou string simples
+    let plats = a.platforms || ['windows'];
+    if (typeof plats === 'string') {
+      try { plats = JSON.parse(plats); } catch { plats = [plats]; }
+    }
+    if (!Array.isArray(plats)) plats = ['windows'];
     setForm({
       id: a.id,
       name: a.name || '',
@@ -135,7 +150,8 @@ export default function AdminApps() {
       price: a.price || 0,
       thumbnail: a.thumbnail || '',
       exec_url: a.executableUrl || '',
-      version: a.version || '1.0.0'
+      version: a.version || '1.0.0',
+      platforms: plats
     });
     document.getElementById('app-form')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -184,7 +200,16 @@ export default function AdminApps() {
   };
 
   const cancelEdit = () => {
-    setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0' });
+    setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'] });
+  };
+
+  const togglePlatform = (plat) => {
+    setForm(s => {
+      const current = s.platforms || [];
+      const has = current.includes(plat);
+      const next = has ? current.filter(p => p !== plat) : [...current, plat];
+      return { ...s, platforms: next.length > 0 ? next : current };
+    });
   };
 
   if (loading) {
@@ -249,6 +274,13 @@ export default function AdminApps() {
                   {a.status || 'draft'}
                 </StatusBadge>
               </div>
+              {a.platforms && a.platforms.length > 0 && (
+                <div className={styles.platformBadges}>
+                  {a.platforms.includes('windows') && <span className={styles.platformBadge}><FaWindows /> Win</span>}
+                  {a.platforms.includes('macos') && <span className={styles.platformBadge}><FaApple /> Mac</span>}
+                  {a.platforms.includes('linux') && <span className={styles.platformBadge}><FaLinux /> Linux</span>}
+                </div>
+              )}
             </div>
 
             <div className={styles.cardActions}>
@@ -343,12 +375,31 @@ export default function AdminApps() {
             </div>
           )}
 
-          <div className={styles.formGroup}>
-            <label>Status</label>
-            <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} className={styles.select}>
-              <option value="draft">Rascunho</option>
-              <option value="available">Disponível</option>
-            </select>
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
+              <label>Status</label>
+              <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} className={styles.select}>
+                <option value="draft">Rascunho</option>
+                <option value="available">Disponível</option>
+              </select>
+            </div>
+            <div className={styles.formGroup}>
+              <label>Plataformas</label>
+              <div className={styles.platformChecks}>
+                <label className={styles.platformCheck}>
+                  <input type="checkbox" checked={form.platforms?.includes('windows')} onChange={() => togglePlatform('windows')} />
+                  <FaWindows /> Windows
+                </label>
+                <label className={styles.platformCheck}>
+                  <input type="checkbox" checked={form.platforms?.includes('macos')} onChange={() => togglePlatform('macos')} />
+                  <FaApple /> macOS
+                </label>
+                <label className={styles.platformCheck}>
+                  <input type="checkbox" checked={form.platforms?.includes('linux')} onChange={() => togglePlatform('linux')} />
+                  <FaLinux /> Linux
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 
