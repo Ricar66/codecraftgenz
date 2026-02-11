@@ -73,6 +73,41 @@
   text-shadow: 0 0 20px rgba(0, 228, 242, 0.3);
 }
 
+/* ===== PLATAFORMAS DISPONÍVEIS ===== */
+.platformSection {
+  margin: var(--espaco-md) 0;
+  padding: var(--espaco-md);
+  background: rgba(0, 228, 242, 0.04);
+  border: 1px solid rgba(0, 228, 242, 0.12);
+  border-radius: var(--raio-md);
+}
+
+.platformLabel {
+  font-size: var(--texto-sm);
+  color: var(--texto-gelo);
+  margin: 0 0 var(--espaco-sm);
+  font-weight: 500;
+}
+
+.platformBadges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.platformBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: rgba(0, 228, 242, 0.1);
+  border: 1px solid rgba(0, 228, 242, 0.25);
+  color: var(--cor-terciaria, #00E4F2);
+}
+
 /* ===== GRUPO DE BOTÕES ===== */
 .btnGroup {
   display: flex;

@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 
+import { FaWindows, FaApple, FaLinux } from 'react-icons/fa';
+
 import CardDirectPayment from '../components/CardDirectPayment.jsx';
 import PaymentBrick from '../components/PaymentBrick.jsx';
 import LoginIncentiveBanner from '../components/LoginIncentiveBanner';
@@ -55,6 +57,19 @@ function mapStatusDetail(detail) {
   };
   return dict[d] || (detail ? `Motivo: ${detail}` : 'Pagamento negado. Verifique os dados e tente novamente.');
 }
+
+const parsePlatforms = (p) => {
+  if (!p) return ['windows'];
+  if (Array.isArray(p)) return p;
+  if (typeof p === 'string') { try { return JSON.parse(p); } catch { return [p]; } }
+  return ['windows'];
+};
+
+const PLATFORM_INFO = {
+  windows: { icon: FaWindows, label: 'Windows' },
+  macos: { icon: FaApple, label: 'macOS' },
+  linux: { icon: FaLinux, label: 'Linux' },
+};
 
 const AppPurchasePage = () => {
   // Fluxo simplificado: apenas Cartão (Brick)
@@ -329,6 +344,30 @@ const AppPurchasePage = () => {
           <>
             <h1 className={styles.title}>{app?.name || app?.titulo}</h1>
             <p className={styles.muted}>{app?.description || app?.mainFeature}</p>
+
+            {/* Plataformas disponíveis */}
+            {(() => {
+              const platforms = parsePlatforms(app?.platforms);
+              if (!platforms.length) return null;
+              return (
+                <div className={styles.platformSection}>
+                  <p className={styles.platformLabel}>Disponível para:</p>
+                  <div className={styles.platformBadges}>
+                    {platforms.map(p => {
+                      const info = PLATFORM_INFO[p];
+                      if (!info) return null;
+                      const Icon = info.icon;
+                      return (
+                        <span key={p} className={styles.platformBadge}>
+                          <Icon /> {info.label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Seletor de quantidade de licenças */}
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', marginBottom: 8, fontSize: '0.9rem', color: '#aaa' }}>
