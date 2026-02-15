@@ -1,0 +1,324 @@
+/* src/pages/HubDownloadPage.module.css */
+/* Cyberpunk/Glassmorphism - Download do CodeCraft Hub */
+
+/* ===== PAGE ===== */
+.page {
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ===== HERO ===== */
+.hero {
+  position: relative;
+  z-index: 1;
+  padding: 140px 24px 60px;
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.heroContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.logoBadge {
+  width: 100px;
+  height: 100px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(209, 43, 242, 0.1);
+  border: 1px solid rgba(209, 43, 242, 0.2);
+  box-shadow: 0 0 40px rgba(209, 43, 242, 0.15);
+  margin-bottom: 16px;
+}
+
+.title {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin: 0;
+  background: linear-gradient(135deg, #68007B 0%, #D12BF2 40%, #00E4F2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  font-size: clamp(1rem, 2.5vw, 1.15rem);
+  font-weight: 400;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.55);
+  max-width: 520px;
+  margin: 8px 0 28px;
+}
+
+/* ===== DOWNLOAD BUTTON ===== */
+.downloadButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px 40px;
+  border-radius: 14px;
+  border: none;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #D12BF2 0%, #9B1FD4 50%, #68007B 100%);
+  box-shadow: 0 8px 32px rgba(209, 43, 242, 0.35), 0 0 0 1px rgba(209, 43, 242, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.downloadButton::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent 50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.downloadButton:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(209, 43, 242, 0.5), 0 0 0 1px rgba(209, 43, 242, 0.3);
+}
+
+.downloadButton:hover::before {
+  opacity: 1;
+}
+
+.downloadButton:active {
+  transform: translateY(-1px);
+}
+
+.versionInfo {
+  margin: 16px 0 24px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* ===== PLATFORM BADGES ===== */
+.platforms {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.platformBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.platformBadge small {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.platformBadge.active {
+  border-color: rgba(0, 228, 242, 0.3);
+  background: rgba(0, 228, 242, 0.08);
+  color: #00E4F2;
+  box-shadow: 0 0 16px rgba(0, 228, 242, 0.1);
+}
+
+/* ===== FEATURES SECTION ===== */
+.features {
+  position: relative;
+  z-index: 1;
+  padding: 60px 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.sectionTitle {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 40px;
+  background: linear-gradient(135deg, #D12BF2 0%, #00E4F2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.featureCard {
+  padding: 28px 24px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+
+.featureCard:hover {
+  border-color: rgba(209, 43, 242, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+.featureIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(209, 43, 242, 0.15), rgba(0, 228, 242, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  font-size: 1.3rem;
+  color: #D12BF2;
+}
+
+.featureCard h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.featureCard p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ===== HOW IT WORKS ===== */
+.howItWorks {
+  position: relative;
+  z-index: 1;
+  padding: 40px 24px 80px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.step {
+  text-align: center;
+  padding: 28px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  position: relative;
+}
+
+.stepNumber {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #D12BF2, #68007B);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 16px rgba(209, 43, 242, 0.3);
+}
+
+.step h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.step p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .hero {
+    padding: 110px 20px 40px;
+  }
+
+  .logoBadge {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+  }
+
+  .logoBadge svg {
+    width: 60px !important;
+    height: 60px !important;
+  }
+
+  .downloadButton {
+    padding: 16px 32px;
+    font-size: 1rem;
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .steps {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .featureGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 95px 16px 32px;
+  }
+
+  .platforms {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .featureGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  .downloadButton:hover,
+  .featureCard:hover {
+    transform: none;
+  }
+}
