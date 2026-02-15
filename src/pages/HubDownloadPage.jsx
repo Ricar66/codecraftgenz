@@ -75,7 +75,7 @@ const HubDownloadPage = () => {
             </a>
 
             <p className={styles.versionInfo}>
-              v1.0.0 &bull; Windows 10/11 &bull; ~80 MB
+              v1.0.0 &bull; Windows 10/11 &bull; ~6 MB
             </p>
 
             {/* Platform badges */}
