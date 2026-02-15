@@ -26,6 +26,7 @@ const OrderSuccessPage = lazy(() => import('./pages/OrderSuccessPage.jsx'));
 const CacheMaintenancePage = lazy(() => import('./pages/CacheMaintenancePage.jsx'));
 const MyAccountPage = lazy(() => import('./pages/MyAccountPage.jsx'));
 const ForCompaniesPage = lazy(() => import('./pages/ForCompaniesPage.jsx'));
+const HubDownloadPage = lazy(() => import('./pages/HubDownloadPage.jsx'));
 
 // Legal pages
 const HelpPage = lazy(() => import('./pages/HelpPage.jsx'));
@@ -122,6 +123,7 @@ function App() {
                 <Route path="/reset-password" element={<PasswordResetPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/aplicativos" element={<AppHubPage />} />
+                <Route path="/aplicativos/hub" element={<HubDownloadPage />} />
                 <Route path="/para-empresas" element={<ForCompaniesPage />} />
                 <Route path="/ajuda" element={<HelpPage />} />
                 <Route path="/politica-privacidade" element={<PrivacyPolicyPage />} />

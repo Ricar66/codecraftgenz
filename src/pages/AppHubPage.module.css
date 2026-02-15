@@ -121,6 +121,113 @@
   color: #00E4F2;
 }
 
+/* ===== HUB DESKTOP BANNER ===== */
+.hubBanner {
+  position: relative;
+  z-index: 1;
+  padding: 0 24px;
+  max-width: 1000px;
+  margin: 0 auto 24px;
+}
+
+.hubBannerContent {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 28px;
+  border-radius: 16px;
+  border: 1px solid rgba(209, 43, 242, 0.2);
+  background: linear-gradient(135deg, rgba(209, 43, 242, 0.08) 0%, rgba(0, 228, 242, 0.04) 100%);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 24px rgba(209, 43, 242, 0.1);
+  transition: all 0.3s ease;
+}
+
+.hubBannerContent:hover {
+  border-color: rgba(209, 43, 242, 0.35);
+  box-shadow: 0 8px 32px rgba(209, 43, 242, 0.15);
+}
+
+.hubBannerIcon {
+  flex-shrink: 0;
+}
+
+.hubBannerText {
+  flex: 1;
+  min-width: 0;
+}
+
+.hubBannerText h3 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hubBannerTag {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #00E4F2, #0099A8);
+  color: #fff;
+}
+
+.hubBannerText p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.hubBannerButton {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: none;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #D12BF2 0%, #68007B 100%);
+  box-shadow: 0 4px 16px rgba(209, 43, 242, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.hubBannerButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(209, 43, 242, 0.4);
+}
+
+@media (max-width: 768px) {
+  .hubBannerContent {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .hubBannerText h3 {
+    justify-content: center;
+  }
+
+  .hubBannerButton {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 /* ===== FILTERS SECTION ===== */
 .filterSection {
   position: relative;

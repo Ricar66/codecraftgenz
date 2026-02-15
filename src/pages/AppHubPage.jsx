@@ -1,6 +1,7 @@
 // src/pages/AppHubPage.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { FaDownload, FaWindows } from 'react-icons/fa';
 
 import AppCard from '../components/AppCard/AppCard.jsx';
 import Navbar from '../components/Navbar/Navbar.jsx';
@@ -225,6 +226,38 @@ const AppHubPage = () => {
             />
             <div className={styles.searchIcon} aria-hidden="true">🔍</div>
           </div>
+        </div>
+      </section>
+
+      {/* Hub Desktop App Banner */}
+      <section className={styles.hubBanner}>
+        <div className={styles.hubBannerContent}>
+          <div className={styles.hubBannerIcon}>
+            <svg width="48" height="48" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#hub-bg)" />
+              <path d="M24 20L12 32L24 44" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
+              <path d="M40 20L52 32L40 44" stroke="url(#hub-accent)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="32" cy="32" r="4" fill="white" opacity="0.95" />
+              <defs>
+                <linearGradient id="hub-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#D12BF2" />
+                  <stop offset="100%" stopColor="#9B1FD4" />
+                </linearGradient>
+                <linearGradient id="hub-accent" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#00E4F2" />
+                  <stop offset="100%" stopColor="#00B4D8" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div className={styles.hubBannerText}>
+            <h3>CodeCraft Hub <span className={styles.hubBannerTag}>Gratuito</span></h3>
+            <p>Baixe o launcher desktop e gerencie todos os seus apps em um só lugar. Download, instalação e atualizações automáticas.</p>
+          </div>
+          <Link to="/aplicativos/hub" className={styles.hubBannerButton}>
+            <FaDownload />
+            <span>Baixar para <FaWindows style={{ marginLeft: 4 }} /> Windows</span>
+          </Link>
         </div>
       </section>
 
