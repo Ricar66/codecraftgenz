@@ -1,6 +1,6 @@
 // src/pages/ProjectsPage.jsx
 // Galeria Imersiva de Projetos - Cyberpunk/Glassmorphism Design
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
 import useProjects from '../hooks/useProjects';
