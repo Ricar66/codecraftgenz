@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   FaCube, FaPlus, FaEdit, FaEye, FaEyeSlash, FaTrash,
   FaSave, FaTimes, FaSync, FaShoppingCart, FaUpload, FaDownload,
-  FaWindows, FaApple, FaLinux
+  FaWindows, FaApple, FaLinux,
+  FaChevronLeft, FaChevronRight
 } from 'react-icons/fa';
 
 import { useAuth } from '../context/useAuth';
@@ -41,6 +42,8 @@ export default function AdminApps() {
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [toast, setToast] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const appsPerPage = 6;
 
   useEffect(() => { setPriceMask(formatBRL(form.price || 0)); }, [form.price]);
 
@@ -75,6 +78,7 @@ export default function AdminApps() {
         })(),
       }));
       setApps(list);
+      setCurrentPage(1);
     } catch (e) {
       setError(e.message || 'Erro ao carregar apps');
     } finally { setLoading(false); }
@@ -246,60 +250,100 @@ export default function AdminApps() {
       {error && <div className={styles.error}><FaTimes /> {error}</div>}
 
       {/* Apps Grid */}
-      <div className={styles.appsGrid}>
-        {apps.length === 0 ? (
-          <AdminCard variant="outlined" className={styles.emptyCard}>
-            <div className={styles.emptyState}>
-              <FaCube className={styles.emptyIcon} />
-              <p>Nenhum aplicativo cadastrado</p>
-            </div>
-          </AdminCard>
-        ) : apps.map(a => (
-          <AdminCard key={a.id} variant="elevated" className={styles.appCard}>
-            <div className={styles.cardThumb}>
-              <img
-                src={sanitizeImageUrl(getAppImageUrl(a))}
-                alt={a.name}
-                onError={(e) => { e.currentTarget.src = '/logo-principal.png'; }}
-              />
+      {(() => {
+        const totalPages = Math.ceil(apps.length / appsPerPage);
+        const paginatedApps = apps.slice((currentPage - 1) * appsPerPage, currentPage * appsPerPage);
+        return (
+          <>
+            <div className={styles.appsGrid}>
+              {apps.length === 0 ? (
+                <AdminCard variant="outlined" className={styles.emptyCard}>
+                  <div className={styles.emptyState}>
+                    <FaCube className={styles.emptyIcon} />
+                    <p>Nenhum aplicativo cadastrado</p>
+                  </div>
+                </AdminCard>
+              ) : paginatedApps.map(a => (
+                <AdminCard key={a.id} variant="elevated" className={styles.appCard}>
+                  <div className={styles.cardThumb}>
+                    <img
+                      src={sanitizeImageUrl(getAppImageUrl(a))}
+                      alt={a.name}
+                      onError={(e) => { e.currentTarget.src = '/logo-principal.png'; }}
+                    />
+                  </div>
+
+                  <div className={styles.cardBody}>
+                    <h3>{a.name}</h3>
+                    <p className={styles.feature}>{String(a.mainFeature || '').slice(0, 80)}</p>
+
+                    <div className={styles.cardMeta}>
+                      <span className={styles.price}>{formatBRL(getAppPrice(a))}</span>
+                      <StatusBadge variant={a.status === 'available' ? 'success' : 'warning'}>
+                        {a.status || 'draft'}
+                      </StatusBadge>
+                    </div>
+                    {a.platforms && a.platforms.length > 0 && (
+                      <div className={styles.platformBadges}>
+                        {a.platforms.includes('windows') && <span className={styles.platformBadge}><FaWindows /> Win</span>}
+                        {a.platforms.includes('macos') && <span className={styles.platformBadge}><FaApple /> Mac</span>}
+                        {a.platforms.includes('linux') && <span className={styles.platformBadge}><FaLinux /> Linux</span>}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className={styles.cardActions}>
+                    <button onClick={() => onEdit(a)} className={styles.editBtn} title="Editar">
+                      <FaEdit />
+                    </button>
+                    <button onClick={() => onToggleStatus(a)} className={styles.visibilityBtn} title={a.status === 'available' ? 'Ocultar' : 'Publicar'}>
+                      {a.status === 'available' ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                    <button onClick={() => window.open(`/apps/${a.id}/compra`, '_blank')} className={styles.buyBtn} title="Ver compra">
+                      <FaShoppingCart />
+                    </button>
+                    <button onClick={() => onDelete(a)} className={styles.deleteBtn} title="Excluir">
+                      <FaTrash />
+                    </button>
+                  </div>
+                </AdminCard>
+              ))}
             </div>
 
-            <div className={styles.cardBody}>
-              <h3>{a.name}</h3>
-              <p className={styles.feature}>{String(a.mainFeature || '').slice(0, 80)}</p>
-
-              <div className={styles.cardMeta}>
-                <span className={styles.price}>{formatBRL(getAppPrice(a))}</span>
-                <StatusBadge variant={a.status === 'available' ? 'success' : 'warning'}>
-                  {a.status || 'draft'}
-                </StatusBadge>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className={styles.pagination}>
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className={styles.pageBtn}
+                >
+                  <FaChevronLeft />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`${styles.pageBtn} ${currentPage === page ? styles.pageBtnActive : ''}`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className={styles.pageBtn}
+                >
+                  <FaChevronRight />
+                </button>
+                <span className={styles.pageInfo}>
+                  {(currentPage - 1) * appsPerPage + 1}-{Math.min(currentPage * appsPerPage, apps.length)} de {apps.length}
+                </span>
               </div>
-              {a.platforms && a.platforms.length > 0 && (
-                <div className={styles.platformBadges}>
-                  {a.platforms.includes('windows') && <span className={styles.platformBadge}><FaWindows /> Win</span>}
-                  {a.platforms.includes('macos') && <span className={styles.platformBadge}><FaApple /> Mac</span>}
-                  {a.platforms.includes('linux') && <span className={styles.platformBadge}><FaLinux /> Linux</span>}
-                </div>
-              )}
-            </div>
-
-            <div className={styles.cardActions}>
-              <button onClick={() => onEdit(a)} className={styles.editBtn} title="Editar">
-                <FaEdit />
-              </button>
-              <button onClick={() => onToggleStatus(a)} className={styles.visibilityBtn} title={a.status === 'available' ? 'Ocultar' : 'Publicar'}>
-                {a.status === 'available' ? <FaEyeSlash /> : <FaEye />}
-              </button>
-              <button onClick={() => window.open(`/apps/${a.id}/compra`, '_blank')} className={styles.buyBtn} title="Ver compra">
-                <FaShoppingCart />
-              </button>
-              <button onClick={() => onDelete(a)} className={styles.deleteBtn} title="Excluir">
-                <FaTrash />
-              </button>
-            </div>
-          </AdminCard>
-        ))}
-      </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* Form */}
       <AdminCard variant="elevated" className={styles.formCard} id="app-form">
