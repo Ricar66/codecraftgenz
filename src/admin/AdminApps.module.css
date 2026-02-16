@@ -447,6 +447,55 @@
 
 .cancelBtn:hover { background: rgba(255, 255, 255, 0.1); }
 
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.pageBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--texto-gelo, #a0a0a0);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: #fff;
+}
+
+.pageBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pageBtnActive {
+  background: rgba(139, 92, 246, 0.3) !important;
+  border-color: #8B5CF6 !important;
+  color: #fff !important;
+}
+
+.pageInfo {
+  font-size: 0.85rem;
+  color: var(--texto-gelo, #a0a0a0);
+  margin-left: 12px;
+}
+
 /* Loading State */
 .loadingState {
   display: flex;

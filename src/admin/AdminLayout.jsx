@@ -2398,6 +2398,12 @@ export default function AdminLayout() {
             <span className={styles.menuText}>Pagamentos</span>
           </NavLink>
           {hasRole(['admin']) && (
+            <NavLink to="/admin/nfse" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+              <span className={styles.menuIcon}>📄</span>
+              <span className={styles.menuText}>NFS-e</span>
+            </NavLink>
+          )}
+          {hasRole(['admin']) && (
             <NavLink to="/admin/licencas" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
               <span className={styles.menuIcon}>🔑</span>
               <span className={styles.menuText}>Licenças</span>
