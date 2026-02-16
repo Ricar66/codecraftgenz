@@ -130,8 +130,11 @@ const ProjectCard = ({ project }) => {
 /**
  * Página de Projetos - Galeria Imersiva
  */
+const PROJECTS_PER_PAGE = 6;
+
 const ProjectsPage = () => {
   const [activeFilter, setActiveFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
   const {
     projects,
     loading,
@@ -170,6 +173,16 @@ const ProjectsPage = () => {
 
     return filtered;
   }, [projects, activeFilter]);
+
+  // Reset page when filter changes
+  useEffect(() => { setCurrentPage(1); }, [activeFilter]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredProjects.length / PROJECTS_PER_PAGE);
+  const paginatedProjects = filteredProjects.slice(
+    (currentPage - 1) * PROJECTS_PER_PAGE,
+    currentPage * PROJECTS_PER_PAGE
+  );
 
   // Contagem por categoria
   const filterCounts = useMemo(() => {
@@ -263,11 +276,47 @@ const ProjectsPage = () => {
             </p>
           </div>
         ) : (
-          <div className={styles.projectsGrid}>
-            {filteredProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
+          <>
+            <div className={styles.projectsGrid}>
+              {paginatedProjects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className={styles.pagination}>
+                <button
+                  onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  disabled={currentPage === 1}
+                  className={styles.pageBtn}
+                  aria-label="Página anterior"
+                >
+                  ‹
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    className={`${styles.pageBtn} ${currentPage === page ? styles.pageBtnActive : ''}`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  disabled={currentPage === totalPages}
+                  className={styles.pageBtn}
+                  aria-label="Próxima página"
+                >
+                  ›
+                </button>
+                <span className={styles.pageInfo}>
+                  {(currentPage - 1) * PROJECTS_PER_PAGE + 1}–{Math.min(currentPage * PROJECTS_PER_PAGE, filteredProjects.length)} de {filteredProjects.length}
+                </span>
+              </div>
+            )}
+          </>
         )}
       </section>
     </div>

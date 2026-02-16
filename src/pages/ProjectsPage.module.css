@@ -327,6 +327,60 @@
   box-shadow: 0 0 12px var(--card-glow, rgba(0, 228, 242, 0.4));
 }
 
+/* ===== PAGINATION ===== */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 48px;
+}
+
+.pageBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: rgba(0, 228, 242, 0.12);
+  border-color: rgba(0, 228, 242, 0.4);
+  color: #00E4F2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 228, 242, 0.15);
+}
+
+.pageBtn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.pageBtnActive {
+  background: linear-gradient(135deg, rgba(0, 228, 242, 0.2), rgba(209, 43, 242, 0.2)) !important;
+  border-color: #00E4F2 !important;
+  color: #fff !important;
+  box-shadow: 0 0 20px rgba(0, 228, 242, 0.25), inset 0 0 12px rgba(0, 228, 242, 0.1);
+}
+
+.pageInfo {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin-left: 12px;
+  letter-spacing: 0.5px;
+}
+
 /* ===== LOADING STATE ===== */
 .loadingContainer {
   display: flex;
