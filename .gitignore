@@ -86,3 +86,13 @@ backups/
 .env*
 !.env.example
 !.env.production.example
+
+# Temporary backups and duplicates
+_temp_backup/
+codecraft-frontend/
+
+# Claude Code local settings (may contain tokens)
+.claude/settings.local.json
+
+# Windows artifacts
+nul
