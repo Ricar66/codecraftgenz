@@ -673,6 +673,21 @@
   margin: 0;
 }
 
+/* ===== GRID PAGINATION ===== */
+.gridPagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+
+.gridPagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .spinner {
   width: 48px;
   height: 48px;
