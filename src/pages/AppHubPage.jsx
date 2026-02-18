@@ -67,7 +67,8 @@ const AppHubPage = () => {
   const categories = ['all', ...new Set(apps.map(app => app.category).filter(Boolean))];
 
   const filteredApps = useMemo(() => {
-    let list = [...apps];
+    // Exclui o CodeCraft Hub da listagem de apps
+    let list = apps.filter(a => String(a.name || '').toLowerCase() !== 'codecraft hub');
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       list = list.filter(a =>
@@ -91,7 +92,7 @@ const AppHubPage = () => {
     gridPage * APPS_PER_PAGE
   );
   const featuredApps = React.useMemo(() => {
-    const list = Array.isArray(apps) ? apps : [];
+    const list = (Array.isArray(apps) ? apps : []).filter(a => String(a.name || '').toLowerCase() !== 'codecraft hub');
     const dateVal = (d) => {
       try { return d ? new Date(d).getTime() : 0; } catch { return 0; }
     };
