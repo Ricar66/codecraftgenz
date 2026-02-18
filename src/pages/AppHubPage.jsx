@@ -104,7 +104,7 @@ const AppHubPage = () => {
     const pinned = list.filter(a => a.isFeatured).sort((a,b) => (dateVal(b.updatedAt) - dateVal(a.updatedAt)) || (priceVal(b.price) - priceVal(a.price)) || String(a.name||'').localeCompare(String(b.name||'')) );
     const avail = list.filter(a => !a.isFeatured && isAvailable(a.status)).sort((a,b) => (dateVal(b.updatedAt) - dateVal(a.updatedAt)) || (priceVal(b.price) - priceVal(a.price)) || String(a.name||'').localeCompare(String(b.name||'')) );
     const rest = list.filter(a => !a.isFeatured && !isAvailable(a.status)).sort((a,b) => (dateVal(b.updatedAt) - dateVal(a.updatedAt)) || (priceVal(b.price) - priceVal(a.price)) || String(a.name||'').localeCompare(String(b.name||'')) );
-    return [...pinned, ...avail, ...rest].slice(0, 6);
+    return [...pinned, ...avail, ...rest];
   }, [apps]);
 
   // Slider controls
