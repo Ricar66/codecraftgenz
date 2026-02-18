@@ -1,5 +1,5 @@
 // src/pages/AppHubPage.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { FaDownload, FaWindows } from 'react-icons/fa';
 
@@ -28,7 +28,8 @@ const AppHubPage = () => {
   const [sortOrder, setSortOrder] = useState('asc');
   const [fromCache, setFromCache] = useState(false);
   const [showCacheBadge, setShowCacheBadge] = useState(false);
-  const showGrid = false;
+  const APPS_PER_PAGE = 6;
+  const [gridPage, setGridPage] = useState(1);
 
   useEffect(() => {
     loadApps();
@@ -63,9 +64,32 @@ const AppHubPage = () => {
     }
   };
 
-  const filteredApps = [];
-
   const categories = ['all', ...new Set(apps.map(app => app.category).filter(Boolean))];
+
+  const filteredApps = useMemo(() => {
+    let list = [...apps];
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      list = list.filter(a =>
+        String(a.name || '').toLowerCase().includes(q) ||
+        String(a.description || '').toLowerCase().includes(q) ||
+        String(a.category || '').toLowerCase().includes(q)
+      );
+    }
+    if (filter !== 'all') {
+      list = list.filter(a => (a.category || 'outros') === filter);
+    }
+    return list;
+  }, [apps, searchTerm, filter]);
+
+  // Reset grid page when filter/search changes
+  useEffect(() => { setGridPage(1); }, [filter, searchTerm]);
+
+  const totalGridPages = Math.ceil(filteredApps.length / APPS_PER_PAGE);
+  const paginatedApps = filteredApps.slice(
+    (gridPage - 1) * APPS_PER_PAGE,
+    gridPage * APPS_PER_PAGE
+  );
   const featuredApps = React.useMemo(() => {
     const list = Array.isArray(apps) ? apps : [];
     const dateVal = (d) => {
@@ -387,10 +411,14 @@ const AppHubPage = () => {
         </section>
       ) : null}
 
-      {/* Apps Grid – ocultado: apenas destaques visíveis no Hub */}
-      {showGrid ? (
+      {/* Apps Grid */}
       <section className={styles.appsSection}>
         <div className={styles.container}>
+          <div className={styles.highlightsHeader}>
+            <h3>Todos os Aplicativos</h3>
+            <p>{filteredApps.length} aplicativo(s) disponível(is)</p>
+          </div>
+
           {filteredApps.length === 0 ? (
             <div className={styles.noResults}>
               <h3>Nenhum aplicativo encontrado</h3>
@@ -398,78 +426,48 @@ const AppHubPage = () => {
             </div>
           ) : (
             <>
-              <div className={styles.resultsInfo}>
-                <p>
-                  {filteredApps.length} aplicativo(s) encontrado(s)
-                  {showCacheBadge ? (
-                    <span style={{
-                      marginLeft: 12,
-                      padding: '4px 8px',
-                      borderRadius: 999,
-                      background: 'rgba(0,228,242,0.15)',
-                      border: '1px solid rgba(0,228,242,0.45)',
-                      color: '#00E4F2',
-                      fontSize: 12
-                    }} title={fromCache ? 'Dados carregados do cache em memória' : ''}>
-                      carregado do cache
-                    </span>
-                  ) : null}
-                </p>
-              </div>
-              
               <div className={styles.appsGrid}>
-                {filteredApps.map(app => (
+                {paginatedApps.map(app => (
                   <div key={app.id} className={styles.cardWrap}>
                     <AppCard app={app} mode="public" />
                   </div>
                 ))}
               </div>
-              
-              {/* Conteúdos adicionais (ex.: demo) podem ficar abaixo dos cards, se necessário */}
-              {/*
-                {filteredApps.map(app => (
-                  app.demoUrl && (
-                    <a 
-                          href={app.demoUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.demoButton}
-                        >
-                          Ver Demo
-                      </a>
-                    )
-                ))}
-              */}
 
-              {/* Pagination Controls */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '24px' }}>
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className={styles.filterButton}
-                  style={{ opacity: page === 1 ? 0.5 : 1 }}
-                >
-                  Página anterior
-                </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span>Página {page}</span>
-                  <span>•</span>
-                  <span>Itens carregados: {apps.length}</span>
+              {totalGridPages > 1 && (
+                <div className={styles.gridPagination}>
+                  <button
+                    onClick={() => { setGridPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    disabled={gridPage === 1}
+                    className={styles.filterButton}
+                  >
+                    ‹ Anterior
+                  </button>
+                  {Array.from({ length: totalGridPages }, (_, i) => i + 1).map(p => (
+                    <button
+                      key={p}
+                      onClick={() => { setGridPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                      className={`${styles.filterButton} ${gridPage === p ? styles.active : ''}`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => { setGridPage(p => Math.min(totalGridPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    disabled={gridPage === totalGridPages}
+                    className={styles.filterButton}
+                  >
+                    Próximo ›
+                  </button>
+                  <span style={{ color: 'var(--texto-gelo, #ccc)', fontSize: '0.85rem', marginLeft: '12px' }}>
+                    {(gridPage - 1) * APPS_PER_PAGE + 1}–{Math.min(gridPage * APPS_PER_PAGE, filteredApps.length)} de {filteredApps.length}
+                  </span>
                 </div>
-                <button
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={apps.length < pageSize}
-                  className={styles.filterButton}
-                  style={{ opacity: apps.length < pageSize ? 0.5 : 1 }}
-                >
-                  Próxima página
-                </button>
-              </div>
+              )}
             </>
           )}
         </div>
       </section>
-      ) : null}
     </div>
   );
 };
