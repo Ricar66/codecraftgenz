@@ -3,6 +3,7 @@ import React, { useState, useCallback, memo } from 'react';
 import { FaBuilding, FaUser, FaEnvelope, FaLaptopCode, FaMoneyBillWave, FaFileAlt, FaCheckCircle, FaRocket } from 'react-icons/fa';
 
 import Navbar from '../components/Navbar/Navbar';
+import { createProposal } from '../services/proposalAPI';
 import styles from './ForCompaniesPage.module.css';
 
 /**
@@ -87,15 +88,22 @@ const ForCompaniesPage = memo(() => {
     setIsSubmitting(true);
 
     try {
-      // Simula envio - integrar com backend depois
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await createProposal({
+        companyName: formData.companyName,
+        contactName: formData.responsibleName,
+        email: formData.email,
+        projectType: formData.projectType,
+        budgetRange: formData.budget,
+        description: formData.description,
+      });
       setIsSubmitted(true);
     } catch (error) {
-      console.error('Erro ao enviar:', error);
+      console.error('Erro ao enviar proposta:', error);
+      setErrors({ submit: 'Erro ao enviar proposta. Tente novamente.' });
     } finally {
       setIsSubmitting(false);
     }
-  }, [validateForm]);
+  }, [validateForm, formData]);
 
   if (isSubmitted) {
     return (
@@ -250,6 +258,13 @@ const ForCompaniesPage = memo(() => {
               />
               {errors.description && <span className={styles.error}>{errors.description}</span>}
             </div>
+
+            {/* Erro geral */}
+            {errors.submit && (
+              <p className={styles.errorMessage} style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                {errors.submit}
+              </p>
+            )}
 
             {/* Botão Submit */}
             <button
