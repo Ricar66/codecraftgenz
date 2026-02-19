@@ -28,6 +28,16 @@ const proposalStatusConfig = {
   rejected: { label: 'Rejeitado', variant: 'danger' },
 };
 
+// Configuração de orçamentos
+const budgetRangeConfig = {
+  under5k: 'Até R$ 5.000',
+  '5k-15k': 'R$ 5.000 - R$ 15.000',
+  '15k-50k': 'R$ 15.000 - R$ 50.000',
+  '50k-100k': 'R$ 50.000 - R$ 100.000',
+  above100k: 'Acima de R$ 100.000',
+  undefined: 'A definir',
+};
+
 // Configuração de tipos de projeto
 const projectTypeConfig = {
   web: { label: 'Aplicação Web' },
@@ -239,7 +249,7 @@ const AdminProposals = () => {
     {
       key: 'budgetRange',
       label: 'Orçamento',
-      render: (val) => <span className={styles.orcamento}>{val || '—'}</span>
+      render: (val) => <span className={styles.orcamento}>{budgetRangeConfig[val] || val || '—'}</span>
     },
     {
       key: 'createdAt',
@@ -474,7 +484,7 @@ const AdminProposals = () => {
                 </div>
                 <div className={styles.modalField}>
                   <label>Orçamento Estimado</label>
-                  <span className={styles.orcamentoDestaque}>{selectedProposal.budgetRange || '—'}</span>
+                  <span className={styles.orcamentoDestaque}>{budgetRangeConfig[selectedProposal.budgetRange] || selectedProposal.budgetRange || '—'}</span>
                 </div>
                 <div className={styles.modalField}>
                   <label>Status Atual</label>
