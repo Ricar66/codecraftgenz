@@ -1,6 +1,6 @@
 // src/components/AppCard/AppCard.jsx
 import React from 'react';
-import { FaWindows, FaApple, FaLinux } from 'react-icons/fa';
+import { FaWindows, FaApple, FaLinux, FaInfoCircle } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
 import { getAppImageUrl, getAppPrice } from '../../utils/appModel.js';
@@ -12,7 +12,7 @@ const parsePlatforms = (p) => {
   return ['windows'];
 };
 
-const AppCard = ({ app, onDownload, mode = 'owned' }) => {
+const AppCard = ({ app, onDownload, onAbout, mode = 'owned' }) => {
   const { id, name, mainFeature, thumbnail, image, status, version, size, category } = app;
   const platforms = parsePlatforms(app.platforms);
   const finalized = status === 'finalizado' || status === 'available' || status === 'ready';
@@ -66,9 +66,15 @@ const AppCard = ({ app, onDownload, mode = 'owned' }) => {
               <Link className="btn btn-buy" to={`/apps/${id}/compra`} aria-label={`Comprar ${name}`} data-qa="appcard-buy-btn">
                 Comprar Agora
               </Link>
-              <Link className="btn btn-secondary" to={`/apps/${id}/compra`} aria-label={`Detalhes de ${name}`}>
-                Detalhes
-              </Link>
+              {onAbout ? (
+                <button className="btn btn-secondary" onClick={() => onAbout(app)} aria-label={`Sobre ${name}`}>
+                  <FaInfoCircle style={{ marginRight: 4 }} /> Sobre
+                </button>
+              ) : (
+                <Link className="btn btn-secondary" to={`/apps/${id}/compra`} aria-label={`Detalhes de ${name}`}>
+                  Detalhes
+                </Link>
+              )}
             </>
           ) : (
             <>

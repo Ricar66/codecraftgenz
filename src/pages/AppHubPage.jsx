@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { FaDownload, FaWindows } from 'react-icons/fa';
 
 import AppCard from '../components/AppCard/AppCard.jsx';
+import AppDetailModal from '../components/AppDetailModal/AppDetailModal.jsx';
 import Navbar from '../components/Navbar/Navbar.jsx';
 import { getPublicApps } from '../services/appsAPI.js';
 import { getAppImageUrl } from '../utils/appModel.js';
@@ -28,6 +29,7 @@ const AppHubPage = () => {
   const [sortOrder, setSortOrder] = useState('asc');
   const [fromCache, setFromCache] = useState(false);
   const [showCacheBadge, setShowCacheBadge] = useState(false);
+  const [detailApp, setDetailApp] = useState(null);
   const APPS_PER_PAGE = 6;
   const [gridPage, setGridPage] = useState(1);
 
@@ -384,7 +386,7 @@ const AppHubPage = () => {
                     </div>
                     <div className={styles.highlightActions}>
                       <Link to={`/apps/${app.id}/compra`} className={styles.ctaPrimary}>Comprar Agora</Link>
-                      <Link to={`/apps/${app.id}/compra`} className={styles.ctaSecondary}>Ver Detalhes</Link>
+                      <button type="button" onClick={() => setDetailApp(app)} className={styles.ctaSecondary}>Ver Detalhes</button>
                     </div>
                   </div>
                 </div>
@@ -430,7 +432,7 @@ const AppHubPage = () => {
               <div className={styles.appsGrid}>
                 {paginatedApps.map(app => (
                   <div key={app.id} className={styles.cardWrap}>
-                    <AppCard app={app} mode="public" />
+                    <AppCard app={app} mode="public" onAbout={setDetailApp} />
                   </div>
                 ))}
               </div>
@@ -469,6 +471,11 @@ const AppHubPage = () => {
           )}
         </div>
       </section>
+
+      {/* Modal Sobre o App */}
+      {detailApp && (
+        <AppDetailModal app={detailApp} onClose={() => setDetailApp(null)} />
+      )}
     </div>
   );
 };
