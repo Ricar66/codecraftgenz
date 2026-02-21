@@ -445,10 +445,10 @@ const SuperDashboard = () => {
       </section>
 
       {/* Vendas por Aplicativo */}
-      {data?.salesPerApp && data.salesPerApp.length > 0 && (
+      {data?.salesPerApp && (
         <section style={{ marginTop: '24px' }}>
           <AdminCard variant="elevated">
-            <AdminCard.Header title="Vendas por Aplicativo" subtitle="Ranking por faturamento" noBorder />
+            <AdminCard.Header title="Aplicativos" subtitle="Vendas e faturamento por app" noBorder />
             <AdminCard.Body noPadding>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -456,6 +456,7 @@ const SuperDashboard = () => {
                     <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                       <th style={{ textAlign: 'left', padding: '12px 16px', color: COLORS.muted, fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>#</th>
                       <th style={{ textAlign: 'left', padding: '12px 16px', color: COLORS.muted, fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Aplicativo</th>
+                      <th style={{ textAlign: 'center', padding: '12px 16px', color: COLORS.muted, fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Preço</th>
                       <th style={{ textAlign: 'center', padding: '12px 16px', color: COLORS.muted, fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Vendas</th>
                       <th style={{ textAlign: 'right', padding: '12px 16px', color: COLORS.muted, fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Faturamento</th>
                     </tr>
@@ -477,17 +478,21 @@ const SuperDashboard = () => {
                             <span style={{ color: '#fff', fontWeight: 600, fontSize: '0.95rem' }}>{app.app_name}</span>
                           </div>
                         </td>
+                        <td style={{ padding: '14px 16px', textAlign: 'center', color: COLORS.text, fontSize: '0.9rem' }}>
+                          R$ {Number(app.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </td>
                         <td style={{ padding: '14px 16px', textAlign: 'center' }}>
                           <span style={{
                             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                             minWidth: 32, padding: '4px 12px', borderRadius: 20,
-                            background: 'rgba(0, 228, 242, 0.12)', color: COLORS.secondary,
+                            background: app.sales_count > 0 ? 'rgba(0, 228, 242, 0.12)' : 'rgba(255,255,255,0.05)',
+                            color: app.sales_count > 0 ? COLORS.secondary : COLORS.muted,
                             fontWeight: 700, fontSize: '0.9rem'
                           }}>
                             {app.sales_count}
                           </span>
                         </td>
-                        <td style={{ padding: '14px 16px', textAlign: 'right', color: COLORS.success, fontWeight: 700, fontSize: '0.95rem' }}>
+                        <td style={{ padding: '14px 16px', textAlign: 'right', color: app.total_revenue > 0 ? COLORS.success : COLORS.muted, fontWeight: 700, fontSize: '0.95rem' }}>
                           R$ {Number(app.total_revenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </td>
                       </tr>
@@ -495,7 +500,7 @@ const SuperDashboard = () => {
                   </tbody>
                   <tfoot>
                     <tr style={{ borderTop: '2px solid rgba(255,255,255,0.1)' }}>
-                      <td colSpan={2} style={{ padding: '14px 16px', color: '#fff', fontWeight: 700, fontSize: '0.95rem' }}>Total</td>
+                      <td colSpan={3} style={{ padding: '14px 16px', color: '#fff', fontWeight: 700, fontSize: '0.95rem' }}>Total</td>
                       <td style={{ padding: '14px 16px', textAlign: 'center', color: COLORS.secondary, fontWeight: 700, fontSize: '0.95rem' }}>
                         {data.salesPerApp.reduce((sum, a) => sum + a.sales_count, 0)}
                       </td>
