@@ -1,6 +1,5 @@
 // src/pages/TermsOfUsePage.jsx
 // Termos de Uso do Site e Serviços
-import { Link } from 'react-router-dom';
 import {
   FaFileContract,
   FaArrowLeft,
@@ -13,7 +12,10 @@ import {
   FaGavel,
   FaEnvelope
 } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
+
 import Navbar from '../components/Navbar/Navbar';
+
 import styles from './LegalPage.module.css';
 
 function TermsOfUsePage() {
@@ -24,9 +26,6 @@ function TermsOfUsePage() {
       {/* Hero Section */}
       <section className={styles.hero}>
         <div className={styles.heroContent}>
-          <Link to="/" className={styles.backLink}>
-            <FaArrowLeft /> Voltar ao início
-          </Link>
           <div className={styles.heroBadge}>
             <FaFileContract />
             <span>Termos Legais</span>

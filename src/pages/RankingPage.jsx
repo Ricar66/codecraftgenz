@@ -5,6 +5,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import Navbar from '../components/Navbar/Navbar';
 import { realtime } from '../lib/realtime';
 import { getRanking } from '../services/rankingAPI.js';
+
 import styles from './RankingPage.module.css';
 
 /**
