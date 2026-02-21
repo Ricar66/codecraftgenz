@@ -4,7 +4,7 @@ import { FaWindows, FaApple, FaLinux, FaDownload, FaShieldAlt, FaRocket, FaLayer
 import Navbar from '../components/Navbar/Navbar.jsx';
 import styles from './HubDownloadPage.module.css';
 
-const DOWNLOAD_URL = 'https://codecraftgenz-monorepo.onrender.com/api/downloads/CodeCraftHub_Setup.exe';
+const DOWNLOAD_URL = 'https://codecraftgenz.com.br/downloads/CodeCraftHub_Setup.exe';
 
 const features = [
   {
