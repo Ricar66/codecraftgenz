@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
 import useProjects from '../hooks/useProjects';
+
 import styles from './ProjectsPage.module.css';
 
 // Categorias de filtro

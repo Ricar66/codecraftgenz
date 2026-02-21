@@ -4,8 +4,8 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import Navbar from '../components/Navbar/Navbar';
 import { useAnalytics } from '../hooks/useAnalytics.js';
-import { getAppById, getPurchaseStatus, registerDownload, resendPurchaseEmail } from '../services/appsAPI.js';
 import { API_BASE_URL } from '../lib/apiConfig.js';
+import { getAppById, getPurchaseStatus, registerDownload, resendPurchaseEmail } from '../services/appsAPI.js';
 
 import styles from './OrderSuccessPage.module.css';
 

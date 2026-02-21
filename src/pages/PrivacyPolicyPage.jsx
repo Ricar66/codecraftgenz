@@ -1,6 +1,5 @@
 // src/pages/PrivacyPolicyPage.jsx
 // Política de Privacidade - Conforme LGPD
-import { Link } from 'react-router-dom';
 import {
   FaShieldAlt,
   FaArrowLeft,
@@ -12,7 +11,10 @@ import {
   FaEnvelope,
   FaBalanceScale
 } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
+
 import Navbar from '../components/Navbar/Navbar';
+
 import styles from './LegalPage.module.css';
 
 function PrivacyPolicyPage() {
@@ -23,9 +25,6 @@ function PrivacyPolicyPage() {
       {/* Hero Section */}
       <section className={styles.hero}>
         <div className={styles.heroContent}>
-          <Link to="/" className={styles.backLink}>
-            <FaArrowLeft /> Voltar ao início
-          </Link>
           <div className={styles.heroBadge}>
             <FaShieldAlt />
             <span>Privacidade</span>
