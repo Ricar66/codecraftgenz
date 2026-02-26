@@ -21,8 +21,9 @@ import styles from './HomePage.module.css';
 const HomePage = () => {
   const [isCrafterModalOpen, setIsCrafterModalOpen] = useState(false);
   const { canonical, ogUrl, ogImageUrl, twitterHandle } = useMemo(() => {
-    const url = typeof window !== 'undefined' ? window.location.href : '';
-    const imageAbs = typeof window !== 'undefined' ? new URL(logoCodecraft, window.location.href).toString() : logoCodecraft;
+    const BASE_URL = 'https://codecraftgenz.com.br';
+    const url = typeof window !== 'undefined' ? window.location.href : BASE_URL;
+    const imageAbs = typeof window !== 'undefined' ? new URL(logoCodecraft, window.location.href).toString() : `${BASE_URL}${logoCodecraft}`;
     const handle = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_TWITTER_HANDLE) ? String(import.meta.env.VITE_TWITTER_HANDLE) : '';
     return { canonical: url, ogUrl: url, ogImageUrl: imageAbs, twitterHandle: handle };
   }, []);
@@ -45,47 +46,49 @@ const HomePage = () => {
         {twitterHandle && <meta name="twitter:site" content={twitterHandle} />}
       </Helmet>
       <Navbar />
-      <div className={styles.sectionBlock}>
-        <Hero onCrafterClick={() => setIsCrafterModalOpen(true)} />
-      </div>
-      <div className={styles.sectionBlock}>
-        <div className={styles.sectionCard}>
-          <FeaturesSection />
+      <main>
+        <div className={styles.sectionBlock}>
+          <Hero onCrafterClick={() => setIsCrafterModalOpen(true)} />
         </div>
-      </div>
-
-      <div className={styles.sectionBlock}>
-        <div className={styles.sectionCard}>
-          <CompanySection />
-        </div>
-      </div>
-
-      <div className={styles.sectionBlock}>
-        <div className={styles.sectionCard}>
-          <OSSPSection />
-        </div>
-      </div>
-
-      <div className={styles.sectionBlock}>
-        <div className={styles.sectionCard}>
-          <MetricsSection />
-        </div>
-      </div>
-
-      <div className={styles.sectionBlock}>
-        <div className={styles.sectionCard}>
-          <div className={styles.feedbackSection}>
-            <h2 className={styles.sectionTitle}>O que dizem sobre nos</h2>
-            <p className={styles.sectionSubtitle}>Feedbacks reais de quem ja usou nossos servicos</p>
-            <FeedbackShowcase autoIntervalMs={5000} showControls={true} />
+        <div className={styles.sectionBlock}>
+          <div className={styles.sectionCard}>
+            <FeaturesSection />
           </div>
         </div>
-      </div>
 
-      <CrafterModal 
-        isOpen={isCrafterModalOpen} 
-        onClose={() => setIsCrafterModalOpen(false)} 
-      />
+        <div className={styles.sectionBlock}>
+          <div className={styles.sectionCard}>
+            <CompanySection />
+          </div>
+        </div>
+
+        <div className={styles.sectionBlock}>
+          <div className={styles.sectionCard}>
+            <OSSPSection />
+          </div>
+        </div>
+
+        <div className={styles.sectionBlock}>
+          <div className={styles.sectionCard}>
+            <MetricsSection />
+          </div>
+        </div>
+
+        <div className={styles.sectionBlock}>
+          <div className={styles.sectionCard}>
+            <div className={styles.feedbackSection}>
+              <h2 className={styles.sectionTitle}>O que dizem sobre nós</h2>
+              <p className={styles.sectionSubtitle}>Feedbacks reais de quem já usou nossos serviços</p>
+              <FeedbackShowcase autoIntervalMs={5000} showControls={true} />
+            </div>
+          </div>
+        </div>
+
+        <CrafterModal
+          isOpen={isCrafterModalOpen}
+          onClose={() => setIsCrafterModalOpen(false)}
+        />
+      </main>
     </div>
   );
 };
