@@ -19,7 +19,7 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  filter: blur(4px);
+  filter: blur(1px);
   z-index: -2;
 }
 
