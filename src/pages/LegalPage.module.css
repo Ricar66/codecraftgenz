@@ -5,11 +5,20 @@
 .page {
   min-height: 100vh;
   padding-bottom: 60px;
-  background-image: url("../assets/hero-background.svg");
+  position: relative;
+}
+
+/* Background com blur */
+.page::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("../assets/hero-background.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-attachment: fixed;
+  filter: blur(4px);
+  z-index: -2;
 }
 
 /* Hero Section */
