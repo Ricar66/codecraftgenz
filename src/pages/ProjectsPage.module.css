@@ -15,7 +15,7 @@
   content: '';
   position: fixed;
   inset: 0;
-  background-image: url("../assets/hero-background.jpg");
+  background-image: url("../assets/hero-background.svg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -23,13 +23,14 @@
   z-index: -2;
 }
 
-/* Background Glow Overlay */
+/* Background Glow Overlay - premium multi-layer */
 .page::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse at 20% 20%, rgba(0, 228, 242, 0.08) 0%, transparent 50%),
-              radial-gradient(ellipse at 80% 80%, rgba(209, 43, 242, 0.06) 0%, transparent 50%);
+  background: radial-gradient(ellipse at 20% 20%, rgba(0, 228, 242, 0.1) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 80%, rgba(209, 43, 242, 0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 50%, rgba(104, 0, 123, 0.05) 0%, transparent 40%);
   pointer-events: none;
   z-index: -1;
 }
@@ -58,10 +59,17 @@
   letter-spacing: -0.03em;
   margin: 0 0 24px;
   background: linear-gradient(135deg, #fff 0%, #00E4F2 50%, #D12BF2 100%);
+  background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 60px rgba(0, 228, 242, 0.3);
+  filter: drop-shadow(0 0 60px rgba(0, 228, 242, 0.3));
+  animation: heroGradient 4s ease-in-out infinite alternate;
+}
+
+@keyframes heroGradient {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
 }
 
 .heroSubtitle {
@@ -170,15 +178,20 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   cursor: pointer;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15),
+              inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .projectCard:hover {
-  transform: translateY(-8px);
+  transform: translateY(-10px) scale(1.01);
   border-color: var(--card-accent, #00E4F2);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
-              0 0 40px var(--card-glow, rgba(0, 228, 242, 0.15));
+              0 0 48px var(--card-glow, rgba(0, 228, 242, 0.15)),
+              inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 /* Card - Tech Accent */
@@ -532,11 +545,13 @@
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(40px) scale(0.97);
+    filter: blur(3px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+    filter: blur(0);
   }
 }
 

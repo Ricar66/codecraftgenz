@@ -15,7 +15,7 @@
   content: '';
   position: fixed;
   inset: 0;
-  background-image: url("../assets/hero-background.jpg");
+  background-image: url("../assets/hero-background.svg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -53,10 +53,17 @@
   letter-spacing: -0.03em;
   margin: 0 0 12px;
   background: linear-gradient(135deg, #68007B 0%, #D12BF2 40%, #00E4F2 100%);
+  background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 60px rgba(104, 0, 123, 0.4);
+  filter: drop-shadow(0 0 60px rgba(104, 0, 123, 0.4));
+  animation: heroGradient 4s ease-in-out infinite alternate;
+}
+
+@keyframes heroGradient {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
 }
 
 .heroSubtitle {

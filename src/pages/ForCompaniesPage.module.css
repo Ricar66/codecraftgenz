@@ -13,7 +13,7 @@
   content: '';
   position: fixed;
   inset: 0;
-  background-image: url("../assets/hero-background.jpg");
+  background-image: url("../assets/hero-background.svg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -52,6 +52,7 @@
   color: var(--texto-branco);
   line-height: 1.2;
   margin-bottom: 16px;
+  filter: drop-shadow(0 0 40px rgba(209, 43, 242, 0.2));
 }
 
 .highlight {
@@ -80,6 +81,18 @@
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.form:hover {
+  border-color: rgba(209, 43, 242, 0.2);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25),
+              0 0 32px rgba(209, 43, 242, 0.06),
+              inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .formTitle {
