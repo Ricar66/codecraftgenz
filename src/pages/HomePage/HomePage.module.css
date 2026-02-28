@@ -15,7 +15,7 @@
   content: '';
   position: fixed;
   inset: 0;
-  background-image: url("../../assets/hero-background.jpg");
+  background-image: url("../../assets/hero-background.svg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -58,7 +58,7 @@
   }
 }
 
-/* ===== CARD DE SECAO - GLASSMORPHISM ===== */
+/* ===== CARD DE SECAO - GLASSMORPHISM PREMIUM ===== */
 .sectionCard {
   max-width: 1200px;
   margin: 0 auto;
@@ -66,13 +66,18 @@
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.03);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.15),
+    0 12px 32px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
   overflow: hidden;
   position: relative;
-  animation: fadeUp 600ms ease-out both;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: revealUp 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.4s ease;
 }
 
 /* Borda gradiente sutil no topo */
@@ -85,12 +90,12 @@
   height: 2px;
   background: linear-gradient(90deg,
     transparent 0%,
-    rgba(104, 0, 123, 0.5) 20%,
-    rgba(209, 43, 242, 0.5) 50%,
-    rgba(0, 228, 242, 0.5) 80%,
+    rgba(104, 0, 123, 0.6) 20%,
+    rgba(209, 43, 242, 0.7) 50%,
+    rgba(0, 228, 242, 0.6) 80%,
     transparent 100%);
   opacity: 0;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.5s ease;
 }
 
 .sectionCard:hover::before {
@@ -98,8 +103,13 @@
 }
 
 .sectionCard:hover {
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4), 0 0 40px rgba(104, 0, 123, 0.08);
+  transform: translateY(-6px);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 8px 16px rgba(0, 0, 0, 0.2),
+    0 24px 64px rgba(0, 0, 0, 0.3),
+    0 0 48px rgba(209, 43, 242, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* Efeito de brilho interno */
@@ -112,7 +122,12 @@
   background:
     radial-gradient(800px 300px at 10% 10%, rgba(209, 43, 242, 0.04), transparent 60%),
     radial-gradient(600px 300px at 90% 90%, rgba(0, 228, 242, 0.04), transparent 60%);
-  opacity: 0.6;
+  opacity: 0.5;
+  transition: opacity 0.4s ease;
+}
+
+.sectionCard:hover::after {
+  opacity: 0.9;
 }
 
 @media (max-width: 768px) {
@@ -130,18 +145,20 @@
 }
 
 /* ===== ANIMACOES ===== */
-@keyframes fadeUp {
+@keyframes revealUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: perspective(1200px) rotateX(4deg) translateY(50px) scale(0.96);
+    filter: blur(3px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: perspective(1200px) rotateX(0deg) translateY(0) scale(1);
+    filter: blur(0);
   }
 }
 
-/* Staggered animation para multiplas secoes */
+/* Staggered animation — entradas escalonadas mais dramaticas */
 .sectionBlock:nth-child(2) .sectionCard { animation-delay: 0.1s; }
 .sectionBlock:nth-child(3) .sectionCard { animation-delay: 0.2s; }
 .sectionBlock:nth-child(4) .sectionCard { animation-delay: 0.3s; }

@@ -15,7 +15,7 @@
   content: '';
   position: fixed;
   inset: 0;
-  background-image: url("../assets/hero-background.jpg");
+  background-image: url("../assets/hero-background.svg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -77,8 +77,14 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   background-size: 200% 200%;
-  animation: gradientShift 4s ease-in-out infinite alternate;
-  text-shadow: 0 0 60px rgba(209, 43, 242, 0.3);
+  animation: gradientShift 4s ease-in-out infinite alternate,
+             sloganFloat 6s ease-in-out infinite;
+  filter: drop-shadow(0 0 60px rgba(209, 43, 242, 0.3));
+}
+
+@keyframes sloganFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 
 @keyframes gradientShift {
@@ -166,14 +172,19 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   text-align: center;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12),
+              inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .featureCard:hover {
-  transform: translateY(-6px);
+  transform: translateY(-8px) scale(1.01);
   border-color: rgba(0, 228, 242, 0.4);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
-              0 0 30px rgba(0, 228, 242, 0.1);
+              0 0 40px rgba(0, 228, 242, 0.12),
+              inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .featureIcon {

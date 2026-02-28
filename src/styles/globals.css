@@ -84,11 +84,25 @@
   --sombra-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --sombra-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   --sombra-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  
+
+  /* Sombras premium com profundidade 3D */
+  --sombra-3d: 0 4px 6px rgba(0, 0, 0, 0.15), 0 12px 24px rgba(0, 0, 0, 0.2);
+  --sombra-3d-hover: 0 8px 16px rgba(0, 0, 0, 0.2), 0 24px 48px rgba(0, 0, 0, 0.25);
+  --sombra-glow-primaria: 0 0 20px rgba(209, 43, 242, 0.15), 0 0 60px rgba(209, 43, 242, 0.08);
+  --sombra-glow-terciaria: 0 0 20px rgba(0, 228, 242, 0.15), 0 0 60px rgba(0, 228, 242, 0.08);
+
+  /* Sombras premium extra para efeitos 3D avancados */
+  --sombra-3d-sutil: 0 2px 4px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.12);
+  --sombra-3d-flutuante: 0 12px 28px rgba(0, 0, 0, 0.25), 0 40px 80px rgba(0, 0, 0, 0.2);
+  --sombra-interna-brilho: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 0 20px rgba(255, 255, 255, 0.02);
+
   /* Transições */
   --transicao-rapida: 0.15s ease-in-out;
   --transicao-normal: 0.3s ease-in-out;
   --transicao-lenta: 0.5s ease-in-out;
+  --transicao-premium: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --transicao-elastica: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transicao-cinematica: 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* ===== RESET CSS ===== */
@@ -560,6 +574,38 @@ img {
   50% { transform: scale(1.05); }
 }
 
+/* === ANIMAÇÕES PREMIUM === */
+
+/* Flutuação suave para elementos decorativos */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+/* Entrada com escala + fade (cinematic) */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Shimmer gradiente para superficies premium */
+@keyframes shimmerSurface {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* Brilho rotativo para bordas */
+@keyframes borderGlow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* Reveal de baixo para cima (staggered) */
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(40px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 .animacao-fade-in {
   animation: fadeIn 0.6s ease-out;
 }
@@ -570,6 +616,77 @@ img {
 
 .animacao-pulse {
   animation: pulse 2s infinite;
+}
+
+/* === ANIMAÇÕES PREMIUM AVANÇADAS === */
+
+/* Flutuação 3D com rotação subtil */
+@keyframes float3D {
+  0%, 100% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
+  25% { transform: translateY(-8px) rotateX(1deg) rotateY(-1deg); }
+  50% { transform: translateY(-14px) rotateX(0deg) rotateY(1deg); }
+  75% { transform: translateY(-6px) rotateX(-1deg) rotateY(0deg); }
+}
+
+/* Fade-up cinematico para entradas de secao */
+@keyframes fadeUpCinematic {
+  from {
+    opacity: 0;
+    transform: translateY(50px) scale(0.96);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Brilho deslizante para superficies */
+@keyframes shineSlide {
+  0% { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(200%) skewX(-15deg); }
+}
+
+/* Pulso de borda neon */
+@keyframes neonBorderPulse {
+  0%, 100% { border-color: rgba(209, 43, 242, 0.2); box-shadow: 0 0 8px rgba(209, 43, 242, 0.05); }
+  50% { border-color: rgba(0, 228, 242, 0.4); box-shadow: 0 0 24px rgba(0, 228, 242, 0.1); }
+}
+
+/* Respiracao suave para elementos de destaque */
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.03); opacity: 1; }
+}
+
+/* Entrada com perspectiva 3D */
+@keyframes perspective3DIn {
+  from {
+    opacity: 0;
+    transform: perspective(1200px) rotateX(8deg) translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1200px) rotateX(0deg) translateY(0);
+  }
+}
+
+/* Classes utilitarias premium */
+.animacao-float-3d {
+  animation: float3D 6s ease-in-out infinite;
+}
+
+.animacao-fade-up-cinematic {
+  animation: fadeUpCinematic 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animacao-breathe {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+.animacao-perspectiva-3d {
+  animation: perspective3DIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* ===== COMPONENTES GEN-Z ===== */
@@ -634,9 +751,12 @@ img {
 }
 
 .card-gen-z:hover {
-  transform: translateY(-5px);
-  border-color: rgba(209, 43, 242, 0.4);
-  box-shadow: 0 10px 30px rgba(209, 43, 242, 0.2);
+  transform: translateY(-6px) scale(1.01);
+  border-color: rgba(209, 43, 242, 0.35);
+  box-shadow:
+    0 8px 16px rgba(0, 0, 0, 0.15),
+    0 20px 48px rgba(209, 43, 242, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 /* Efeitos neon */
@@ -1143,11 +1263,12 @@ img {
 }
 
 .card-premium:hover {
-  transform: translateY(-5px);
+  transform: translateY(-8px) scale(1.01);
   border-color: rgba(209, 43, 242, 0.3);
   box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.3),
-    0 0 40px rgba(209, 43, 242, 0.1);
+    0 8px 16px rgba(0, 0, 0, 0.2),
+    0 24px 64px rgba(0, 0, 0, 0.3),
+    0 0 48px rgba(209, 43, 242, 0.1);
 }
 
 .card-premium:hover::before {

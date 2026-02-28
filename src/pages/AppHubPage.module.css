@@ -28,7 +28,7 @@
   content: '';
   position: fixed;
   inset: 0;
-  background-image: url("../assets/hero-background.jpg");
+  background-image: url("../assets/hero-background.svg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -70,10 +70,17 @@
   letter-spacing: -0.03em;
   margin: 0 0 16px;
   background: linear-gradient(135deg, #68007B 0%, #D12BF2 40%, #00E4F2 100%);
+  background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 60px rgba(104, 0, 123, 0.4);
+  filter: drop-shadow(0 0 60px rgba(104, 0, 123, 0.4));
+  animation: heroGradient 4s ease-in-out infinite alternate;
+}
+
+@keyframes heroGradient {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
 }
 
 .heroSubtitle {
@@ -420,14 +427,17 @@
   overflow: hidden;
   min-height: 380px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .highlightCard:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(209, 43, 242, 0.15);
-  border-color: rgba(209, 43, 242, 0.3);
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5),
+              0 0 48px rgba(209, 43, 242, 0.15),
+              inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border-color: rgba(209, 43, 242, 0.35);
 }
 
 .highlightMedia {
@@ -626,8 +636,10 @@
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15),
+              0 8px 32px rgba(0, 0, 0, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   position: relative;
 }
 
@@ -644,9 +656,11 @@
 }
 
 .cardWrap:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 0 0 30px rgba(209, 43, 242, 0.1);
-  border-color: rgba(209, 43, 242, 0.3);
+  transform: translateY(-10px) scale(1.01);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
+              0 0 40px rgba(209, 43, 242, 0.12),
+              inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border-color: rgba(209, 43, 242, 0.35);
 }
 
 .cardWrap:hover::before {
