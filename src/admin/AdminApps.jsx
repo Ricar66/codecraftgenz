@@ -152,12 +152,12 @@ export default function AdminApps() {
     setForm({
       id: a.id,
       name: a.name || '',
-      mainFeature: a.mainFeature || '',
+      mainFeature: a.short_description || a.mainFeature || '',
       description: a.description || '',
       status: a.status || 'draft',
       price: a.price || 0,
-      thumbnail: a.thumbnail || '',
-      exec_url: a.executableUrl || '',
+      thumbnail: a.thumb_url || a.thumbnail || '',
+      exec_url: a.executable_url || a.executableUrl || '',
       version: a.version || '1.0.0',
       platforms: plats
     });
@@ -212,7 +212,7 @@ export default function AdminApps() {
     try {
       setThumbUploadBusy(true);
       setThumbUploadError('');
-      const r = await uploadImage(thumbFile);
+      const r = await uploadImage(thumbFile, form.thumbnail || undefined);
       const imageUrl = r?.data?.url || r?.url;
       if (imageUrl) {
         setForm(s => ({ ...s, thumbnail: imageUrl }));
