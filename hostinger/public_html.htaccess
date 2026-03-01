@@ -10,9 +10,10 @@ Options +FollowSymlinks
   RewriteEngine On
   RewriteBase /
 
-  # Nao processar arquivos na pasta downloads (FTP uploads)
+  # Downloads e imagens ficam em nodejs/downloads/ (protegido do auto-deploy)
+  # Rewrite /downloads/ -> /nodejs/downloads/ (resolvido via symlink)
   RewriteCond %{REQUEST_URI} ^/downloads/ [NC]
-  RewriteRule ^ - [L]
+  RewriteRule ^downloads/(.*)$ /nodejs/downloads/$1 [L]
 
   # Se o arquivo existe fisicamente em public_html, servir direto
   RewriteCond %{REQUEST_FILENAME} -f
