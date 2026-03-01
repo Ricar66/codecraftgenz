@@ -94,10 +94,19 @@ def sync_dist(sftp):
         log("Execute 'npm run build' primeiro ou remova --skip-build", 'ERR')
         sys.exit(1)
 
+    # Pastas a ignorar (gerenciadas pelo backend/FTP, nao pelo deploy frontend)
+    skip_dirs = {'downloads'}
+
     uploaded = 0
     for root, dirs, files in os.walk(LOCAL_DIST):
         # Caminho relativo ao dist/
         rel = os.path.relpath(root, LOCAL_DIST).replace(os.sep, '/')
+
+        # Pular pastas que nao devem ser sincronizadas
+        dirs[:] = [d for d in dirs if d not in skip_dirs]
+        if any(part in skip_dirs for part in rel.split('/')):
+            continue
+
         remote_path = REMOTE_NODEJS if rel == '.' else f'{REMOTE_NODEJS}/{rel}'
 
         # Garantir que o diretorio remoto existe
