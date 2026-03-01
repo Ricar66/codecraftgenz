@@ -11,9 +11,11 @@ Options +FollowSymlinks
   RewriteBase /
 
   # Se o arquivo existe fisicamente em public_html, servir direto
-  # (imagens em public_html/downloads/images/apps/ e /projetos/)
   RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
+
+  # Redirecionar /downloads/ para o backend Render (que serve os arquivos)
+  RewriteRule ^downloads/(.*)$ https://codecraftgenz-monorepo.onrender.com/api/downloads/$1 [R=302,L]
 
   # Arquivos com extensao conhecida -> buscar em /nodejs/
   RewriteCond %{REQUEST_URI} \.(js|mjs|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|webmanifest|webp|map|xml|txt|exe|zip|rar|7z|msi|mp4|mp3|pdf)$ [NC]

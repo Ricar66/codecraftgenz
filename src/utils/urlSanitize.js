@@ -12,6 +12,9 @@ export function sanitizeImageUrl(input) {
     if (input.startsWith('blob:')) return input;
     // URLs de API do backend (/api/downloads/...) -> resolver para o backend Render
     if (input.startsWith('/api/')) return `${BACKEND_URL}${input}`;
+    // URLs antigas da Hostinger (codecraftgenz.com.br/downloads/...) -> redirecionar para backend API
+    const hostingerDownloadMatch = input.match(/^https?:\/\/codecraftgenz\.com\.br\/downloads\/(.+)$/);
+    if (hostingerDownloadMatch) return `${BACKEND_URL}/api/downloads/${hostingerDownloadMatch[1]}`;
     const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
     const currentProtocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
   const u = new URL(input, currentOrigin);
