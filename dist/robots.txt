@@ -1,0 +1,33 @@
+# CodeCraft Gen-Z - robots.txt
+# https://codecraftgenz.com.br
+
+User-agent: *
+Allow: /
+
+# Paginas publicas principais
+Allow: /projetos
+Allow: /aplicativos
+Allow: /mentoria
+Allow: /ranking
+Allow: /desafios
+Allow: /feedbacks
+
+# Bloquear areas administrativas e privadas
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /downloads/
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /cache-maintenance
+
+# Bloquear service worker e workbox
+Disallow: /sw.js
+Disallow: /workbox-*.js
+
+# Sitemap
+Sitemap: https://codecraftgenz.com.br/sitemap.xml
+
+# Crawl-delay para bots que respeitam
+Crawl-delay: 1
