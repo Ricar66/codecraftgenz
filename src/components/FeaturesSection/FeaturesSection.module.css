@@ -1,475 +1,295 @@
 /* src/components/FeaturesSection/FeaturesSection.module.css */
 
 .featuresSection {
-  /* Fundo transparente para herdar o fundo da Home */
   background: transparent;
-  padding: 120px 20px; /* Aumentado o espaçamento interno */
-  margin-top: 0; /* Remove margem superior para conectar melhor com o hero */
+  padding: 120px 20px;
+  margin-top: 0;
   position: relative;
 }
 
-/* Removido overlay de separação para manter uma aparência contínua */
-
 .container {
-  max-width: 1400px; /* Aumentado para melhor uso do espaço */
+  max-width: 1400px;
   margin: 0 auto;
   text-align: center;
-  padding: 0 20px; /* Adiciona padding lateral */
+  padding: 0 20px;
 }
 
 .title {
-  /* Títulos: Montserrat ExtraBold */
   font-family: var(--fonte-titulos);
   font-weight: 800;
-  font-size: 3.5rem; /* Aumentado para maior impacto */
+  font-size: 3.5rem;
   background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-secundaria) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 24px; /* Aumentado o espaçamento */
+  margin-bottom: 24px;
   line-height: 1.2;
 }
 
 .subtitle {
-  /* Subtítulos: Poppins Regular */
   font-family: var(--fonte-subtitulos);
-  font-size: 1.4rem; /* Ligeiramente aumentado */
+  font-size: 1.4rem;
   color: var(--texto-cinza-escuro);
-  margin-bottom: 80px; /* Aumentado significativamente */
-  max-width: 700px; /* Limita a largura para melhor legibilidade */
+  margin-bottom: 80px;
+  max-width: 700px;
   margin-left: auto;
   margin-right: auto;
   line-height: 1.6;
 }
 
-/* A grade que segura os cards */
+/* ===== GRID ===== */
 .featuresGrid {
   display: grid;
-  /* Ajustado para melhor responsividade */
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 3rem; /* Aumentado o espaço entre os cards */
-  margin-top: 60px; /* Adiciona espaço superior */
+  gap: 3rem;
+  margin-top: 60px;
+  perspective: 1200px;
 }
 
-.featureCard {
-  background: rgba(255, 255, 255, 0.03);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  padding: 40px 30px;
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  transition: all 0.4s ease;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* ===== FLIP CARD 3D ===== */
+.flipCard {
+  height: 340px;
+  perspective: 1000px;
+  cursor: pointer;
+}
+
+.flipCardInner {
   position: relative;
-  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Adiciona um efeito de borda gradiente sutil */
-.featureCard::before {
-  content: '';
+.flipCard:hover .flipCardInner {
+  transform: rotateY(180deg);
+}
+
+/* ===== FACES ===== */
+.flipFront,
+.flipBack {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--cor-primaria), var(--cor-terciaria));
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 30px;
+  box-sizing: border-box;
 }
 
-.featureCard:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 0 0 30px rgba(209, 43, 242, 0.15);
-  border-color: rgba(209, 43, 242, 0.3);
+/* --- FRENTE --- */
+.flipFront {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  z-index: 2;
 }
 
-.featureCard:hover::before {
-  opacity: 1;
+/* --- VERSO --- */
+.flipBack {
+  background: linear-gradient(
+    145deg,
+    rgba(15, 10, 30, 0.95) 0%,
+    rgba(30, 15, 50, 0.95) 50%,
+    rgba(15, 10, 30, 0.95) 100%
+  );
+  border: 1px solid var(--accent, rgba(209, 43, 242, 0.4));
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4),
+              0 0 30px color-mix(in srgb, var(--accent, #D12BF2) 15%, transparent),
+              inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transform: rotateY(180deg);
+  z-index: 1;
 }
 
+/* ===== FRONT CONTENT ===== */
 .iconWrapper {
-  /* Destaque visual com o Azul Gen-Z  */
   color: var(--cor-terciaria);
-  font-size: 4rem; /* Aumentado o tamanho do ícone */
-  margin-bottom: 30px; /* Aumentado o espaçamento */
+  font-size: 4rem;
+  margin-bottom: 30px;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 80px; /* Define altura fixa para alinhamento */
+  height: 80px;
+  filter: drop-shadow(0 0 10px rgba(0, 228, 242, 0.2));
+  transition: filter 0.3s ease;
+}
+
+.flipFront:hover .iconWrapper {
+  filter: drop-shadow(0 0 20px rgba(0, 228, 242, 0.5));
 }
 
 .cardTitle {
   font-family: var(--fonte-subtitulos);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1.8rem;
   color: #fff;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   line-height: 1.3;
 }
 
 .cardText {
   font-family: var(--fonte-principal);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: rgba(255, 255, 255, 0.6);
-  line-height: 1.7;
+  line-height: 1.6;
   max-width: 280px;
   margin: 0 auto;
 }
 
-/* ===== RESPONSIVIDADE MELHORADA ===== */
+/* ===== BACK CONTENT ===== */
+.backIcon {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 0 15px currentColor);
+}
 
-/* Desktop grande (1440px+) */
+.backText {
+  font-family: var(--fonte-subtitulos);
+  font-size: 1.15rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.7;
+  max-width: 260px;
+  margin: 0 auto 24px;
+  text-align: center;
+}
+
+.backCta {
+  display: inline-block;
+  padding: 12px 28px;
+  border: 2px solid;
+  border-radius: 12px;
+  font-family: var(--fonte-subtitulos);
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  letter-spacing: 0.02em;
+}
+
+.backCta:hover {
+  background: var(--accent, #D12BF2);
+  color: #fff !important;
+  border-color: var(--accent, #D12BF2) !important;
+  transform: scale(1.05);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--accent, #D12BF2) 40%, transparent);
+}
+
+/* ===== GLOW BORDER ON HOVER ===== */
+.flipCard:hover .flipFront {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  .flipCardInner {
+    transition: none;
+  }
+  .flipCard:hover .flipCardInner {
+    transform: none;
+  }
+  .flipBack {
+    transform: none;
+    display: none;
+  }
+}
+
+/* ===== RESPONSIVIDADE ===== */
+
 @media (min-width: 1440px) {
-  .featuresSection {
-    padding: 140px 30px;
-  }
-  
-  .container {
-    max-width: 1500px;
-    padding: 0 30px;
-  }
-  
-  .title {
-    font-size: 4rem;
-    margin-bottom: 30px;
-  }
-  
-  .subtitle {
-    font-size: 1.5rem;
-    max-width: 800px;
-    margin-bottom: 100px;
-  }
-  
-  .featuresGrid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4rem;
-    margin-top: 80px;
-  }
-  
-  .featureCard {
-    padding: 50px 40px;
-  }
-  
-  .iconWrapper {
-    font-size: 4.5rem;
-    margin-bottom: 35px;
-  }
-  
-  .cardTitle {
-    font-size: 2rem;
-    margin-bottom: 25px;
-  }
-  
-  .cardText {
-    font-size: 1.2rem;
-    max-width: 320px;
-  }
+  .featuresSection { padding: 140px 30px; }
+  .container { max-width: 1500px; padding: 0 30px; }
+  .title { font-size: 4rem; margin-bottom: 30px; }
+  .subtitle { font-size: 1.5rem; max-width: 800px; margin-bottom: 100px; }
+  .featuresGrid { grid-template-columns: repeat(3, 1fr); gap: 4rem; margin-top: 80px; }
+  .flipCard { height: 380px; }
+  .iconWrapper { font-size: 4.5rem; margin-bottom: 35px; }
+  .cardTitle { font-size: 2rem; margin-bottom: 25px; }
+  .cardText { font-size: 1.2rem; max-width: 320px; }
+  .backText { font-size: 1.25rem; max-width: 300px; }
 }
 
-/* Desktop médio (1200px - 1439px) */
 @media (max-width: 1439px) and (min-width: 1200px) {
-  .featuresSection {
-    padding: 130px 25px;
-  }
-  
-  .container {
-    max-width: 1300px;
-    padding: 0 25px;
-  }
-  
-  .title {
-    font-size: 3.8rem;
-    margin-bottom: 28px;
-  }
-  
-  .subtitle {
-    font-size: 1.45rem;
-    max-width: 750px;
-    margin-bottom: 90px;
-  }
-  
-  .featuresGrid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 3.5rem;
-  }
-  
-  .featureCard {
-    padding: 45px 35px;
-  }
-  
-  .iconWrapper {
-    font-size: 4.2rem;
-    margin-bottom: 32px;
-  }
-  
-  .cardTitle {
-    font-size: 1.9rem;
-    margin-bottom: 22px;
-  }
-  
-  .cardText {
-    font-size: 1.15rem;
-    max-width: 300px;
-  }
+  .featuresSection { padding: 130px 25px; }
+  .container { max-width: 1300px; padding: 0 25px; }
+  .title { font-size: 3.8rem; margin-bottom: 28px; }
+  .subtitle { font-size: 1.45rem; max-width: 750px; margin-bottom: 90px; }
+  .featuresGrid { grid-template-columns: repeat(3, 1fr); gap: 3.5rem; }
+  .flipCard { height: 360px; }
+  .iconWrapper { font-size: 4.2rem; margin-bottom: 32px; }
+  .cardTitle { font-size: 1.9rem; margin-bottom: 22px; }
+  .cardText { font-size: 1.15rem; max-width: 300px; }
 }
 
-/* Desktop pequeno / Laptop (992px - 1199px) */
 @media (max-width: 1199px) and (min-width: 992px) {
-  .featuresSection {
-    padding: 110px 20px;
-  }
-  
-  .container {
-    max-width: 1100px;
-    padding: 0 20px;
-  }
-  
-  .title {
-    font-size: 3.2rem;
-    margin-bottom: 25px;
-  }
-  
-  .subtitle {
-    font-size: 1.3rem;
-    max-width: 650px;
-    margin-bottom: 70px;
-  }
-  
-  .featuresGrid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2.5rem;
-    margin-top: 50px;
-  }
-  
-  .featureCard {
-    padding: 35px 28px;
-  }
-  
-  .iconWrapper {
-    font-size: 3.8rem;
-    margin-bottom: 28px;
-  }
-  
-  .cardTitle {
-    font-size: 1.7rem;
-    margin-bottom: 18px;
-  }
-  
-  .cardText {
-    font-size: 1.05rem;
-    max-width: 260px;
-  }
+  .featuresSection { padding: 110px 20px; }
+  .container { max-width: 1100px; padding: 0 20px; }
+  .title { font-size: 3.2rem; margin-bottom: 25px; }
+  .subtitle { font-size: 1.3rem; max-width: 650px; margin-bottom: 70px; }
+  .featuresGrid { grid-template-columns: repeat(3, 1fr); gap: 2.5rem; margin-top: 50px; }
+  .flipCard { height: 340px; }
+  .iconWrapper { font-size: 3.8rem; margin-bottom: 28px; }
+  .cardTitle { font-size: 1.7rem; margin-bottom: 18px; }
+  .cardText { font-size: 1.05rem; max-width: 260px; }
 }
 
-/* Tablet landscape (768px - 991px) */
 @media (max-width: 991px) and (min-width: 768px) {
-  .featuresSection {
-    padding: 90px 20px;
-  }
-  
-  .container {
-    max-width: 700px;
-    padding: 0 20px;
-  }
-  
-  .title {
-    font-size: 2.8rem;
-    margin-bottom: 22px;
-    text-align: center;
-  }
-  
-  .subtitle {
-    font-size: 1.2rem;
-    max-width: 600px;
-    margin-bottom: 60px;
-    text-align: center;
-  }
-  
-  .featuresGrid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
-    margin-top: 40px;
-  }
-  
-  .featureCard {
-    padding: 30px 25px;
-    text-align: center;
-  }
-  
-  .iconWrapper {
-    font-size: 3.5rem;
-    margin-bottom: 25px;
-  }
-  
-  .cardTitle {
-    font-size: 1.6rem;
-    margin-bottom: 16px;
-  }
-  
-  .cardText {
-    font-size: 1rem;
-    max-width: 100%;
-    margin: 0 auto;
-  }
+  .featuresSection { padding: 90px 20px; }
+  .container { max-width: 700px; padding: 0 20px; }
+  .title { font-size: 2.8rem; margin-bottom: 22px; text-align: center; }
+  .subtitle { font-size: 1.2rem; max-width: 600px; margin-bottom: 60px; text-align: center; }
+  .featuresGrid { grid-template-columns: repeat(2, 1fr); gap: 2rem; margin-top: 40px; }
+  .flipCard { height: 320px; }
+  .iconWrapper { font-size: 3.5rem; margin-bottom: 25px; }
+  .cardTitle { font-size: 1.6rem; margin-bottom: 16px; }
+  .cardText { font-size: 1rem; max-width: 100%; }
 }
 
-/* Tablet portrait (576px - 767px) */
 @media (max-width: 767px) and (min-width: 576px) {
-  .featuresSection {
-    padding: 70px 15px;
-  }
-  
-  .container {
-    max-width: 500px;
-    padding: 0 15px;
-  }
-  
-  .title {
-    font-size: 2.4rem;
-    margin-bottom: 20px;
-    text-align: center;
-    line-height: 1.3;
-  }
-  
-  .subtitle {
-    font-size: 1.1rem;
-    max-width: 100%;
-    margin-bottom: 50px;
-    text-align: center;
-    line-height: 1.6;
-  }
-  
-  .featuresGrid {
-    grid-template-columns: 1fr;
-    gap: 1.8rem;
-    margin-top: 35px;
-  }
-  
-  .featureCard {
-    padding: 28px 22px;
-    text-align: center;
-    max-width: 400px;
-    margin: 0 auto;
-  }
-  
-  .iconWrapper {
-    font-size: 3.2rem;
-    margin-bottom: 22px;
-  }
-  
-  .cardTitle {
-    font-size: 1.5rem;
-    margin-bottom: 15px;
-  }
-  
-  .cardText {
-    font-size: 0.95rem;
-    max-width: 100%;
-    line-height: 1.6;
-  }
+  .featuresSection { padding: 70px 15px; }
+  .container { max-width: 500px; padding: 0 15px; }
+  .title { font-size: 2.4rem; margin-bottom: 20px; text-align: center; line-height: 1.3; }
+  .subtitle { font-size: 1.1rem; max-width: 100%; margin-bottom: 50px; text-align: center; line-height: 1.6; }
+  .featuresGrid { grid-template-columns: 1fr; gap: 1.8rem; margin-top: 35px; }
+  .flipCard { height: 300px; max-width: 400px; margin: 0 auto; }
+  .iconWrapper { font-size: 3.2rem; margin-bottom: 22px; }
+  .cardTitle { font-size: 1.5rem; margin-bottom: 15px; }
+  .cardText { font-size: 0.95rem; max-width: 100%; line-height: 1.6; }
 }
 
-/* Mobile (até 575px) */
 @media (max-width: 575px) {
-  .featuresSection {
-    padding: 60px 15px;
-  }
-  
-  .container {
-    max-width: 100%;
-    padding: 0 10px;
-  }
-  
-  .title {
-    font-size: 2rem;
-    margin-bottom: 18px;
-    text-align: center;
-    line-height: 1.35;
-  }
-  
-  .subtitle {
-    font-size: 1rem;
-    max-width: 100%;
-    margin-bottom: 40px;
-    text-align: center;
-    line-height: 1.7;
-    padding: 0 10px;
-  }
-  
-  .featuresGrid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-    margin-top: 30px;
-  }
-  
-  .featureCard {
-    padding: 25px 20px;
-    text-align: center;
-    max-width: 100%;
-    margin: 0 auto;
-  }
-  
-  .iconWrapper {
-    font-size: 2.8rem;
-    margin-bottom: 20px;
-  }
-  
-  .cardTitle {
-    font-size: 1.3rem;
-    margin-bottom: 12px;
-    line-height: 1.4;
-  }
-  
-  .cardText {
-    font-size: 0.9rem;
-    max-width: 100%;
-    line-height: 1.7;
-  }
+  .featuresSection { padding: 60px 15px; }
+  .container { max-width: 100%; padding: 0 10px; }
+  .title { font-size: 2rem; margin-bottom: 18px; text-align: center; line-height: 1.35; }
+  .subtitle { font-size: 1rem; max-width: 100%; margin-bottom: 40px; text-align: center; line-height: 1.7; padding: 0 10px; }
+  .featuresGrid { grid-template-columns: 1fr; gap: 1.5rem; margin-top: 30px; }
+  .flipCard { height: 300px; max-width: 100%; margin: 0 auto; }
+  .flipFront, .flipBack { padding: 25px 20px; }
+  .iconWrapper { font-size: 2.8rem; margin-bottom: 20px; }
+  .cardTitle { font-size: 1.3rem; margin-bottom: 12px; line-height: 1.4; }
+  .cardText { font-size: 0.9rem; max-width: 100%; line-height: 1.7; }
+  .backText { font-size: 1rem; }
+  .backCta { padding: 10px 22px; font-size: 0.9rem; }
 }
 
-/* Mobile pequeno (até 375px) */
 @media (max-width: 375px) {
-  .featuresSection {
-    padding: 50px 10px;
-  }
-  
-  .container {
-    padding: 0 5px;
-  }
-  
-  .title {
-    font-size: 1.8rem;
-    margin-bottom: 15px;
-    line-height: 1.4;
-  }
-  
-  .subtitle {
-    font-size: 0.95rem;
-    margin-bottom: 35px;
-    padding: 0 5px;
-  }
-  
-  .featuresGrid {
-    gap: 1.2rem;
-    margin-top: 25px;
-  }
-  
-  .featureCard {
-    padding: 20px 15px;
-  }
-  
-  .iconWrapper {
-    font-size: 2.5rem;
-    margin-bottom: 18px;
-  }
-  
-  .cardTitle {
-    font-size: 1.2rem;
-    margin-bottom: 10px;
-  }
-  
-  .cardText {
-    font-size: 0.85rem;
-    line-height: 1.8;
-  }
+  .featuresSection { padding: 50px 10px; }
+  .container { padding: 0 5px; }
+  .title { font-size: 1.8rem; margin-bottom: 15px; line-height: 1.4; }
+  .subtitle { font-size: 0.95rem; margin-bottom: 35px; padding: 0 5px; }
+  .featuresGrid { gap: 1.2rem; margin-top: 25px; }
+  .flipCard { height: 280px; }
+  .flipFront, .flipBack { padding: 20px 15px; }
+  .iconWrapper { font-size: 2.5rem; margin-bottom: 18px; }
+  .cardTitle { font-size: 1.2rem; margin-bottom: 10px; }
+  .cardText { font-size: 0.85rem; line-height: 1.8; }
+  .backText { font-size: 0.9rem; }
+  .backCta { padding: 8px 18px; font-size: 0.85rem; }
 }

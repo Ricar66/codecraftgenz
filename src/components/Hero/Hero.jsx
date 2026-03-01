@@ -1,126 +1,223 @@
 /**
  * COMPONENTE HERO - SEÇÃO PRINCIPAL DA PÁGINA
- * 
+ *
  * Este componente representa a seção hero (banner principal) da aplicação CodeCraft.
  * Contém o slogan principal, descrição da plataforma e call-to-action (CTA).
- * 
- * Funcionalidades:
- * - Exibe slogan motivacional para desenvolvedores Gen-Z
- * - Apresenta proposta de valor da plataforma
- * - Botão de conversão para cadastro/login
- * - Background animado com rede de conexões
- * 
+ *
  * @author CodeCraft Team
- * @version 1.0.0
+ * @version 2.0.0
  */
 
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { useAnalytics } from '../../hooks/useAnalytics';
 import Button from '../Button/Button';
 
 import styles from './Hero.module.css';
 
-/**
- * Componente Hero - Banner principal da aplicação
- * 
- * @param {Function} onCrafterClick - Callback para abrir o modal do crafter
- * @returns {JSX.Element} Seção hero com slogan, descrição e CTA
- */
+const sloganText = 'Programe seu futuro, craftando o agora.';
+const TYPING_SPEED = 60;
+const ERASING_SPEED = 30;
+const PAUSE_AFTER_TYPE = 2500;
+const PAUSE_AFTER_ERASE = 800;
+const START_DELAY = 400;
+
+const fadeUp = (delay = 0) => ({
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { delay, duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+  },
+});
+
+const hashtagVariant = {
+  hidden: { opacity: 0, scale: 0.7, y: 15 },
+  visible: (i) => ({
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      delay: 0.3 + i * 0.12,
+      type: 'spring',
+      stiffness: 150,
+      damping: 12,
+    },
+  }),
+};
+
+const ctaVariant = {
+  hidden: { opacity: 0, scale: 0.8, y: 20 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      delay: 0.6,
+      type: 'spring',
+      stiffness: 120,
+      damping: 14,
+    },
+  },
+};
+
+const hashtags = ['#DevGenZ', '#CraftandoSonhos', '#TechOpportunities'];
+
 const Hero = ({ onCrafterClick }) => {
-  // Estado para controlar animações e interações
-  const [isVisible, setIsVisible] = useState(false);
   const [buttonClicks, setButtonClicks] = useState(0);
-  
-  // Hook personalizado para analytics
+  const [typedCount, setTypedCount] = useState(0);
+  const [firstCycleDone, setFirstCycleDone] = useState(false);
   const { trackButtonClick } = useAnalytics();
+  const cancelRef = useRef(false);
 
-  /**
-   * Effect para animar a entrada do componente
-   * Ativa a animação após o componente ser montado
-   */
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, 100);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setTypedCount(sloganText.length);
+      setFirstCycleDone(true);
+      return;
+    }
 
-    return () => clearTimeout(timer);
+    cancelRef.current = false;
+    let timeout;
+
+    const runCycle = () => {
+      let i = 0;
+      // Phase 1: Type
+      const typeInterval = setInterval(() => {
+        if (cancelRef.current) { clearInterval(typeInterval); return; }
+        i++;
+        setTypedCount(i);
+        if (i >= sloganText.length) {
+          clearInterval(typeInterval);
+          setFirstCycleDone(true);
+          // Phase 2: Pause then erase
+          timeout = setTimeout(() => {
+            if (cancelRef.current) return;
+            let j = sloganText.length;
+            const eraseInterval = setInterval(() => {
+              if (cancelRef.current) { clearInterval(eraseInterval); return; }
+              j--;
+              setTypedCount(j);
+              if (j <= 0) {
+                clearInterval(eraseInterval);
+                // Phase 3: Pause then restart
+                timeout = setTimeout(() => {
+                  if (!cancelRef.current) runCycle();
+                }, PAUSE_AFTER_ERASE);
+              }
+            }, ERASING_SPEED);
+          }, PAUSE_AFTER_TYPE);
+        }
+      }, TYPING_SPEED);
+    };
+
+    timeout = setTimeout(runCycle, START_DELAY);
+
+    return () => {
+      cancelRef.current = true;
+      clearTimeout(timeout);
+    };
   }, []);
 
-  /**
-   * Manipulador de clique do botão CTA
-   * Registra interação do usuário e pode redirecionar para cadastro
-   */
-  const handleCtaClick = () => {
+  const handleCtaClick = useCallback(() => {
     const newClickCount = buttonClicks + 1;
     setButtonClicks(newClickCount);
-    
-    // Registra evento no analytics
     trackButtonClick('cta_quero_ser_crafter', 'hero_section', {
       click_count: newClickCount,
       user_engagement: newClickCount > 1 ? 'high' : 'normal',
-      cta_text: 'Quero ser um Crafter'
+      cta_text: 'Quero ser um Crafter',
     });
+    if (onCrafterClick) onCrafterClick();
+  }, [buttonClicks, trackButtonClick, onCrafterClick]);
 
-    // Abre o modal de inscrição para Crafter
-    if (onCrafterClick) {
-      onCrafterClick();
-    }
-  };
+  const typedText = sloganText.slice(0, typedCount);
 
   return (
-    <section 
-      className={`${styles.heroWrapper} ${isVisible ? styles.visible : ''}`}
+    <section
+      className={styles.heroWrapper}
       aria-label="Seção principal - Banner CodeCraft"
     >
-      {/* Container principal do conteúdo */}
       <div className={`${styles.heroContent} container`}>
-        
-        {/* Área de texto principal */}
         <div className={styles.textArea}>
-          {/* Slogan principal - Tom jovem e motivacional */}
-          <h1 className={`${styles.slogan} animacao-fade-in`}>
-            Programe seu futuro, craftando o agora.
+          {/* Slogan - typewriter effect */}
+          <h1 className={styles.slogan} aria-label={sloganText}>
+            <span className={styles.sloganText}>{typedText}</span>
+            <span className={styles.cursor}>|</span>
           </h1>
-          
-          {/* Subtítulo explicativo - Proposta de valor */}
-          <p className={`${styles.subtitle} animacao-fade-in`}>
+
+          {/* Subtitle - aparece quando digitação termina */}
+          <motion.p
+            className={styles.subtitle}
+            initial="hidden"
+            animate={firstCycleDone ? 'visible' : 'hidden'}
+            variants={fadeUp(0.2)}
+          >
             Conectamos talentos Gen-Z como você às melhores
             oportunidades e desafios do mundo tech.
-          </p>
-          
-          {/* Texto adicional com hashtags Gen-Z */}
-          <p className={`${styles.hashtags} animacao-fade-in`}>
-            #DevGenZ #CraftandoSonhos #TechOpportunities
-          </p>
-        </div>
-        
-        {/* Área de ação */}
-        <div className={`${styles.actionArea} animacao-fade-in`}>
-          {/* Botão de Call-to-Action principal */}
-          <Button 
-            onClick={handleCtaClick} 
-            variant="secondary"
-            className={`${styles.ctaButton} animacao-pulse`}
-            aria-label="Cadastrar-se na plataforma CodeCraft"
-          >
-            🚀 Quero ser um Crafter
-          </Button>
-          
-          {/* Indicador de cliques (apenas para demonstração) */}
-          {buttonClicks > 0 && (
-            <span className={styles.clickCounter}>
-              Interesse demonstrado: {buttonClicks}x
-            </span>
-          )}
+          </motion.p>
+
+          {/* Hashtags - aparecem após subtitle */}
+          <div className={styles.hashtags}>
+            {hashtags.map((tag, i) => (
+              <motion.span
+                key={tag}
+                className={styles.hashtagItem}
+                custom={i}
+                initial="hidden"
+                animate={firstCycleDone ? 'visible' : 'hidden'}
+                variants={hashtagVariant}
+              >
+                {tag}
+              </motion.span>
+            ))}
+          </div>
         </div>
 
+        {/* CTA Area */}
+        <motion.div
+          className={styles.actionArea}
+          initial="hidden"
+          animate={firstCycleDone ? 'visible' : 'hidden'}
+          variants={ctaVariant}
+        >
+          <motion.div
+            whileHover={{ scale: 1.05, y: -3 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+          >
+            <Button
+              onClick={handleCtaClick}
+              variant="secondary"
+              className={styles.ctaButton}
+              aria-label="Cadastrar-se na plataforma CodeCraft"
+            >
+              🚀 Quero ser um Crafter
+            </Button>
+          </motion.div>
+
+          <AnimatePresence>
+            {buttonClicks > 0 && (
+              <motion.span
+                className={styles.clickCounter}
+                initial={{ opacity: 0, scale: 0.5, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.5, y: -10 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+              >
+                Interesse demonstrado: {buttonClicks}x
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
 
-      {/* Scroll Indicator - fora do heroContent para posicionamento correto */}
-      <div
+      {/* Scroll Indicator */}
+      <motion.div
         className={styles.scrollIndicator}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 2.0, duration: 0.6 }}
         onClick={() => {
           const nextSection = document.querySelector('[data-section="features"]');
           if (nextSection) {
@@ -139,10 +236,14 @@ const Hero = ({ onCrafterClick }) => {
         }}
       >
         <span className={styles.scrollText}>Descubra mais</span>
-        <div className={styles.scrollMouse}>
+        <motion.div
+          className={styles.scrollMouse}
+          animate={{ y: [0, 8, 0] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+        >
           <div className={styles.scrollWheel}></div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </section>
   );
 };

@@ -145,7 +145,7 @@ body {
   }
 }
 
-/* Rede de conexões Gen-Z */
+/* Rede de conexões Gen-Z - estática para performance */
 body::after {
   content: '';
   position: fixed;
@@ -153,50 +153,14 @@ body::after {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: 
-    /* Pontos de conexão principais */
+  background-image:
     radial-gradient(circle at 2px 2px, var(--cor-primaria) 1px, transparent 1px),
-    radial-gradient(circle at 2px 2px, var(--cor-terciaria) 0.5px, transparent 0.5px),
-    /* Linhas de conexão sutis */
-    linear-gradient(45deg, transparent 49%, rgba(209, 43, 242, 0.1) 50%, transparent 51%),
-    linear-gradient(-45deg, transparent 49%, rgba(0, 228, 242, 0.08) 50%, transparent 51%);
-  background-size: 
-    80px 80px,
-    120px 120px,
-    60px 60px,
-    90px 90px;
-  background-position:
-    0 0,
-    40px 40px,
-    0 0,
-    30px 30px;
+    radial-gradient(circle at 2px 2px, var(--cor-terciaria) 0.5px, transparent 0.5px);
+  background-size: 80px 80px, 120px 120px;
+  background-position: 0 0, 40px 40px;
   pointer-events: none;
   z-index: -1;
-  animation: networkFlow 25s linear infinite;
-}
-
-/* Animação de fluxo da rede Gen-Z */
-@keyframes networkFlow {
-  0% {
-    transform: translate(0px, 0px);
-    opacity: 0.6;
-  }
-  25% {
-    transform: translate(-20px, -20px);
-    opacity: 0.8;
-  }
-  50% {
-    transform: translate(-40px, -40px);
-    opacity: 1;
-  }
-  75% {
-    transform: translate(-60px, -60px);
-    opacity: 0.8;
-  }
-  100% {
-    transform: translate(-80px, -80px);
-    opacity: 0.6;
-  }
+  opacity: 0.5;
 }
 
 /* ===== ESTILOS BASE GEN-Z ===== */
@@ -742,12 +706,10 @@ img {
 /* Cards Gen-Z */
 .card-gen-z {
   background: var(--fundo-card);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
   border: 1px solid rgba(209, 43, 242, 0.2);
   border-radius: var(--raio-xl);
   padding: var(--espaco-xl);
-  transition: all var(--transicao-normal);
+  transition: transform var(--transicao-normal), box-shadow var(--transicao-normal), border-color var(--transicao-normal);
 }
 
 .card-gen-z:hover {

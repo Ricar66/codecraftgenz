@@ -82,6 +82,71 @@
   margin: 0 auto;
 }
 
+/* ===== SHOWCASE SECTION ===== */
+.showcaseSection {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px 60px;
+  position: relative;
+  z-index: 1;
+}
+
+.showcaseImageWrapper {
+  flex: 0 0 45%;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 12px 48px rgba(209, 43, 242, 0.2),
+              0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.showcaseImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+.showcaseText {
+  flex: 1;
+}
+
+.showcaseTitle {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  margin: 0 0 16px;
+  background: linear-gradient(135deg, #D12BF2 0%, #00E4F2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.showcaseDesc {
+  font-size: 1.05rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.7;
+  margin: 0 0 20px;
+}
+
+.showcaseHighlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.showcaseChip {
+  padding: 6px 16px;
+  background: rgba(209, 43, 242, 0.12);
+  border: 1px solid rgba(209, 43, 242, 0.25);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
 /* ===== CHALLENGES SECTION ===== */
 .challengesSection {
   position: relative;
@@ -350,6 +415,31 @@
 
   .heroTitle {
     font-size: clamp(2rem, 7vw, 3rem);
+  }
+
+  .showcaseSection {
+    flex-direction: column;
+    gap: 32px;
+    padding: 0 16px 40px;
+  }
+
+  .showcaseImageWrapper {
+    flex: none;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .showcaseTitle {
+    font-size: 1.4rem;
+    text-align: center;
+  }
+
+  .showcaseDesc {
+    text-align: center;
+  }
+
+  .showcaseHighlights {
+    justify-content: center;
   }
 
   .carouselContainer {

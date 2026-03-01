@@ -51,22 +51,17 @@
 }
 
 .osspCard {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--raio-lg, 16px);
   padding: 2rem;
   position: relative;
   overflow: hidden;
-  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
-}
-
-.osspCard:hover {
-  transform: translateY(-5px);
-  border-color: rgba(209, 43, 242, 0.3);
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .osspCard::before {
@@ -74,22 +69,35 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: radial-gradient(600px 200px at 0% 0%, rgba(209, 43, 242, 0.05), transparent 60%);
-  opacity: 0.6;
+  background: radial-gradient(300px 150px at 0% 0%, rgba(0, 228, 242, 0.05), transparent 60%);
+  opacity: 0;
   pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.osspCard:hover::before {
+  opacity: 1;
 }
 
 .osspIcon {
   font-size: 2rem;
   margin-bottom: 1.5rem;
   color: var(--cor-terciaria, #00D2D3);
-  background: rgba(0, 210, 211, 0.1);
+  background: rgba(0, 228, 242, 0.1);
   width: fit-content;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 14px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid rgba(0, 228, 242, 0.15);
+  box-shadow: 0 0 16px rgba(0, 228, 242, 0.1);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.osspCard:hover .osspIcon {
+  box-shadow: 0 0 24px rgba(0, 228, 242, 0.2);
+  border-color: rgba(0, 228, 242, 0.3);
 }
 
 .osspCardTitle {
