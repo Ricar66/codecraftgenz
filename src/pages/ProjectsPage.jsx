@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 
 import Navbar from '../components/Navbar/Navbar';
 import useProjects from '../hooks/useProjects';
+import { sanitizeImageUrl } from '../utils/urlSanitize';
 
 import styles from './ProjectsPage.module.css';
 
@@ -78,7 +79,7 @@ const ProjectCard = ({ project }) => {
       <div className={styles.cardImageContainer}>
         {thumbnail ? (
           <img
-            src={thumbnail}
+            src={sanitizeImageUrl(thumbnail)}
             alt={title}
             className={styles.cardImage}
             loading="lazy"
