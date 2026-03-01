@@ -1,48 +1,12 @@
 // src/admin/AdminIdeias.jsx
-// Refatorado para usar Design System CodeCraft
+// Refatorado para usar Design System CodeCraft + API real
 import React, { useState, useEffect } from 'react';
 import { FaLightbulb, FaPlus, FaThumbsUp, FaComment, FaTimes, FaSave } from 'react-icons/fa';
 
+import { getIdeias, createIdeia, voteIdeia, addComentario } from '../services/ideiasAPI.js';
 import AdminCard from './components/AdminCard';
 import StatusBadge from './components/StatusBadge';
 import styles from './AdminIdeias.module.css';
-
-// Simulação de API
-const IdeiasRepo = {
-  async getAll() {
-    return [
-      {
-        id: 1,
-        titulo: "Sistema de Gamificação para Aprendizado",
-        descricao: "Desenvolver um sistema de gamificação com badges, níveis e recompensas para engajar os usuários no aprendizado.",
-        autor: "Admin",
-        data_criacao: "2024-01-15T10:30:00Z",
-        votos: 12,
-        comentarios: [
-          { id: 1, autor: "Mentor 1", texto: "Excelente ideia! Podemos integrar com o sistema atual de pontos.", data: "2024-01-15T11:00:00Z" }
-        ]
-      },
-      {
-        id: 2,
-        titulo: "Plataforma de Mentoria em Tempo Real",
-        descricao: "Criar uma plataforma onde mentores possam oferecer sessões de mentoria em tempo real com agendamento integrado.",
-        autor: "Admin",
-        data_criacao: "2024-01-14T14:20:00Z",
-        votos: 8,
-        comentarios: []
-      }
-    ];
-  },
-  async create(ideia) {
-    return { ...ideia, id: Date.now(), data_criacao: new Date().toISOString(), votos: 0, comentarios: [] };
-  },
-  async vote(ideiaId) {
-    return { success: true };
-  },
-  async addComment(ideiaId, comentario) {
-    return { success: true };
-  }
-};
 
 export default function AdminIdeias() {
   const [ideias, setIdeias] = useState([]);
@@ -57,8 +21,8 @@ export default function AdminIdeias() {
     try {
       setLoading(true);
       setError('');
-      const dados = await IdeiasRepo.getAll();
-      setIdeias(dados);
+      const dados = await getIdeias();
+      setIdeias(Array.isArray(dados) ? dados : []);
     } catch (err) {
       setError('Erro ao carregar ideias: ' + err.message);
     } finally {
@@ -77,11 +41,10 @@ export default function AdminIdeias() {
       return;
     }
     try {
-      const novaIdeia = await IdeiasRepo.create(form);
-      setIdeias([novaIdeia, ...ideias]);
+      await createIdeia(form);
       setForm({ titulo: '', descricao: '' });
       setFormAberto(false);
-      alert('Ideia criada com sucesso!');
+      await carregarIdeias();
     } catch (err) {
       alert('Erro ao criar ideia: ' + err.message);
     }
@@ -89,10 +52,10 @@ export default function AdminIdeias() {
 
   const handleVotar = async (ideiaId) => {
     try {
-      await IdeiasRepo.vote(ideiaId);
+      await voteIdeia(ideiaId);
       setIdeias(ideias.map(ideia =>
         ideia.id === ideiaId
-          ? { ...ideia, votos: ideia.votos + 1 }
+          ? { ...ideia, votos: (ideia.votos || 0) + 1 }
           : ideia
       ));
     } catch (err) {
@@ -106,29 +69,10 @@ export default function AdminIdeias() {
       return;
     }
     try {
-      await IdeiasRepo.addComment(ideiaId, {
-        autor: 'Admin',
-        texto: novoComentario,
-        data: new Date().toISOString()
-      });
-      setIdeias(ideias.map(ideia =>
-        ideia.id === ideiaId
-          ? {
-              ...ideia,
-              comentarios: [
-                ...ideia.comentarios,
-                {
-                  id: Date.now(),
-                  autor: 'Admin',
-                  texto: novoComentario,
-                  data: new Date().toISOString()
-                }
-              ]
-            }
-          : ideia
-      ));
+      await addComentario(ideiaId, novoComentario);
       setNovoComentario('');
       setComentarioAberto(null);
+      await carregarIdeias();
     } catch (err) {
       alert('Erro ao adicionar comentário: ' + err.message);
     }
