@@ -3,6 +3,7 @@ import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { searchPayments, getPaymentById, updatePaymentById, adminGetAppPayment } from '../services/appsAPI.js';
+import StatusBadge from './components/StatusBadge';
 
 export default function AdminPagamentos() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -320,10 +321,6 @@ export default function AdminPagamentos() {
     const a = document.createElement('a'); a.href = url; a.download = 'pagamentos_mercadopago.csv'; a.click(); URL.revokeObjectURL(url);
   };
 
-  const StatusBadge = ({ s }) => (
-    <span style={{ background: s==='approved'? '#00E4F2' : s==='pending'? '#FFA500' : s==='rejected'? '#FF6B6B' : '#666', color:'#fff', padding:'4px 8px', borderRadius:12, fontSize:'0.8em', fontWeight:'bold' }}>{s || '—'}</span>
-  );
-
   const handleShowPayment = async (id) => {
     if (!id) return;
     try {
@@ -538,7 +535,7 @@ export default function AdminPagamentos() {
                     <button className="btn btn-link" onClick={()=>handleShowPayment(p.id)} title="Ver completo">{p.id}</button>
                   </td>
                 )}
-                {columns.status && (<td data-label="Status"><StatusBadge s={p.status} /></td>)}
+                {columns.status && (<td data-label="Status"><StatusBadge variant={StatusBadge.getVariant(p.status)}>{p.status || '—'}</StatusBadge></td>)}
                 {columns.method && (<td data-label="Método">{p.payment_method_id || '—'}</td>)}
                 {columns.amount && (<td data-label="Valor">R$ {Number(p.transaction_amount||0).toLocaleString('pt-BR')}</td>)}
                 {columns.installments && (<td data-label="Parcelas">{p.installments || 1}</td>)}
@@ -669,7 +666,7 @@ export default function AdminPagamentos() {
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:12 }}>
             <div>
               <div className="muted">Status</div>
-              <div><StatusBadge s={singlePayment?.status} /></div>
+              <div><StatusBadge variant={StatusBadge.getVariant(singlePayment?.status)}>{singlePayment?.status || '—'}</StatusBadge></div>
             </div>
             <div>
               <div className="muted">Método</div>

@@ -51,10 +51,10 @@ const AdminLicencas = lazy(() => import('./admin/AdminLicencas.jsx'));
 const AdminNFSe = lazy(() => import('./admin/AdminNFSe.jsx'));
 const LeadsDashboard = lazy(() => import('./admin/LeadsDashboard.jsx'));
 
-// Admin sub-pages (imported dynamically from AdminLayout)
+// Admin sub-pages
 const Dashboard = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Dashboard })));
-const Usuarios = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Usuarios })));
-const Config = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Config })));
+const AdminUsuarios = lazy(() => import('./admin/AdminUsuarios.jsx'));
+const AdminConfig = lazy(() => import('./admin/AdminConfig.jsx'));
 
 /**
  * Componente de fallback leve para carregamento de paginas
@@ -147,7 +147,7 @@ function App() {
                   <Route index element={<Dashboard />} />
                   <Route path="usuarios" element={
                     <ProtectedRoute allowed={["admin"]}>
-                      <Usuarios />
+                      <AdminUsuarios />
                     </ProtectedRoute>
                   } />
                   <Route path="mentores" element={<AdminMentores />} />
@@ -181,7 +181,7 @@ function App() {
                       <LeadsDashboard />
                     </ProtectedRoute>
                   } />
-                  <Route path="config" element={<Config />} />
+                  <Route path="config" element={<AdminConfig />} />
                 </Route>
                 {/* Fallback: qualquer rota desconhecida redireciona para /admin */}
                 <Route path="*" element={<Navigate to="/admin" replace />} />
