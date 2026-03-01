@@ -1,0 +1,27 @@
+# Configuração para pasta de downloads
+# Arquivos aqui são enviados via FTP pelo backend
+
+# Permitir acesso direto a todos os arquivos
+Options -Indexes
+
+# MIME types para executáveis
+<IfModule mod_mime.c>
+  AddType application/octet-stream .exe
+  AddType application/x-msdownload .msi
+  AddType application/zip .zip
+  AddType application/x-rar-compressed .rar
+  AddType application/x-7z-compressed .7z
+</IfModule>
+
+# Forçar download (não abrir no navegador)
+<IfModule mod_headers.c>
+  <FilesMatch "\.(exe|msi|zip|rar|7z)$">
+    Header set Content-Disposition "attachment"
+    Header set Content-Type "application/octet-stream"
+  </FilesMatch>
+</IfModule>
+
+# Não aplicar regras de rewrite do SPA aqui
+<IfModule mod_rewrite.c>
+  RewriteEngine Off
+</IfModule>
