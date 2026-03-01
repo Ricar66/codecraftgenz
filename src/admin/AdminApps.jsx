@@ -212,7 +212,7 @@ export default function AdminApps() {
     try {
       setThumbUploadBusy(true);
       setThumbUploadError('');
-      const r = await uploadImage(thumbFile, form.thumbnail || undefined);
+      const r = await uploadImage(thumbFile, form.thumbnail || undefined, 'apps');
       const imageUrl = r?.data?.url || r?.url;
       if (imageUrl) {
         setForm(s => ({ ...s, thumbnail: imageUrl }));
