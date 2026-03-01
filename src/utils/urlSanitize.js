@@ -1,12 +1,17 @@
 // src/utils/urlSanitize.js
 // Funções utilitárias para sanitizar URLs de imagens e evitar Mixed Content
 
+// URL do backend (Render) para resolver URLs relativas de API
+const BACKEND_URL = 'https://codecraftgenz-monorepo.onrender.com';
+
 export function sanitizeImageUrl(input) {
   try {
     if (!input || typeof input !== 'string') return '';
     // Permite pré-visualização de uploads via Data URLs sem reprocessar
     if (input.startsWith('data:')) return input;
     if (input.startsWith('blob:')) return input;
+    // URLs de API do backend (/api/downloads/...) -> resolver para o backend Render
+    if (input.startsWith('/api/')) return `${BACKEND_URL}${input}`;
     const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
     const currentProtocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
   const u = new URL(input, currentOrigin);
