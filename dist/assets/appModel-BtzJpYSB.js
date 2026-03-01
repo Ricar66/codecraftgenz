@@ -1,0 +1,1 @@
+import{s as r}from"./urlSanitize-kq56XB4o.js";function t(t){const i=t?.image||t?.thumbnail||t?.thumb_url||t?.picture_url||"";return i?r(i):""}function i(r){const t=Number(r?.price);return Number.isFinite(t)?t:0}export{i as a,t as g};
