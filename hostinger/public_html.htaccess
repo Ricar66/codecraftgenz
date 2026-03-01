@@ -11,12 +11,8 @@ Options +FollowSymlinks
   RewriteBase /
 
   # Se o arquivo existe fisicamente em public_html, servir direto
-  # (downloads, imagens, etc. ficam em public_html/downloads/)
+  # (imagens em public_html/downloads/images/apps/ e /projetos/)
   RewriteCond %{REQUEST_FILENAME} -f
-  RewriteRule ^ - [L]
-
-  # Se o diretorio existe fisicamente em public_html, servir direto
-  RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
   # Arquivos com extensao conhecida -> buscar em /nodejs/
