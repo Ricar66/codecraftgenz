@@ -170,7 +170,7 @@ export default function AdminProjetos() {
     try {
       setThumbUploadBusy(true);
       setThumbUploadError('');
-      const r = await uploadImage(thumbFile, form.thumb_url || undefined);
+      const r = await uploadImage(thumbFile, form.thumb_url || undefined, 'projetos');
       const imageUrl = r?.data?.url || r?.url;
       if (imageUrl) {
         setForm(s => ({ ...s, thumb_url: imageUrl }));
