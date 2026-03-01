@@ -31,7 +31,29 @@
       "Bash(DATABASE_URL=\"mysql://u984096926_codecraftgenz:admin123@193.203.175.202:3306/u984096926_codecraftgenz\" npx prisma db push:*)",
       "Bash(git restore:*)",
       "Bash(node generate-license.js:*)",
-      "Bash(node test-license.js:*)"
+      "Bash(node test-license.js:*)",
+      "Bash(# First, check what executables the apps expect curl -s -H \"\"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkBjb2RlY3JhZnQuZGV2Iiwicm9sZSI6ImFkbWluIiwibmFtZSI6IkFkbWluIiwiaWF0IjoxNzcxMTc2NzkyLCJleHAiOjE3NzE3ODE1OTJ9.wyvBT4mGyC4jHbm67b4_4Lj7f0jE6FaG6CiJ9hex5jw\"\" \"\"https://codecraftgenz-monorepo.onrender.com/api/apps\"\")",
+      "Bash(nslookup:*)",
+      "Bash(dig:*)",
+      "Bash(\"C:/Program Files \\(x86\\)/Inno Setup 6/ISCC.exe\" \"c:/projetos/CodeCraftHub/installer/codecrafthub.iss\")",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkBjb2RlY3JhZnQuZGV2Iiwicm9sZSI6ImFkbWluIiwibmFtZSI6IkFkbWluIiwiaWF0IjoxNzcxMjYyMTUzLCJleHAiOjE3NzE4NjY5NTN9.IfrIBd0rYqAT9Ef7Us7ArCvFgywIlQAMF-hNUphQidE\")",
+      "Bash(pushd:*)",
+      "Bash(\"/c/Program Files \\(x86\\)/Inno Setup 6/ISCC.exe\" \"C:\\\\projetos\\\\CodeCraftHub\\\\installer\\\\codecrafthub.iss\")",
+      "Bash(npx vite build --mode development)",
+      "Bash(\"/c/Users/ricardo.moretti/AppData/Local/Programs/Python/Python312/python.exe\" -c \"import paramiko; print\\(''OK''\\)\")",
+      "Bash(PYTHON=\"/c/Users/ricardo.moretti/AppData/Local/Programs/Python/Python312/python.exe\")",
+      "Bash($PYTHON -c \":*)",
+      "Bash($PYTHON:*)",
+      "Bash(\"/c/Users/ricardo.moretti/AppData/Local/Programs/Python/Python312/python.exe\" -c \":*)",
+      "Bash(/c/Users/ricardo.moretti/AppData/Local/Programs/Python/Python312/python.exe -c \":*)",
+      "Bash(/c/Users/ricardo.moretti/AppData/Local/Programs/Python/Python312/python.exe -c \"import sys,json; data=json.load\\(sys.stdin\\); items=data.get\\(''data'',data\\) if isinstance\\(data,dict\\) else data; print\\(f''Total projetos: {len\\(items\\)}''\\); [print\\(f''  #{p[\"\"id\"\"]} - {p[\"\"nome\"\"]} - status: {p[\"\"status\"\"]}''\\) for p in \\(items if isinstance\\(items,list\\) else []\\)]\")",
+      "Bash(/c/Users/ricardo.moretti/AppData/Local/Programs/Python/Python312/python.exe -c \"import sys,json; data=json.load\\(sys.stdin\\); items=data.get\\(''data'',[]\\); print\\(f''Feedbacks existentes: {len\\(items\\)}''\\); [print\\(f''  #{f[\"\"id\"\"]} - {f.get\\(\"\"nome\"\",\"\"?\"\"\\)} - {f.get\\(\"\"mensagem\"\",\"\"?\"\"\\)[:60]}''\\) for f in items]\")"
+    ],
+    "additionalDirectories": [
+      "C:\\projetos\\CodeCraftHub\\src-tauri\\target\\release\\bundle\\nsis",
+      "C:\\projetos\\CodeCraftHub\\installer",
+      "\\tmp",
+      "c:\\Users\\ricardo.moretti\\Documents\\codecraft-frontend"
     ]
   }
 }
