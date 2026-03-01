@@ -10,6 +10,7 @@ import {
 
 import { useAuth } from '../context/useAuth';
 import { getAllApps, updateApp, createApp, deleteApp, uploadAppExecutable } from '../services/appsAPI';
+import { uploadImage } from '../services/uploadsAPI';
 import { sanitizeImageUrl } from '../utils/urlSanitize';
 
 import AdminCard from './components/AdminCard';
@@ -41,6 +42,9 @@ export default function AdminApps() {
   const [exeFile, setExeFile] = useState(null);
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [thumbFile, setThumbFile] = useState(null);
+  const [thumbUploadBusy, setThumbUploadBusy] = useState(false);
+  const [thumbUploadError, setThumbUploadError] = useState('');
   const [toast, setToast] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const appsPerPage = 6;
@@ -201,6 +205,25 @@ export default function AdminApps() {
     } catch (e) {
       setUploadError(e.message || 'Falha no upload');
     } finally { setUploadBusy(false); }
+  };
+
+  const handleThumbnailUpload = async () => {
+    if (!thumbFile) return;
+    try {
+      setThumbUploadBusy(true);
+      setThumbUploadError('');
+      const r = await uploadImage(thumbFile);
+      const imageUrl = r?.data?.url || r?.url;
+      if (imageUrl) {
+        setForm(s => ({ ...s, thumbnail: imageUrl }));
+        showToast('Thumbnail enviada!');
+      } else {
+        setThumbUploadError('Upload ok mas URL não retornada.');
+      }
+      setThumbFile(null);
+    } catch (e) {
+      setThumbUploadError(e.message || 'Falha no upload da imagem');
+    } finally { setThumbUploadBusy(false); }
   };
 
   const cancelEdit = () => {
@@ -374,8 +397,18 @@ export default function AdminApps() {
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label>Thumbnail URL</label>
-              <input type="url" placeholder="https://..." value={form.thumbnail} onChange={e => setForm({ ...form, thumbnail: e.target.value })} className={styles.input} />
+              <label>Thumbnail (URL ou Upload)</label>
+              <input type="url" placeholder="https://... (ou envie abaixo)" value={form.thumbnail} onChange={e => setForm({ ...form, thumbnail: e.target.value })} className={styles.input} />
+              <div className={styles.uploadRow} style={{ marginTop: 8 }}>
+                <label className={styles.fileUpload}>
+                  <FaUpload /> {thumbFile ? thumbFile.name : 'Enviar imagem'}
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" onChange={e => { setThumbFile(e.target.files?.[0] || null); setThumbUploadError(''); }} />
+                </label>
+                <button onClick={handleThumbnailUpload} disabled={thumbUploadBusy || !thumbFile} className={styles.uploadBtn}>
+                  {thumbUploadBusy ? 'Enviando...' : <><FaUpload /> Enviar</>}
+                </button>
+              </div>
+              {thumbUploadError && <span className={styles.uploadError}>{thumbUploadError}</span>}
             </div>
             <div className={styles.formGroup}>
               <label>URL do Executável</label>
