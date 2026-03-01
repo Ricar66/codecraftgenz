@@ -28,11 +28,18 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
         let text = item.mensagem;
         let author = item.nome || 'Anônimo';
         if (typeof text === 'string' && text.trim().startsWith('{')) {
+          // Tenta JSON.parse primeiro (JSON completo)
           try {
             const parsed = JSON.parse(text);
             if (parsed.mensagem) text = parsed.mensagem;
             if (parsed.nome) author = parsed.nome;
-          } catch { /* use original */ }
+          } catch {
+            // JSON truncado pelo banco - extrair via regex
+            const nomeMatch = text.match(/"nome"\s*:\s*"([^"]+)"/);
+            const msgMatch = text.match(/"mensagem"\s*:\s*"([^"]*)/);
+            if (nomeMatch) author = nomeMatch[1];
+            if (msgMatch) text = msgMatch[1];
+          }
         }
         return { id: item.id, text, author, avatarUrl: null, createdAt: item.data_criacao, type: 'feedback' };
       });
