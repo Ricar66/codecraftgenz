@@ -1,22 +1,31 @@
 #!/usr/bin/env python3
 """
-Deploy do CodeCraft Gen-Z para Hostinger via SFTP.
+Deploy do CodeCraft Gen-Z para Hostinger.
 
 Uso:
-  python deploy.py          # Build + deploy completo
-  python deploy.py --skip-build  # Apenas deploy (usa dist/ existente)
+  python deploy.py              # Build + git push + deploy completo
+  python deploy.py --skip-build # Pula o build (usa dist/ existente)
+  python deploy.py --skip-git   # Pula o git push
+  python deploy.py --fix-only   # Apenas corrige symlink + htaccess (sem sync)
 
-O que faz:
+Etapas:
   1. npm run build (gera dist/)
-  2. Limpa assets antigos em nodejs/ no servidor
-  3. Sincroniza dist/ -> nodejs/ via SFTP
-  4. Garante symlink public_html/nodejs -> ../nodejs
-  5. Atualiza public_html/.htaccess com versao correta
+  2. git add + commit + push (dispara auto-deploy da Hostinger)
+  3. Aguarda auto-deploy da Hostinger terminar (40s)
+  4. Limpa assets antigos em nodejs/ no servidor
+  5. Sincroniza dist/ -> nodejs/ via SFTP
+  6. Garante symlink public_html/nodejs -> ../nodejs
+  7. Atualiza public_html/.htaccess com versao correta
+
+IMPORTANTE: Use SEMPRE este script para deploy.
+            O auto-deploy da Hostinger sobrescreve o .htaccess e remove o symlink.
+            Este script roda DEPOIS e corrige tudo.
 """
 
 import os
 import sys
 import stat
+import time
 import subprocess
 import paramiko
 
@@ -30,10 +39,16 @@ BASE_DIR = '/home/u984096926/domains/codecraftgenz.com.br'
 REMOTE_NODEJS = f'{BASE_DIR}/nodejs'
 REMOTE_PUBLIC = f'{BASE_DIR}/public_html'
 
+# Tempo para esperar o auto-deploy da Hostinger (segundos)
+AUTO_DEPLOY_WAIT = 40
+
 # Caminhos locais (relativos ao script)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOCAL_DIST = os.path.join(SCRIPT_DIR, 'dist')
 LOCAL_HTACCESS = os.path.join(SCRIPT_DIR, 'hostinger', 'public_html.htaccess')
+
+# Pastas a ignorar no sync (gerenciadas pelo backend/FTP)
+SKIP_DIRS = {'downloads'}
 
 
 def log(msg, level='INFO'):
@@ -41,37 +56,87 @@ def log(msg, level='INFO'):
     print(f"  [{icons.get(level, '>')}] {msg}")
 
 
-def step(msg):
+def step(num, total, msg):
     print(f"\n{'='*60}")
-    print(f"  {msg}")
+    print(f"  {num}/{total}  {msg}")
     print(f"{'='*60}")
 
 
-def build():
-    """Executa npm run build."""
-    step("1/5  Build do projeto (npm run build)")
-    result = subprocess.run(
-        ['npm', 'run', 'build'],
-        cwd=SCRIPT_DIR,
-        shell=True,
-    )
+# ── 1. Build ──────────────────────────────────────────────────
+def build(total):
+    step(1, total, "Build do projeto (npm run build)")
+    result = subprocess.run(['npm', 'run', 'build'], cwd=SCRIPT_DIR, shell=True)
     if result.returncode != 0:
         log("Build falhou!", 'ERR')
         sys.exit(1)
     log("Build concluido com sucesso", 'OK')
 
 
+# ── 2. Git push ──────────────────────────────────────────────
+def git_push(step_num, total):
+    step(step_num, total, "Git commit + push")
+
+    # Verifica se ha mudancas
+    result = subprocess.run(
+        ['git', 'status', '--porcelain'],
+        cwd=SCRIPT_DIR, capture_output=True, text=True, shell=True
+    )
+    changes = result.stdout.strip()
+    if not changes:
+        log("Nenhuma mudanca para commitar", 'WARN')
+        return False
+
+    # Stage all tracked files + dist/
+    subprocess.run(['git', 'add', '-u'], cwd=SCRIPT_DIR, shell=True)
+    subprocess.run(['git', 'add', 'dist/'], cwd=SCRIPT_DIR, shell=True)
+
+    # Commit
+    result = subprocess.run(
+        ['git', 'commit', '-m', 'deploy: update build'],
+        cwd=SCRIPT_DIR, capture_output=True, text=True, shell=True
+    )
+    if result.returncode != 0:
+        if 'nothing to commit' in result.stdout:
+            log("Nada novo para commitar", 'WARN')
+            return False
+        log(f"Commit falhou: {result.stderr}", 'ERR')
+        return False
+
+    log("Commit criado", 'OK')
+
+    # Push
+    result = subprocess.run(
+        ['git', 'push', 'origin', 'main'],
+        cwd=SCRIPT_DIR, capture_output=True, text=True, shell=True
+    )
+    if result.returncode != 0:
+        log(f"Push falhou: {result.stderr}", 'ERR')
+        return False
+
+    log("Push para origin/main concluido", 'OK')
+    return True
+
+
+# ── 3. Esperar auto-deploy ────────────────────────────────────
+def wait_auto_deploy(step_num, total):
+    step(step_num, total, f"Aguardando auto-deploy da Hostinger ({AUTO_DEPLOY_WAIT}s)")
+    for i in range(AUTO_DEPLOY_WAIT, 0, -5):
+        sys.stdout.write(f"\r  [>] {i}s restantes...")
+        sys.stdout.flush()
+        time.sleep(5)
+    print(f"\r  [+] Auto-deploy deve ter finalizado    ")
+
+
+# ── SFTP helpers ──────────────────────────────────────────────
 def connect_sftp():
-    """Conecta ao servidor via SFTP."""
     transport = paramiko.Transport((SFTP_HOST, SFTP_PORT))
     transport.connect(username=SFTP_USER, password=SFTP_PASS)
     sftp = paramiko.SFTPClient.from_transport(transport)
     return sftp, transport
 
 
-def clean_remote_assets(sftp):
-    """Remove assets antigos do servidor."""
-    step("2/5  Limpando assets antigos no servidor")
+def clean_remote_assets(sftp, step_num, total):
+    step(step_num, total, "Limpando assets antigos no servidor")
     remote_assets = f'{REMOTE_NODEJS}/assets'
     try:
         files = sftp.listdir(remote_assets)
@@ -85,31 +150,22 @@ def clean_remote_assets(sftp):
         log("Pasta assets/ nao existe ainda, sera criada", 'WARN')
 
 
-def sync_dist(sftp):
-    """Sincroniza dist/ local para nodejs/ no servidor."""
-    step("3/5  Sincronizando dist/ -> nodejs/")
+def sync_dist(sftp, step_num, total):
+    step(step_num, total, "Sincronizando dist/ -> nodejs/")
 
     if not os.path.isdir(LOCAL_DIST):
         log(f"Pasta dist/ nao encontrada em {LOCAL_DIST}", 'ERR')
         log("Execute 'npm run build' primeiro ou remova --skip-build", 'ERR')
         sys.exit(1)
 
-    # Pastas a ignorar (gerenciadas pelo backend/FTP, nao pelo deploy frontend)
-    skip_dirs = {'downloads'}
-
     uploaded = 0
     for root, dirs, files in os.walk(LOCAL_DIST):
-        # Caminho relativo ao dist/
         rel = os.path.relpath(root, LOCAL_DIST).replace(os.sep, '/')
-
-        # Pular pastas que nao devem ser sincronizadas
-        dirs[:] = [d for d in dirs if d not in skip_dirs]
-        if any(part in skip_dirs for part in rel.split('/')):
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+        if any(part in SKIP_DIRS for part in rel.split('/')):
             continue
 
         remote_path = REMOTE_NODEJS if rel == '.' else f'{REMOTE_NODEJS}/{rel}'
-
-        # Garantir que o diretorio remoto existe
         try:
             sftp.stat(remote_path)
         except FileNotFoundError:
@@ -125,13 +181,11 @@ def sync_dist(sftp):
     log(f"Upload de {uploaded} arquivos concluido", 'OK')
 
 
-def ensure_symlink(sftp):
-    """Garante que public_html/nodejs aponta para ../nodejs."""
-    step("4/5  Verificando symlink public_html/nodejs -> ../nodejs")
+def ensure_symlink(sftp, step_num, total):
+    step(step_num, total, "Garantindo symlink public_html/nodejs -> ../nodejs")
 
     symlink_path = f'{REMOTE_PUBLIC}/nodejs'
     target = '../nodejs'
-
     needs_create = False
 
     try:
@@ -147,7 +201,6 @@ def ensure_symlink(sftp):
                 needs_create = True
         elif stat.S_ISDIR(attr.st_mode):
             log("Existe diretorio real nodejs/ em public_html, removendo...", 'WARN')
-            # Tenta remover diretorio (se vazio)
             try:
                 sftp.rmdir(symlink_path)
             except Exception:
@@ -165,7 +218,6 @@ def ensure_symlink(sftp):
         sftp.symlink(target, symlink_path)
         log(f"Symlink criado: public_html/nodejs -> {target}", 'OK')
 
-    # Verificar
     try:
         resolved = sftp.readlink(symlink_path)
         log(f"Verificado: {symlink_path} -> {resolved}", 'OK')
@@ -173,9 +225,8 @@ def ensure_symlink(sftp):
         log(f"Erro ao verificar symlink: {e}", 'ERR')
 
 
-def upload_htaccess(sftp):
-    """Envia o .htaccess correto para public_html/."""
-    step("5/5  Atualizando public_html/.htaccess")
+def upload_htaccess(sftp, step_num, total):
+    step(step_num, total, "Atualizando public_html/.htaccess")
 
     if not os.path.isfile(LOCAL_HTACCESS):
         log(f"Arquivo nao encontrado: {LOCAL_HTACCESS}", 'ERR')
@@ -184,7 +235,6 @@ def upload_htaccess(sftp):
     remote_htaccess = f'{REMOTE_PUBLIC}/.htaccess'
     sftp.put(LOCAL_HTACCESS, remote_htaccess)
 
-    # Verificar
     with sftp.open(remote_htaccess, 'r') as f:
         content = f.read().decode('utf-8')
 
@@ -196,8 +246,7 @@ def upload_htaccess(sftp):
 
     all_ok = all(checks.values())
     for key, ok in checks.items():
-        status = 'OK' if ok else 'ERR'
-        log(f"{key}: {'presente' if ok else 'AUSENTE!'}", status)
+        log(f"{key}: {'presente' if ok else 'AUSENTE!'}", 'OK' if ok else 'ERR')
 
     if all_ok:
         log(f".htaccess atualizado ({len(content)} bytes)", 'OK')
@@ -205,32 +254,81 @@ def upload_htaccess(sftp):
         log("ATENCAO: .htaccess pode estar incorreto!", 'ERR')
 
 
+# ── Main ──────────────────────────────────────────────────────
 def main():
     skip_build = '--skip-build' in sys.argv
+    skip_git = '--skip-git' in sys.argv
+    fix_only = '--fix-only' in sys.argv
 
     print("\n" + "=" * 60)
     print("  CodeCraft Gen-Z - Deploy para Hostinger")
     print("=" * 60)
 
-    # 1. Build
-    if not skip_build:
-        build()
+    if fix_only:
+        # Modo rapido: apenas corrige symlink + htaccess
+        total = 2
+        log(f"Conectando ao servidor {SFTP_HOST}:{SFTP_PORT}...")
+        sftp, transport = connect_sftp()
+        log("Conectado!", 'OK')
+        try:
+            ensure_symlink(sftp, 1, total)
+            upload_htaccess(sftp, 2, total)
+        finally:
+            sftp.close()
+            transport.close()
     else:
-        log("Build ignorado (--skip-build)")
+        # Deploy completo
+        # Calcular total de etapas
+        steps = []
+        if not skip_build:
+            steps.append('build')
+        if not skip_git:
+            steps.append('git')
+            steps.append('wait')
+        steps += ['clean', 'sync', 'symlink', 'htaccess']
+        total = len(steps)
+        s = 0
 
-    # 2-5. SFTP
-    log(f"Conectando ao servidor {SFTP_HOST}:{SFTP_PORT}...")
-    sftp, transport = connect_sftp()
-    log("Conectado!", 'OK')
+        # 1. Build
+        if not skip_build:
+            s += 1
+            build(total)
+        else:
+            log("Build ignorado (--skip-build)")
 
-    try:
-        clean_remote_assets(sftp)  # 2
-        sync_dist(sftp)            # 3
-        ensure_symlink(sftp)       # 4
-        upload_htaccess(sftp)      # 5
-    finally:
-        sftp.close()
-        transport.close()
+        # 2. Git push
+        did_push = False
+        if not skip_git:
+            s += 1
+            did_push = git_push(s, total)
+        else:
+            log("Git push ignorado (--skip-git)")
+
+        # 3. Esperar auto-deploy (so se fez push)
+        if did_push:
+            s += 1
+            wait_auto_deploy(s, total)
+        elif not skip_git:
+            s += 1  # Count the step even if skipped
+            log("Sem push, pulando espera do auto-deploy")
+
+        # 4-7. SFTP
+        log(f"Conectando ao servidor {SFTP_HOST}:{SFTP_PORT}...")
+        sftp, transport = connect_sftp()
+        log("Conectado!", 'OK')
+
+        try:
+            s += 1
+            clean_remote_assets(sftp, s, total)
+            s += 1
+            sync_dist(sftp, s, total)
+            s += 1
+            ensure_symlink(sftp, s, total)
+            s += 1
+            upload_htaccess(sftp, s, total)
+        finally:
+            sftp.close()
+            transport.close()
 
     print(f"\n{'='*60}")
     print("  Deploy concluido com sucesso!")
