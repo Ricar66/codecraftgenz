@@ -1,0 +1,38 @@
+/* TiltCard - Card 3D Premium (performance optimized) */
+
+.tiltCard {
+  position: relative;
+  perspective: 800px;
+  transform-style: preserve-3d;
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+/* Conteudo interno - sem backdrop-filter */
+.cardInner {
+  position: relative;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: inherit;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.tiltCard:hover .cardInner {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.35),
+    0 0 30px color-mix(in srgb, var(--accent, #00E4F2) 10%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .tiltCard {
+    perspective: none;
+    transform-style: flat;
+  }
+}

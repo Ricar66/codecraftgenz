@@ -2,6 +2,7 @@
 // Mentoria Page - Cyberpunk/Glassmorphism Design
 import React, { useEffect, useState, useCallback } from 'react';
 
+import mentoriaBanner from '../assets/mentoria-banner.jpg';
 import Navbar from '../components/Navbar/Navbar';
 import { API_BASE_URL } from '../lib/apiConfig';
 import { realtime } from '../lib/realtime';
@@ -242,14 +243,24 @@ export default function MentoriaPage() {
       {/* Hero Section */}
       <section className={styles.hero}>
         <div className={styles.heroContent}>
-          <h1 className={styles.heroTitle}>Mentoria CodeCraft</h1>
-          <p className={styles.heroSubtitle}>
-            Aprenda com quem já está construindo o futuro
-          </p>
-          <p className={styles.heroLead}>
-            Nosso programa de mentoria conecta você a profissionais experientes
-            que vão guiar sua jornada de crescimento técnico e profissional.
-          </p>
+          <div className={styles.heroText}>
+            <h1 className={styles.heroTitle}>Mentoria CodeCraft</h1>
+            <p className={styles.heroSubtitle}>
+              Aprenda com quem já está construindo o futuro
+            </p>
+            <p className={styles.heroLead}>
+              Nosso programa de mentoria conecta você a profissionais experientes
+              que vão guiar sua jornada de crescimento técnico e profissional.
+            </p>
+          </div>
+          <div className={styles.heroImageWrapper}>
+            <img
+              src={mentoriaBanner}
+              alt="Mentoria CodeCraft"
+              className={styles.heroImage}
+              loading="eager"
+            />
+          </div>
         </div>
       </section>
 

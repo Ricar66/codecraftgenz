@@ -1,6 +1,7 @@
 /**
  * ESTILOS DO COMPONENTE HERO
- * Cyberpunk/Glassmorphism Design System - Premium Edition
+ * Cyberpunk/Glassmorphism Design System - Premium Edition v2
+ * Animacoes agora controladas por Framer Motion (JS)
  */
 
 /* ===== CONTAINER PRINCIPAL ===== */
@@ -14,14 +15,10 @@
   justify-content: center;
   padding: 100px 24px 60px;
   box-sizing: border-box;
-  opacity: 0;
-  transform: translateY(30px) scale(0.98);
-  transition: opacity 1s cubic-bezier(0.22, 1, 0.36, 1),
-              transform 1s cubic-bezier(0.22, 1, 0.36, 1);
   overflow: hidden;
 }
 
-/* Overlay de particulas luminosas subtil */
+/* Overlay de particulas luminosas - estático */
 .heroWrapper::before {
   content: '';
   position: absolute;
@@ -34,19 +31,7 @@
     radial-gradient(1px 1px at 30% 45%, rgba(255, 255, 255, 0.2), transparent);
   pointer-events: none;
   z-index: 0;
-  animation: particlesDrift 12s ease-in-out infinite alternate;
-}
-
-@keyframes particlesDrift {
-  0% { opacity: 0.6; transform: translateY(0); }
-  50% { opacity: 1; transform: translateY(-8px); }
-  100% { opacity: 0.7; transform: translateY(4px); }
-}
-
-/* Estado visivel com animacao cinematica */
-.heroWrapper.visible {
-  opacity: 1;
-  transform: translateY(0) scale(1);
+  opacity: 0.8;
 }
 
 /* ===== CONTEUDO PRINCIPAL ===== */
@@ -75,72 +60,78 @@
   width: 100%;
 }
 
-/* Slogan Principal - Gradient Cyberpunk com animacao premium */
+/* Slogan Principal - Gradient Cyberpunk + Typewriter */
 .slogan {
   font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
   font-size: clamp(2.5rem, 8vw, 5rem);
   font-weight: 800;
-  line-height: 1.05;
+  line-height: 1.1;
   letter-spacing: -0.03em;
   margin: 0 0 16px;
+  text-align: center;
+  min-height: 2.2em;
+}
+
+.sloganText {
   background: linear-gradient(135deg, #68007B 0%, #D12BF2 35%, #00E4F2 70%, #fff 100%);
-  background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  filter: drop-shadow(0 0 60px rgba(104, 0, 123, 0.4));
-  animation: gradientShift 4s ease-in-out infinite alternate,
-             sloganFloat 6s ease-in-out infinite;
 }
 
-@keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 100% 50%; }
+.cursor {
+  display: inline-block;
+  background: linear-gradient(135deg, #D12BF2, #00E4F2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: blink 0.7s step-end infinite;
+  margin-left: 2px;
+  font-weight: 300;
 }
 
-@keyframes sloganFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
-/* Subtitle com fade-in staggered */
+/* Subtitle */
 .subtitle {
   font-size: clamp(1rem, 2.5vw, 1.35rem);
   font-weight: 400;
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.75);
   max-width: 700px;
   margin: 0 auto;
-  opacity: 0;
-  animation: fadeUpSubtle 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
 }
 
-@keyframes fadeUpSubtle {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-    filter: blur(2px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-}
-
-/* Hashtags com animacao de entrada */
+/* Hashtags */
 .hashtags {
-  font-size: 1rem;
-  font-weight: 500;
-  letter-spacing: 1.5px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
   margin-top: 8px;
-  background: linear-gradient(90deg, #00E4F2, #D12BF2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 0 20px rgba(0, 228, 242, 0.4);
-  opacity: 0;
-  animation: fadeUpSubtle 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.5s forwards;
+}
+
+.hashtagItem {
+  display: inline-block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(0, 228, 242, 0.08);
+  border: 1px solid rgba(0, 228, 242, 0.2);
+  color: #00E4F2;
+  transition: all 0.3s ease;
+}
+
+.hashtagItem:hover {
+  background: rgba(0, 228, 242, 0.15);
+  border-color: rgba(0, 228, 242, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 228, 242, 0.15);
 }
 
 /* ===== AREA DE ACAO ===== */
@@ -150,11 +141,9 @@
   align-items: center;
   gap: 20px;
   margin-top: 24px;
-  opacity: 0;
-  animation: fadeUpSubtle 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.6s forwards;
 }
 
-/* Botao CTA Principal - Premium com flutuacao e brilho */
+/* Botao CTA Principal */
 .ctaButton {
   font-size: 1.15rem;
   font-weight: 700;
@@ -168,13 +157,6 @@
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 228, 242, 0.35),
               0 0 60px rgba(209, 43, 242, 0.2);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: ctaFloat 3s ease-in-out infinite;
-}
-
-@keyframes ctaFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
 }
 
 /* Brilho deslizante no CTA */
@@ -193,7 +175,7 @@
   left: 120%;
 }
 
-/* Borda neon pulsante no CTA */
+/* Borda neon no CTA - aparece somente no hover */
 .ctaButton::after {
   content: '';
   position: absolute;
@@ -201,49 +183,27 @@
   border-radius: 16px;
   padding: 2px;
   background: linear-gradient(135deg, #00E4F2, #D12BF2, #00E4F2);
-  background-size: 200% 200%;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   opacity: 0;
   transition: opacity 0.4s ease;
-  animation: borderRotate 3s linear infinite;
 }
 
 .ctaButton:hover::after {
   opacity: 1;
 }
 
-@keyframes borderRotate {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
-}
-
-.ctaButton:hover {
-  transform: translateY(-4px) scale(1.03);
-  box-shadow: 0 16px 48px rgba(0, 228, 242, 0.45),
-              0 0 80px rgba(209, 43, 242, 0.3);
-}
-
-/* Click Counter com glassmorphism */
+/* Click Counter */
 .clickCounter {
-  background: rgba(0, 228, 242, 0.08);
+  background: rgba(0, 228, 242, 0.1);
   color: #00E4F2;
   padding: 8px 16px;
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 500;
   border: 1px solid rgba(0, 228, 242, 0.25);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 4px 16px rgba(0, 228, 242, 0.1);
-  transition: all 0.3s ease;
-}
-
-.clickCounter:hover {
-  border-color: rgba(0, 228, 242, 0.5);
-  box-shadow: 0 8px 24px rgba(0, 228, 242, 0.15);
 }
 
 /* ===== SCROLL INDICATOR ===== */
@@ -254,14 +214,11 @@
   gap: 10px;
   margin-top: 32px;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.3s ease, transform 0.3s ease;
   z-index: 10;
-  animation: fadeUpSubtle 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.9s forwards;
+  transition: transform 0.3s ease;
 }
 
 .scrollIndicator:hover {
-  opacity: 1 !important;
   transform: translateY(-4px);
 }
 
@@ -289,18 +246,6 @@
   background: linear-gradient(180deg, #00E4F2, #D12BF2);
   border-radius: 2px;
   margin-top: 8px;
-  animation: scrollBounce 2s ease-in-out infinite;
-}
-
-@keyframes scrollBounce {
-  0%, 100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  50% {
-    transform: translateY(12px);
-    opacity: 0.2;
-  }
 }
 
 /* ===== RESPONSIVIDADE ===== */
@@ -323,7 +268,12 @@
   }
 
   .hashtags {
-    font-size: 0.9rem;
+    gap: 8px;
+  }
+
+  .hashtagItem {
+    font-size: 0.8rem;
+    padding: 5px 12px;
   }
 
   .ctaButton {
@@ -374,42 +324,17 @@
 
 /* ===== REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {
-  .heroWrapper {
-    transition: none;
-    opacity: 1;
-    transform: none;
-  }
-
   .heroWrapper::before {
     animation: none;
   }
 
-  .slogan {
+  .cursor {
     animation: none;
-  }
-
-  .subtitle,
-  .hashtags,
-  .actionArea,
-  .scrollIndicator {
-    animation: none;
-    opacity: 1;
-  }
-
-  .ctaButton {
-    animation: none;
-  }
-
-  .ctaButton:hover {
-    transform: none;
+    display: none;
   }
 
   .ctaButton::before,
   .ctaButton::after {
     display: none;
-  }
-
-  .scrollWheel {
-    animation: none;
   }
 }
