@@ -1,0 +1,141 @@
+Options +FollowSymlinks
+
+# CodeCraft Gen-Z - Configuracao Apache (Hostinger)
+# ================================================
+# IMPORTANTE: Este arquivo deve ficar em public_html/.htaccess
+# O symlink public_html/nodejs -> ../nodejs permite que o Apache
+# acesse os arquivos do build (que ficam em ../nodejs/)
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Nao processar arquivos na pasta downloads (FTP uploads)
+  RewriteCond %{REQUEST_URI} ^/downloads/ [NC]
+  RewriteRule ^ - [L]
+
+  # Se o arquivo existe fisicamente em public_html, servir direto
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  # Arquivos com extensao conhecida -> buscar em /nodejs/
+  RewriteCond %{REQUEST_URI} \.(js|mjs|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|webmanifest|webp|map|xml|txt|exe|zip|rar|7z|msi|mp4|mp3|pdf)$ [NC]
+  RewriteRule ^(.*)$ /nodejs/$1 [L]
+
+  # Tudo que sobrar (rotas SPA) -> /nodejs/index.html
+  RewriteRule ^ /nodejs/index.html [L]
+</IfModule>
+
+# Headers de seguranca
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set X-XSS-Protection "1; mode=block"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Cache Control Headers
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType text/javascript "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/gif "access plus 1 month"
+  ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType image/x-icon "access plus 1 month"
+  ExpiresByType font/woff "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType application/font-woff "access plus 1 year"
+  ExpiresByType application/font-woff2 "access plus 1 year"
+  ExpiresByType application/json "access plus 0 seconds"
+  ExpiresByType application/xml "access plus 0 seconds"
+  ExpiresByType application/manifest+json "access plus 1 hour"
+  ExpiresByType text/cache-manifest "access plus 0 seconds"
+</IfModule>
+
+# Cache-Control por tipo de arquivo
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+  <FilesMatch "sw\.js$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+  <FilesMatch "manifest\.webmanifest$">
+    Header set Cache-Control "public, max-age=3600"
+  </FilesMatch>
+  <FilesMatch "\.[a-f0-9]{8}\.(js|css)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.(jpg|jpeg|png|gif|webp|svg|ico)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+  <FilesMatch "\.(woff|woff2|ttf|otf|eot)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+# Compressao GZIP
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html
+  AddOutputFilterByType DEFLATE text/css
+  AddOutputFilterByType DEFLATE text/javascript
+  AddOutputFilterByType DEFLATE application/javascript
+  AddOutputFilterByType DEFLATE application/json
+  AddOutputFilterByType DEFLATE application/xml
+  AddOutputFilterByType DEFLATE image/svg+xml
+  AddOutputFilterByType DEFLATE font/woff
+  AddOutputFilterByType DEFLATE font/woff2
+</IfModule>
+
+# Prevenir acesso a arquivos sensiveis
+<FilesMatch "^\.">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+<FilesMatch "\.(env|log|bak|sql|md)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# CORS para assets
+<IfModule mod_headers.c>
+  <FilesMatch "\.(ttf|ttc|otf|eot|woff|woff2|font\.css|css|js)$">
+    Header set Access-Control-Allow-Origin "*"
+  </FilesMatch>
+</IfModule>
+
+# Tipos MIME corretos
+<IfModule mod_mime.c>
+  AddType application/javascript .js .mjs
+  AddType text/css .css
+  AddType image/svg+xml .svg
+  AddType application/font-woff .woff
+  AddType application/font-woff2 .woff2
+  AddType application/manifest+json .webmanifest
+  AddType application/octet-stream .exe
+  AddType application/zip .zip
+  AddType application/x-rar-compressed .rar
+  AddType application/x-7z-compressed .7z
+  AddType application/x-msdownload .msi
+</IfModule>
+
+# Forcar download de executaveis
+<IfModule mod_headers.c>
+  <FilesMatch "\.(exe|msi|zip|rar|7z)$">
+    Header set Content-Disposition "attachment"
+    Header set X-Content-Type-Options "nosniff"
+  </FilesMatch>
+</IfModule>
+
+# Bloquear acesso a .builds
+RewriteRule ^\.builds - [F,L]
