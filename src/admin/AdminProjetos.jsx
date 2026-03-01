@@ -3,11 +3,12 @@
 import React, { useState, useMemo } from 'react';
 import {
   FaProjectDiagram, FaPlus, FaEdit, FaTrash, FaEye, FaEyeSlash,
-  FaSearch, FaSave, FaTimes, FaDownload, FaChevronLeft, FaChevronRight, FaTag
+  FaSearch, FaSave, FaTimes, FaDownload, FaUpload, FaChevronLeft, FaChevronRight, FaTag
 } from 'react-icons/fa';
 
 import { useProjects, ProjectsRepo } from '../hooks/useAdminRepo';
 import { deleteProject as deleteProjectApi } from '../services/projectsAPI';
+import { uploadImage } from '../services/uploadsAPI';
 
 import AdminCard from './components/AdminCard';
 import StatusBadge from './components/StatusBadge';
@@ -33,6 +34,9 @@ export default function AdminProjetos() {
     tags: []
   });
   const [notice, setNotice] = useState({ type: '', msg: '' });
+  const [thumbFile, setThumbFile] = useState(null);
+  const [thumbUploadBusy, setThumbUploadBusy] = useState(false);
+  const [thumbUploadError, setThumbUploadError] = useState('');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
   const [newTag, setNewTag] = useState('');
@@ -159,6 +163,25 @@ export default function AdminProjetos() {
     a.download = 'projetos.csv';
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleThumbnailUpload = async () => {
+    if (!thumbFile) return;
+    try {
+      setThumbUploadBusy(true);
+      setThumbUploadError('');
+      const r = await uploadImage(thumbFile);
+      const imageUrl = r?.data?.url || r?.url;
+      if (imageUrl) {
+        setForm(s => ({ ...s, thumb_url: imageUrl }));
+        showNotice('success', 'Thumbnail enviada!');
+      } else {
+        setThumbUploadError('Upload ok mas URL não retornada.');
+      }
+      setThumbFile(null);
+    } catch (e) {
+      setThumbUploadError(e.message || 'Falha no upload da imagem');
+    } finally { setThumbUploadBusy(false); }
   };
 
   const cancelEdit = () => {
@@ -355,14 +378,24 @@ export default function AdminProjetos() {
               />
             </div>
             <div className={styles.formGroup}>
-              <label>Thumbnail URL</label>
+              <label>Thumbnail (URL ou Upload)</label>
               <input
                 type="url"
-                placeholder="https://..."
+                placeholder="https://... (ou envie abaixo)"
                 value={form.thumb_url}
                 onChange={e => setForm({ ...form, thumb_url: e.target.value })}
                 className={styles.input}
               />
+              <div className={styles.uploadRow} style={{ marginTop: 8 }}>
+                <label className={styles.fileUpload}>
+                  <FaUpload /> {thumbFile ? thumbFile.name : 'Enviar imagem'}
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" onChange={e => { setThumbFile(e.target.files?.[0] || null); setThumbUploadError(''); }} />
+                </label>
+                <button onClick={handleThumbnailUpload} disabled={thumbUploadBusy || !thumbFile} className={styles.uploadBtn}>
+                  {thumbUploadBusy ? 'Enviando...' : <><FaUpload /> Enviar</>}
+                </button>
+              </div>
+              {thumbUploadError && <span className={styles.uploadError}>{thumbUploadError}</span>}
             </div>
           </div>
 
