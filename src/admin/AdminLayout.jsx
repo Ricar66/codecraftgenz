@@ -2417,6 +2417,12 @@ export default function AdminLayout() {
             <span className={styles.menuIcon}>💼</span>
             <span className={styles.menuText}>Propostas B2B</span>
           </NavLink>
+          {hasRole(['admin']) && (
+            <NavLink to="/admin/leads" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+              <span className={styles.menuIcon}>📊</span>
+              <span className={styles.menuText}>Leads</span>
+            </NavLink>
+          )}
           <NavLink to="/admin/config" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
             <span className={styles.menuIcon}>⚙️</span>
             <span className={styles.menuText}>Config</span>
