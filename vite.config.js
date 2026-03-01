@@ -34,6 +34,14 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB max
         runtimeCaching: [
           {
+            // Requests cross-origin ao backend Render devem ir direto para a rede
+            urlPattern: ({ url }) => url.origin === 'https://codecraftgenz-monorepo.onrender.com',
+            handler: 'NetworkOnly',
+            options: {
+              cacheName: 'backend-network-only'
+            }
+          },
+          {
             // Todas as rotas de API devem ir para a rede e nunca serem cacheadas
             urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
             handler: 'NetworkOnly',
