@@ -1,71 +1,125 @@
-# Configuração e Migração do Ambiente
+# Configuracao e Migracao do Ambiente
 
-Este guia cobre como configurar o projeto em uma nova máquina ou ambiente de desenvolvimento.
+Este guia cobre como configurar o projeto CodeCraft Gen-Z em uma nova maquina.
 
-## Pré-requisitos
-- **Node.js**: Versão 18 ou superior.
-- **Git**: Para clonar o repositório.
-- **Acesso ao Banco de Dados**: Credenciais para o Azure SQL Server.
+## Pre-requisitos
 
-## 🚀 Passo a Passo para Migrar/Configurar em Outra Máquina
+- **Node.js**: >= 18 (frontend) / >= 20 (backend)
+- **Git**: Para clonar os repositorios
+- **MySQL**: Acesso ao banco (Hostinger em producao, local em dev)
+- **npm**: Gerenciador de pacotes
 
-### 1. Clonar o Repositório
-Baixe o código para a nova máquina:
+## Repositorios
+
+| Repo | Descricao |
+|------|-----------|
+| `codecraft-frontend` | SPA React 19 + Vite - interface do usuario e painel admin |
+| `codecraftgenz-monorepo/backend` | API REST Express + TypeScript |
+
+## Passo a Passo
+
+### 1. Clonar os Repositorios
+
 ```bash
-git clone https://github.com/Ricar66/codecraftgenz.git
-cd codecraftgenz
+# Frontend
+git clone https://github.com/Ricar66/codecraft-frontend.git
+
+# Backend (monorepo)
+git clone https://github.com/Ricar66/codecraftgenz-monorepo.git
 ```
 
-### 2. Instalar Dependências
-Instale todas as bibliotecas listadas no `package.json`:
+### 2. Instalar Dependencias
+
 ```bash
-npm install
+# Frontend
+cd codecraft-frontend && npm install
+
+# Backend
+cd codecraftgenz-monorepo/backend && npm install
 ```
 
-### 3. Configurar Variáveis de Ambiente (CRÍTICO)
-O arquivo `.env` **não** é baixado pelo Git por segurança. Você precisa criá-lo manualmente na raiz do projeto.
-Crie um arquivo chamado `.env` e preencha com as credenciais (peça ao administrador ou copie da máquina antiga):
+### 3. Configurar Variaveis de Ambiente
 
-```ini
-# Exemplo de .env (não use valores reais aqui)
+Os arquivos `.env` nao sao versionados. Crie manualmente:
+
+#### Frontend (.env)
+
+```env
+VITE_API_URL=http://localhost:8080
+VITE_MERCADO_PAGO_PUBLIC_KEY=APP_USR-xxxxxxxx
+VITE_ALLOW_EXTERNAL_API=true
+VITE_ENABLE_PWA=true
+VITE_APP_ENV=development
+VITE_ENABLE_CARD_PAYMENT_UI=false
+```
+
+#### Backend (.env)
+
+```env
+NODE_ENV=development
 PORT=8080
+DATABASE_URL=mysql://usuario:senha@localhost:3306/codecraft_db
+JWT_SECRET=chave-secreta-minimo-32-caracteres
+JWT_EXPIRES_IN=7d
+CORS_ORIGIN=http://localhost:5173
 ALLOWED_ORIGINS=http://localhost:5173
-
-# Segurança
-JWT_SECRET=seu_segredo_super_secreto_aqui
-
-# Banco de Dados (Azure SQL)
-DB_SERVER=codecraft-sql.database.windows.net
-DB_DATABASE=codecraft_db
-DB_USER=seu_usuario
-DB_PASSWORD=sua_senha
-
-# Mercado Pago
-MERCADO_PAGO_ACCESS_TOKEN=seu_token
-MERCADO_PAGO_PUBLIC_KEY=sua_chave_publica
+FRONTEND_URL=http://localhost:5173
+MP_ENV=sandbox
+MP_ACCESS_TOKEN=APP_USR-xxxxxxxxxxxx
+MP_PUBLIC_KEY=APP_USR-xxxxxxxxxxxx
+EMAIL_USER=email@codecraft.com
+EMAIL_PASS=senha-do-email
 ```
 
-### 4. Executar o Projeto
+### 4. Configurar Banco de Dados
 
-**Modo Desenvolvimento (com Hot Reload):**
-Abra dois terminais:
-1. Terminal 1 (Frontend): `npm run dev`
-2. Terminal 2 (Backend): `npm start` (ou `node server.js`)
-
-**Modo Produção:**
 ```bash
-npm run build
-npm start
+cd codecraftgenz-monorepo/backend
+npx prisma generate        # Gerar Prisma Client
+npx prisma migrate dev     # Criar tabelas
+npx prisma db seed         # Dados iniciais (opcional)
 ```
 
-## Estrutura Importante
-- `server.js`: Backend principal (API).
-- `src/`: Frontend React.
-- `.env`: Arquivo de configuração (segredos).
-- `public/downloads`: Pasta onde ficam os executáveis (.exe) para download.
+### 5. Executar o Projeto
 
-## Solução de Problemas Comuns
+```bash
+# Terminal 1 - Frontend
+cd codecraft-frontend
+npm run dev                # http://localhost:5173
 
-- **Erro de Conexão com Banco:** Verifique se o IP da nova máquina está liberado no Firewall do Azure SQL.
-- **Erro de Dependências:** Tente rodar `npm install` novamente ou apague a pasta `node_modules` e instale de novo.
-- **Imagens/Arquivos faltando:** Verifique se a pasta `public/downloads` contém os executáveis necessários (eles não costumam ir para o Git se forem muito grandes, mas neste projeto alguns estão versionados).
+# Terminal 2 - Backend
+cd codecraftgenz-monorepo/backend
+npm run dev                # http://localhost:8080
+```
+
+O Vite proxeia automaticamente `/api/*` e `/downloads/*` para `localhost:8080`.
+
+## Producao
+
+| Servico | Provedor | URL |
+|---------|----------|-----|
+| Frontend | Hostinger (SFTP) | codecraftgenz.com.br |
+| Backend | Render.com | codecraftgenz-monorepo.onrender.com |
+| Banco MySQL | Hostinger | srv1889.hstgr.io:3306 |
+| Email | Hostinger | @codecraftgenz.com.br |
+
+### Deploy Frontend
+
+```bash
+python deploy.py                          # Build + git + SFTP
+python deploy.py --skip-build --skip-git  # Apenas SFTP
+```
+
+### Deploy Backend
+
+```bash
+git push origin main    # Render auto-deploy
+```
+
+## Solucao de Problemas
+
+- **Erro de conexao com banco:** Verifique `DATABASE_URL` e IP liberado no firewall MySQL
+- **Erro de dependencias:** Delete `node_modules` e rode `npm install`
+- **Prisma Client desatualizado:** Rode `npx prisma generate` apos alterar schema
+- **CORS bloqueado:** Verifique `ALLOWED_ORIGINS` no `.env` do backend
+- **Build falha:** Verifique se `VITE_API_URL` esta configurado no `.env` frontend

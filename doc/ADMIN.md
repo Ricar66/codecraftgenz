@@ -24,6 +24,7 @@ O painel admin esta em `/admin` e e acessivel apenas por usuarios com role `admi
 ├── /admin/licencas               ← Gestao de licencas (admin only)
 ├── /admin/pagamentos             ← Gestao de pagamentos (admin only)
 ├── /admin/nfse                   ← Notas fiscais (admin only)
+├── /admin/leads                  ← Dashboard de leads (admin only)
 └── /admin/config                 ← Configuracoes
 ```
 
@@ -191,23 +192,59 @@ Funcionalidades extras alem do CRUD padrao:
 - Visualizacao de XML
 - Status com badge colorido
 
+### LeadsDashboard (admin only)
+
+Dashboard dedicado para gestao de leads com:
+- **KPIs** (4 cards): Total Leads, Novos no periodo, Convertidos, Taxa de Conversao %
+- **Graficos Recharts**:
+  - AreaChart — volume diario de leads
+  - PieChart — distribuicao por origem
+  - BarChart horizontal — funil por status (new → contacted → converted → lost)
+- **Filtros**: dropdown Origem + dropdown Status + input Search
+- **Tabela**: Nome, Email, Origem, Status (StatusBadge), Data, Acoes (mudar status)
+- **Seletor de periodo**: 7d, 30d, 90d, 365d
+- API: `GET /api/leads/dashboard`, `GET /api/leads`, `PUT /api/leads/:id/status`
+
+### AdminUsuarios (admin only)
+
+Extraido do antigo AdminLayout monolito:
+- CRUD de usuarios do sistema
+- Busca por nome/email
+- Paginacao
+- Export CSV
+- Gestao de roles (admin, editor, user, viewer)
+- Modal de edicao de senha
+
+### AdminConfig
+
+Pagina de configuracoes do sistema com 4 secoes:
+- **Informacoes da Plataforma**: nome, versao, ambiente
+- **Tema**: dark glassmorphism, swatches de cores do design system
+- **Status do Sistema**: URL da API, health check, status do banco
+- **Logs**: lista filtrada de logs do sistema
+
+### AdminIdeias
+
+- Listagem de ideias com votacao e comentarios
+- Criar nova ideia (titulo + descricao)
+- Votar em ideias (thumbs up)
+- Adicionar/visualizar comentarios
+- API real: `/api/ideias`
+
 ## Tema Visual
 
-O admin usa tema dark com as cores do design system:
+O admin usa tema dark glassmorphism com as cores do design system:
 
 ```javascript
 const COLORS = {
-  bg: '#0B0B1A',
-  cardBg: '#12122A',
-  cardBorder: '#1E1E3F',
-  primary: '#6C5CE7',
-  secondary: '#A29BFE',
-  success: '#00D68F',
-  danger: '#FF6B6B',
-  warning: '#FFD93D',
-  text: '#E8E8FF',
-  textMuted: '#8888AA',
+  primary: '#D12BF2',     // Magenta principal
+  secondary: '#00E4F2',   // Ciano neon
+  purple: '#7A3EF5',      // Roxo
+  success: '#10B981',     // Verde
+  warning: '#F59E0B',     // Amarelo
+  danger: '#ef4444',      // Vermelho
 };
 ```
 
-Estilos via CSS Modules (*.module.css) + estilos inline para componentes dinamicos.
+Cards com `backdrop-filter: blur(12px)` e bordas translucidas (`rgba(255,255,255,0.1)`).
+Estilos via CSS Modules (*.module.css).

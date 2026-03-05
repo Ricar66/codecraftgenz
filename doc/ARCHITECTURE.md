@@ -49,13 +49,14 @@ Browser
 ```
 HTTP Request
   -> Express Middleware (helmet, cors, rate-limit, auth)
-    -> Routes (definicao de rotas)
-      -> Validate Middleware (Zod schemas)
-        -> Controllers (handlers HTTP)
-          -> Services (logica de negocio)
-            -> Repositories (acesso a dados)
-              -> Prisma Client (ORM)
-                -> MySQL Database
+    -> Audit Middleware (logs POST/PUT/PATCH/DELETE)
+      -> Routes (definicao de rotas)
+        -> Validate Middleware (Zod schemas)
+          -> Controllers (handlers HTTP)
+            -> Services (logica de negocio)
+              -> Repositories (acesso a dados)
+                -> Prisma Client (ORM)
+                  -> MySQL Database
 ```
 
 ## Fluxo de Dados

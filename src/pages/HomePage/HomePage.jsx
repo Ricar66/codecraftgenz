@@ -173,6 +173,47 @@ const HomePage = () => {
           </div>
         </motion.div>
 
+        {/* CardCraft Banner */}
+        <motion.div
+          className={styles.sectionBlock}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.15 }}
+          variants={sectionReveal}
+        >
+          <a
+            href="https://craftcardgenz.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.cardcraftBanner}
+          >
+            <div className={styles.cardcraftGlow} />
+            <div className={styles.cardcraftContent}>
+              <span className={styles.cardcraftBadge}>Novo Produto</span>
+              <h2 className={styles.cardcraftHeadline}>
+                Apresentacao nao e detalhe.<br />
+                <span className={styles.cardcraftAccent}>E posicionamento.</span>
+              </h2>
+              <p className={styles.cardcraftDesc}>
+                CardCraft e o cartao virtual profissional feito para quem leva carreira e mercado a serio.
+                Compartilhe seus dados, portfolio e presenca digital em um formato atual, rapido e alinhado ao mercado.
+              </p>
+              <div className={styles.cardcraftCta}>
+                <span className={styles.cardcraftCtaText}>Conhecer CardCraft</span>
+                <span className={styles.cardcraftArrow}>&#8594;</span>
+              </div>
+            </div>
+            <div className={styles.cardcraftVisual}>
+              <div className={styles.cardcraftCard}>
+                <div className={styles.cardcraftCardInner}>
+                  <span className={styles.cardcraftLogo}>CardCraft</span>
+                  <span className={styles.cardcraftTagline}>Seu cartao virtual profissional</span>
+                </div>
+              </div>
+            </div>
+          </a>
+        </motion.div>
+
         <div className={styles.sectionBlock}>
           <div className={styles.sectionCard}>
             <FeaturesSection />

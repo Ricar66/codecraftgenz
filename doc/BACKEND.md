@@ -33,7 +33,7 @@ backend/
 │   │   ├── project.controller.ts
 │   │   └── proposal.controller.ts
 │   │
-│   ├── services/              # Logica de negocio (18 arquivos)
+│   ├── services/              # Logica de negocio (21 arquivos)
 │   │   ├── auth.service.ts
 │   │   ├── user.service.ts
 │   │   ├── app.service.ts
@@ -51,7 +51,10 @@ backend/
 │   │   ├── finance.service.ts
 │   │   ├── nfse.service.ts
 │   │   ├── nfse-xml.service.ts
-│   │   └── nfse-soap.service.ts
+│   │   ├── nfse-soap.service.ts
+│   │   ├── audit.service.ts      # Audit log (fire-and-forget)
+│   │   ├── lead.service.ts       # Leads engine
+│   │   └── ideia.service.ts      # Ideas/voting system
 │   │
 │   ├── repositories/          # Acesso a dados (4 arquivos)
 │   │   ├── app.repository.ts
@@ -59,7 +62,7 @@ backend/
 │   │   ├── license.repository.ts
 │   │   └── project.repository.ts
 │   │
-│   ├── routes/                # Definicao de rotas (23 arquivos)
+│   ├── routes/                # Definicao de rotas (27 arquivos)
 │   │   ├── auth.routes.ts
 │   │   ├── user.routes.ts
 │   │   ├── app.routes.ts
@@ -78,12 +81,15 @@ backend/
 │   │   ├── team.routes.ts
 │   │   ├── config.routes.ts
 │   │   ├── download.routes.ts
+│   │   ├── upload.routes.ts
 │   │   ├── hub.routes.ts
 │   │   ├── health.routes.ts
 │   │   ├── integration.routes.ts
+│   │   ├── leads.ts              # Leads dashboard + CRUD
+│   │   ├── ideias.ts             # Ideas/voting system
 │   │   └── test.routes.ts
 │   │
-│   ├── schemas/               # Validacao Zod (12 arquivos)
+│   ├── schemas/               # Validacao Zod (14 arquivos)
 │   │   ├── auth.schema.ts
 │   │   ├── app.schema.ts
 │   │   ├── payment.schema.ts
@@ -95,13 +101,15 @@ backend/
 │   │   ├── team.schema.ts
 │   │   ├── inscricao.schema.ts
 │   │   ├── finance.schema.ts
-│   │   └── nfse.schema.ts
+│   │   ├── nfse.schema.ts
+│   │   └── lead.schema.ts       # Leads validation
 │   │
 │   ├── middlewares/
 │   │   ├── auth.ts            # Autenticacao JWT
 │   │   ├── validate.ts        # Validacao Zod
 │   │   ├── rateLimiter.ts     # Rate limiting
 │   │   ├── cache.ts           # Cache-Control headers
+│   │   ├── audit.ts           # Audit log (POST/PUT/PATCH/DELETE)
 │   │   └── errorHandler.ts    # Tratamento de erros
 │   │
 │   ├── utils/

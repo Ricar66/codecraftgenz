@@ -414,6 +414,90 @@ Todas as respostas seguem o formato `{ success, data, status }` ou `{ success, e
 
 ---
 
+## Leads (Admin)
+
+| Metodo | Rota | Auth | Descricao |
+|--------|------|------|-----------|
+| GET | `/api/leads/dashboard` | Admin | Dados agregados do dashboard |
+| GET | `/api/leads` | Admin | Lista paginada com filtros |
+| PUT | `/api/leads/:id/status` | Admin | Atualizar status do lead |
+
+### GET /api/leads/dashboard?periodo=30d
+
+```json
+{
+  "success": true,
+  "data": {
+    "total": 150,
+    "novos": 45,
+    "convertidos": 12,
+    "taxaConversao": 8.0,
+    "porOrigem": [
+      { "origin": "feedback", "_count": 30 },
+      { "origin": "proposal", "_count": 25 }
+    ],
+    "porStatus": [
+      { "status": "new", "_count": 100 },
+      { "status": "contacted", "_count": 30 }
+    ],
+    "porDia": [
+      { "date": "2026-02-28", "count": 5 }
+    ],
+    "recentes": [...]
+  }
+}
+```
+
+### GET /api/leads?origin=feedback&status=new&search=email&page=1&limit=25
+
+Retorna lista paginada com filtros por origem, status e busca textual.
+
+---
+
+## Ideias (Voting System)
+
+| Metodo | Rota | Auth | Descricao |
+|--------|------|------|-----------|
+| GET | `/api/ideias` | Sim | Listar ideias com comentarios |
+| POST | `/api/ideias` | Sim | Criar nova ideia |
+| POST | `/api/ideias/:id/vote` | Sim | Votar em uma ideia |
+| POST | `/api/ideias/:id/comment` | Sim | Adicionar comentario |
+
+### POST /api/ideias
+
+```json
+// Request
+{
+  "titulo": "Nova funcionalidade",     // min 3 chars
+  "descricao": "Descricao detalhada..."  // min 10 chars
+}
+
+// Response 201
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "titulo": "Nova funcionalidade",
+    "descricao": "...",
+    "autorId": 1,
+    "autorNome": "Admin",
+    "votos": 0,
+    "status": "active",
+    "comentarios": []
+  }
+}
+```
+
+---
+
+## Audit Logs
+
+O sistema registra automaticamente todas as mutacoes (POST/PUT/PATCH/DELETE) na tabela `audit_logs` via middleware. Os logs sao consultados diretamente no banco via phpMyAdmin ou Prisma Studio.
+
+Dados capturados: usuario, acao (CREATE/UPDATE/DELETE), entidade, endpoint, status code, duracao, IP, User-Agent.
+
+---
+
 ## Health
 
 | Metodo | Rota | Auth | Descricao |

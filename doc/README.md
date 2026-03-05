@@ -28,6 +28,9 @@
 - **Sistema de Gamificacao** - Ranking de crafters com pontuacao e desafios
 - **Mentoria** - Programa de mentores para desenvolvedores
 - **Painel Admin** - Dashboard completo com KPIs, financas e gestao
+- **Leads Engine** - Captura unificada de leads com dashboard analitico
+- **Audit System** - Log automatico de todas as mutacoes administrativas
+- **Ideas/Voting** - Sistema colaborativo de ideias com votacao e comentarios
 
 ## Stack Tecnologico
 
@@ -37,7 +40,7 @@
 | Backend | Node.js + Express + TypeScript |
 | Banco de Dados | MySQL (Hostinger) + Prisma ORM |
 | Pagamentos | Mercado Pago SDK |
-| Hospedagem | Render.com (backend) + Vercel/Render (frontend) |
+| Hospedagem | Render.com (backend) + Hostinger (frontend) |
 | PWA | vite-plugin-pwa + Service Worker |
 
 ## Repositorios
