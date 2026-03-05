@@ -316,6 +316,292 @@
   }
 }
 
+/* ===== CARDCRAFT BANNER ===== */
+.cardcraftBanner {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 56px;
+  border-radius: 24px;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg,
+      rgba(0, 228, 242, 0.12) 0%,
+      rgba(209, 43, 242, 0.08) 40%,
+      rgba(122, 62, 245, 0.10) 100%);
+  border: 1.5px solid rgba(0, 228, 242, 0.25);
+  box-shadow:
+    0 8px 32px rgba(0, 228, 242, 0.08),
+    0 24px 64px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.5s ease;
+  cursor: pointer;
+}
+
+.cardcraftBanner:hover {
+  transform: translateY(-8px);
+  border-color: rgba(0, 228, 242, 0.5);
+  box-shadow:
+    0 16px 48px rgba(0, 228, 242, 0.15),
+    0 32px 80px rgba(0, 0, 0, 0.35),
+    0 0 80px rgba(0, 228, 242, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.cardcraftGlow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(600px 300px at 0% 0%, rgba(0, 228, 242, 0.12), transparent 60%),
+    radial-gradient(400px 200px at 100% 100%, rgba(209, 43, 242, 0.08), transparent 60%);
+  opacity: 0.6;
+  transition: opacity 0.5s ease;
+}
+
+.cardcraftBanner:hover .cardcraftGlow {
+  opacity: 1;
+}
+
+.cardcraftContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.cardcraftBadge {
+  display: inline-block;
+  width: fit-content;
+  padding: 6px 18px;
+  border-radius: 20px;
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #00E4F2;
+  background: rgba(0, 228, 242, 0.12);
+  border: 1px solid rgba(0, 228, 242, 0.35);
+  animation: badgePulse 3s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 228, 242, 0.3); }
+  50% { box-shadow: 0 0 16px 4px rgba(0, 228, 242, 0.15); }
+}
+
+.cardcraftHeadline {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-size: clamp(1.6rem, 3.8vw, 2.4rem);
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.cardcraftAccent {
+  background: linear-gradient(135deg, #00E4F2 0%, #D12BF2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.cardcraftDesc {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  max-width: 520px;
+}
+
+.cardcraftCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 14px 32px;
+  border-radius: 14px;
+  width: fit-content;
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  color: #0a0a0f;
+  background: linear-gradient(135deg, #00E4F2 0%, #00B8C4 100%);
+  box-shadow: 0 4px 20px rgba(0, 228, 242, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cardcraftBanner:hover .cardcraftCta {
+  transform: translateX(4px);
+  box-shadow: 0 8px 32px rgba(0, 228, 242, 0.4);
+}
+
+.cardcraftCtaText {
+  display: inline;
+}
+
+.cardcraftArrow {
+  font-size: 1.3rem;
+  transition: transform 0.3s ease;
+}
+
+.cardcraftBanner:hover .cardcraftArrow {
+  transform: translateX(6px);
+}
+
+/* Visual card mockup */
+.cardcraftVisual {
+  flex: 0 0 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+
+.cardcraftCard {
+  width: 260px;
+  height: 160px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #0d1117 0%, #161b22 100%);
+  border: 1.5px solid rgba(0, 228, 242, 0.3);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    0 0 40px rgba(0, 228, 242, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cardcraftBanner:hover .cardcraftCard {
+  transform: rotate(-2deg) scale(1.05);
+}
+
+.cardcraftCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #00E4F2, #D12BF2, #00E4F2);
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.cardcraftCard::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 40%, rgba(0, 228, 242, 0.06), transparent 50%);
+  pointer-events: none;
+}
+
+.cardcraftCardInner {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cardcraftLogo {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-size: 1.6rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #00E4F2 0%, #D12BF2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+.cardcraftTagline {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .cardcraftBanner {
+    flex-direction: column;
+    padding: 36px 28px;
+    gap: 32px;
+    text-align: center;
+  }
+
+  .cardcraftContent {
+    align-items: center;
+  }
+
+  .cardcraftDesc {
+    max-width: 100%;
+  }
+
+  .cardcraftVisual {
+    flex: none;
+  }
+
+  .cardcraftCard {
+    width: 220px;
+    height: 136px;
+  }
+
+  .cardcraftHeadline {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .cardcraftBanner {
+    padding: 28px 20px;
+    gap: 24px;
+  }
+
+  .cardcraftHeadline {
+    font-size: 1.3rem;
+  }
+
+  .cardcraftDesc {
+    font-size: 0.95rem;
+  }
+
+  .cardcraftCta {
+    padding: 12px 24px;
+    font-size: 0.9rem;
+  }
+
+  .cardcraftCard {
+    width: 200px;
+    height: 124px;
+  }
+
+  .cardcraftLogo {
+    font-size: 1.3rem;
+  }
+}
+
 /* ===== SECAO DE FEEDBACKS ===== */
 .feedbackSection {
   text-align: center;

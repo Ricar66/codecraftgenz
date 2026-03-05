@@ -430,6 +430,97 @@ Propostas B2B de empresas.
 
 ---
 
+### AuditLog (audit_logs)
+
+Log automatico de mutacoes administrativas (fire-and-forget).
+
+| Campo | Tipo | Descricao |
+|-------|------|-----------|
+| id | Int (PK, auto) | ID |
+| userId | Int? | Usuario que fez a acao |
+| userName | String? | Nome do usuario |
+| action | String | CREATE, UPDATE, DELETE |
+| entity | String | Entidade afetada |
+| entityId | String? | ID da entidade |
+| endpoint | String | URL do endpoint |
+| method | String | POST, PUT, PATCH, DELETE |
+| statusCode | Int? | Status HTTP |
+| oldData | String? (Text) | Dados anteriores (JSON) |
+| newData | String? (Text) | Dados novos (JSON) |
+| ip | String? | IP do request |
+| userAgent | String? | User-Agent |
+| duration | Int? | Duracao em ms |
+| createdAt | DateTime | Quando |
+
+**Indices:** `@@index([userId])`, `@@index([entity])`, `@@index([createdAt])`
+
+---
+
+### Lead (leads)
+
+Lead unificado capturado de diversos pontos do sistema.
+
+| Campo | Tipo | Descricao |
+|-------|------|-----------|
+| id | Int (PK, auto) | ID |
+| nome | String? | Nome |
+| email | String | Email |
+| telefone | String? | Telefone |
+| origin | String | feedback, proposal, crafter_signup, challenge_subscribe, registration |
+| originId | Int? | ID do registro de origem |
+| originRef | String? | Referencia (nome do app, empresa) |
+| status | String (default: "new") | new, contacted, converted, lost |
+| metadata | String? (Text) | Dados extras JSON |
+| utmSource | String? | UTM Source |
+| utmMedium | String? | UTM Medium |
+| utmCampaign | String? | UTM Campaign |
+| ip | String? | IP |
+| userAgent | String? | User-Agent |
+| convertedAt | DateTime? | Data de conversao |
+| createdAt | DateTime | Criacao |
+| updatedAt | DateTime | Atualizacao |
+
+**Indices:** `@@index([email])`, `@@index([origin])`, `@@index([status])`, `@@index([createdAt])`
+
+---
+
+### Ideia (ideias)
+
+Ideias de projetos com sistema de votacao.
+
+| Campo | Tipo | Descricao |
+|-------|------|-----------|
+| id | Int (PK, auto) | ID |
+| titulo | String | Titulo |
+| descricao | String (Text) | Descricao detalhada |
+| autorId | Int? | ID do autor |
+| autorNome | String? | Nome do autor |
+| votos | Int (default: 0) | Contagem de votos |
+| status | String (default: "active") | active, archived |
+| createdAt | DateTime | Criacao |
+| updatedAt | DateTime | Atualizacao |
+
+**Relacoes:** comentarios[] (IdeiaComentario)
+
+---
+
+### IdeiaComentario (ideia_comentarios)
+
+Comentarios em ideias.
+
+| Campo | Tipo | Descricao |
+|-------|------|-----------|
+| id | Int (PK, auto) | ID |
+| ideiaId | Int (FK -> Ideia) | Ideia |
+| autorId | Int? | ID do autor |
+| autorNome | String? | Nome do autor |
+| texto | String (Text) | Texto |
+| createdAt | DateTime | Criacao |
+
+**Cascade:** Deleta comentarios ao deletar ideia.
+
+---
+
 ## Comandos Uteis
 
 ```bash

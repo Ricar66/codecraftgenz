@@ -6,6 +6,7 @@ import { FaWindows, FaApple, FaLinux, FaShoppingCart } from 'react-icons/fa';
 
 import Modal from '../UI/Modal/Modal.jsx';
 import { getAppImageUrl, getAppPrice } from '../../utils/appModel.js';
+import { sanitizeImageUrl } from '../../utils/urlSanitize.js';
 
 import styles from './AppDetailModal.module.css';
 
@@ -45,7 +46,7 @@ const platformIcons = {
 export default function AppDetailModal({ app, onClose }) {
   if (!app) return null;
 
-  const imageUrl = getAppImageUrl(app);
+  const imageUrl = sanitizeImageUrl(getAppImageUrl(app));
   const price = getAppPrice(app);
   const displayPrice = price > 0 ? `R$ ${price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Gratuito';
   const platforms = parsePlatforms(app.platforms);

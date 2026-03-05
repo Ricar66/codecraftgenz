@@ -30,6 +30,9 @@ src/
 │   ├── AdminLicencas.jsx     # Gestao de licencas
 │   ├── AdminPagamentos.jsx   # Gestao de pagamentos
 │   ├── AdminNFSe.jsx         # Notas fiscais
+│   ├── AdminUsuarios.jsx     # Gestao de usuarios (extraido do AdminLayout)
+│   ├── AdminConfig.jsx       # Configuracoes do sistema
+│   ├── LeadsDashboard.jsx    # Dashboard de leads com graficos
 │   └── *.module.css          # Estilos por componente
 │
 ├── components/               # Componentes publicos
@@ -104,7 +107,9 @@ src/
 │   ├── dashboardAPI.js       # Dashboard
 │   ├── proposalAPI.js        # Propostas
 │   ├── nfseAPI.js            # NFS-e
-│   └── leadsAPI.js           # Captura de leads (TrackPro)
+│   ├── leadsAPI.js           # Captura de leads (TrackPro)
+│   ├── leadsAdminAPI.js      # Leads dashboard admin (backend)
+│   └── ideiasAPI.js          # Ideas/voting system
 │
 ├── styles/                   # Estilos globais
 │   ├── globals.css           # Design tokens e variaveis CSS
@@ -157,7 +162,7 @@ src/
 | Rota | Pagina | Roles |
 |------|--------|-------|
 | `/admin` | SuperDashboard | admin, editor |
-| `/admin/usuarios` | Usuarios | admin |
+| `/admin/usuarios` | AdminUsuarios | admin |
 | `/admin/mentores` | AdminMentores | admin, editor |
 | `/admin/equipes` | AdminEquipes | admin, editor |
 | `/admin/crafters` | AdminCrafters | admin, editor |
@@ -172,7 +177,8 @@ src/
 | `/admin/licencas` | AdminLicencas | admin |
 | `/admin/pagamentos` | AdminPagamentos | admin |
 | `/admin/nfse` | AdminNFSe | admin |
-| `/admin/config` | Config | admin, editor |
+| `/admin/leads` | LeadsDashboard | admin |
+| `/admin/config` | AdminConfig | admin, editor |
 
 ## Componentes Admin
 

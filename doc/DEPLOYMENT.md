@@ -5,7 +5,7 @@
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
 │   Frontend      │     │    Backend        │     │   Banco MySQL   │
-│   (Render)      │────►│   (Render)        │────►│  (Hostinger)    │
+│  (Hostinger)    │────►│   (Render)        │────►│  (Hostinger)    │
 │   Port: 443     │     │   Port: 8080      │     │  Port: 3306     │
 └─────────────────┘     └──────────────────┘     └─────────────────┘
                                │
@@ -26,12 +26,23 @@ npm run build
 # Output: dist/
 ```
 
-### Ambiente: Render.com (Static Site)
+### Ambiente: Hostinger (SFTP)
 
-Configuracao no Render:
-- **Build Command:** `npm install && npm run build`
-- **Publish Directory:** `dist`
-- **Rewrite Rules:** `/* -> /index.html` (SPA fallback)
+Deploy via script `deploy.py` na raiz do repositorio:
+
+```bash
+python deploy.py                          # Completo: build + git + SFTP
+python deploy.py --skip-build --skip-git  # Apenas upload SFTP
+```
+
+O script:
+1. Executa `npm run build` (Vite)
+2. Commit + push no Git
+3. Conecta via SFTP ao servidor Hostinger (147.93.37.67:65002)
+4. Limpa assets antigos no servidor
+5. Faz upload de `dist/` para `nodejs/`
+6. Atualiza symlink `public_html/nodejs -> ../nodejs`
+7. Verifica `.htaccess` (SPA fallback para index.html)
 
 ### Variaveis de Ambiente (Frontend)
 
@@ -273,7 +284,7 @@ server: {
 
 | Servico | Dominio | Provedor |
 |---------|---------|----------|
-| Frontend | codecraftgenz.com.br | Render (CNAME) |
+| Frontend | codecraftgenz.com.br | Hostinger |
 | Backend | codecraftgenz-monorepo.onrender.com | Render |
 | Email | @codecraftgenz.com.br | Hostinger |
 | Banco | *.hostinger.com | Hostinger |
