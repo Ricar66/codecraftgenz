@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 
 import Navbar from '../components/Navbar/Navbar';
 import { confirmPasswordReset } from '../services/userAPI.js';
+
 import styles from './PasswordResetPage.module.css';
 
 export default function PasswordResetPage() {

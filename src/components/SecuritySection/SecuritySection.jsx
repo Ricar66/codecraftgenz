@@ -8,7 +8,7 @@ const content = {
   pt: {
     badge: 'Segurança & Instalação',
     title: 'Software verificado. Aviso esperado.',
-    subtitle: 'O Windows exibe um alerta de "Editor Desconhecido" para softwares independentes — não por risco, mas pela ausência de um certificado EV (custo acima de R$ 3.000/ano). Aqui está tudo que você precisa saber.',
+    subtitle: 'Nossos apps estão em processo de reconhecimento pelo Windows. Enquanto isso, um aviso de "Editor Desconhecido" pode aparecer — é apenas uma etapa de verificação, não indica nenhum risco. Veja como instalar com segurança.',
     steps: [
       { icon: '🛡️', title: 'Clique em "Mais informações"', desc: 'Na janela do SmartScreen, procure o link discreto abaixo da mensagem principal e clique nele.' },
       { icon: '▶️', title: 'Clique em "Executar assim mesmo"', desc: 'Um segundo botão aparecerá. Clique para confirmar que deseja prosseguir com a instalação.' },
@@ -38,7 +38,7 @@ const content = {
   en: {
     badge: 'Security & Installation',
     title: 'Verified software. Expected warning.',
-    subtitle: 'Windows shows an "Unknown Publisher" alert for independent software — not because of risk, but due to the absence of an EV certificate (cost over $500/year). Here is everything you need to know.',
+    subtitle: 'Our apps are going through Windows recognition approval. In the meantime, an "Unknown Publisher" warning may appear — it is just a verification step, not a sign of any risk. Here is how to install safely.',
     steps: [
       { icon: '🛡️', title: 'Click "More info"', desc: 'In the SmartScreen window, find the subtle link below the main message and click it.' },
       { icon: '▶️', title: 'Click "Run anyway"', desc: 'A second button will appear. Click it to confirm you want to proceed with the installation.' },
