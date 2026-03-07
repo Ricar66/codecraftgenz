@@ -16,12 +16,12 @@ const FEATURES = [
   {
     icon: '🚀',
     title: 'Melhoria Continua',
-    description: 'Usamos suas sugestoes para aprimorar constantemente nossos produtos e servicos.',
+    description: 'Usamos suas sugestões para aprimorar constantemente nossos produtos e serviços.',
   },
   {
     icon: '🤝',
     title: 'Construindo Juntos',
-    description: 'Sua participacao e essencial para criarmos solucoes que realmente fazem a diferenca.',
+    description: 'Sua participação é essencial para criarmos soluções que realmente fazem a diferença.',
   },
 ];
 
@@ -37,8 +37,8 @@ export default function FeedbacksPage() {
           <div className={styles.textArea}>
             <h1 className={styles.heroTitle}>Compartilhe Seu Feedback</h1>
             <p className={styles.heroDescription}>
-              Sua opiniao e fundamental para nosso crescimento.
-              Compartilhe sua experiencia e ajude-nos a criar solucoes ainda melhores.
+              Sua opinião é fundamental para nosso crescimento.
+              Compartilhe sua experiência e ajude-nos a criar soluções ainda melhores.
             </p>
           </div>
 

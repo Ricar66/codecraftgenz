@@ -41,13 +41,13 @@ export default function DesafiosPage() {
   const participar = async (id) => {
     const crafterId = user?.id;
     if (!crafterId) {
-      alert('E necessario estar autenticado para participar.');
+      alert('É necessário estar autenticado para participar.');
       return;
     }
     const payload = { crafter_id: crafterId };
     try {
       await apiRequest(`/api/desafios/${id}/inscrever`, { method: 'POST', body: JSON.stringify(payload) });
-      alert('Inscricao realizada!');
+      alert('Inscrição realizada!');
       realtime.publish('desafios_changed', {});
     } catch (e) {
       alert(e.message || 'Falha ao inscrever');
@@ -62,7 +62,7 @@ export default function DesafiosPage() {
     }
     const crafterId = user?.id;
     if (!crafterId) {
-      alert('E necessario estar autenticado para enviar a entrega.');
+      alert('É necessário estar autenticado para enviar a entrega.');
       return;
     }
     const payload = { crafter_id: crafterId, delivery: { url, notes: '' } };
@@ -90,10 +90,10 @@ export default function DesafiosPage() {
 
       {/* Hero Section */}
       <header className={styles.hero}>
-        <h1 className={styles.heroTitle}>Desafios Epicos</h1>
+        <h1 className={styles.heroTitle}>Desafios Épicos</h1>
         <h2 className={styles.heroSubtitle}>Desafios que moldam gigantes</h2>
         <p className={styles.heroLead}>
-          Cada missao CodeCraft e uma oportunidade de testar suas habilidades
+          Cada missão CodeCraft é uma oportunidade de testar suas habilidades
           e crescer como desenvolvedor. Aceite o desafio!
         </p>
       </header>
@@ -148,7 +148,7 @@ export default function DesafiosPage() {
                       <div className={styles.deliveryForm}>
                         <input
                           type="text"
-                          placeholder={d.delivery_type === 'github' ? 'URL do repositorio' : 'URL da entrega'}
+                          placeholder={d.delivery_type === 'github' ? 'URL do repositório' : 'URL da entrega'}
                           value={deliverUrls[d.id] || ''}
                           onChange={e => setDeliverUrls(prev => ({ ...prev, [d.id]: e.target.value }))}
                           className={styles.deliveryInput}
@@ -171,7 +171,7 @@ export default function DesafiosPage() {
             <button
               className={`${styles.navBtn} ${styles.navBtnRight}`}
               onClick={() => scrollBy(1)}
-              aria-label="Ver proximos"
+              aria-label="Ver próximos"
             >
               ▶
             </button>
@@ -194,8 +194,8 @@ export default function DesafiosPage() {
       <section className={styles.footerSection}>
         <div className={styles.footerCard}>
           <p className={styles.footerText}>
-            Nossos desafios nao sao apenas testes. Sao experiencias que transformam
-            Crafters em verdadeiros criadores do amanha.
+            Nossos desafios não são apenas testes. São experiências que transformam
+            Crafters em verdadeiros criadores do amanhã.
           </p>
         </div>
       </section>
