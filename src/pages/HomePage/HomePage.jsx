@@ -71,19 +71,19 @@ const HomePage = () => {
         >
           <div className={styles.showcaseRow}>
             <div className={styles.showcaseImage}>
-              <img src={hero3dImg} alt="Equipe CodeCraft desenvolvendo solucoes" loading="lazy" />
+              <img src={hero3dImg} alt="Equipe CodeCraft desenvolvendo soluções" loading="lazy" />
             </div>
             <div className={styles.showcaseContent}>
-              <span className={styles.showcaseBadge}>Sobre nos</span>
+              <span className={styles.showcaseBadge}>Sobre nós</span>
               <h2 className={styles.showcaseTitle}>Criando o futuro, linha por linha</h2>
               <p className={styles.showcaseDesc}>
-                Somos uma equipe Gen-Z apaixonada por tecnologia. Desenvolvemos solucoes
-                de software modernas, escalaveis e com design que faz a diferenca.
+                Somos uma equipe Gen-Z apaixonada por tecnologia. Desenvolvemos soluções
+                de software modernas, escaláveis e com design que faz a diferença.
               </p>
               <ul className={styles.showcaseFeatures}>
-                <li><span className={styles.featureIcon}>⚡</span> Desenvolvimento agil e moderno</li>
+                <li><span className={styles.featureIcon}>⚡</span> Desenvolvimento ágil e moderno</li>
                 <li><span className={styles.featureIcon}>🎨</span> Design UI/UX premium</li>
-                <li><span className={styles.featureIcon}>🚀</span> Deploy continuo e escalavel</li>
+                <li><span className={styles.featureIcon}>🚀</span> Deploy contínuo e escalável</li>
               </ul>
             </div>
           </div>
@@ -99,7 +99,7 @@ const HomePage = () => {
         >
           <div className={`${styles.showcaseRow} ${styles.showcaseReverse}`}>
             <div className={styles.showcaseImage}>
-              <img src={desafiosBanner} alt="Desafios de programacao CodeCraft" loading="lazy" />
+              <img src={desafiosBanner} alt="Desafios de programação CodeCraft" loading="lazy" />
             </div>
             <div className={styles.showcaseContent}>
               <span className={styles.showcaseBadge}>Desafios</span>
@@ -133,13 +133,13 @@ const HomePage = () => {
               <span className={styles.showcaseBadge}>Aplicativos</span>
               <h2 className={styles.showcaseTitle}>Nosso ecossistema de apps</h2>
               <p className={styles.showcaseDesc}>
-                Aplicativos desenvolvidos com as melhores praticas de engenharia.
-                Solucoes robustas, interfaces intuitivas e performance de alto nivel.
+                Aplicativos desenvolvidos com as melhores práticas de engenharia.
+                Soluções robustas, interfaces intuitivas e performance de alto nível.
               </p>
               <ul className={styles.showcaseFeatures}>
                 <li><span className={styles.featureIcon}>📱</span> Apps desktop e mobile</li>
-                <li><span className={styles.featureIcon}>🔄</span> Atualizacoes automaticas</li>
-                <li><span className={styles.featureIcon}>🛡️</span> Suporte tecnico dedicado</li>
+                <li><span className={styles.featureIcon}>🔄</span> Atualizações automáticas</li>
+                <li><span className={styles.featureIcon}>🛡️</span> Suporte técnico dedicado</li>
               </ul>
             </div>
           </div>
@@ -155,13 +155,13 @@ const HomePage = () => {
         >
           <div className={`${styles.showcaseRow} ${styles.showcaseReverse}`}>
             <div className={styles.showcaseImage}>
-              <img src={companiesBanner} alt="Solucoes empresariais CodeCraft" loading="lazy" />
+              <img src={companiesBanner} alt="Soluções empresariais CodeCraft" loading="lazy" />
             </div>
             <div className={styles.showcaseContent}>
               <span className={styles.showcaseBadge}>Para Empresas</span>
-              <h2 className={styles.showcaseTitle}>Solucoes sob medida</h2>
+              <h2 className={styles.showcaseTitle}>Soluções sob medida</h2>
               <p className={styles.showcaseDesc}>
-                Da ideacao ao deploy, construimos solucoes que combinam tecnologia
+                Da ideação ao deploy, construímos soluções que combinam tecnologia
                 de ponta com design intuitivo para entregar resultados reais.
               </p>
               <ul className={styles.showcaseFeatures}>
@@ -191,12 +191,12 @@ const HomePage = () => {
             <div className={styles.cardcraftContent}>
               <span className={styles.cardcraftBadge}>Novo Produto</span>
               <h2 className={styles.cardcraftHeadline}>
-                Apresentacao nao e detalhe.<br />
-                <span className={styles.cardcraftAccent}>E posicionamento.</span>
+                Apresentação não é detalhe.<br />
+                <span className={styles.cardcraftAccent}>É posicionamento.</span>
               </h2>
               <p className={styles.cardcraftDesc}>
-                CardCraft e o cartao virtual profissional feito para quem leva carreira e mercado a serio.
-                Compartilhe seus dados, portfolio e presenca digital em um formato atual, rapido e alinhado ao mercado.
+                CardCraft é o cartão virtual profissional feito para quem leva carreira e mercado a sério.
+                Compartilhe seus dados, portfólio e presença digital em um formato atual, rápido e alinhado ao mercado.
               </p>
               <div className={styles.cardcraftCta}>
                 <span className={styles.cardcraftCtaText}>Conhecer CardCraft</span>
@@ -207,7 +207,7 @@ const HomePage = () => {
               <div className={styles.cardcraftCard}>
                 <div className={styles.cardcraftCardInner}>
                   <span className={styles.cardcraftLogo}>CardCraft</span>
-                  <span className={styles.cardcraftTagline}>Seu cartao virtual profissional</span>
+                  <span className={styles.cardcraftTagline}>Seu cartão virtual profissional</span>
                 </div>
               </div>
             </div>

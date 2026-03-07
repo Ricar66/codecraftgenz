@@ -66,7 +66,7 @@ const AppsPage = () => {
         globalPerformanceMonitor.endMeasure(metricId, { success: true, count: list.length });
       } catch (e) {
         if (e.status === 401) {
-          setError('Nao autenticado');
+          setError('Não autenticado');
           navigate('/login?redirect=/apps');
         } else {
           setError(e.message || 'Erro ao carregar aplicativos');
@@ -139,7 +139,7 @@ const AppsPage = () => {
       setPayModal(s => ({ ...s, loading: true, error: '' }));
       const { init_point } = await apiRequest(`/api/apps/${encodeURIComponent(payModal.app.id)}/purchase`, { method: 'POST' });
       if (init_point) window.open(init_point, '_blank', 'noopener');
-      else setPayModal(s => ({ ...s, error: 'Nao foi possivel iniciar o checkout' }));
+      else setPayModal(s => ({ ...s, error: 'Não foi possível iniciar o checkout' }));
     } catch (e) {
       setPayModal(s => ({ ...s, error: e.message || 'Erro ao iniciar pagamento' }));
     } finally {
@@ -189,14 +189,14 @@ const AppsPage = () => {
         if (!statusResp.ok) throw new Error(`Falha no download (HTTP ${resp.status})`);
         const js = await statusResp.json().catch(() => ({}));
         const directUrl = resolveDownloadUrl(js?.download_url || js?.data?.download_url || null);
-        if (!directUrl) throw new Error('Download nao liberado. Pagamento nao aprovado.');
+        if (!directUrl) throw new Error('Download não liberado. Pagamento não aprovado.');
         window.location.href = directUrl;
         setPayModal(s => ({ ...s, status: 'done', progress: 100 }));
         return;
       }
       const js = await resp.json().catch(() => ({}));
       const directUrl = resolveDownloadUrl(js?.download_url || null);
-      if (!directUrl) throw new Error('Aplicativo sem URL de executavel configurada');
+      if (!directUrl) throw new Error('Aplicativo sem URL de executável configurada');
       window.location.href = directUrl;
       setPayModal(s => ({ ...s, status: 'done', progress: 100 }));
     } catch (e) {
@@ -242,7 +242,7 @@ const AppsPage = () => {
           <h1 className={styles.heroTitle}>Meus Aplicativos</h1>
           <p className={styles.heroSubtitle}>
             Baixe e compre seus apps com visual profissional.
-            Explore nossa colecao de aplicativos desenvolvidos pela comunidade CodeCraft.
+            Explore nossa coleção de aplicativos desenvolvidos pela comunidade CodeCraft.
           </p>
 
           <div className={styles.actionsBar}>
@@ -250,7 +250,7 @@ const AppsPage = () => {
               className={`${styles.publishBtn} ${showPublish ? styles.publishBtnActive : ''}`}
               onClick={() => setShowPublish(v => !v)}
             >
-              {showPublish ? 'Fechar publicacao' : 'Publicar projeto'}
+              {showPublish ? 'Fechar publicação' : 'Publicar projeto'}
             </button>
           </div>
         </header>
@@ -299,7 +299,7 @@ const AppsPage = () => {
           {apps.length === 0 && !loading ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>📦</div>
-              <h3 className={styles.emptyTitle}>Nenhum aplicativo disponivel</h3>
+              <h3 className={styles.emptyTitle}>Nenhum aplicativo disponível</h3>
               <p className={styles.emptyText}>
                 Volte em breve para conferir novos aplicativos da comunidade.
               </p>
@@ -315,7 +315,7 @@ const AppsPage = () => {
                         className={styles.licenseToggleBtn}
                         onClick={() => toggleLicense(app.id)}
                       >
-                        {expandedLicenses[app.id] ? 'Ocultar Ativacao' : 'Ativar Licenca'}
+                        {expandedLicenses[app.id] ? 'Ocultar Ativação' : 'Ativar Licença'}
                       </button>
                       {expandedLicenses[app.id] && (
                         <div className={styles.licenseExpanded}>
@@ -340,8 +340,8 @@ const AppsPage = () => {
               {projects.length === 0 ? (
                 <div className={styles.emptyState}>
                   <div className={styles.emptyIcon}>📁</div>
-                  <h3 className={styles.emptyTitle}>Nenhum projeto disponivel</h3>
-                  <p className={styles.emptyText}>Crie um projeto primeiro para poder publica-lo.</p>
+                  <h3 className={styles.emptyTitle}>Nenhum projeto disponível</h3>
+                  <p className={styles.emptyText}>Crie um projeto primeiro para poder publicá-lo.</p>
                 </div>
               ) : (
                 <div className={styles.projectsGrid}>
@@ -371,10 +371,10 @@ const AppsPage = () => {
         {/* History Section */}
         <section className={styles.historySection}>
           <div className={styles.historyCard}>
-            <h2 className={styles.historyTitle}>Historico de compras e downloads</h2>
+            <h2 className={styles.historyTitle}>Histórico de compras e downloads</h2>
 
             {history.length === 0 ? (
-              <p className={styles.historyEmpty}>Sem historico de compras ou downloads.</p>
+              <p className={styles.historyEmpty}>Sem histórico de compras ou downloads.</p>
             ) : (
               <table className={styles.historyTable}>
                 <thead>
@@ -411,7 +411,7 @@ const AppsPage = () => {
             <h3 className={styles.modalTitle}>{payModal.app?.name}</h3>
             <p className={styles.modalDescription}>{payModal.app?.mainFeature}</p>
             <p className={styles.modalPrice}>
-              Preco: {(() => {
+              Preço: {(() => {
                 const p = getAppPrice(payModal.app || {});
                 return p > 0 ? `R$ ${p.toLocaleString('pt-BR')}` : 'a definir';
               })()}
@@ -455,7 +455,7 @@ const AppsPage = () => {
                   <div className={styles.progressFill} style={{ width: `${payModal.progress}%` }} />
                 </div>
                 <p className={styles.progressText}>
-                  {payModal.status === 'done' ? 'Download concluido!' : `Baixando... ${payModal.progress}%`}
+                  {payModal.status === 'done' ? 'Download concluído!' : `Baixando... ${payModal.progress}%`}
                 </p>
               </div>
             )}
