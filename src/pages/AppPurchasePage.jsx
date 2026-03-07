@@ -14,6 +14,7 @@ import { captureAppPurchaseLead } from '../services/leadsAPI.js';
 import { getAppPrice } from '../utils/appModel.js';
 import { API_BASE_URL } from '../lib/apiConfig.js';
 
+import SecuritySection from '../components/SecuritySection/SecuritySection.jsx';
 import styles from './AppPurchasePage.module.css';
 
 // Converte URL relativa para URL completa do backend
@@ -780,6 +781,9 @@ const AppPurchasePage = () => {
           </>
         )}
       </div>
+
+      {/* Security & Installation */}
+      <SecuritySection />
 
       {showEmailModal && (
         <div
