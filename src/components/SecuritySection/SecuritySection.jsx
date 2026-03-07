@@ -2,36 +2,36 @@
 import React, { useState } from 'react';
 import styles from './SecuritySection.module.css';
 
-const SHA256 = '844a4dee2ce1ca1472e80a08961e8022732c55849c4babe5b3b0b0ff6dd2fb19';
+const SHA256 = 'd4573b2bbb04f41068fa5f2bc3c309b36fa6f9bd24c23348fc3b5e1698984348';
 
 const content = {
   pt: {
-    badge: 'Seguranca & Instalacao',
+    badge: 'Segurança & Instalação',
     title: 'Software verificado. Aviso esperado.',
-    subtitle: 'O Windows exibe um alerta de "Editor Desconhecido" para softwares independentes — nao por risco, mas pela ausencia de um certificado EV (custo acima de R$ 3.000/ano). Aqui esta tudo que voce precisa saber.',
+    subtitle: 'O Windows exibe um alerta de "Editor Desconhecido" para softwares independentes — não por risco, mas pela ausência de um certificado EV (custo acima de R$ 3.000/ano). Aqui está tudo que você precisa saber.',
     steps: [
-      { icon: '🛡️', title: 'Clique em "Mais informacoes"', desc: 'Na janela do SmartScreen, procure o link discreto abaixo da mensagem principal e clique nele.' },
-      { icon: '▶️', title: 'Clique em "Executar assim mesmo"', desc: 'Um segundo botao aparecera. Clique para confirmar que deseja prosseguir com a instalacao.' },
-      { icon: '✅', title: 'Instalacao concluida', desc: 'O instalador abrira normalmente. Apos isso, o aplicativo roda sem restricoes.' },
+      { icon: '🛡️', title: 'Clique em "Mais informações"', desc: 'Na janela do SmartScreen, procure o link discreto abaixo da mensagem principal e clique nele.' },
+      { icon: '▶️', title: 'Clique em "Executar assim mesmo"', desc: 'Um segundo botão aparecerá. Clique para confirmar que deseja prosseguir com a instalação.' },
+      { icon: '✅', title: 'Instalação concluída', desc: 'O instalador abrirá normalmente. Após isso, o aplicativo roda sem restrições.' },
     ],
     hashLabel: 'SHA-256 do instalador atual',
     copyBtn: 'Copiar hash',
     copiedBtn: 'Copiado!',
-    ctaTitle: 'Ficou com duvidas?',
-    ctaText: 'A comunidade CodeCraft GenZ esta aqui. Nos chame no suporte — respondemos em ate 24h.',
+    ctaTitle: 'Ficou com dúvidas?',
+    ctaText: 'A comunidade CodeCraft GenZ está aqui. Nos chame no suporte — respondemos em até 24h.',
     ctaBtn: 'Acessar suporte',
     accordion: [
       {
         q: 'Por que o Windows exibe esse aviso?',
-        a: 'O Windows SmartScreen funciona por reputacao. Apps com certificado EV (Extended Validation) passam automaticamente. Para desenvolvedores independentes, esse certificado custa entre R$ 1.500–3.000/ano e leva semanas para ser emitido. Optamos por ser transparentes sobre isso.'
+        a: 'O Windows SmartScreen funciona por reputação. Apps com certificado EV (Extended Validation) passam automaticamente. Para desenvolvedores independentes, esse certificado custa entre R$ 1.500–3.000/ano e leva semanas para ser emitido. Optamos por ser transparentes sobre isso.'
       },
       {
-        q: 'Como sei que o software e seguro?',
-        a: 'Verifique o hash SHA-256 do arquivo baixado e compare com o que divulgamos. Se forem identicos, o arquivo nao foi modificado. Nosso software nao faz chamadas externas nao documentadas e pode ser auditado.'
+        q: 'Como sei que o software é seguro?',
+        a: 'Verifique o hash SHA-256 do arquivo baixado e compare com o que divulgamos. Se forem idênticos, o arquivo não foi modificado. Nosso software não faz chamadas externas não documentadas e pode ser auditado.'
       },
       {
         q: 'Como verificar a integridade antes de instalar?',
-        a: 'No Windows PowerShell: Get-FileHash .\\NomeDoArquivo.exe -Algorithm SHA256. Compare o resultado com o hash que disponibilizamos. Voce tambem pode usar ferramentas como 7-Zip ou HashCheck.'
+        a: 'No Windows PowerShell: Get-FileHash .\\NomeDoArquivo.exe -Algorithm SHA256. Compare o resultado com o hash que disponibilizamos. Você também pode usar ferramentas como 7-Zip ou HashCheck.'
       },
     ],
   },
