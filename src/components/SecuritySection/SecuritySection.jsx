@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import styles from './SecuritySection.module.css';
 
-const SHA256 = 'd4573b2bbb04f41068fa5f2bc3c309b36fa6f9bd24c23348fc3b5e1698984348';
+const SHA256 = 'e0b50ff918ea77250e837df9f0f6e0aae4f6b47b0eccfc934eeaf5393b91ec23';
 
 const content = {
   pt: {
