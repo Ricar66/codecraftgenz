@@ -1,7 +1,7 @@
 // src/pages/MyAccountPage.jsx
 import React, { useState, useEffect } from 'react';
-import { Link, Navigate } from 'react-router-dom';
 import { FaUser, FaShoppingBag, FaDownload, FaCalendar, FaCheckCircle, FaClock, FaExclamationCircle } from 'react-icons/fa';
+import { Link, Navigate } from 'react-router-dom';
 
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth';
