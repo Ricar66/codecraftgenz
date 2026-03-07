@@ -2,6 +2,7 @@
 import React from 'react';
 import { FaWindows, FaApple, FaLinux, FaDownload, FaShieldAlt, FaRocket, FaLayerGroup } from 'react-icons/fa';
 import Navbar from '../components/Navbar/Navbar.jsx';
+import SecuritySection from '../components/SecuritySection/SecuritySection.jsx';
 import styles from './HubDownloadPage.module.css';
 
 const DOWNLOAD_URL = 'https://codecraftgenz-monorepo.onrender.com/api/downloads/CodeCraftHub_Setup.exe';
@@ -133,6 +134,9 @@ const HubDownloadPage = () => {
             </div>
           </div>
         </section>
+
+        {/* Security & Installation */}
+        <SecuritySection />
       </div>
     </>
   );
