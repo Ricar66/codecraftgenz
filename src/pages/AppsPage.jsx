@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import AppCard from '../components/AppCard/AppCard';
 import LicenseActivator from '../components/LicenseActivator.jsx';
 import Navbar from '../components/Navbar/Navbar';
+import SecuritySection from '../components/SecuritySection/SecuritySection.jsx';
 import { API_BASE_URL, apiRequest } from '../lib/apiConfig.js';
 import { getHistory, upsertAppFromProject, getPublicApps, getPurchaseStatus } from '../services/appsAPI.js';
 import { getProjects } from '../services/projectsAPI.js';
@@ -399,6 +400,9 @@ const AppsPage = () => {
           </div>
         </section>
       </div>
+
+      {/* Security & Installation Section */}
+      <SecuritySection />
 
       {/* Payment Modal */}
       {payModal.open && (

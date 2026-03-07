@@ -1,0 +1,363 @@
+/* SecuritySection.module.css — Cyberpunk/Glassmorphism */
+
+.section {
+  padding: 64px 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* ── Header row ── */
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 228, 242, 0.25);
+  background: rgba(0, 228, 242, 0.06);
+  color: #00E4F2;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.badgeDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #00E4F2;
+  box-shadow: 0 0 8px #00E4F2;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ── Lang toggle ── */
+.langToggle {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 3px;
+}
+
+.langBtn {
+  padding: 5px 14px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.langBtnActive {
+  background: rgba(209, 43, 242, 0.2);
+  color: #D12BF2;
+  border: 1px solid rgba(209, 43, 242, 0.3);
+}
+
+/* ── Title / Subtitle ── */
+.title {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 800;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.2;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.5);
+  max-width: 720px;
+}
+
+/* ── SmartScreen Steps ── */
+.steps {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  flex-wrap: wrap;
+}
+
+.step {
+  flex: 1;
+  min-width: 200px;
+  padding: 24px 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.step:hover {
+  border-color: rgba(209, 43, 242, 0.2);
+}
+
+.stepIcon {
+  font-size: 2rem;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.stepTitle {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.stepDesc {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.stepConnector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  font-size: 1.3rem;
+  color: rgba(209, 43, 242, 0.5);
+  flex-shrink: 0;
+  padding-top: 32px;
+}
+
+/* ── SHA-256 Hash Card ── */
+.hashCard {
+  border-radius: 14px;
+  border: 1px solid rgba(0, 228, 242, 0.15);
+  background: rgba(0, 228, 242, 0.04);
+  overflow: hidden;
+}
+
+.hashCardLabel {
+  padding: 12px 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #00E4F2;
+  border-bottom: 1px solid rgba(0, 228, 242, 0.1);
+  letter-spacing: 0.03em;
+}
+
+.hashCardBody {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  flex-wrap: wrap;
+}
+
+.hashValue {
+  flex: 1;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.copyBtn {
+  flex-shrink: 0;
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 228, 242, 0.3);
+  background: rgba(0, 228, 242, 0.08);
+  color: #00E4F2;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.copyBtn:hover {
+  background: rgba(0, 228, 242, 0.15);
+}
+
+.copyBtnSuccess {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+/* ── Accordion ── */
+.accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accordionItem {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.accordionItemOpen {
+  border-color: rgba(209, 43, 242, 0.2);
+  background: rgba(209, 43, 242, 0.03);
+}
+
+.accordionTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.accordionTrigger:hover {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.chevron {
+  font-size: 1.1rem;
+  color: rgba(209, 43, 242, 0.6);
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.accordionContent {
+  padding: 0 20px 16px;
+  animation: slideDown 0.2s ease;
+}
+
+.accordionContent p {
+  margin: 0;
+  font-size: 0.87rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── CTA ── */
+.cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 28px 32px;
+  border-radius: 16px;
+  border: 1px solid rgba(209, 43, 242, 0.18);
+  background: linear-gradient(135deg, rgba(209, 43, 242, 0.06), rgba(0, 228, 242, 0.03));
+}
+
+.ctaTitle {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.ctaText {
+  margin: 0;
+  font-size: 0.87rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.ctaBtn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1px solid rgba(209, 43, 242, 0.4);
+  background: rgba(209, 43, 242, 0.1);
+  color: #D12BF2;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.ctaBtn:hover {
+  background: rgba(209, 43, 242, 0.2);
+  box-shadow: 0 0 20px rgba(209, 43, 242, 0.2);
+}
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .steps {
+    flex-direction: column;
+  }
+
+  .stepConnector {
+    transform: rotate(90deg);
+    padding: 0;
+    height: 24px;
+  }
+
+  .cta {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 24px 20px;
+  }
+
+  .ctaBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .hashCardBody {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .copyBtn {
+    width: 100%;
+    text-align: center;
+  }
+}
