@@ -4,6 +4,7 @@ import { FaBuilding, FaUser, FaEnvelope, FaLaptopCode, FaMoneyBillWave, FaFileAl
 
 import Navbar from '../components/Navbar/Navbar';
 import { createProposal } from '../services/proposalAPI';
+
 import styles from './ForCompaniesPage.module.css';
 
 /**
