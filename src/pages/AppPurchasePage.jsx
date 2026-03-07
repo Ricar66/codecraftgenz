@@ -472,6 +472,26 @@ const AppPurchasePage = () => {
               </button>
             </div>
 
+            {/* Mini security notice — visível sem precisar rolar */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 10,
+              padding: '10px 14px',
+              borderRadius: 10,
+              border: '1px solid rgba(0, 228, 242, 0.2)',
+              background: 'rgba(0, 228, 242, 0.04)',
+              marginTop: 4,
+            }}>
+              <span style={{ fontSize: '1rem', flexShrink: 0, marginTop: 2 }}>🛡️</span>
+              <p style={{ margin: 0, fontSize: '0.82rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.55 }}>
+                <strong style={{ color: '#00E4F2' }}>Windows pode exibir um aviso ao instalar</strong> — é esperado para softwares independentes, não indica risco.{' '}
+                <a href="#security" style={{ color: '#D12BF2', fontWeight: 600, textDecoration: 'none' }}>
+                  Como instalar corretamente ↓
+                </a>
+              </p>
+            </div>
+
             {step === 1 && (
               <div id="buyer-info-section" className={styles.buyerSection}>
                 <h3 className={styles.subtitle}>Dados do comprador</h3>
@@ -783,7 +803,9 @@ const AppPurchasePage = () => {
       </div>
 
       {/* Security & Installation */}
-      <SecuritySection />
+      <div id="security">
+        <SecuritySection />
+      </div>
 
       {showEmailModal && (
         <div
