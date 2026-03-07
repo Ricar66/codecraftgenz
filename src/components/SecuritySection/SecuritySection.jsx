@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import styles from './SecuritySection.module.css';
 
-const SHA256 = 'Disponivel apos verificacao — use "Verificar integridade" no CodeCraft Hub';
+const SHA256 = '844a4dee2ce1ca1472e80a08961e8022732c55849c4babe5b3b0b0ff6dd2fb19';
 
 const content = {
   pt: {
