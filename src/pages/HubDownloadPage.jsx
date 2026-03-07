@@ -1,11 +1,20 @@
 // src/pages/HubDownloadPage.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaWindows, FaApple, FaLinux, FaDownload, FaShieldAlt, FaRocket, FaLayerGroup } from 'react-icons/fa';
 import Navbar from '../components/Navbar/Navbar.jsx';
 import SecuritySection from '../components/SecuritySection/SecuritySection.jsx';
+import { getAppById } from '../services/appsAPI.js';
+import { API_BASE_URL } from '../lib/apiConfig.js';
 import styles from './HubDownloadPage.module.css';
 
-const DOWNLOAD_URL = 'https://codecraftgenz-monorepo.onrender.com/api/downloads/CodeCraftHub_Setup.exe';
+const HUB_APP_ID = 13;
+const FALLBACK_URL = 'https://codecraftgenz-monorepo.onrender.com/api/downloads/CodeCraftHub_Setup.exe';
+
+const resolveUrl = (url) => {
+  if (!url) return FALLBACK_URL;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
 const features = [
   {
@@ -31,6 +40,16 @@ const features = [
 ];
 
 const HubDownloadPage = () => {
+  const [downloadUrl, setDownloadUrl] = useState(FALLBACK_URL);
+  const [version, setVersion] = useState('1.0.0');
+
+  useEffect(() => {
+    getAppById(HUB_APP_ID).catch(() => null).then(app => {
+      if (app?.executableUrl) setDownloadUrl(resolveUrl(app.executableUrl));
+      if (app?.version) setVersion(app.version);
+    });
+  }, []);
+
   return (
     <>
       <Navbar />
@@ -66,7 +85,7 @@ const HubDownloadPage = () => {
 
             {/* Download Button */}
             <a
-              href={DOWNLOAD_URL}
+              href={downloadUrl}
               className={styles.downloadButton}
               target="_blank"
               rel="noopener noreferrer"
@@ -76,7 +95,7 @@ const HubDownloadPage = () => {
             </a>
 
             <p className={styles.versionInfo}>
-              v1.0.0 &bull; Windows 10/11 &bull; ~5 MB
+              v{version} &bull; Windows 10/11 &bull; ~5 MB
             </p>
 
             {/* Platform badges */}
