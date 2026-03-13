@@ -1,13 +1,15 @@
 // src/pages/LoginPage.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Mail, Lock } from 'lucide-react';
 
-import Navbar from '../components/Navbar/Navbar';
+import logoImg from '../assets/logo-principal.png';
 import { useAuth } from '../context/useAuth';
+import styles from './LoginPage.module.css';
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [email, setEmail] = useState('admin@codecraft.dev');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,75 +24,89 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="login-page page-with-background">
-      <Navbar />
-      <section className="section-block" aria-label="Formulario de login">
-        <div className="login-card">
-          <header>
-            <h1 className="title">Entrar</h1>
-            <p className="subtitle">Acesse a área administrativa</p>
-          </header>
-
-          <form className="form" onSubmit={onSubmit} aria-label="Formulario de autenticacao">
-            <label className="label" htmlFor="login-email">E-mail</label>
-            <input
-              className="input"
-              type="email"
-              id="login-email"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
-
-            <label className="label" htmlFor="login-password">Senha</label>
-            <input
-              className="input"
-              type="password"
-              id="login-password"
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
-
-            {error && <div className="error" role="alert">{error}</div>}
-
-            <button className="btnPrimary" type="submit" disabled={loading}>
-              {loading ? 'Entrando...' : 'Entrar'}
-            </button>
-            <div className="actions">
-              <Link className="link" to="/forgot-password">Esqueci minha senha</Link>
-            </div>
-            <div className="register-link">
-              <span className="text">Nao tem uma conta?</span>
-              <Link className="link" to="/register">Criar conta</Link>
-            </div>
-          </form>
+    <div className={styles.page}>
+      {/* Left — Form */}
+      <div className={styles.formPanel}>
+        <div className={styles.brandRow}>
+          <img src={logoImg} alt="CodeCraft" className={styles.brandLogo} />
+          <span className={styles.brandName}>CodeCraft</span>
         </div>
-      </section>
 
-      <style>{`
-        .login-page { min-height: 100vh; }
-        .section-block { padding: var(--espaco-3xl) var(--espaco-xl); }
-        .login-card { max-width: 420px; margin: 0 auto; background: #F4F4F4; border-radius: 16px; padding: 24px; box-shadow: 0 12px 32px rgba(0,0,0,0.18); border: 1px solid rgba(0,228,242,0.2); }
-        .title { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 700; font-size: 1.75rem; color: #121212; }
-        .subtitle { font-family: 'Poppins', system-ui, sans-serif; color: #555; margin-top: 6px; }
-        .form { display: grid; gap: 12px; margin-top: 16px; }
-        .label { font-family: 'Inter', system-ui, sans-serif; font-size: 0.95rem; color: #333; }
-        .input { font-family: 'Inter', system-ui, sans-serif; padding: 10px 12px; border-radius: 10px; border: 1px solid #A6A6A6; outline: none; }
-        .input:focus { border-color: #00E4F2; box-shadow: 0 0 0 3px rgba(0,228,242,0.2); }
-        .btnPrimary { background: #D12BF2; color: white; border: none; border-radius: 10px; padding: 10px 14px; font-weight: 600; cursor: pointer; }
-        .btnPrimary:hover { filter: brightness(1.05); }
-        .actions { display: flex; justify-content: flex-end; margin-top: 8px; }
-        .register-link { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #ddd; }
-        .text { font-family: 'Inter', system-ui, sans-serif; font-size: 0.9rem; color: #555; }
-        .link { font-family: 'Inter', system-ui, sans-serif; font-size: 0.9rem; color: #004A54; text-decoration: underline; cursor: pointer; }
-        .error { background: rgba(209,43,242,0.1); border: 1px solid rgba(209,43,242,0.3); padding: 8px 10px; border-radius: 8px; color: #68007B; }
-        @media (max-width: 480px) { .login-card { margin: 0 16px; } }
-      `}</style>
+        <span className={styles.welcomeLabel}>Bem-vindo</span>
+        <h1 className={styles.title}>
+          Code<span className={styles.titleAccent}>Craft</span>
+        </h1>
+        <p className={styles.subtitle}>Tecnologia para maximizar resultados.</p>
+
+        <form className={styles.form} onSubmit={onSubmit} aria-label="Formulário de autenticação">
+          <div className={styles.fieldGroup}>
+            <label className={styles.label} htmlFor="login-email">E-mail</label>
+            <div className={styles.inputWrapper}>
+              <span className={styles.inputIcon}><Mail size={18} /></span>
+              <input
+                className={styles.input}
+                type="email"
+                id="login-email"
+                name="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
+            </div>
+          </div>
+
+          <div className={styles.fieldGroup}>
+            <label className={styles.label} htmlFor="login-password">Senha</label>
+            <div className={styles.inputWrapper}>
+              <span className={styles.inputIcon}><Lock size={18} /></span>
+              <input
+                className={styles.input}
+                type="password"
+                id="login-password"
+                name="password"
+                placeholder="Senha"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+            </div>
+          </div>
+
+          <div className={styles.forgotRow}>
+            <Link className={styles.forgotLink} to="/forgot-password">Esqueceu a senha?</Link>
+          </div>
+
+          {error && <div className={styles.error} role="alert">{error}</div>}
+
+          <button className={styles.submitBtn} type="submit" disabled={loading}>
+            {loading ? 'Entrando...' : 'Entrar'}
+          </button>
+
+          <div className={styles.divider}>
+            <span className={styles.dividerLine} />
+            <span className={styles.dividerText}>ou continue com</span>
+            <span className={styles.dividerLine} />
+          </div>
+
+          <div className={styles.registerRow}>
+            <span className={styles.registerText}>Não tem conta?</span>
+            <Link className={styles.registerLink} to="/register">Criar conta</Link>
+          </div>
+        </form>
+      </div>
+
+      {/* Right — Visual */}
+      <div className={styles.visualPanel}>
+        <div className={styles.visualBg} />
+        <div className={styles.visualGlow} />
+        <div className={styles.visualContent}>
+          <span className={styles.visualLetters}>CC</span>
+          <span className={styles.visualTagline}>Seu software do futuro</span>
+        </div>
+      </div>
     </div>
   );
 }
