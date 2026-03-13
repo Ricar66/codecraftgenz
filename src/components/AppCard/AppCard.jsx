@@ -14,7 +14,8 @@ const parsePlatforms = (p) => {
 };
 
 const getBadge = (app) => {
-  const finalized = app.status === 'finalizado' || app.status === 'available' || app.status === 'ready';
+  const statusLower = String(app.status || '').toLowerCase();
+  const finalized = !!app.status && statusLower !== 'draft' && statusLower !== 'disabled';
   if (!finalized) return null;
   const name = String(app.name || '').toLowerCase();
   if (name === 'coincraft') return { label: 'Popular', className: styles.badgePopular };
@@ -27,7 +28,8 @@ const getBadge = (app) => {
 const AppCard = ({ app, onDownload, onAbout, mode = 'owned', featured = false }) => {
   const { id, name, mainFeature, category } = app;
   const platforms = parsePlatforms(app.platforms);
-  const finalized = app.status === 'finalizado' || app.status === 'available' || app.status === 'ready';
+  const statusLower = String(app.status || '').toLowerCase();
+  const finalized = !!app.status && statusLower !== 'draft' && statusLower !== 'disabled';
   const safePrice = getAppPrice(app);
   const displayPrice = safePrice > 0 ? `R$ ${safePrice.toLocaleString('pt-BR')}` : 'Gratuito';
   const badge = getBadge(app);
@@ -57,11 +59,8 @@ const AppCard = ({ app, onDownload, onAbout, mode = 'owned', featured = false })
         {category && <span className={styles.chip} aria-label="Categoria">{category}</span>}
         <p className={`${styles.feature} ${styles.clamp2}`} title={mainFeature}>{mainFeature}</p>
 
-        <div className={styles.pricingRow} aria-label="Preço e status">
+        <div className={styles.pricingRow} aria-label="Preço">
           <span className={`${styles.price} ${safePrice === 0 ? styles.priceFree : ''}`}>{displayPrice}</span>
-          <span className={`${styles.status} ${finalized ? styles.statusOk : styles.statusPending}`}>
-            {finalized ? 'Pronto' : 'Em breve'}
-          </span>
         </div>
 
         {platforms.length > 0 && (
