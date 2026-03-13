@@ -158,7 +158,6 @@ const AppHubPage = () => {
       handlePrev();
       pauseAndScheduleResume();
     } else if (e.key === 'ArrowRight') {
-      // Avança com loop no keydown para experiência fluida
       const next = currentSlide + 1 >= featuredApps.length ? 0 : currentSlide + 1;
       scrollToIndex(next);
       pauseAndScheduleResume();
@@ -214,7 +213,7 @@ const AppHubPage = () => {
       <div className={styles.appHubPage}>
         <Navbar />
         <div className={styles.errorContainer}>
-          <h2>Erro ao carregar aplicativos</h2>
+          <h2>Erro ao carregar</h2>
           <p>{error}</p>
           <button onClick={loadApps} className={styles.retryButton}>
             Tentar Novamente
@@ -233,10 +232,10 @@ const AppHubPage = () => {
         <div className={styles.heroContent}>
           <header>
             <h1 className={styles.heroTitle}>
-              Hub de Aplicativos
+              Descubra nossos <span className={styles.heroAccent}>Aplicativos</span>
             </h1>
             <p className={styles.heroSubtitle}>
-              Descubra e adquira os melhores aplicativos para impulsionar seu negócio
+              Soluções profissionais para impulsionar seu dia a dia. Desenvolvidas pela comunidade CodeCraft.
             </p>
           </header>
 
@@ -251,7 +250,7 @@ const AppHubPage = () => {
               onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
               className={styles.searchInput}
             />
-            <div className={styles.searchIcon} aria-hidden="true">🔍</div>
+            <div className={styles.searchIcon} aria-hidden="true">&#128269;</div>
           </div>
         </div>
       </section>
@@ -260,30 +259,20 @@ const AppHubPage = () => {
       <section className={styles.hubBanner}>
         <div className={styles.hubBannerContent}>
           <div className={styles.hubBannerIcon}>
-            <svg width="48" height="48" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#hub-bg)" />
+            <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="2" width="60" height="60" rx="14" fill="#6366f1" />
               <path d="M24 20L12 32L24 44" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
-              <path d="M40 20L52 32L40 44" stroke="url(#hub-accent)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="32" cy="32" r="4" fill="white" opacity="0.95" />
-              <defs>
-                <linearGradient id="hub-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#D12BF2" />
-                  <stop offset="100%" stopColor="#9B1FD4" />
-                </linearGradient>
-                <linearGradient id="hub-accent" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#00E4F2" />
-                  <stop offset="100%" stopColor="#00B4D8" />
-                </linearGradient>
-              </defs>
+              <path d="M40 20L52 32L40 44" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
+              <circle cx="32" cy="32" r="3" fill="white" opacity="0.95" />
             </svg>
           </div>
           <div className={styles.hubBannerText}>
             <h3>CodeCraft Hub <span className={styles.hubBannerTag}>Gratuito</span></h3>
-            <p>Baixe o launcher desktop e gerencie todos os seus apps em um só lugar. Download, instalação e atualizações automáticas.</p>
+            <p>Launcher desktop — gerencie todos os seus apps em um só lugar.</p>
           </div>
           <Link to="/aplicativos/hub" className={styles.hubBannerButton}>
             <FaDownload />
-            <span>Baixar para <FaWindows style={{ marginLeft: 4 }} /> Windows</span>
+            <span>Baixar para <FaWindows /> Windows</span>
           </Link>
         </div>
       </section>
@@ -291,7 +280,7 @@ const AppHubPage = () => {
       {/* Filter & Sort Section */}
       <section className={styles.filterSection} aria-label="Filtros e ordenacao">
         <div className={styles.filterContainer}>
-          <h3 id="category-filter-label">Filtrar por Categoria</h3>
+          <h3 id="category-filter-label">Categoria</h3>
           <div className={styles.filterButtons} role="group" aria-labelledby="category-filter-label">
             {categories.map(category => (
               <button
@@ -308,7 +297,7 @@ const AppHubPage = () => {
 
           <div className={styles.sortControls}>
             <label>
-              Ordenar por
+              Ordenar
               <select value={sortBy} onChange={(e) => { setPage(1); setSortBy(e.target.value); }} className={styles.filterButton}>
                 <option value="name">Nome</option>
                 <option value="price">Preço</option>
@@ -318,20 +307,8 @@ const AppHubPage = () => {
             <label>
               Ordem
               <select value={sortOrder} onChange={(e) => { setPage(1); setSortOrder(e.target.value); }} className={styles.filterButton}>
-                <option value="asc">Ascendente</option>
-                <option value="desc">Descendente</option>
-              </select>
-            </label>
-            <label>
-              Página
-              <input type="number" min={1} value={page} onChange={(e) => setPage(Math.max(1, Number(e.target.value) || 1))} className={styles.pageInput} />
-            </label>
-            <label>
-              Itens por página
-              <select value={pageSize} onChange={(e) => { setPage(1); setPageSize(Number(e.target.value)); }} className={styles.filterButton}>
-                <option value={12}>12</option>
-                <option value={24}>24</option>
-                <option value={48}>48</option>
+                <option value="asc">A → Z</option>
+                <option value="desc">Z → A</option>
               </select>
             </label>
           </div>
@@ -343,7 +320,7 @@ const AppHubPage = () => {
         <section className={styles.highlightsSection}>
           <div className={styles.highlightsHeader}>
             <h3>Destaques</h3>
-            <p>Apps recomendados para você — populares e atualizados</p>
+            <p>Apps populares e atualizados</p>
           </div>
           <div
             className={styles.highlightsViewport}
@@ -375,9 +352,7 @@ const AppHubPage = () => {
                       onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                   ) : (
-                    <div className={styles.highlightMedia} style={{ background: 'linear-gradient(135deg, rgba(209,43,242,0.3), rgba(0,228,242,0.3))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--texto-gelo)', fontSize: '2rem', fontWeight: 700 }}>
-                      {app.name?.charAt(0) || 'A'}
-                    </div>
+                    <div className={styles.highlightMedia} aria-hidden="true" />
                   )}
                   <div className={styles.highlightOverlay}>
                     <div className={styles.highlightInfo}>
@@ -392,8 +367,8 @@ const AppHubPage = () => {
                 </div>
               ))}
             </div>
-            <button type="button" className={`${styles.navButton} ${styles.prev}`} onClick={handlePrev} aria-label="Anterior">‹</button>
-            <button type="button" className={`${styles.navButton} ${styles.next}`} onClick={handleNext} aria-label="Próximo">›</button>
+            <button type="button" className={`${styles.navButton} ${styles.prev}`} onClick={handlePrev} aria-label="Anterior">&#8249;</button>
+            <button type="button" className={`${styles.navButton} ${styles.next}`} onClick={handleNext} aria-label="Próximo">&#8250;</button>
             <div className={styles.srOnly} role="status" aria-live="polite" aria-atomic="true">
               Destaque {currentSlide + 1} de {featuredApps.length}: {featuredApps[currentSlide]?.name || ''}
             </div>
@@ -419,7 +394,7 @@ const AppHubPage = () => {
         <div className={styles.container}>
           <div className={styles.highlightsHeader}>
             <h3>Todos os Aplicativos</h3>
-            <p>{filteredApps.length} aplicativo(s) disponível(is)</p>
+            <p>{filteredApps.length} aplicativo{filteredApps.length !== 1 ? 's' : ''} disponíve{filteredApps.length !== 1 ? 'is' : 'l'}</p>
           </div>
 
           {filteredApps.length === 0 ? (
@@ -430,9 +405,9 @@ const AppHubPage = () => {
           ) : (
             <>
               <div className={styles.appsGrid}>
-                {paginatedApps.map(app => (
+                {paginatedApps.map((app, index) => (
                   <div key={app.id} className={styles.cardWrap}>
-                    <AppCard app={app} mode="public" onAbout={setDetailApp} />
+                    <AppCard app={app} mode="public" onAbout={setDetailApp} featured={index === 0 && gridPage === 1 && paginatedApps.length > 1} />
                   </div>
                 ))}
               </div>
@@ -444,7 +419,7 @@ const AppHubPage = () => {
                     disabled={gridPage === 1}
                     className={styles.filterButton}
                   >
-                    ‹ Anterior
+                    &#8249; Anterior
                   </button>
                   {Array.from({ length: totalGridPages }, (_, i) => i + 1).map(p => (
                     <button
@@ -460,9 +435,9 @@ const AppHubPage = () => {
                     disabled={gridPage === totalGridPages}
                     className={styles.filterButton}
                   >
-                    Próximo ›
+                    Próximo &#8250;
                   </button>
-                  <span style={{ color: 'var(--texto-gelo, #ccc)', fontSize: '0.85rem', marginLeft: '12px' }}>
+                  <span className={styles.paginationInfo}>
                     {(gridPage - 1) * APPS_PER_PAGE + 1}–{Math.min(gridPage * APPS_PER_PAGE, filteredApps.length)} de {filteredApps.length}
                   </span>
                 </div>
