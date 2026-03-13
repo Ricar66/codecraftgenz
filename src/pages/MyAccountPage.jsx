@@ -9,6 +9,7 @@ import { Link, Navigate } from 'react-router-dom';
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth';
 import { apiRequest } from '../lib/apiConfig';
+import { sanitizeImageUrl } from '../utils/urlSanitize.js';
 import styles from './MyAccountPage.module.css';
 
 export default function MyAccountPage() {
@@ -51,22 +52,19 @@ export default function MyAccountPage() {
     });
   };
 
-  const getStatusBadge = (license) => {
-    if (license.activatedAt) {
-      return { icon: <FaCheckCircle />, text: 'Ativada', className: styles.statusActive };
-    }
-    return { icon: <FaClock />, text: 'Pendente', className: styles.statusPending };
+  const formatPrice = (amount) => {
+    if (!amount || amount === 0) return 'Gratuito';
+    return `R$ ${Number(amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
   };
 
   if (!authLoading && !isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  const activatedCount = purchases.filter(p => p.activatedAt).length;
-  const pendingCount = purchases.length - activatedCount;
+  const totalSpent = purchases.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
   return (
-    <div className={`${styles.page} page-with-background`}>
+    <div className={styles.page}>
       <Navbar />
 
       <div className={styles.container}>
@@ -94,12 +92,12 @@ export default function MyAccountPage() {
             <span className={styles.statLabel}>Compras</span>
           </div>
           <div className={styles.statCard}>
-            <span className={styles.statValue}>{activatedCount}</span>
-            <span className={styles.statLabel}>Ativadas</span>
+            <span className={styles.statValue}>{purchases.filter(p => p.executable_url).length}</span>
+            <span className={styles.statLabel}>Downloads</span>
           </div>
           <div className={styles.statCard}>
-            <span className={styles.statValue}>{pendingCount}</span>
-            <span className={styles.statLabel}>Pendentes</span>
+            <span className={styles.statValue}>{formatPrice(totalSpent)}</span>
+            <span className={styles.statLabel}>Investido</span>
           </div>
         </div>
 
@@ -130,47 +128,65 @@ export default function MyAccountPage() {
             ) : error ? (
               <div className={styles.error}>
                 <FaExclamationCircle />
-                <p>{error}</p>
+                <span>{error}</span>
               </div>
             ) : purchases.length === 0 ? (
               <div className={styles.empty}>
                 <FaBoxOpen className={styles.emptyIcon} />
                 <h3 className={styles.emptyTitle}>Nenhuma compra encontrada</h3>
-                <p className={styles.emptyText}>Voce ainda nao realizou nenhuma compra.</p>
+                <p className={styles.emptyText}>Explore nossos aplicativos e encontre a ferramenta ideal para voce.</p>
                 <Link to="/aplicativos" className={styles.browseBtn}>
                   Ver Aplicativos
                 </Link>
               </div>
             ) : (
               <div className={styles.purchasesList}>
-                {purchases.map((license) => {
-                  const status = getStatusBadge(license);
+                {purchases.map((purchase) => {
+                  const thumbUrl = sanitizeImageUrl(purchase.app_thumb);
+                  const hasDownload = !!purchase.executable_url;
                   return (
-                    <article key={license.id} className={styles.purchaseCard}>
-                      <div className={styles.purchaseIcon}>
-                        <FaBoxOpen />
-                      </div>
+                    <article key={purchase.payment_id} className={styles.purchaseCard}>
+                      {thumbUrl ? (
+                        <img
+                          src={thumbUrl}
+                          alt={purchase.app_name}
+                          className={styles.purchaseThumb}
+                          loading="lazy"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      ) : (
+                        <div className={styles.purchasePlaceholder}>
+                          <FaBoxOpen />
+                        </div>
+                      )}
                       <div className={styles.purchaseBody}>
-                        <h3 className={styles.purchaseName}>
-                          {license.appName || `App #${license.appId}`}
-                        </h3>
-                        <div className={styles.purchaseMeta}>
-                          <span className={styles.purchaseDate}>
-                            <FaCalendar /> {formatDate(license.createdAt)}
-                          </span>
-                          <span className={`${styles.statusBadge} ${status.className}`}>
-                            {status.icon} {status.text}
+                        <div className={styles.purchaseTopRow}>
+                          <h3 className={styles.purchaseName}>
+                            {purchase.app_name || `Aplicativo #${purchase.app_id}`}
+                          </h3>
+                          <span className={styles.purchaseAmount}>
+                            {formatPrice(purchase.amount)}
                           </span>
                         </div>
-                        {license.licenseKey && (
-                          <div className={styles.licenseRow}>
-                            <span className={styles.licenseLabel}>Chave:</span>
-                            <code className={styles.licenseCode}>{license.licenseKey}</code>
-                          </div>
-                        )}
+                        <div className={styles.purchaseMeta}>
+                          <span className={styles.purchaseDate}>
+                            <FaCalendar /> {formatDate(purchase.purchased_at)}
+                          </span>
+                          <span className={`${styles.statusBadge} ${styles.statusApproved}`}>
+                            <FaCheckCircle /> Aprovado
+                          </span>
+                        </div>
                       </div>
                       <div className={styles.purchaseActions}>
-                        <button className={styles.downloadBtn} title="Download" aria-label={`Download ${license.appName}`}>
+                        <button
+                          className={styles.downloadBtn}
+                          title={hasDownload ? 'Download' : 'Download indisponivel'}
+                          aria-label={`Download ${purchase.app_name}`}
+                          disabled={!hasDownload}
+                          onClick={() => {
+                            if (hasDownload) window.open(purchase.executable_url, '_blank');
+                          }}
+                        >
                           <FaDownload />
                         </button>
                       </div>
@@ -183,18 +199,20 @@ export default function MyAccountPage() {
         )}
 
         {activeTab === 'profile' && (
-          <div className={styles.profileForm}>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>Nome</label>
-              <input type="text" value={user?.name || ''} readOnly className={styles.formInput} />
+          <div className={styles.profileSection}>
+            <div className={styles.profileForm}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Nome</label>
+                <input type="text" value={user?.name || ''} readOnly className={styles.formInput} />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>E-mail</label>
+                <input type="email" value={user?.email || ''} readOnly className={styles.formInput} />
+              </div>
+              <p className={styles.profileNote}>
+                Para alterar seus dados, entre em contato com o suporte.
+              </p>
             </div>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>E-mail</label>
-              <input type="email" value={user?.email || ''} readOnly className={styles.formInput} />
-            </div>
-            <p className={styles.profileNote}>
-              Para alterar seus dados, entre em contato com o suporte.
-            </p>
           </div>
         )}
       </div>
