@@ -35,16 +35,16 @@ const sectionReveal = {
 
 const showcaseData = [
   {
-    badge: 'Sobre nos',
+    badge: 'Sobre nós',
     title: 'Criando o futuro, linha por linha',
-    description: 'Somos uma equipe Gen-Z apaixonada por tecnologia. Desenvolvemos solucoes de software modernas, escalaveis e com design que faz a diferenca.',
+    description: 'Somos uma equipe Gen-Z apaixonada por tecnologia. Desenvolvemos soluções de software modernas, escaláveis e com design que faz a diferença.',
     image: hero3dImg,
-    imageAlt: 'Equipe CodeCraft desenvolvendo solucoes',
+    imageAlt: 'Equipe CodeCraft desenvolvendo soluções',
     reverse: false,
     features: [
-      { icon: <Zap size={18} />, text: 'Desenvolvimento agil e moderno' },
+      { icon: <Zap size={18} />, text: 'Desenvolvimento ágil e moderno' },
       { icon: <Palette size={18} />, text: 'Design UI/UX premium' },
-      { icon: <Rocket size={18} />, text: 'Deploy continuo e escalavel' },
+      { icon: <Rocket size={18} />, text: 'Deploy contínuo e escalável' },
     ],
   },
   {
@@ -52,7 +52,7 @@ const showcaseData = [
     title: 'Supere seus limites',
     description: 'Desafios reais que testam suas habilidades e aceleram seu crescimento. Problemas do mercado, prazos reais e feedback de profissionais.',
     image: desafiosBanner,
-    imageAlt: 'Desafios de programacao CodeCraft',
+    imageAlt: 'Desafios de programação CodeCraft',
     reverse: true,
     features: [
       { icon: <Target size={18} />, text: 'Desafios com problemas reais' },
@@ -63,22 +63,22 @@ const showcaseData = [
   {
     badge: 'Aplicativos',
     title: 'Nosso ecossistema de apps',
-    description: 'Aplicativos desenvolvidos com as melhores praticas de engenharia. Solucoes robustas, interfaces intuitivas e performance de alto nivel.',
+    description: 'Aplicativos desenvolvidos com as melhores práticas de engenharia. Soluções robustas, interfaces intuitivas e performance de alto nível.',
     image: appsBanner,
     imageAlt: 'Hub de aplicativos CodeCraft',
     reverse: false,
     features: [
       { icon: <Smartphone size={18} />, text: 'Apps desktop e mobile' },
-      { icon: <RefreshCw size={18} />, text: 'Atualizacoes automaticas' },
-      { icon: <Shield size={18} />, text: 'Suporte tecnico dedicado' },
+      { icon: <RefreshCw size={18} />, text: 'Atualizações automáticas' },
+      { icon: <Shield size={18} />, text: 'Suporte técnico dedicado' },
     ],
   },
   {
     badge: 'Para Empresas',
-    title: 'Solucoes sob medida',
-    description: 'Da ideacao ao deploy, construimos solucoes que combinam tecnologia de ponta com design intuitivo para entregar resultados reais.',
+    title: 'Soluções sob medida',
+    description: 'Da ideação ao deploy, construímos soluções que combinam tecnologia de ponta com design intuitivo para entregar resultados reais.',
     image: companiesBanner,
-    imageAlt: 'Solucoes empresariais CodeCraft',
+    imageAlt: 'Soluções empresariais CodeCraft',
     reverse: true,
     features: [
       { icon: <Handshake size={18} />, text: 'Consultoria personalizada' },
@@ -101,17 +101,17 @@ const HomePage = () => {
   return (
     <div className={styles.homePage}>
       <Helmet>
-        <title>CodeCraft Gen-Z | Solucoes de Software do Futuro</title>
-        <meta name="description" content="A CodeCraft Gen-Z cria solucoes de software modernas, escalaveis e seguras, combinando IA, experiencias digitais e engenharia de alto desempenho." />
-        <meta property="og:title" content="CodeCraft Gen-Z | Solucoes de Software do Futuro" />
-        <meta property="og:description" content="Solucoes de software com foco em performance, seguranca e experiencia — impulsionadas por design e tecnologia de ponta." />
+        <title>CodeCraft Gen-Z | Soluções de Software do Futuro</title>
+        <meta name="description" content="A CodeCraft Gen-Z cria soluções de software modernas, escaláveis e seguras, combinando IA, experiências digitais e engenharia de alto desempenho." />
+        <meta property="og:title" content="CodeCraft Gen-Z | Soluções de Software do Futuro" />
+        <meta property="og:description" content="Soluções de software com foco em performance, segurança e experiência — impulsionadas por design e tecnologia de ponta." />
         <meta property="og:image" content={ogImageUrl} />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={ogUrl} />
         <link rel="canonical" href={canonical} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="CodeCraft Gen-Z | Solucoes de Software do Futuro" />
-        <meta name="twitter:description" content="Solucoes de software com foco em performance, seguranca e experiencia — impulsionadas por design e tecnologia de ponta." />
+        <meta name="twitter:title" content="CodeCraft Gen-Z | Soluções de Software do Futuro" />
+        <meta name="twitter:description" content="Soluções de software com foco em performance, segurança e experiência — impulsionadas por design e tecnologia de ponta." />
         <meta name="twitter:image" content={ogImageUrl} />
         {twitterHandle && <meta name="twitter:site" content={twitterHandle} />}
       </Helmet>
@@ -145,12 +145,12 @@ const HomePage = () => {
             <div className={styles.cardcraftContent}>
               <span className={styles.cardcraftBadge}>Novo Produto</span>
               <h2 className={styles.cardcraftHeadline}>
-                Apresentacao nao e detalhe.<br />
-                <span className={styles.cardcraftAccent}>E posicionamento.</span>
+                Apresentação não é detalhe.<br />
+                <span className={styles.cardcraftAccent}>É posicionamento.</span>
               </h2>
               <p className={styles.cardcraftDesc}>
-                CardCraft e o cartao virtual profissional feito para quem leva carreira e mercado a serio.
-                Compartilhe seus dados, portfolio e presenca digital em um formato atual, rapido e alinhado ao mercado.
+                CardCraft é o cartão virtual profissional feito para quem leva carreira e mercado a sério.
+                Compartilhe seus dados, portfólio e presença digital em um formato atual, rápido e alinhado ao mercado.
               </p>
               <div className={styles.cardcraftCta}>
                 <span className={styles.cardcraftCtaText}>Conhecer CardCraft</span>
@@ -161,7 +161,7 @@ const HomePage = () => {
               <div className={styles.cardcraftCard}>
                 <div className={styles.cardcraftCardInner}>
                   <span className={styles.cardcraftLogo}>CardCraft</span>
-                  <span className={styles.cardcraftTagline}>Seu cartao virtual profissional</span>
+                  <span className={styles.cardcraftTagline}>Seu cartão virtual profissional</span>
                 </div>
               </div>
             </div>
@@ -201,8 +201,8 @@ const HomePage = () => {
         >
           <div className={styles.sectionCard}>
             <div className={styles.feedbackSection}>
-              <h2 className={styles.sectionTitle}>O que dizem sobre nos</h2>
-              <p className={styles.sectionSubtitle}>Feedbacks reais de quem ja usou nossos servicos</p>
+              <h2 className={styles.sectionTitle}>O que dizem sobre nós</h2>
+              <p className={styles.sectionSubtitle}>Feedbacks reais de quem já usou nossos serviços</p>
               <FeedbackShowcase autoIntervalMs={5000} showControls={true} />
             </div>
           </div>
