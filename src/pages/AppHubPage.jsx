@@ -407,7 +407,7 @@ const AppHubPage = () => {
               <div className={styles.appsGrid}>
                 {paginatedApps.map((app, index) => (
                   <div key={app.id} className={styles.cardWrap}>
-                    <AppCard app={app} mode="public" onAbout={setDetailApp} featured={index === 0 && gridPage === 1 && paginatedApps.length > 1} />
+                    <AppCard app={app} mode="public" onAbout={setDetailApp} />
                   </div>
                 ))}
               </div>
