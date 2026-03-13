@@ -20,8 +20,7 @@ const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
 const PasswordResetPage = lazy(() => import('./pages/PasswordResetPage.jsx'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage.jsx'));
 const AppHubPage = lazy(() => import('./pages/AppHubPage.jsx'));
-// AppsPage desativada — rota /apps redundante e expunha LicenseActivator
-// const AppsPage = lazy(() => import('./pages/AppsPage.jsx'));
+
 const AppPurchasePage = lazy(() => import('./pages/AppPurchasePage.jsx'));
 const OrderSuccessPage = lazy(() => import('./pages/OrderSuccessPage.jsx'));
 const CacheMaintenancePage = lazy(() => import('./pages/CacheMaintenancePage.jsx'));
@@ -132,8 +131,6 @@ function App() {
                 <Route path="/politica-privacidade" element={<PrivacyPolicyPage />} />
                 <Route path="/termos-uso" element={<TermsOfUsePage />} />
                 <Route path="/cache/clear" element={<CacheMaintenancePage />} />
-                {/* Rota /apps desativada — redirecciona para montra publica */}
-                <Route path="/apps" element={<Navigate to="/aplicativos" replace />} />
                 <Route path="/apps/:id/compra" element={<AppPurchasePage />} />
                 <Route path="/apps/:id/sucesso" element={<OrderSuccessPage />} />
                 <Route path="/minha-conta" element={<MyAccountPage />} />
