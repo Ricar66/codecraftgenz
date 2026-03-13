@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Mail, Lock } from 'lucide-react';
 
 import logoImg from '../assets/logo-principal.png';
+import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth';
 import styles from './LoginPage.module.css';
 
@@ -25,86 +26,74 @@ export default function LoginPage() {
 
   return (
     <div className={styles.page}>
-      {/* Left — Form */}
-      <div className={styles.formPanel}>
-        <div className={styles.brandRow}>
-          <img src={logoImg} alt="CodeCraft" className={styles.brandLogo} />
-          <span className={styles.brandName}>CodeCraft</span>
-        </div>
+      <Navbar />
 
-        <span className={styles.welcomeLabel}>Bem-vindo</span>
-        <h1 className={styles.title}>
-          Code<span className={styles.titleAccent}>Craft</span>
-        </h1>
-        <p className={styles.subtitle}>Tecnologia para maximizar resultados.</p>
+      <div className={styles.wrapper}>
+        <div className={styles.card}>
+          <header className={styles.header}>
+            <img src={logoImg} alt="CodeCraft" className={styles.logo} />
+            <h1 className={styles.title}>Entrar na plataforma</h1>
+            <p className={styles.subtitle}>Acesse sua conta CodeCraft</p>
+          </header>
 
-        <form className={styles.form} onSubmit={onSubmit} aria-label="Formulário de autenticação">
-          <div className={styles.fieldGroup}>
-            <label className={styles.label} htmlFor="login-email">E-mail</label>
-            <div className={styles.inputWrapper}>
-              <span className={styles.inputIcon}><Mail size={18} /></span>
-              <input
-                className={styles.input}
-                type="email"
-                id="login-email"
-                name="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
+          <form className={styles.form} onSubmit={onSubmit} aria-label="Formulário de autenticação">
+            <div className={styles.fieldGroup}>
+              <label className={styles.label} htmlFor="login-email">E-mail</label>
+              <div className={styles.inputWrapper}>
+                <span className={styles.inputIcon}><Mail size={17} /></span>
+                <input
+                  className={styles.input}
+                  type="email"
+                  id="login-email"
+                  name="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </div>
             </div>
-          </div>
 
-          <div className={styles.fieldGroup}>
-            <label className={styles.label} htmlFor="login-password">Senha</label>
-            <div className={styles.inputWrapper}>
-              <span className={styles.inputIcon}><Lock size={18} /></span>
-              <input
-                className={styles.input}
-                type="password"
-                id="login-password"
-                name="password"
-                placeholder="Senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-              />
+            <div className={styles.fieldGroup}>
+              <label className={styles.label} htmlFor="login-password">Senha</label>
+              <div className={styles.inputWrapper}>
+                <span className={styles.inputIcon}><Lock size={17} /></span>
+                <input
+                  className={styles.input}
+                  type="password"
+                  id="login-password"
+                  name="password"
+                  placeholder="Sua senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
             </div>
-          </div>
 
-          <div className={styles.forgotRow}>
-            <Link className={styles.forgotLink} to="/forgot-password">Esqueceu a senha?</Link>
-          </div>
+            <div className={styles.forgotRow}>
+              <Link className={styles.forgotLink} to="/forgot-password">Esqueceu a senha?</Link>
+            </div>
 
-          {error && <div className={styles.error} role="alert">{error}</div>}
+            {error && <div className={styles.error} role="alert">{error}</div>}
 
-          <button className={styles.submitBtn} type="submit" disabled={loading}>
-            {loading ? 'Entrando...' : 'Entrar'}
-          </button>
+            <button className={styles.submitBtn} type="submit" disabled={loading}>
+              {loading ? 'Entrando...' : 'Entrar'}
+            </button>
 
-          <div className={styles.divider}>
-            <span className={styles.dividerLine} />
-            <span className={styles.dividerText}>ou continue com</span>
-            <span className={styles.dividerLine} />
-          </div>
+            <div className={styles.divider}>
+              <span className={styles.dividerLine} />
+              <span className={styles.dividerText}>ou</span>
+              <span className={styles.dividerLine} />
+            </div>
 
-          <div className={styles.registerRow}>
-            <span className={styles.registerText}>Não tem conta?</span>
-            <Link className={styles.registerLink} to="/register">Criar conta</Link>
-          </div>
-        </form>
-      </div>
-
-      {/* Right — Visual */}
-      <div className={styles.visualPanel}>
-        <div className={styles.visualBg} />
-        <div className={styles.visualGlow} />
-        <div className={styles.visualContent}>
-          <span className={styles.visualLetters}>CC</span>
-          <span className={styles.visualTagline}>Seu software do futuro</span>
+            <div className={styles.registerRow}>
+              <span className={styles.registerText}>Não tem conta?</span>
+              <Link className={styles.registerLink} to="/register">Criar conta</Link>
+            </div>
+          </form>
         </div>
       </div>
     </div>
