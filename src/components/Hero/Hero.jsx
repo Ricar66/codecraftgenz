@@ -47,7 +47,7 @@ const Hero = ({ onCrafterClick }) => {
   return (
     <section
       className={styles.heroWrapper}
-      aria-label="Secao principal - Banner CodeCraft"
+      aria-label="Seção principal - Banner CodeCraft"
     >
       <div className={`${styles.heroContent} container`}>
         <div className={styles.textArea}>
@@ -67,7 +67,7 @@ const Hero = ({ onCrafterClick }) => {
             animate="visible"
             variants={fadeUp(0.25)}
           >
-            Conectamos talentos Gen-Z como voce as melhores
+            Conectamos talentos Gen-Z como você às melhores
             oportunidades e desafios do mundo tech.
           </motion.p>
 
