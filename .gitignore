@@ -89,8 +89,17 @@ backups/
 _temp_backup/
 codecraft-frontend/
 
-# Claude Code local settings (may contain tokens)
-.claude/settings.local.json
+# Claude Code settings
+.claude/
 
 # Windows artifacts
 nul
+
+# Loose images and scripts at root
+*.jpg
+*.jpeg
+*.png
+generate_favicon.py
+
+# Deploy artifacts
+codecraft-deploy.zip

@@ -1,5 +1,5 @@
 // src/pages/AppsPage.jsx
-// Loja de Aplicativos - Cyberpunk/Glassmorphism Design
+// Loja de Aplicativos — Premium Store
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -239,20 +239,12 @@ const AppsPage = () => {
       <div className={styles.content}>
         {/* Hero Section */}
         <header className={styles.hero}>
-          <h1 className={styles.heroTitle}>Meus Aplicativos</h1>
+          <h1 className={styles.heroTitle}>
+            Explore nossos <span className={styles.heroAccent}>Aplicativos</span>
+          </h1>
           <p className={styles.heroSubtitle}>
-            Baixe e compre seus apps com visual profissional.
-            Explore nossa coleção de aplicativos desenvolvidos pela comunidade CodeCraft.
+            Soluções profissionais desenvolvidas pela comunidade CodeCraft. Prontas para usar.
           </p>
-
-          <div className={styles.actionsBar}>
-            <button
-              className={`${styles.publishBtn} ${showPublish ? styles.publishBtnActive : ''}`}
-              onClick={() => setShowPublish(v => !v)}
-            >
-              {showPublish ? 'Fechar publicação' : 'Publicar projeto'}
-            </button>
-          </div>
         </header>
 
         {/* Filters Section */}
@@ -289,16 +281,31 @@ const AppsPage = () => {
         </section>
 
         {/* Loading State */}
-        {loading && <p className={styles.loadingState}>Carregando seus apps...</p>}
+        {loading && (
+          <div className={styles.loadingState}>
+            <div className={styles.loadingSpinner} />
+            <p className={styles.loadingText}>Carregando aplicativos...</p>
+          </div>
+        )}
 
         {/* Error State */}
-        {error && <p className={styles.errorState}>{error}</p>}
+        {error && (
+          <div className={styles.errorState}>
+            <p className={styles.errorText}>{error}</p>
+          </div>
+        )}
 
         {/* Apps Grid */}
         <section className={styles.appsSection}>
           {apps.length === 0 && !loading ? (
             <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>📦</div>
+              <div className={styles.emptyIcon}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+              </div>
               <h3 className={styles.emptyTitle}>Nenhum aplicativo disponível</h3>
               <p className={styles.emptyText}>
                 Volte em breve para conferir novos aplicativos da comunidade.
@@ -306,9 +313,13 @@ const AppsPage = () => {
             </div>
           ) : (
             <div className={styles.appsGrid}>
-              {filteredApps.map(app => (
+              {filteredApps.map((app, index) => (
                 <div key={app.id} className={styles.appCardWrapper}>
-                  <AppCard app={app} onDownload={openPaymentModal} />
+                  <AppCard
+                    app={app}
+                    onDownload={openPaymentModal}
+                    featured={index === 0 && filteredApps.length > 1}
+                  />
                   {needsLicense(app) && (
                     <>
                       <button
@@ -329,44 +340,6 @@ const AppsPage = () => {
             </div>
           )}
         </section>
-
-        {/* Publish Section */}
-        {showPublish && (
-          <section className={styles.publishSection}>
-            <div className={styles.publishCard}>
-              <h2 className={styles.publishTitle}>Publicar a partir de projetos</h2>
-              {publishMessage && <p className={styles.publishMessage}>{publishMessage}</p>}
-
-              {projects.length === 0 ? (
-                <div className={styles.emptyState}>
-                  <div className={styles.emptyIcon}>📁</div>
-                  <h3 className={styles.emptyTitle}>Nenhum projeto disponível</h3>
-                  <p className={styles.emptyText}>Crie um projeto primeiro para poder publicá-lo.</p>
-                </div>
-              ) : (
-                <div className={styles.projectsGrid}>
-                  {projects.map(p => (
-                    <div key={p.id} className={styles.projectCard}>
-                      <div className={styles.projectInfo}>
-                        <h3 className={styles.projectTitle}>{p.title}</h3>
-                        <p className={styles.projectDesc}>{p.description}</p>
-                      </div>
-                      <div className={styles.projectActions}>
-                        <button
-                          className={styles.projectPublishBtn}
-                          disabled={publishing}
-                          onClick={() => handlePublish(p)}
-                        >
-                          Publicar
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-        )}
 
         {/* History Section */}
         <section className={styles.historySection}>
@@ -408,12 +381,16 @@ const AppsPage = () => {
       {payModal.open && (
         <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label="Pagamento do aplicativo">
           <div className={styles.modal}>
+            <button className={styles.modalClose} onClick={closePaymentModal} aria-label="Fechar">
+              ✕
+            </button>
+
             <h3 className={styles.modalTitle}>{payModal.app?.name}</h3>
             <p className={styles.modalDescription}>{payModal.app?.mainFeature}</p>
             <p className={styles.modalPrice}>
-              Preço: {(() => {
+              {(() => {
                 const p = getAppPrice(payModal.app || {});
-                return p > 0 ? `R$ ${p.toLocaleString('pt-BR')}` : 'a definir';
+                return p > 0 ? `R$ ${p.toLocaleString('pt-BR')}` : 'Gratuito';
               })()}
             </p>
 
@@ -421,29 +398,35 @@ const AppsPage = () => {
 
             <div className={styles.modalActions}>
               <button
-                className={styles.btnPrimary}
+                className={styles.btnCheckout}
                 onClick={startCheckout}
                 disabled={payModal.loading}
               >
-                {payModal.loading ? 'Iniciando...' : 'Pagar com Mercado Pago'}
+                {payModal.loading ? 'Processando...' : 'Finalizar Compra Segura'}
               </button>
-              <button
-                className={styles.btnOutline}
-                onClick={checkPaymentStatus}
-                disabled={payModal.checking}
-              >
-                {payModal.checking ? 'Verificando...' : 'Verificar pagamento'}
-              </button>
-              <button
-                className={styles.btnOutline}
-                onClick={() => window.open(`/apps/${payModal.app?.id}/compra`, '_blank', 'noopener')}
-              >
-                Tela de pagamento
-              </button>
-              <button className={styles.btnOutline} onClick={closePaymentModal}>
-                Fechar
-              </button>
+
+              <div className={styles.modalSecondaryActions}>
+                <button
+                  className={styles.btnGhost}
+                  onClick={checkPaymentStatus}
+                  disabled={payModal.checking}
+                >
+                  {payModal.checking ? 'Verificando...' : 'Já paguei — verificar status'}
+                </button>
+                <button
+                  className={styles.btnGhost}
+                  onClick={() => window.open(`/apps/${payModal.app?.id}/compra`, '_blank', 'noopener')}
+                >
+                  Ver página do produto
+                </button>
+              </div>
             </div>
+
+            {payModal.status === 'pending' && (
+              <div className={styles.modalInfo}>
+                Pagamento pendente. Conclua o pagamento e clique em "verificar status".
+              </div>
+            )}
 
             {payModal.status === 'approved' && (
               <LicenseActivator appId={payModal.app?.id} />
