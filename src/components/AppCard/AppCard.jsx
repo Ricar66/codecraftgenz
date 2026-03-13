@@ -1,9 +1,10 @@
 // src/components/AppCard/AppCard.jsx
 import React from 'react';
-import { FaWindows, FaApple, FaLinux, FaInfoCircle } from 'react-icons/fa';
+import { FaWindows, FaApple, FaLinux } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
 import { getAppImageUrl, getAppPrice } from '../../utils/appModel.js';
+import styles from './AppCard.module.css';
 
 const parsePlatforms = (p) => {
   if (!p) return ['windows'];
@@ -12,66 +13,77 @@ const parsePlatforms = (p) => {
   return ['windows'];
 };
 
-const AppCard = ({ app, onDownload, onAbout, mode = 'owned' }) => {
-  const { id, name, mainFeature, thumbnail, image, status, version, size, category } = app;
+const getBadge = (app) => {
+  const finalized = app.status === 'finalizado' || app.status === 'available' || app.status === 'ready';
+  if (!finalized) return null;
+  const name = String(app.name || '').toLowerCase();
+  if (name === 'coincraft') return { label: 'Popular', className: styles.badgePopular };
+  const created = app.createdAt ? new Date(app.createdAt) : null;
+  const isRecent = created && (Date.now() - created.getTime()) < 30 * 24 * 60 * 60 * 1000;
+  if (isRecent) return { label: 'Novo', className: styles.badgeNew };
+  return { label: 'Disponível', className: styles.badgeAvailable };
+};
+
+const AppCard = ({ app, onDownload, onAbout, mode = 'owned', featured = false }) => {
+  const { id, name, mainFeature, category } = app;
   const platforms = parsePlatforms(app.platforms);
-  const finalized = status === 'finalizado' || status === 'available' || status === 'ready';
+  const finalized = app.status === 'finalizado' || app.status === 'available' || app.status === 'ready';
   const safePrice = getAppPrice(app);
   const displayPrice = safePrice > 0 ? `R$ ${safePrice.toLocaleString('pt-BR')}` : 'Gratuito';
-  const displayVersion = version ? `v${version}` : 'v1.0';
-  const displaySize = size ? `${size}` : '—';
+  const badge = getBadge(app);
+
+  const cardClass = [styles.card, featured ? styles.cardFeatured : ''].filter(Boolean).join(' ');
 
   return (
-    <article className="app-card" aria-label={`Aplicativo ${name}`}>
-      <div className="app-media">
+    <article className={cardClass} aria-label={`Aplicativo ${name}`}>
+      <div className={styles.media}>
         {getAppImageUrl(app) ? (
           <img
             src={getAppImageUrl(app)}
             alt={name}
-            className="app-thumb"
+            className={styles.thumb}
             loading="lazy"
             decoding="async"
-            width="140"
-            height="100"
-            fetchpriority="low"
             onError={(e) => { e.currentTarget.style.display = 'none'; }}
           />
         ) : (
-          <div className="app-thumb placeholder" aria-hidden="true">APP</div>
+          <div className={styles.placeholder} aria-hidden="true">APP</div>
         )}
-        {finalized && <span className="app-ribbon">Disponível</span>}
+        {badge && <span className={`${styles.badge} ${badge.className}`}>{badge.label}</span>}
       </div>
-      <div className="app-body">
-        <h3 className="app-title" title={name}>{name}</h3>
-        {category && <span className="app-chip" aria-label="Categoria">{category}</span>}
-        <p className="app-feature clamp-2" title={mainFeature}>{mainFeature}</p>
-        <div className="app-meta" aria-label="Preço e status">
-          <span className="app-price">{displayPrice}</span>
-          <span className={`app-status ${finalized ? 'ok' : 'pending'}`}>{finalized ? 'Pronto para compra' : 'Em preparação'}</span>
+
+      <div className={styles.body}>
+        <h3 className={styles.title} title={name}>{name}</h3>
+        {category && <span className={styles.chip} aria-label="Categoria">{category}</span>}
+        <p className={`${styles.feature} ${styles.clamp2}`} title={mainFeature}>{mainFeature}</p>
+
+        <div className={styles.pricingRow} aria-label="Preço e status">
+          <span className={`${styles.price} ${safePrice === 0 ? styles.priceFree : ''}`}>{displayPrice}</span>
+          <span className={`${styles.status} ${finalized ? styles.statusOk : styles.statusPending}`}>
+            {finalized ? 'Pronto' : 'Em breve'}
+          </span>
         </div>
-        <div className="app-submeta" aria-label="Versão e tamanho">
-          <span className="app-version">{displayVersion}</span>
-          <span className="app-size">{displaySize}</span>
-        </div>
+
         {platforms.length > 0 && (
-          <div className="app-platforms" aria-label="Plataformas disponíveis">
-            {platforms.includes('windows') && <span className="platform-tag"><FaWindows /> Windows</span>}
-            {platforms.includes('macos') && <span className="platform-tag"><FaApple /> macOS</span>}
-            {platforms.includes('linux') && <span className="platform-tag"><FaLinux /> Linux</span>}
+          <div className={styles.platforms} aria-label="Plataformas disponíveis">
+            {platforms.includes('windows') && <span className={styles.platformTag}><FaWindows /> Win</span>}
+            {platforms.includes('macos') && <span className={styles.platformTag}><FaApple /> Mac</span>}
+            {platforms.includes('linux') && <span className={styles.platformTag}><FaLinux /> Linux</span>}
           </div>
         )}
-        <div className="app-actions">
+
+        <div className={styles.actions}>
           {mode === 'public' ? (
             <>
-              <Link className="btn btn-buy" to={`/apps/${id}/compra`} aria-label={`Comprar ${name}`} data-qa="appcard-buy-btn">
+              <Link className={`${styles.btn} ${styles.btnPrimary}`} to={`/apps/${id}/compra`} aria-label={`Comprar ${name}`} data-qa="appcard-buy-btn">
                 Comprar Agora
               </Link>
               {onAbout ? (
-                <button className="btn btn-secondary" onClick={() => onAbout(app)} aria-label={`Sobre ${name}`}>
-                  <FaInfoCircle style={{ marginRight: 4 }} /> Sobre
+                <button className={`${styles.btn} ${styles.btnSecondary}`} onClick={() => onAbout(app)} aria-label={`Sobre ${name}`}>
+                  Sobre
                 </button>
               ) : (
-                <Link className="btn btn-secondary" to={`/apps/${id}/compra`} aria-label={`Detalhes de ${name}`}>
+                <Link className={`${styles.btn} ${styles.btnSecondary}`} to={`/apps/${id}/compra`} aria-label={`Detalhes de ${name}`}>
                   Detalhes
                 </Link>
               )}
@@ -79,7 +91,7 @@ const AppCard = ({ app, onDownload, onAbout, mode = 'owned' }) => {
           ) : (
             <>
               <button
-                className="btn btn-buy"
+                className={`${styles.btn} ${styles.btnPrimary}`}
                 onClick={() => {
                   try { navigator.vibrate?.(10); } catch (e) {
                     if (import.meta.env?.DEV) console.warn('Vibrate não suportado ou bloqueado:', e);
@@ -91,60 +103,13 @@ const AppCard = ({ app, onDownload, onAbout, mode = 'owned' }) => {
               >
                 Download
               </button>
-              <Link className="btn btn-secondary" to={`/apps/${id}/compra`} target="_blank" rel="noopener noreferrer" aria-label={`Detalhes de ${name}`}>
+              <Link className={`${styles.btn} ${styles.btnSecondary}`} to={`/apps/${id}/compra`} target="_blank" rel="noopener noreferrer" aria-label={`Detalhes de ${name}`}>
                 Detalhes
               </Link>
             </>
           )}
         </div>
       </div>
-      <style>{`
-        .app-card {
-          display: grid;
-          grid-template-columns: 140px 1fr;
-          gap: 14px;
-          background: transparent;
-          border-radius: 16px;
-          padding: 16px;
-          transition: transform .2s ease;
-          width: 100%;
-          box-sizing: border-box;
-        }
-        @media (max-width: 560px) { .app-card { grid-template-columns: 1fr; } }
-
-        .app-media { position: relative; }
-        .app-thumb { width: 140px; height: 100px; object-fit: cover; border-radius: 12px; border: 1px solid rgba(255,255,255,0.18); }
-        .app-thumb.placeholder { display:flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.06); color: var(--texto-gelo); font-weight: 700; letter-spacing: 1px; }
-        .app-ribbon { position: absolute; top: 8px; left: 8px; background: linear-gradient(90deg, #D12BF2, #00E4F2); color: #000; padding: 4px 8px; border-radius: 999px; font-size: 0.75rem; border: 1px solid rgba(0,0,0,0.2); }
-
-        .app-title { margin: 0; color: var(--texto-branco); font-size: clamp(1.1rem, 2.5vw, 1.3rem); letter-spacing: .2px; }
-        .app-chip { display:inline-flex; align-items:center; gap:6px; padding: 4px 8px; border-radius: 999px; background: rgba(255,255,255,0.08); color: #b0e1ff; font-size: .75rem; border: 1px solid rgba(255,255,255,0.14); margin-top: 6px; width: fit-content; }
-        .app-feature { color: var(--texto-gelo); margin: 6px 0; font-size: 0.95rem; }
-        .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .app-meta { display: flex; gap: 12px; align-items: center; color: var(--texto-gelo); font-size: 0.95rem; margin-top: 4px; }
-        .app-price { color: #00E4F2; font-weight: 700; }
-        .app-status.ok { color: #7CF6FF; font-weight: 600; }
-        .app-status.pending { color: #FFA500; font-weight: 600; }
-
-        .app-submeta { display:flex; gap:12px; align-items:center; color: var(--texto-gelo); font-size: 0.85rem; }
-        .app-version { color: #b0e1ff; }
-        .app-size { color: #d6d6d6; }
-
-        .app-platforms { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
-        .platform-tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; background: rgba(0, 228, 242, 0.08); border: 1px solid rgba(0, 228, 242, 0.15); color: #00E4F2; }
-
-        .app-actions { margin-top: 10px; display:flex; gap: 8px; flex-wrap: wrap; }
-        .btn { display:inline-block; padding: 10px 14px; border-radius: 10px; border:1px solid rgba(255,255,255,0.18); cursor:pointer; transition: transform .12s ease, box-shadow .12s ease, filter .12s ease; min-width: 140px; }
-        .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 18px rgba(0,0,0,0.25); }
-        .btn:active { transform: translateY(0px) scale(0.98); filter: brightness(0.95); }
-        .btn:focus-visible { outline: 2px solid #00E4F2; outline-offset: 2px; }
-        .btn-buy { background: linear-gradient(90deg, #D12BF2, #00E4F2); color: #000; border:none; font-weight: 700; }
-        .btn-secondary { background: rgba(255,255,255,0.08); color: var(--texto-branco); }
-
-        @media (max-width: 560px) {
-          .btn { width: 100%; min-width: unset; }
-        }
-      `}</style>
     </article>
   );
 };
