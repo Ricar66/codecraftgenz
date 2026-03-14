@@ -4,7 +4,6 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import ProtectedRoute from './admin/ProtectedRoute.jsx';
 import heroBackground from './assets/hero-background.svg';
-import ChatWidget from './components/ChatWidget/ChatWidget';
 import Footer from './components/Footer';
 import { ErrorBoundary } from './components/UI/ErrorBoundary';
 import { ToastProvider } from './components/UI/Toast';
@@ -185,7 +184,6 @@ function App() {
             </Suspense>
           </main>
           <Footer />
-          <ChatWidget />
         </div>
       </ErrorBoundary>
     </ToastProvider>
