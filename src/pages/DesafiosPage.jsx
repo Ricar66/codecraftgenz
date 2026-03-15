@@ -111,7 +111,7 @@ export default function DesafiosPage() {
         {/* Error State */}
         {!loading && error && (
           <div className={styles.errorState} role="alert">
-            {error}
+            Não foi possível carregar os desafios. Tente novamente mais tarde.
           </div>
         )}
 
