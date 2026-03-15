@@ -34,7 +34,16 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
     window.location.reload()
   })
 
+  // Limpa todos os caches antigos ao carregar para evitar FetchEvent errors
   window.addEventListener('load', () => {
+    caches.keys().then((names) => {
+      names.forEach((name) => {
+        if (name.includes('workbox') || name.includes('api-') || name.includes('backend-')) {
+          caches.delete(name)
+        }
+      })
+    }).catch(() => {})
+
     // Registra SW após 1 segundo (reduzido de 3s para atualização mais rápida)
     setTimeout(() => {
       navigator.serviceWorker.register('/sw.js', { scope: '/' })
