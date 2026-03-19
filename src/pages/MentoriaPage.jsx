@@ -237,7 +237,7 @@ export default function MentoriaPage() {
   };
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} starfield-bg`}>
       <Navbar />
 
       {/* Hero Section */}

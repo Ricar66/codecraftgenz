@@ -222,7 +222,7 @@ export default function RankingPage() {
   const getPodiumData = (place) => (top3 || []).find(p => p.place === place);
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} starfield-bg`}>
       <Navbar />
 
       {/* Hero Section */}
