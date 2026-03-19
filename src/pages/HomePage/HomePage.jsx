@@ -193,19 +193,15 @@ const HomePage = () => {
         </div>
 
         <motion.div
-          className={styles.sectionBlock}
+          className={styles.feedbackFullWidth}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.1 }}
           variants={sectionReveal}
         >
-          <div className={styles.sectionCard}>
-            <div className={styles.feedbackSection}>
-              <h2 className={styles.sectionTitle}>O que dizem sobre nós</h2>
-              <p className={styles.sectionSubtitle}>Feedbacks reais de quem já usou nossos serviços</p>
-              <FeedbackShowcase autoIntervalMs={5000} showControls={true} />
-            </div>
-          </div>
+          <h2 className={styles.sectionTitle}>O que dizem sobre nós</h2>
+          <p className={styles.sectionSubtitle}>Feedbacks reais de quem já usou nossos serviços</p>
+          <FeedbackShowcase autoIntervalMs={5000} showControls={true} />
         </motion.div>
 
         <CrafterModal

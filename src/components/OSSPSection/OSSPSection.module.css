@@ -1,158 +1,101 @@
-.osspSection {
-  padding: 40px 16px;
-  background: transparent;
+/* OSSPSection — Redesign Profissional */
+
+.section {
+  padding: 16px 0;
 }
 
-@media (min-width: 1024px) {
-  .osspSection {
-    padding: 80px 20px;
-  }
-}
-
-.osspHeader {
+.header {
   text-align: center;
-  margin-bottom: 3rem;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-bottom: 48px;
 }
 
-.osspTitle {
-  color: var(--texto-branco, #ffffff);
-  font-size: clamp(1.8rem, 4vw, 2.5rem);
-  margin: 0;
-  font-family: var(--fonte-titulos, sans-serif);
-  font-weight: 700;
+.badge {
+  display: inline-block;
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.15);
+  margin-bottom: 20px;
+}
+
+.title {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-weight: 800;
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  color: #f1f5f9;
+  margin: 0 0 14px;
+  line-height: 1.15;
   letter-spacing: -0.02em;
 }
 
-.osspSubtitle {
-  color: var(--cor-terciaria, #00D2D3);
-  margin-top: 0.5rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-size: 0.875rem;
+.lead {
+  font-size: clamp(0.95rem, 2vw, 1.05rem);
+  color: #94a3b8;
+  margin: 0 auto;
+  max-width: 520px;
+  line-height: 1.7;
 }
 
-.osspLead {
-  color: var(--texto-gelo, #a0a0b0);
-  margin-top: 1rem;
-  font-size: 1.125rem;
-  line-height: 1.6;
-}
-
-.osspGrid {
+.grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
   max-width: 1200px;
   margin: 0 auto;
 }
 
-.osspCard {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--raio-lg, 16px);
-  padding: 2rem;
-  position: relative;
-  overflow: hidden;
+.card {
+  padding: 28px 24px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2),
-              inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  gap: 12px;
+  transition: border-color 0.3s ease, background 0.3s ease;
 }
 
-.osspCard::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(300px 150px at 0% 0%, rgba(0, 228, 242, 0.05), transparent 60%);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
+.card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
 }
 
-.osspCard:hover::before {
-  opacity: 1;
-}
-
-.osspIcon {
-  font-size: 2rem;
-  margin-bottom: 1.5rem;
-  color: var(--cor-terciaria, #00D2D3);
-  background: rgba(0, 228, 242, 0.1);
-  width: fit-content;
-  padding: 14px;
-  border-radius: 14px;
+.iconBox {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(0, 228, 242, 0.15);
-  box-shadow: 0 0 16px rgba(0, 228, 242, 0.1);
-  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  flex-shrink: 0;
 }
 
-.osspCard:hover .osspIcon {
-  box-shadow: 0 0 24px rgba(0, 228, 242, 0.2);
-  border-color: rgba(0, 228, 242, 0.3);
+.cardTitle {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #f1f5f9;
+  margin: 0;
 }
 
-.osspCardTitle {
-  color: var(--texto-branco, #ffffff);
-  margin: 0 0 0.75rem;
-  font-size: 1.25rem;
-  font-family: var(--fonte-titulos, sans-serif);
-  font-weight: 600;
-}
-
-.osspCardText {
-  color: var(--texto-gelo, #a0a0b0);
+.cardText {
+  font-size: 0.88rem;
+  color: #94a3b8;
   margin: 0;
   line-height: 1.6;
-  font-size: 0.95rem;
 }
 
-.osspFooter {
-  margin-top: 3rem;
-  text-align: center;
+@media (max-width: 991px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-.osspLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: linear-gradient(90deg, var(--cor-primaria, #D12BF2), var(--cor-secundaria, #9055FF));
-  color: white;
-  padding: 12px 24px;
-  border-radius: var(--raio-md, 8px);
-  text-decoration: none;
-  font-weight: 600;
-  transition: all 0.2s;
-  box-shadow: 0 4px 15px rgba(209, 43, 242, 0.2);
-}
-
-.osspLink:hover {
-  filter: brightness(1.1);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(209, 43, 242, 0.3);
-}
-
-/* Responsive adjustments */
-@media (min-width: 640px) {
-  .osspGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .osspSection {
-    padding: 80px 20px;
-  }
-  
-  .osspGrid {
-    grid-template-columns: repeat(4, 1fr);
-  }
+@media (max-width: 640px) {
+  .grid { grid-template-columns: 1fr; gap: 14px; }
+  .card { padding: 22px 20px; }
 }
