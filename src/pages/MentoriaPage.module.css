@@ -5,7 +5,7 @@
   width: 100%;
   position: relative;
   overflow-x: hidden;
-  background: linear-gradient(175deg, #060918 0%, #0b1130 30%, #0d1538 50%, #0a0a0f 80%);
+  /* background handled by .starfield-bg global class */
 }
 
 /* ===== HERO ===== */

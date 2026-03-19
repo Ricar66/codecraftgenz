@@ -99,7 +99,7 @@ const HomePage = () => {
   }, []);
 
   return (
-    <div className={styles.homePage}>
+    <div className={`${styles.homePage} starfield-bg`}>
       <Helmet>
         <title>CodeCraft Gen-Z | Soluções de Software do Futuro</title>
         <meta name="description" content="A CodeCraft Gen-Z cria soluções de software modernas, escaláveis e seguras, combinando IA, experiências digitais e engenharia de alto desempenho." />
