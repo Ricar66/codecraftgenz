@@ -1,5 +1,5 @@
 // src/pages/LoginPage.jsx
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Lock } from 'lucide-react';
 
@@ -8,12 +8,53 @@ import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth';
 import styles from './LoginPage.module.css';
 
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogleResponse = useCallback(async (response) => {
+    if (!response?.credential) return;
+    setError('');
+    setGoogleLoading(true);
+    const res = await loginWithGoogle(response.credential);
+    setGoogleLoading(false);
+    if (!res.ok) setError(res.error);
+  }, [loginWithGoogle]);
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      window.google?.accounts?.id?.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleResponse,
+      });
+      window.google?.accounts?.id?.renderButton(
+        document.getElementById('google-signin-btn'),
+        {
+          type: 'standard',
+          theme: 'filled_black',
+          size: 'large',
+          text: 'signin_with',
+          shape: 'rectangular',
+          width: '100%',
+          locale: 'pt-BR',
+        }
+      );
+    };
+    document.head.appendChild(script);
+    return () => { script.remove(); };
+  }, [handleGoogleResponse]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -88,6 +129,13 @@ export default function LoginPage() {
               <span className={styles.dividerText}>ou</span>
               <span className={styles.dividerLine} />
             </div>
+
+            {GOOGLE_CLIENT_ID && (
+              <div className={styles.googleBtnWrapper}>
+                <div id="google-signin-btn" />
+                {googleLoading && <p className={styles.googleLoading}>Autenticando com Google...</p>}
+              </div>
+            )}
 
             <div className={styles.registerRow}>
               <span className={styles.registerText}>Não tem conta?</span>

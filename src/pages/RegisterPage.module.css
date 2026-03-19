@@ -1,4 +1,4 @@
-/* LoginPage — Premium Centered Card */
+/* RegisterPage — Premium Centered Card (matches LoginPage) */
 
 .page {
   min-height: 100vh;
@@ -63,7 +63,7 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-bottom: 36px;
+  margin-bottom: 32px;
   position: relative;
 }
 
@@ -92,7 +92,7 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
   position: relative;
 }
 
@@ -143,23 +143,6 @@
 .input:focus {
   border-color: rgba(99, 102, 241, 0.35);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.06);
-}
-
-.forgotRow {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: -6px;
-}
-
-.forgotLink {
-  font-size: 0.8rem;
-  color: #a78bfa;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.forgotLink:hover {
-  color: #c4b5fd;
 }
 
 /* ── Error ── */
@@ -223,7 +206,29 @@
   white-space: nowrap;
 }
 
-/* ── Register ── */
+/* ── Google Button ── */
+.googleBtnWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.googleBtnWrapper > div {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.googleLoading {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  margin: 0;
+}
+
+/* ── Register Row ── */
 .registerRow {
   display: flex;
   justify-content: center;
@@ -248,28 +253,6 @@
   color: #c4b5fd;
 }
 
-/* ── Google Button ── */
-.googleBtnWrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.googleBtnWrapper > div {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-.googleLoading {
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.4);
-  text-align: center;
-  margin: 0;
-}
-
 /* ── Responsive ── */
 @media (max-width: 480px) {
   .wrapper {
@@ -291,7 +274,7 @@
   }
 
   .header {
-    margin-bottom: 28px;
+    margin-bottom: 24px;
   }
 
   .input {

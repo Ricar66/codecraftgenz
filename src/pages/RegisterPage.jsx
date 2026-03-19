@@ -1,167 +1,205 @@
 // src/pages/RegisterPage.jsx
-import React, { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { User, Mail, Lock } from 'lucide-react';
 
+import logoImg from '../assets/logo-principal.png';
 import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../context/useAuth';
 import { apiRequest } from '../lib/apiConfig';
+import styles from './RegisterPage.module.css';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export default function RegisterPage() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogleResponse = useCallback(async (response) => {
+    if (!response?.credential) return;
+    setError('');
+    setGoogleLoading(true);
+    const res = await loginWithGoogle(response.credential);
+    setGoogleLoading(false);
+    if (!res.ok) setError(res.error);
+  }, [loginWithGoogle]);
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      window.google?.accounts?.id?.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleResponse,
+      });
+      window.google?.accounts?.id?.renderButton(
+        document.getElementById('google-signup-btn'),
+        {
+          type: 'standard',
+          theme: 'filled_black',
+          size: 'large',
+          text: 'signup_with',
+          shape: 'rectangular',
+          width: '100%',
+          locale: 'pt-BR',
+        }
+      );
+    };
+    document.head.appendChild(script);
+    return () => { script.remove(); };
+  }, [handleGoogleResponse]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    // Validacoes basicas
-    if (!name.trim()) {
-      setError('Por favor, informe seu nome.');
-      return;
-    }
-
-    if (!email.trim()) {
-      setError('Por favor, informe seu e-mail.');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('As senhas nao conferem.');
-      return;
-    }
+    if (!name.trim()) { setError('Por favor, informe seu nome.'); return; }
+    if (!email.trim()) { setError('Por favor, informe seu e-mail.'); return; }
+    if (password.length < 6) { setError('A senha deve ter pelo menos 6 caracteres.'); return; }
+    if (password !== confirmPassword) { setError('As senhas não conferem.'); return; }
 
     setLoading(true);
-
     try {
-      // Registrar usuario
       const response = await apiRequest('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({ name, email, password }),
       });
 
-      // Se retornou token, faz login automatico
       if (response?.token || response?.data?.token) {
         const token = response.token || response.data.token;
         localStorage.setItem('cc_session', JSON.stringify({ token }));
-        // Redireciona para login para completar autenticacao
         await login(email, password);
       } else {
-        setError('Registro realizado, mas houve erro ao fazer login automatico. Tente fazer login manualmente.');
+        setError('Registro realizado, mas houve erro ao fazer login automático. Tente fazer login manualmente.');
       }
     } catch (err) {
-      const msg = err?.message || err?.error || 'Erro ao criar conta. Tente novamente.';
-      setError(msg);
+      setError(err?.message || 'Erro ao criar conta. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="register-page page-with-background">
+    <div className={styles.page}>
       <Navbar />
-      <section className="section-block" aria-label="Formulario de registro">
-        <div className="register-card">
-          <header>
-            <h1 className="title">Criar Conta</h1>
-            <p className="subtitle">Cadastre-se para acessar a plataforma</p>
+
+      <div className={styles.wrapper}>
+        <div className={styles.card}>
+          <header className={styles.header}>
+            <img src={logoImg} alt="CodeCraft" className={styles.logo} />
+            <h1 className={styles.title}>Criar Conta</h1>
+            <p className={styles.subtitle}>Cadastre-se para acessar a plataforma</p>
           </header>
 
-          <form className="form" onSubmit={onSubmit} aria-label="Formulario de cadastro">
-            <label className="label" htmlFor="register-name">Nome completo</label>
-            <input
-              className="input"
-              type="text"
-              id="register-name"
-              name="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              autoComplete="name"
-              placeholder="Seu nome"
-            />
+          <form className={styles.form} onSubmit={onSubmit} aria-label="Formulário de cadastro">
+            <div className={styles.fieldGroup}>
+              <label className={styles.label} htmlFor="register-name">Nome completo</label>
+              <div className={styles.inputWrapper}>
+                <span className={styles.inputIcon}><User size={17} /></span>
+                <input
+                  className={styles.input}
+                  type="text"
+                  id="register-name"
+                  name="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  autoComplete="name"
+                  placeholder="Seu nome"
+                />
+              </div>
+            </div>
 
-            <label className="label" htmlFor="register-email">E-mail</label>
-            <input
-              className="input"
-              type="email"
-              id="register-email"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              placeholder="seu@email.com"
-            />
+            <div className={styles.fieldGroup}>
+              <label className={styles.label} htmlFor="register-email">E-mail</label>
+              <div className={styles.inputWrapper}>
+                <span className={styles.inputIcon}><Mail size={17} /></span>
+                <input
+                  className={styles.input}
+                  type="email"
+                  id="register-email"
+                  name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  placeholder="seu@email.com"
+                />
+              </div>
+            </div>
 
-            <label className="label" htmlFor="register-password">Senha</label>
-            <input
-              className="input"
-              type="password"
-              id="register-password"
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="new-password"
-              placeholder="Minimo 6 caracteres"
-            />
+            <div className={styles.fieldGroup}>
+              <label className={styles.label} htmlFor="register-password">Senha</label>
+              <div className={styles.inputWrapper}>
+                <span className={styles.inputIcon}><Lock size={17} /></span>
+                <input
+                  className={styles.input}
+                  type="password"
+                  id="register-password"
+                  name="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                  placeholder="Mínimo 6 caracteres"
+                />
+              </div>
+            </div>
 
-            <label className="label" htmlFor="register-confirm-password">Confirmar Senha</label>
-            <input
-              className="input"
-              type="password"
-              id="register-confirm-password"
-              name="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              autoComplete="new-password"
-              placeholder="Repita a senha"
-            />
+            <div className={styles.fieldGroup}>
+              <label className={styles.label} htmlFor="register-confirm-password">Confirmar Senha</label>
+              <div className={styles.inputWrapper}>
+                <span className={styles.inputIcon}><Lock size={17} /></span>
+                <input
+                  className={styles.input}
+                  type="password"
+                  id="register-confirm-password"
+                  name="confirmPassword"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                  placeholder="Repita a senha"
+                />
+              </div>
+            </div>
 
-            {error && <div className="error" role="alert">{error}</div>}
+            {error && <div className={styles.error} role="alert">{error}</div>}
 
-            <button className="btnPrimary" type="submit" disabled={loading}>
+            <button className={styles.submitBtn} type="submit" disabled={loading}>
               {loading ? 'Criando conta...' : 'Criar Conta'}
             </button>
 
-            <div className="actions">
-              <span className="text">Ja tem uma conta?</span>
-              <Link className="link" to="/login">Fazer login</Link>
+            <div className={styles.divider}>
+              <span className={styles.dividerLine} />
+              <span className={styles.dividerText}>ou</span>
+              <span className={styles.dividerLine} />
+            </div>
+
+            {GOOGLE_CLIENT_ID && (
+              <div className={styles.googleBtnWrapper}>
+                <div id="google-signup-btn" />
+                {googleLoading && <p className={styles.googleLoading}>Autenticando com Google...</p>}
+              </div>
+            )}
+
+            <div className={styles.registerRow}>
+              <span className={styles.registerText}>Já tem uma conta?</span>
+              <Link className={styles.registerLink} to="/login">Fazer login</Link>
             </div>
           </form>
         </div>
-      </section>
-
-      <style>{`
-        .register-page { min-height: 100vh; }
-        .section-block { padding: var(--espaco-3xl) var(--espaco-xl); }
-        .register-card { max-width: 420px; margin: 0 auto; background: #F4F4F4; border-radius: 16px; padding: 24px; box-shadow: 0 12px 32px rgba(0,0,0,0.18); border: 1px solid rgba(0,228,242,0.2); }
-        .title { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 700; font-size: 1.75rem; color: #121212; }
-        .subtitle { font-family: 'Poppins', system-ui, sans-serif; color: #555; margin-top: 6px; }
-        .form { display: grid; gap: 12px; margin-top: 16px; }
-        .label { font-family: 'Inter', system-ui, sans-serif; font-size: 0.95rem; color: #333; }
-        .input { font-family: 'Inter', system-ui, sans-serif; padding: 10px 12px; border-radius: 10px; border: 1px solid #A6A6A6; outline: none; }
-        .input:focus { border-color: #00E4F2; box-shadow: 0 0 0 3px rgba(0,228,242,0.2); }
-        .btnPrimary { background: #D12BF2; color: white; border: none; border-radius: 10px; padding: 10px 14px; font-weight: 600; cursor: pointer; margin-top: 8px; }
-        .btnPrimary:hover { filter: brightness(1.05); }
-        .btnPrimary:disabled { opacity: 0.7; cursor: not-allowed; }
-        .actions { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 12px; }
-        .text { font-family: 'Inter', system-ui, sans-serif; font-size: 0.9rem; color: #555; }
-        .link { font-family: 'Inter', system-ui, sans-serif; font-size: 0.9rem; color: #004A54; text-decoration: underline; cursor: pointer; }
-        .error { background: rgba(209,43,242,0.1); border: 1px solid rgba(209,43,242,0.3); padding: 8px 10px; border-radius: 8px; color: #68007B; }
-        @media (max-width: 480px) { .register-card { margin: 0 16px; } }
-      `}</style>
+      </div>
     </div>
   );
 }
