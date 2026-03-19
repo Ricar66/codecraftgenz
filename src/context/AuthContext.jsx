@@ -167,6 +167,45 @@ function useAuthProvider() {
     }
   }, [navigate]);
 
+  const loginWithGoogle = useCallback(async (credential, redirectTo = null) => {
+    const isDebug = import.meta.env.DEV || localStorage.getItem('cc_debug') === '1';
+    try {
+      const data = await apiRequest('/api/auth/google', {
+        method: 'POST',
+        body: JSON.stringify({ credential }),
+      });
+
+      const token = data?.token || data?.data?.token;
+      const userData = data?.user || data?.data?.user;
+
+      if (isDebug) {
+        console.log('[Auth:google] Token:', !!token, 'User:', userData);
+      }
+
+      if (token) {
+        localStorage.setItem('cc_session', JSON.stringify({ token }));
+      }
+
+      let u = userData;
+      if (!u) u = await fetchMe();
+
+      if (u) {
+        flushSync(() => { setUser(u); });
+        try { sessionStorage.setItem('cc_user_cache', JSON.stringify(u)); } catch {}
+
+        const isAdmin = ['admin', 'administrator', 'superadmin', 'owner', 'editor'].includes(
+          String(u.role || '').toLowerCase()
+        );
+        const destination = redirectTo || (isAdmin ? '/admin' : '/');
+        navigate(destination);
+      }
+      return { ok: true };
+    } catch (error) {
+      console.error('Erro Google auth:', error);
+      return { ok: false, error: error?.message || 'Erro ao autenticar com Google.' };
+    }
+  }, [navigate]);
+
   const logout = useCallback(async () => {
     try {
       await apiRequest('/api/auth/logout', { method: 'POST' });
@@ -194,9 +233,10 @@ function useAuthProvider() {
     loading,
     isAuthenticated: !!user,
     login,
+    loginWithGoogle,
     logout,
     hasRole,
-  }), [user, loading, login, logout, hasRole]);
+  }), [user, loading, login, loginWithGoogle, logout, hasRole]);
 
   return value;
 }
