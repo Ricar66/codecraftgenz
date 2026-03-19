@@ -32,7 +32,7 @@ const hashtagVariant = {
   }),
 };
 
-const hashtags = ['#DevGenZ', '#CraftandoSonhos', '#TechOpportunities'];
+const hashtags = ['Comunidade Dev', 'Open Source', 'Oportunidades Tech'];
 
 const Hero = ({ onCrafterClick }) => {
   const { trackButtonClick } = useAnalytics();

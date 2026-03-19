@@ -1,4 +1,4 @@
-/* src/pages/HomePage/HomePage.module.css */
+/* src/pages/HomePage/HomePage.module.css — Redesign Profissional */
 
 /* ===== CONTAINER PRINCIPAL ===== */
 .homePage {
@@ -6,93 +6,58 @@
   width: 100%;
   position: relative;
   overflow-x: hidden;
-  isolation: isolate;
+  background: #0a0a0f;
 }
 
-/* Background */
-.homePage::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("../../assets/hero-background.svg");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  z-index: -2;
-}
-
-/* Background Glow Overlay */
-.homePage::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
-              radial-gradient(ellipse at 80% 80%, rgba(167, 139, 250, 0.04) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: -1;
-}
+/* Removidos: background SVG e glow overlay — fundo limpo */
 
 /* ===== BLOCO DE SECAO ===== */
 .sectionBlock {
   position: relative;
   z-index: 1;
-  padding: 60px 24px;
+  padding: 80px 24px;
 }
 
 .sectionBlock:first-of-type {
   padding-top: 0;
 }
 
+/* Seções pares — fundo levemente diferente para ritmo visual */
+.sectionBlock:nth-of-type(even) {
+  background: rgba(255, 255, 255, 0.015);
+}
+
 @media (max-width: 768px) {
-  .sectionBlock {
-    padding: 40px 16px;
-  }
+  .sectionBlock { padding: 48px 16px; }
 }
 
 @media (max-width: 480px) {
-  .sectionBlock {
-    padding: 32px 12px;
-  }
+  .sectionBlock { padding: 36px 12px; }
 }
 
 /* ===== CARD DE SECAO ===== */
 .sectionCard {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px;
-  border-radius: 24px;
+  padding: 48px;
+  border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(255, 255, 255, 0.02);
-  box-shadow:
-    0 4px 8px rgba(0, 0, 0, 0.15),
-    0 12px 32px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   position: relative;
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.4s ease;
+  transition: border-color 0.3s ease;
 }
 
 .sectionCard:hover {
-  transform: translateY(-4px);
   border-color: rgba(255, 255, 255, 0.1);
-  box-shadow:
-    0 8px 16px rgba(0, 0, 0, 0.2),
-    0 24px 64px rgba(0, 0, 0, 0.25);
 }
 
 @media (max-width: 768px) {
-  .sectionCard {
-    padding: 24px 20px;
-    border-radius: 20px;
-  }
+  .sectionCard { padding: 28px 20px; border-radius: 16px; }
 }
 
 @media (max-width: 480px) {
-  .sectionCard {
-    padding: 20px 16px;
-    border-radius: 16px;
-  }
+  .sectionCard { padding: 24px 16px; border-radius: 14px; }
 }
 
 /* ===== CARDCRAFT BANNER ===== */
@@ -103,47 +68,24 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 48px 56px;
-  border-radius: 24px;
+  border-radius: 20px;
   text-decoration: none;
   color: inherit;
   position: relative;
   overflow: hidden;
-  background:
-    linear-gradient(135deg,
-      rgba(99, 102, 241, 0.08) 0%,
-      rgba(167, 139, 250, 0.06) 40%,
-      rgba(99, 102, 241, 0.04) 100%);
-  border: 1px solid rgba(99, 102, 241, 0.15);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.2),
-    0 24px 64px rgba(0, 0, 0, 0.25);
-  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-              border-color 0.5s ease;
+  background: linear-gradient(135deg, #111827 0%, #1e1b4b 100%);
+  border: 1px solid rgba(99, 102, 241, 0.12);
+  transition: border-color 0.3s ease, transform 0.3s ease;
   cursor: pointer;
 }
 
 .cardcraftBanner:hover {
-  transform: translateY(-4px);
-  border-color: rgba(99, 102, 241, 0.3);
-  box-shadow:
-    0 16px 48px rgba(99, 102, 241, 0.08),
-    0 32px 80px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.25);
 }
 
 .cardcraftGlow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(600px 300px at 0% 0%, rgba(99, 102, 241, 0.06), transparent 60%),
-    radial-gradient(400px 200px at 100% 100%, rgba(167, 139, 250, 0.04), transparent 60%);
-  opacity: 0.6;
-  transition: opacity 0.5s ease;
-}
-
-.cardcraftBanner:hover .cardcraftGlow {
-  opacity: 1;
+  display: none; /* Removido glow */
 }
 
 .cardcraftContent {
@@ -158,14 +100,14 @@
 .cardcraftBadge {
   display: inline-block;
   width: fit-content;
-  padding: 6px 18px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #a78bfa;
-  background: rgba(99, 102, 241, 0.08);
+  color: #818cf8;
+  background: rgba(99, 102, 241, 0.1);
   border: 1px solid rgba(99, 102, 241, 0.2);
 }
 
@@ -175,20 +117,17 @@
   font-weight: 800;
   line-height: 1.2;
   margin: 0;
-  color: rgba(255, 255, 255, 0.95);
+  color: #f1f5f9;
 }
 
 .cardcraftAccent {
-  background: linear-gradient(135deg, #6366f1 0%, #a78bfa 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #818cf8;
 }
 
 .cardcraftDesc {
-  font-size: 1.02rem;
+  font-size: 1rem;
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.5);
+  color: #94a3b8;
   margin: 0;
   max-width: 520px;
 }
@@ -198,34 +137,29 @@
   align-items: center;
   gap: 10px;
   margin-top: 8px;
-  padding: 14px 32px;
-  border-radius: 14px;
+  padding: 13px 28px;
+  border-radius: 10px;
   width: fit-content;
   font-weight: 700;
-  font-size: 1rem;
-  letter-spacing: 0.02em;
+  font-size: 0.95rem;
   color: #fff;
-  background: #6366f1;
-  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.2);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background: #4f46e5;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .cardcraftBanner:hover .cardcraftCta {
-  transform: translateX(4px);
-  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3);
+  background: #4338ca;
 }
 
-.cardcraftCtaText {
-  display: inline;
-}
+.cardcraftCtaText { display: inline; }
 
 .cardcraftArrow {
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   transition: transform 0.3s ease;
 }
 
 .cardcraftBanner:hover .cardcraftArrow {
-  transform: translateX(6px);
+  transform: translateX(4px);
 }
 
 /* Visual card mockup */
@@ -241,20 +175,19 @@
 .cardcraftCard {
   width: 260px;
   height: 160px;
-  border-radius: 16px;
-  background: linear-gradient(145deg, #0d1117 0%, #161b22 100%);
-  border: 1px solid rgba(99, 102, 241, 0.15);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  border-radius: 14px;
+  background: linear-gradient(145deg, #0f172a 0%, #1e1b4b 100%);
+  border: 1px solid rgba(99, 102, 241, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
-  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .cardcraftBanner:hover .cardcraftCard {
-  transform: rotate(-2deg) scale(1.04);
+  transform: rotate(-1deg) scale(1.02);
 }
 
 .cardcraftCard::before {
@@ -264,14 +197,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, #6366f1, #a78bfa, #6366f1);
-  background-size: 200% 100%;
-  animation: shimmer 3s linear infinite;
-}
-
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  background: linear-gradient(90deg, #4f46e5, #818cf8);
 }
 
 .cardcraftCardInner {
@@ -285,19 +211,21 @@
   font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
   font-size: 1.6rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #6366f1 0%, #a78bfa 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #818cf8;
   letter-spacing: -0.02em;
 }
 
 .cardcraftTagline {
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.35);
-  letter-spacing: 0.1em;
+  color: #64748b;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 500;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 @media (max-width: 768px) {
@@ -307,56 +235,20 @@
     gap: 32px;
     text-align: center;
   }
-
-  .cardcraftContent {
-    align-items: center;
-  }
-
-  .cardcraftDesc {
-    max-width: 100%;
-  }
-
-  .cardcraftVisual {
-    flex: none;
-  }
-
-  .cardcraftCard {
-    width: 220px;
-    height: 136px;
-  }
-
-  .cardcraftHeadline {
-    font-size: 1.5rem;
-  }
+  .cardcraftContent { align-items: center; }
+  .cardcraftDesc { max-width: 100%; }
+  .cardcraftVisual { flex: none; }
+  .cardcraftCard { width: 220px; height: 136px; }
+  .cardcraftHeadline { font-size: 1.5rem; }
 }
 
 @media (max-width: 480px) {
-  .cardcraftBanner {
-    padding: 28px 20px;
-    gap: 24px;
-  }
-
-  .cardcraftHeadline {
-    font-size: 1.3rem;
-  }
-
-  .cardcraftDesc {
-    font-size: 0.95rem;
-  }
-
-  .cardcraftCta {
-    padding: 12px 24px;
-    font-size: 0.9rem;
-  }
-
-  .cardcraftCard {
-    width: 200px;
-    height: 124px;
-  }
-
-  .cardcraftLogo {
-    font-size: 1.3rem;
-  }
+  .cardcraftBanner { padding: 28px 20px; gap: 24px; }
+  .cardcraftHeadline { font-size: 1.3rem; }
+  .cardcraftDesc { font-size: 0.95rem; }
+  .cardcraftCta { padding: 12px 24px; font-size: 0.9rem; }
+  .cardcraftCard { width: 200px; height: 124px; }
+  .cardcraftLogo { font-size: 1.3rem; }
 }
 
 /* ===== SECAO DE FEEDBACKS ===== */
@@ -372,14 +264,14 @@
   font-size: clamp(1.75rem, 4vw, 2.5rem);
   font-weight: 700;
   margin: 0 0 12px;
-  color: #fff;
+  color: #f1f5f9;
 }
 
 .sectionSubtitle {
-  font-size: 1.02rem;
+  font-size: 1rem;
   font-weight: 400;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.5);
+  color: #94a3b8;
   margin: 0 0 32px;
   max-width: 500px;
   margin-left: auto;
@@ -387,38 +279,17 @@
 }
 
 @media (max-width: 768px) {
-  .feedbackSection {
-    padding: 16px 0;
-  }
-
-  .sectionTitle {
-    font-size: 1.5rem;
-  }
-
-  .sectionSubtitle {
-    font-size: 0.95rem;
-    margin-bottom: 24px;
-  }
+  .feedbackSection { padding: 16px 0; }
+  .sectionTitle { font-size: 1.5rem; }
+  .sectionSubtitle { font-size: 0.95rem; margin-bottom: 24px; }
 }
 
 @media (max-width: 480px) {
-  .sectionTitle {
-    font-size: 1.35rem;
-  }
-
-  .sectionSubtitle {
-    font-size: 0.9rem;
-    margin-bottom: 20px;
-  }
+  .sectionTitle { font-size: 1.35rem; }
+  .sectionSubtitle { font-size: 0.9rem; margin-bottom: 20px; }
 }
 
-/* ===== REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {
-  .sectionCard {
-    animation: none;
-  }
-
-  .sectionCard:hover {
-    transform: none;
-  }
+  .sectionCard { animation: none; }
+  .sectionCard:hover { transform: none; }
 }

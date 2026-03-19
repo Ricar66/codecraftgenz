@@ -1,6 +1,5 @@
-/* src/components/Hero/Hero.module.css */
+/* src/components/Hero/Hero.module.css — Redesign Profissional */
 
-/* ===== CONTAINER PRINCIPAL ===== */
 .heroWrapper {
   min-height: 100vh;
   width: 100%;
@@ -12,140 +11,149 @@
   padding: 100px 24px 60px;
   box-sizing: border-box;
   overflow: hidden;
+  background: linear-gradient(175deg, #0a0a0f 0%, #0f1021 40%, #111327 100%);
 }
 
-/* Particulas luminosas sutis */
+/* Glow sutil — sem partículas */
 .heroWrapper::before {
   content: '';
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(2px 2px at 15% 25%, rgba(99, 102, 241, 0.3), transparent),
-    radial-gradient(2px 2px at 85% 15%, rgba(167, 139, 250, 0.25), transparent),
-    radial-gradient(1.5px 1.5px at 50% 75%, rgba(99, 102, 241, 0.2), transparent),
-    radial-gradient(2px 2px at 70% 60%, rgba(167, 139, 250, 0.15), transparent),
-    radial-gradient(1px 1px at 30% 45%, rgba(255, 255, 255, 0.15), transparent);
+    radial-gradient(800px 600px at 30% 30%, rgba(99, 102, 241, 0.07), transparent 60%),
+    radial-gradient(600px 400px at 70% 70%, rgba(59, 130, 246, 0.04), transparent 60%);
   pointer-events: none;
   z-index: 0;
-  opacity: 0.7;
 }
 
-/* ===== CONTEUDO PRINCIPAL ===== */
+/* Linha divisória sutil */
+.heroWrapper::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  z-index: 1;
+}
+
 .heroContent {
   position: relative;
   z-index: 2;
-  max-width: 1000px;
+  max-width: 860px;
   width: 100%;
-  padding: 80px 24px;
+  padding: 60px 24px;
   margin: 0 auto;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 32px;
+  gap: 28px;
 }
 
-/* ===== AREA DE TEXTO ===== */
 .textArea {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 24px;
+  gap: 20px;
   width: 100%;
 }
 
-/* Slogan Principal */
 .slogan {
   font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
-  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-size: clamp(2.5rem, 7vw, 4.5rem);
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.08;
   letter-spacing: -0.03em;
   margin: 0;
   text-align: center;
-  color: #fff;
+  color: #f1f5f9;
 }
 
+/* Cor sólida em vez de gradiente — mais profissional */
 .sloganAccent {
-  background: linear-gradient(135deg, #6366f1 0%, #a78bfa 50%, #c4b5fd 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #818cf8;
 }
 
-/* Subtitle */
 .subtitle {
-  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  font-size: clamp(1.05rem, 2.2vw, 1.25rem);
   font-weight: 400;
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.6);
-  max-width: 640px;
+  color: #94a3b8;
+  max-width: 580px;
   margin: 0 auto;
 }
 
-/* Hashtags */
+/* Badges profissionais — retangulares, sem # */
 .hashtags {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .hashtagItem {
-  display: inline-block;
-  font-size: 0.88rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  padding: 6px 16px;
-  border-radius: 999px;
-  background: rgba(99, 102, 241, 0.08);
-  border: 1px solid rgba(99, 102, 241, 0.15);
-  color: #a78bfa;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 7px 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
   transition: all 0.25s ease;
 }
 
 .hashtagItem:hover {
-  background: rgba(99, 102, 241, 0.12);
-  border-color: rgba(99, 102, 241, 0.3);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #c7d2fe;
 }
 
-/* ===== AREA DE ACAO ===== */
 .actionArea {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
-/* Botao CTA */
+/* CTA — cor vibrante, sem glow excessivo */
 .ctaButton {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  padding: 18px 40px;
-  border-radius: 14px;
+  padding: 16px 36px;
+  border-radius: 12px;
   border: none;
-  background: #6366f1;
+  background: #4f46e5;
   color: #fff;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.25);
-  transition: box-shadow 0.3s ease;
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.25);
+  transition: background 0.2s ease, box-shadow 0.3s ease, transform 0.2s ease;
 }
 
 .ctaButton:hover {
-  box-shadow: 0 12px 40px rgba(99, 102, 241, 0.35);
+  background: #4338ca;
+  box-shadow: 0 8px 28px rgba(79, 70, 229, 0.35);
+  transform: translateY(-1px);
 }
 
-/* ===== SCROLL INDICATOR ===== */
+.ctaButton:active {
+  transform: scale(0.98);
+}
+
+/* Scroll indicator */
 .scrollIndicator {
   display: flex;
   flex-direction: column;
@@ -162,108 +170,53 @@
 }
 
 .scrollText {
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: 0.68rem;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .scrollMouse {
-  width: 26px;
-  height: 42px;
-  border: 2px solid rgba(255, 255, 255, 0.25);
-  border-radius: 13px;
+  width: 24px;
+  height: 38px;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
   position: relative;
   display: flex;
   justify-content: center;
 }
 
 .scrollWheel {
-  width: 4px;
-  height: 10px;
-  background: linear-gradient(180deg, #6366f1, #a78bfa);
+  width: 3px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.25);
   border-radius: 2px;
   margin-top: 8px;
 }
 
 /* ===== RESPONSIVIDADE ===== */
 @media (max-width: 768px) {
-  .heroWrapper {
-    padding: 80px 20px 40px;
-  }
-
-  .heroContent {
-    padding: 40px 16px;
-    gap: 24px;
-  }
-
-  .slogan {
-    font-size: clamp(2rem, 7vw, 3rem);
-  }
-
-  .subtitle {
-    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
-  }
-
-  .hashtags {
-    gap: 8px;
-  }
-
-  .hashtagItem {
-    font-size: 0.8rem;
-    padding: 5px 12px;
-  }
-
-  .ctaButton {
-    padding: 16px 32px;
-    font-size: 1rem;
-  }
-
-  .scrollIndicator {
-    margin-top: 24px;
-  }
-
-  .scrollText {
-    font-size: 9px;
-    letter-spacing: 1.5px;
-  }
-
-  .scrollMouse {
-    width: 22px;
-    height: 36px;
-  }
+  .heroWrapper { padding: 80px 20px 40px; }
+  .heroContent { padding: 40px 16px; gap: 24px; }
+  .slogan { font-size: clamp(2rem, 7vw, 3rem); }
+  .subtitle { font-size: clamp(0.95rem, 2.5vw, 1.1rem); }
+  .hashtags { gap: 8px; }
+  .hashtagItem { font-size: 0.78rem; padding: 6px 12px; }
+  .ctaButton { padding: 14px 28px; font-size: 1rem; }
+  .scrollIndicator { margin-top: 24px; }
+  .scrollText { font-size: 9px; letter-spacing: 1.5px; }
+  .scrollMouse { width: 22px; height: 34px; }
 }
 
 @media (max-width: 480px) {
-  .heroContent {
-    padding: 50px 16px;
-    gap: 20px;
-  }
-
-  .slogan {
-    font-size: clamp(1.75rem, 6vw, 2.5rem);
-  }
-
-  .subtitle {
-    font-size: 0.95rem;
-  }
-
-  .ctaButton {
-    padding: 14px 28px;
-    font-size: 0.95rem;
-    width: 100%;
-    max-width: 280px;
-  }
-
-  .scrollIndicator {
-    display: none;
-  }
+  .heroContent { padding: 50px 16px; gap: 20px; }
+  .slogan { font-size: clamp(1.75rem, 6vw, 2.5rem); }
+  .subtitle { font-size: 0.95rem; }
+  .ctaButton { padding: 14px 28px; font-size: 0.95rem; width: 100%; max-width: 280px; }
+  .scrollIndicator { display: none; }
 }
 
-/* ===== REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {
-  .heroWrapper::before {
-    animation: none;
-  }
+  .heroWrapper::before { animation: none; }
 }
