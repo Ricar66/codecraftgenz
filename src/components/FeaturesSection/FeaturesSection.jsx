@@ -1,58 +1,80 @@
 // src/components/FeaturesSection/FeaturesSection.jsx
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FaTrophy, FaProjectDiagram, FaUsers, FaChartLine, FaRocket, FaComments } from 'react-icons/fa';
+import { Trophy, GitBranch, Users, BarChart3, Rocket, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import styles from './FeaturesSection.module.css';
 
 const features = [
   {
-    to: '/desafios', Icon: FaTrophy, title: 'Desafios', accent: '#FFD700',
-    text: 'Teste suas habilidades com desafios de código reais propostos por empresas parceiras.',
-    backText: 'Resolva problemas reais, ganhe pontos e destaque-se no mercado tech.',
+    to: '/desafios',
+    Icon: Trophy,
+    title: 'Desafios',
+    text: 'Resolva problemas reais propostos por empresas e ganhe reconhecimento no mercado tech.',
+    color: '#eab308',
+    bg: 'rgba(234, 179, 8, 0.08)',
+    border: 'rgba(234, 179, 8, 0.15)',
   },
   {
-    to: '/projetos', Icon: FaProjectDiagram, title: 'Projetos', accent: '#D12BF2',
-    text: 'Construa portfólio participando de projetos open-source e squads de desenvolvimento.',
-    backText: 'Colabore em squads, contribua com código e construa seu portfólio profissional.',
+    to: '/projetos',
+    Icon: GitBranch,
+    title: 'Projetos',
+    text: 'Contribua em projetos open-source e squads para construir um portfólio profissional.',
+    color: '#818cf8',
+    bg: 'rgba(129, 140, 248, 0.08)',
+    border: 'rgba(129, 140, 248, 0.15)',
   },
   {
-    to: '/mentoria', Icon: FaUsers, title: 'Mentorias', accent: '#00E4F2',
-    text: 'Conecte-se com profissionais experientes do mercado para acelerar sua jornada.',
-    backText: 'Sessões 1:1 com mentores seniores para acelerar sua carreira em tech.',
+    to: '/mentoria',
+    Icon: Users,
+    title: 'Mentorias',
+    text: 'Sessões 1:1 com profissionais seniores para acelerar sua carreira em tecnologia.',
+    color: '#22d3ee',
+    bg: 'rgba(34, 211, 238, 0.08)',
+    border: 'rgba(34, 211, 238, 0.15)',
   },
   {
-    to: '/ranking', Icon: FaChartLine, title: 'Ranking', accent: '#10B981',
-    text: 'Gamifique seu aprendizado, ganhe pontos e se destaque para os recrutadores.',
-    backText: 'Suba no ranking, conquiste badges e seja visto por recrutadores top.',
+    to: '/ranking',
+    Icon: BarChart3,
+    title: 'Ranking',
+    text: 'Gamifique seu aprendizado, conquiste badges e seja visto por recrutadores.',
+    color: '#34d399',
+    bg: 'rgba(52, 211, 153, 0.08)',
+    border: 'rgba(52, 211, 153, 0.15)',
   },
   {
-    to: '/aplicativos', Icon: FaRocket, title: 'Aplicativos', accent: '#F97316',
-    text: 'Explore ferramentas e soluções desenvolvidas pela comunidade CodeCraft.',
-    backText: 'Apps desktop e mobile criados com as melhores práticas de engenharia.',
+    to: '/aplicativos',
+    Icon: Rocket,
+    title: 'Aplicativos',
+    text: 'Apps desktop e mobile criados com as melhores práticas de engenharia de software.',
+    color: '#fb923c',
+    bg: 'rgba(251, 146, 60, 0.08)',
+    border: 'rgba(251, 146, 60, 0.15)',
   },
   {
-    to: '/feedback', Icon: FaComments, title: 'Feedbacks', accent: '#8B5CF6',
-    text: 'Compartilhe sua experiência e ajude a melhorar nossa plataforma.',
-    backText: 'Sua opinião molda o futuro da plataforma. Cada feedback conta!',
+    to: '/feedback',
+    Icon: MessageCircle,
+    title: 'Feedbacks',
+    text: 'Sua opinião molda o futuro da plataforma. Cada feedback conta para melhorarmos.',
+    color: '#a78bfa',
+    bg: 'rgba(167, 139, 250, 0.08)',
+    border: 'rgba(167, 139, 250, 0.15)',
   },
 ];
 
 const cardVariant = {
-  hidden: { opacity: 0, y: 60, scale: 0.92 },
+  hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
-    scale: 1,
-    transition: { type: 'spring', stiffness: 80, damping: 16 },
+    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
   },
 };
 
-const stagger015 = { hidden: {}, visible: { transition: { staggerChildren: 0.15 } } };
-const stagger010 = { hidden: {}, visible: { transition: { staggerChildren: 0.1 } } };
+const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
 const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
+  hidden: { opacity: 0, y: 16 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
 };
 
@@ -61,48 +83,43 @@ const FeaturesSection = () => {
     <section className={styles.featuresSection} aria-label="Recursos da plataforma" data-section="features">
       <div className={styles.container}>
         <motion.header
+          className={styles.header}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
-          variants={stagger015}
+          variants={stagger}
         >
+          <motion.span className={styles.badge} variants={fadeUp}>Plataforma</motion.span>
           <motion.h2 className={styles.title} variants={fadeUp}>
-            Explore a Plataforma CodeCraft
+            Tudo que você precisa em um só lugar
           </motion.h2>
           <motion.p className={styles.subtitle} variants={fadeUp}>
-            Tudo que você precisa para conectar seu talento à inovação real.
+            Ferramentas, comunidade e oportunidades para conectar seu talento à inovação real.
           </motion.p>
         </motion.header>
 
         <motion.div
-          className={styles.featuresGrid}
+          className={styles.grid}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.05 }}
-          variants={stagger010}
+          variants={stagger}
         >
-          {features.map(({ to, Icon, title, text, backText, accent }) => (
-            <motion.div key={to} className={styles.flipCard} variants={cardVariant}>
-              <div className={styles.flipCardInner}>
-                {/* FRENTE */}
-                <div className={styles.flipFront}>
-                  <div className={styles.iconWrapper} aria-hidden="true" style={{ color: accent }}>
-                    <Icon />
-                  </div>
-                  <h3 className={styles.cardTitle}>{title}</h3>
-                  <p className={styles.cardText}>{text}</p>
+          {features.map(({ to, Icon, title, text, color, bg, border }) => (
+            <motion.div key={to} variants={cardVariant}>
+              <Link to={to} className={styles.card}>
+                <div
+                  className={styles.iconBox}
+                  style={{ background: bg, borderColor: border, color }}
+                >
+                  <Icon size={24} />
                 </div>
-                {/* VERSO */}
-                <div className={styles.flipBack} style={{ '--accent': accent }}>
-                  <div className={styles.backIcon} aria-hidden="true" style={{ color: accent }}>
-                    <Icon />
-                  </div>
-                  <p className={styles.backText}>{backText}</p>
-                  <Link to={to} className={styles.backCta} style={{ borderColor: accent, color: accent }}>
-                    Explorar {title} →
-                  </Link>
-                </div>
-              </div>
+                <h3 className={styles.cardTitle}>{title}</h3>
+                <p className={styles.cardText}>{text}</p>
+                <span className={styles.cardLink} style={{ color }}>
+                  Explorar <span className={styles.arrow}>&rarr;</span>
+                </span>
+              </Link>
             </motion.div>
           ))}
         </motion.div>
