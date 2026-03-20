@@ -198,7 +198,7 @@ const AppHubPage = () => {
 
   if (loading) {
     return (
-      <div className={styles.appHubPage}>
+      <div className={`${styles.appHubPage} starfield-bg`}>
         <Navbar />
         <div className={styles.loadingContainer}>
           <div className={styles.spinner}></div>
@@ -210,7 +210,7 @@ const AppHubPage = () => {
 
   if (error) {
     return (
-      <div className={styles.appHubPage}>
+      <div className={`${styles.appHubPage} starfield-bg`}>
         <Navbar />
         <div className={styles.errorContainer}>
           <h2>Erro ao carregar</h2>
@@ -224,7 +224,7 @@ const AppHubPage = () => {
   }
 
   return (
-    <div className={styles.appHubPage}>
+    <div className={`${styles.appHubPage} starfield-bg`}>
       <Navbar />
 
       {/* Hero Section */}

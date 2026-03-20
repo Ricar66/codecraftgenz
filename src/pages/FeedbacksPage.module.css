@@ -1,38 +1,10 @@
-/* src/pages/FeedbacksPage.module.css */
-/* Cyberpunk/Glassmorphism - Feedback Page */
+/* src/pages/FeedbacksPage.module.css — Redesign Profissional */
 
-/* ===== CONTAINER PRINCIPAL ===== */
 .page {
   min-height: 100vh;
   width: 100%;
   position: relative;
   overflow-x: hidden;
-  isolation: isolate;
-}
-
-/* Background com blur */
-.page::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("../assets/hero-background.svg");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  filter: blur(1px);
-  z-index: -2;
-}
-
-/* Background Glow Overlay */
-.page::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse at 30% 20%, rgba(209, 43, 242, 0.1) 0%, transparent 50%),
-              radial-gradient(ellipse at 70% 80%, rgba(0, 228, 242, 0.08) 0%, transparent 50%),
-              radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.05) 0%, transparent 40%);
-  pointer-events: none;
-  z-index: -1;
 }
 
 /* ===== HERO SECTION ===== */
@@ -67,19 +39,12 @@
 
 .heroTitle {
   font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
-  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-size: clamp(2.5rem, 7vw, 4rem);
   font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
   margin: 0;
-  background: linear-gradient(135deg, #D12BF2 0%, #00E4F2 50%, #fff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  background-size: 200% 200%;
-  animation: gradientShift 4s ease-in-out infinite alternate,
-             sloganFloat 6s ease-in-out infinite;
-  filter: drop-shadow(0 0 60px rgba(209, 43, 242, 0.3));
+  color: #f1f5f9;
 }
 
 @keyframes sloganFloat {
@@ -117,16 +82,16 @@
   box-shadow:
     0 24px 60px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 0 80px rgba(209, 43, 242, 0.1);
+    0 0 80px rgba(99, 102, 241, 0.1);
   transition: all 0.4s ease;
 }
 
 .formContainer:hover {
-  border-color: rgba(209, 43, 242, 0.3);
+  border-color: rgba(99, 102, 241, 0.3);
   box-shadow:
     0 24px 60px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 0 100px rgba(209, 43, 242, 0.15);
+    0 0 100px rgba(99, 102, 241, 0.15);
 }
 
 /* Neon border effect */
@@ -136,7 +101,7 @@
   inset: -2px;
   border-radius: 26px;
   padding: 2px;
-  background: linear-gradient(135deg, rgba(209, 43, 242, 0.4), rgba(0, 228, 242, 0.4), rgba(209, 43, 242, 0.4));
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(99, 102, 241, 0.4), rgba(99, 102, 241, 0.4));
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -181,9 +146,9 @@
 
 .featureCard:hover {
   transform: translateY(-8px) scale(1.01);
-  border-color: rgba(0, 228, 242, 0.4);
+  border-color: rgba(99, 102, 241, 0.4);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
-              0 0 40px rgba(0, 228, 242, 0.12),
+              0 0 40px rgba(99, 102, 241, 0.12),
               inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
@@ -194,7 +159,7 @@
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
-  background: linear-gradient(135deg, rgba(0, 228, 242, 0.2) 0%, rgba(209, 43, 242, 0.2) 100%);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%);
   border-radius: 16px;
   font-size: 28px;
 }

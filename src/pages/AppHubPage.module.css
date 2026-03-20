@@ -18,34 +18,9 @@
 .appHubPage {
   min-height: 100vh;
   width: 100%;
-  background: #0a0a0f;
   position: relative;
   overflow-x: hidden;
-  isolation: isolate;
-}
-
-/* Background SVG */
-.appHubPage::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("../assets/hero-background.svg");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  opacity: 0.4;
-  z-index: -2;
-}
-
-/* Subtle ambient glow */
-.appHubPage::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse at 25% 20%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
-              radial-gradient(ellipse at 75% 80%, rgba(139, 92, 246, 0.03) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: -1;
+  /* Background handled by .starfield-bg global class */
 }
 
 /* ===== HERO SECTION ===== */
@@ -74,17 +49,14 @@
 }
 
 .heroAccent {
-  background: linear-gradient(135deg, #6366f1, #a78bfa);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #818cf8;
 }
 
 .heroSubtitle {
   font-size: clamp(0.95rem, 2vw, 1.15rem);
   font-weight: 400;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.5);
+  color: #94a3b8;
   max-width: 520px;
   margin: 0 auto 32px;
 }
