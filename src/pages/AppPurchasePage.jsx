@@ -332,7 +332,7 @@ const AppPurchasePage = () => {
   };
 
   return (
-    <div className={`${styles.purchasePage} page-with-background`}>
+    <div className={`${styles.purchasePage} starfield-bg`}>
       <Navbar />
       <div className={styles.purchaseCard}>
         {loading ? (

@@ -110,7 +110,7 @@ const ForCompaniesPage = memo(() => {
     return (
       <>
         <Navbar />
-        <div className={styles.page}>
+        <div className={`${styles.page} starfield-bg`}>
           <div className={styles.successContainer}>
             <FaCheckCircle className={styles.successIcon} aria-hidden="true" />
             <h1 className={styles.successTitle}>Solicitação Enviada!</h1>
@@ -129,7 +129,7 @@ const ForCompaniesPage = memo(() => {
   return (
     <>
       <Navbar />
-      <div className={styles.page}>
+      <div className={`${styles.page} starfield-bg`}>
         {/* Hero Section */}
         <section className={styles.hero}>
           <div className={styles.heroContent}>

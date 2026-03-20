@@ -1,24 +1,9 @@
-/* src/pages/ForCompaniesPage.module.css */
-/* Mobile First - Otimizado para Performance */
+/* src/pages/ForCompaniesPage.module.css — Redesign Profissional */
 
 .page {
   min-height: 100vh;
   padding-bottom: 40px;
   position: relative;
-  isolation: isolate;
-}
-
-/* Background com blur */
-.page::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("../assets/hero-background.svg");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  filter: blur(1px);
-  z-index: -2;
 }
 
 /* Hero Section */
@@ -38,30 +23,29 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  background: rgba(209, 43, 242, 0.15);
-  border: 1px solid rgba(209, 43, 242, 0.3);
-  border-radius: 20px;
-  color: var(--cor-primaria);
-  font-size: 0.85rem;
+  padding: 5px 14px;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 6px;
+  color: #818cf8;
+  font-size: 0.72rem;
   font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   margin-bottom: 16px;
 }
 
 .heroTitle {
   font-size: 1.75rem;
   font-weight: 800;
-  color: var(--texto-branco);
-  line-height: 1.2;
+  color: #f1f5f9;
+  line-height: 1.15;
   margin-bottom: 16px;
-  filter: drop-shadow(0 0 40px rgba(209, 43, 242, 0.2));
+  letter-spacing: -0.02em;
 }
 
 .highlight {
-  background: linear-gradient(135deg, var(--cor-terciaria), var(--cor-primaria));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #818cf8;
 }
 
 .heroSubtitle {
@@ -87,7 +71,7 @@
   flex: 0 0 45%;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 12px 48px rgba(209, 43, 242, 0.2),
+  box-shadow: 0 12px 48px rgba(99, 102, 241, 0.2),
               0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
@@ -107,7 +91,7 @@
   font-size: clamp(1.5rem, 3vw, 2rem);
   font-weight: 700;
   margin: 0 0 16px;
-  background: linear-gradient(135deg, #D12BF2 0%, #00E4F2 100%);
+  background: linear-gradient(135deg, #4f46e5 0%, #818cf8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -128,8 +112,8 @@
 
 .showcaseChip {
   padding: 6px 16px;
-  background: rgba(209, 43, 242, 0.12);
-  border: 1px solid rgba(209, 43, 242, 0.25);
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.25);
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 600;
@@ -156,9 +140,9 @@
 }
 
 .form:hover {
-  border-color: rgba(209, 43, 242, 0.2);
+  border-color: rgba(99, 102, 241, 0.2);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25),
-              0 0 32px rgba(209, 43, 242, 0.06),
+              0 0 32px rgba(99, 102, 241, 0.06),
               inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
@@ -185,7 +169,7 @@
 }
 
 .label svg {
-  color: var(--cor-terciaria);
+  color: #818cf8;
   font-size: 0.85rem;
 }
 
@@ -214,7 +198,7 @@
 .select:focus,
 .textarea:focus {
   outline: none;
-  border-color: var(--cor-terciaria);
+  border-color: #818cf8;
   background: rgba(0, 228, 242, 0.05);
 }
 
@@ -257,7 +241,7 @@
   font-weight: 600;
   font-family: inherit;
   color: var(--fundo-escuro);
-  background: linear-gradient(135deg, var(--cor-terciaria), var(--cor-primaria));
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -276,7 +260,7 @@
 }
 
 .submitButton:focus-visible {
-  outline: 2px solid var(--cor-terciaria);
+  outline: 2px solid #818cf8;
   outline-offset: 2px;
 }
 
@@ -328,7 +312,7 @@
   font-size: 1rem;
   font-weight: 600;
   color: var(--fundo-escuro);
-  background: linear-gradient(135deg, var(--cor-terciaria), var(--cor-primaria));
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
   border-radius: 10px;
   text-decoration: none;
   min-height: 48px;
