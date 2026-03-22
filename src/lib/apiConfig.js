@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 
 import { toBoolFlag } from '../utils/hooks.js';
 
-// URL do backend em produção (Render)
-const PROD_API_URL = 'https://codecraftgenz-monorepo.onrender.com';
+// URL do backend em produção (VPS)
+const PROD_API_URL = 'https://api.codecraftgenz.com.br';
 
 // Detecta o ambiente e configura a URL base da API
 const getApiBaseUrl = () => {
