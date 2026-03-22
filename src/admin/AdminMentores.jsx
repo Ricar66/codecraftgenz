@@ -9,12 +9,14 @@ import {
 
 import { useMentors, MentorsRepo } from '../hooks/useAdminRepo';
 import { sanitizeImageUrl } from '../utils/urlSanitize.js';
+import { useToast } from '../components/UI/Toast';
 
 import AdminCard from './components/AdminCard';
 import StatusBadge from './components/StatusBadge';
 import styles from './AdminMentores.module.css';
 
 export default function AdminMentores() {
+  const toast = useToast();
   const { data: list, loading, error, refresh } = useMentors();
   const [form, setForm] = useState({
     name: '',
@@ -30,7 +32,7 @@ export default function AdminMentores() {
   const [editingId, setEditingId] = useState(null);
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
-  const [toast, setToast] = useState('');
+  const [toastMsg, setToastMsg] = useState('');
 
   const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5MB limit
   const ACCEPT_TYPES = ['image/jpeg','image/png','image/webp','image/jpg','image/pjpeg','image/gif','image/svg+xml'];
@@ -83,11 +85,11 @@ export default function AdminMentores() {
       }
       setForm({ name: '', specialty: '', bio: '', email: '', phone: '', photo: '', avatar_url: '', status: 'published', visible: true });
       setEditingId(null);
-      setToast('Mentor salvo com sucesso!');
-      setTimeout(() => setToast(''), 2500);
+      setToastMsg('Mentor salvo com sucesso!');
+      setTimeout(() => setToastMsg(''), 2500);
       refresh();
     } catch (err) {
-      setToast('Erro ao salvar mentor');
+      setToastMsg('Erro ao salvar mentor');
       console.error(err);
     } finally {
       setBusy(false);
@@ -98,11 +100,11 @@ export default function AdminMentores() {
     if (!file) return;
     const isImage = (file.type && file.type.startsWith('image/')) || ACCEPT_TYPES.includes(file.type);
     if (!isImage) {
-      alert('Formato inválido. Use imagens (JPEG, PNG, WEBP, GIF, SVG).');
+      toast.warning('Formato inválido. Use imagens (JPEG, PNG, WEBP, GIF, SVG).');
       return;
     }
     if (file.size > MAX_PHOTO_BYTES) {
-      alert('Imagem muito grande. Máximo de 5MB.');
+      toast.warning('Imagem muito grande. Máximo de 5MB.');
       return;
     }
     const reader = new FileReader();
@@ -201,7 +203,7 @@ export default function AdminMentores() {
     const revertHistory = async (historyId) => {
       if (!window.confirm(`Reverter evento ${historyId}?`)) return;
       const res = await MentorsRepo.revertHistory(historyId);
-      if (!res.ok) alert(res.error);
+      if (!res.ok) toast.error(res.error);
       refresh();
     };
 
@@ -272,10 +274,10 @@ export default function AdminMentores() {
       </header>
 
       {/* Toast */}
-      {toast && (
-        <div className={`${styles.toast} ${toast.includes('Erro') ? styles.error : styles.success}`}>
-          {toast.includes('Erro') ? <FaTimes /> : <FaCheck />}
-          {toast}
+      {toastMsg && (
+        <div className={`${styles.toast} ${toastMsg.includes('Erro') ? styles.error : styles.success}`}>
+          {toastMsg.includes('Erro') ? <FaTimes /> : <FaCheck />}
+          {toastMsg}
         </div>
       )}
 

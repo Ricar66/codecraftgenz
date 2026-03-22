@@ -3,6 +3,7 @@ import { FaArrowRight, FaCheckCircle, FaEnvelope, FaHome, FaSpinner, FaWindows }
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import Navbar from '../components/Navbar/Navbar';
+import { useToast } from '../components/UI/Toast';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import { API_BASE_URL } from '../lib/apiConfig.js';
 import { getAppById, getPurchaseStatus, registerDownload, resendPurchaseEmail } from '../services/appsAPI.js';
@@ -43,6 +44,7 @@ const OrderSuccessPage = () => {
   const [emailStatus, setEmailStatus] = useState('idle'); // idle, sending, sent, error
   const [emailMessage, setEmailMessage] = useState('');
   const { trackEvent } = useAnalytics();
+  const toast = useToast();
 
   useEffect(() => {
     const init = async () => {
@@ -151,11 +153,11 @@ const OrderSuccessPage = () => {
       }
 
       // Se chegou aqui, não conseguiu obter URL - mostra erro
-      alert('Não foi possível obter o link de download. Por favor, use o campo abaixo para receber por e-mail.');
+      toast.warning('Não foi possível obter o link de download. Por favor, use o campo abaixo para receber por e-mail.');
 
     } catch (error) {
       console.error('Erro no download:', error);
-      alert('Erro ao processar download: ' + (error?.message || 'Tente novamente'));
+      toast.error('Erro ao processar download: ' + (error?.message || 'Tente novamente'));
     }
   };
 
