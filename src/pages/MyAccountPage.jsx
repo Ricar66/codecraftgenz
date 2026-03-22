@@ -7,6 +7,7 @@ import {
 import { Link, Navigate } from 'react-router-dom';
 
 import Navbar from '../components/Navbar/Navbar';
+import { useToast } from '../components/UI/Toast';
 import { useAuth } from '../context/useAuth';
 import { apiRequest } from '../lib/apiConfig';
 import { sanitizeImageUrl } from '../utils/urlSanitize.js';
@@ -14,10 +15,15 @@ import styles from './MyAccountPage.module.css';
 
 export default function MyAccountPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const toast = useToast();
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('purchases');
+  const [editMode, setEditMode] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && user?.email) {
@@ -201,17 +207,111 @@ export default function MyAccountPage() {
         {activeTab === 'profile' && (
           <div className={styles.profileSection}>
             <div className={styles.profileForm}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Nome</label>
-                <input type="text" value={user?.name || ''} readOnly className={styles.formInput} />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>E-mail</label>
-                <input type="email" value={user?.email || ''} readOnly className={styles.formInput} />
-              </div>
-              <p className={styles.profileNote}>
-                Para alterar seus dados, entre em contato com o suporte.
-              </p>
+              {!editMode ? (
+                <>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Nome</label>
+                    <input type="text" value={user?.name || ''} readOnly className={styles.formInput} />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>E-mail</label>
+                    <input type="email" value={user?.email || ''} readOnly className={styles.formInput} />
+                  </div>
+                  <button
+                    className={styles.downloadBtn}
+                    style={{ marginTop: 16, width: 'auto', padding: '10px 24px' }}
+                    onClick={() => {
+                      setEditName(user?.name || '');
+                      setEditEmail(user?.email || '');
+                      setEditMode(true);
+                    }}
+                  >
+                    Editar Perfil
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Nome</label>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className={styles.formInput}
+                      style={{
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: 12,
+                        color: '#F5F5F7',
+                        padding: '12px 16px',
+                        width: '100%',
+                      }}
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>E-mail</label>
+                    <input
+                      type="email"
+                      value={editEmail}
+                      readOnly
+                      className={styles.formInput}
+                      title="O e-mail não pode ser alterado por segurança"
+                      style={{
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: 12,
+                        color: '#F5F5F7',
+                        padding: '12px 16px',
+                        width: '100%',
+                        opacity: 0.6,
+                        cursor: 'not-allowed',
+                      }}
+                    />
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
+                      O e-mail não pode ser alterado por segurança.
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+                    <button
+                      className={styles.downloadBtn}
+                      style={{ padding: '10px 24px' }}
+                      disabled={savingProfile}
+                      onClick={async () => {
+                        if (!editName.trim()) {
+                          toast.error('O nome não pode ficar vazio.');
+                          return;
+                        }
+                        setSavingProfile(true);
+                        try {
+                          await apiRequest('/api/auth/profile', {
+                            method: 'PUT',
+                            body: JSON.stringify({ name: editName }),
+                          });
+                          toast.success('Perfil atualizado com sucesso!');
+                          setEditMode(false);
+                          // Reload user data by refreshing the page
+                          window.location.reload();
+                        } catch (err) {
+                          console.error('Erro ao salvar perfil:', err);
+                          toast.error(err?.message || 'Erro ao salvar perfil. Tente novamente.');
+                        } finally {
+                          setSavingProfile(false);
+                        }
+                      }}
+                    >
+                      {savingProfile ? 'Salvando...' : 'Salvar'}
+                    </button>
+                    <button
+                      className={styles.downloadBtn}
+                      style={{ padding: '10px 24px', opacity: 0.7 }}
+                      onClick={() => setEditMode(false)}
+                      disabled={savingProfile}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}

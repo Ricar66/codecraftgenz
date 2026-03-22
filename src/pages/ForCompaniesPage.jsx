@@ -41,6 +41,43 @@ const ForCompaniesPage = memo(() => {
     { value: 'undefined', label: 'A definir' }
   ];
 
+  const fieldErrorStyle = { color: '#f87171', fontSize: '0.8rem', marginTop: '4px' };
+  const charCounterStyle = { color: '#6B7280', fontSize: '0.8rem', marginTop: '4px', textAlign: 'right' };
+
+  const validateField = useCallback((field, value) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    switch (field) {
+      case 'companyName':
+        if (!value.trim()) return 'Nome da empresa é obrigatório';
+        if (value.length > 256) return 'Máximo de 256 caracteres';
+        return '';
+      case 'responsibleName':
+        if (!value.trim()) return 'Nome do responsável é obrigatório';
+        if (value.length > 256) return 'Máximo de 256 caracteres';
+        return '';
+      case 'email':
+        if (!value.trim()) return 'Email é obrigatório';
+        if (value.length > 256) return 'Máximo de 256 caracteres';
+        if (!emailRegex.test(value)) return 'Email inválido';
+        return '';
+      case 'projectType':
+        if (!value) return 'Selecione o tipo de projeto';
+        return '';
+      case 'description':
+        if (!value.trim()) return 'Descreva sua ideia';
+        if (value.trim().length < 20) return 'Descrição deve ter pelo menos 20 caracteres';
+        if (value.length > 5000) return 'Máximo de 5000 caracteres';
+        return '';
+      default:
+        return '';
+    }
+  }, []);
+
+  const handleBlur = useCallback((field) => {
+    const err = validateField(field, formData[field]);
+    setErrors(prev => ({ ...prev, [field]: err }));
+  }, [formData, validateField]);
+
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -161,11 +198,15 @@ const ForCompaniesPage = memo(() => {
                 name="companyName"
                 value={formData.companyName}
                 onChange={handleChange}
+                onBlur={() => handleBlur('companyName')}
                 className={`${styles.input} ${errors.companyName ? styles.inputError : ''}`}
                 placeholder="Ex: TechCorp Ltda"
                 autoComplete="organization"
+                maxLength={256}
+                aria-invalid={!!errors.companyName}
+                aria-describedby={errors.companyName ? 'companyName-error' : undefined}
               />
-              {errors.companyName && <span className={styles.error}>{errors.companyName}</span>}
+              {errors.companyName && <span id="companyName-error" style={fieldErrorStyle}>{errors.companyName}</span>}
             </div>
 
             {/* Nome do Responsável */}
@@ -179,11 +220,15 @@ const ForCompaniesPage = memo(() => {
                 name="responsibleName"
                 value={formData.responsibleName}
                 onChange={handleChange}
+                onBlur={() => handleBlur('responsibleName')}
                 className={`${styles.input} ${errors.responsibleName ? styles.inputError : ''}`}
                 placeholder="Seu nome completo"
                 autoComplete="name"
+                maxLength={256}
+                aria-invalid={!!errors.responsibleName}
+                aria-describedby={errors.responsibleName ? 'responsibleName-error' : undefined}
               />
-              {errors.responsibleName && <span className={styles.error}>{errors.responsibleName}</span>}
+              {errors.responsibleName && <span id="responsibleName-error" style={fieldErrorStyle}>{errors.responsibleName}</span>}
             </div>
 
             {/* Email Corporativo */}
@@ -197,11 +242,15 @@ const ForCompaniesPage = memo(() => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                onBlur={() => handleBlur('email')}
                 className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
                 placeholder="contato@empresa.com"
                 autoComplete="email"
+                maxLength={256}
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'email-error' : undefined}
               />
-              {errors.email && <span className={styles.error}>{errors.email}</span>}
+              {errors.email && <span id="email-error" style={fieldErrorStyle}>{errors.email}</span>}
             </div>
 
             {/* Tipo de Projeto */}
@@ -214,14 +263,17 @@ const ForCompaniesPage = memo(() => {
                 name="projectType"
                 value={formData.projectType}
                 onChange={handleChange}
+                onBlur={() => handleBlur('projectType')}
                 className={`${styles.select} ${errors.projectType ? styles.inputError : ''}`}
+                aria-invalid={!!errors.projectType}
+                aria-describedby={errors.projectType ? 'projectType-error' : undefined}
               >
                 <option value="">Selecione uma opção</option>
                 {projectTypes.map(type => (
                   <option key={type.value} value={type.value}>{type.label}</option>
                 ))}
               </select>
-              {errors.projectType && <span className={styles.error}>{errors.projectType}</span>}
+              {errors.projectType && <span id="projectType-error" style={fieldErrorStyle}>{errors.projectType}</span>}
             </div>
 
             {/* Orçamento Estimado */}
@@ -253,11 +305,18 @@ const ForCompaniesPage = memo(() => {
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
+                onBlur={() => handleBlur('description')}
                 className={`${styles.textarea} ${errors.description ? styles.inputError : ''}`}
                 placeholder="Descreva sua ideia, funcionalidades desejadas, público-alvo, prazo estimado..."
                 rows={5}
+                maxLength={5000}
+                aria-invalid={!!errors.description}
+                aria-describedby={errors.description ? 'description-error' : 'description-counter'}
               />
-              {errors.description && <span className={styles.error}>{errors.description}</span>}
+              {errors.description && <span id="description-error" style={fieldErrorStyle}>{errors.description}</span>}
+              <span id="description-counter" style={charCounterStyle}>
+                {formData.description.length} / 5000 caracteres
+              </span>
             </div>
 
             {/* Erro geral */}
