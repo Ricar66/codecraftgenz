@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
 import Navbar from '../components/Navbar/Navbar';
+import { useToast } from '../components/UI/Toast';
 import { useAuth } from '../context/useAuth';
 import { apiRequest } from '../lib/apiConfig.js';
 import { realtime } from '../lib/realtime';
@@ -15,6 +16,7 @@ export default function DesafiosPage() {
   const [error, setError] = useState('');
   const [deliverUrls, setDeliverUrls] = useState({});
   const { user } = useAuth();
+  const toast = useToast();
 
   const fetchDesafios = async () => {
     try {
@@ -41,38 +43,38 @@ export default function DesafiosPage() {
   const participar = async (id) => {
     const crafterId = user?.id;
     if (!crafterId) {
-      alert('É necessário estar autenticado para participar.');
+      toast.warning('É necessário estar autenticado para participar.');
       return;
     }
     const payload = { crafter_id: crafterId };
     try {
       await apiRequest(`/api/desafios/${id}/inscrever`, { method: 'POST', body: JSON.stringify(payload) });
-      alert('Inscrição realizada!');
+      toast.success('Inscrição realizada!');
       realtime.publish('desafios_changed', {});
     } catch (e) {
-      alert(e.message || 'Falha ao inscrever');
+      toast.error(e.message || 'Falha ao inscrever');
     }
   };
 
   const entregar = async (d) => {
     const url = String(deliverUrls[d.id] || '').trim();
     if ((d.delivery_type === 'link' || d.delivery_type === 'github') && !/^https?:\/\//i.test(url)) {
-      alert('URL invalida.');
+      toast.warning('URL invalida.');
       return;
     }
     const crafterId = user?.id;
     if (!crafterId) {
-      alert('É necessário estar autenticado para enviar a entrega.');
+      toast.warning('É necessário estar autenticado para enviar a entrega.');
       return;
     }
     const payload = { crafter_id: crafterId, delivery: { url, notes: '' } };
     try {
       await apiRequest(`/api/desafios/${d.id}/entregar`, { method: 'POST', body: JSON.stringify(payload) });
-      alert('Entrega enviada!');
+      toast.success('Entrega enviada!');
       realtime.publish('desafios_changed', {});
       setDeliverUrls(prev => ({ ...prev, [d.id]: '' }));
     } catch (e) {
-      alert(e.message || 'Falha ao enviar');
+      toast.error(e.message || 'Falha ao enviar');
     }
   };
 

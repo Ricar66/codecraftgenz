@@ -4,12 +4,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FaUsers, FaSearch, FaEdit, FaTrash, FaStar } from 'react-icons/fa';
 
 import { useCrafters, CraftersRepo } from '../hooks/useAdminRepo';
+import { useToast } from '../components/UI/Toast';
 
 import AdminCard from './components/AdminCard';
 import StatusBadge from './components/StatusBadge';
 import styles from './AdminCrafters.module.css';
 
 export default function AdminCrafters() {
+  const toast = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -68,7 +70,7 @@ export default function AdminCrafters() {
       reload();
     } catch (error) {
       console.error('Erro ao excluir crafter:', error);
-      alert('Erro ao excluir crafter: ' + error.message);
+      toast.error('Erro ao excluir crafter: ' + error.message);
     }
   };
 

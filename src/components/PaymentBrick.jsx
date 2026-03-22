@@ -2,6 +2,7 @@
 // Payment Brick completo - combina todos os métodos de pagamento (cartão, PIX, boleto, Mercado Pago)
 import React, { useEffect, useState, useRef } from 'react';
 
+import { useToast } from './UI/Toast';
 import { useAuth } from '../context/useAuth.js';
 import { apiRequest } from '../lib/apiConfig.js';
 import { createDirectPayment, createPaymentPreference, getPurchaseStatus } from '../services/appsAPI.js';
@@ -25,6 +26,7 @@ const PaymentBrick = ({
   const [preferenceId, setPreferenceId] = useState(externalPreferenceId || '');
   const [pixData, setPixData] = useState(null); // Para mostrar QR Code do PIX
   const { user } = useAuth();
+  const toast = useToast();
   const brickContainerRef = useRef(null);
   const brickControllerRef = useRef(null);
 
@@ -460,7 +462,7 @@ const PaymentBrick = ({
               <button
                 onClick={() => {
                   navigator.clipboard?.writeText(pixData.qrCode);
-                  alert('Codigo PIX copiado!');
+                  toast.success('Codigo PIX copiado!');
                 }}
                 style={{
                   padding: '12px 20px',

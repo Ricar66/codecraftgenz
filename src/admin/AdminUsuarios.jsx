@@ -2,10 +2,12 @@
 // Gerenciamento de usuarios - extraido de AdminLayout.jsx
 import React from 'react';
 import { useUsers, UsersRepo } from '../hooks/useAdminRepo';
+import { useToast } from '../components/UI/Toast';
 
 import './AdminCommon.css';
 
 export default function AdminUsuarios() {
+  const toast = useToast();
   const { data: list, loading, error, refresh } = useUsers();
   const [form, setForm] = React.useState({ name: '', email: '', password: '', role: 'viewer' });
   const [busy, setBusy] = React.useState(false);
@@ -24,7 +26,7 @@ export default function AdminUsuarios() {
     setBusy(true);
     const res = await UsersRepo.create(form);
     setBusy(false);
-    if (res.ok) refresh(); else alert(res.error);
+    if (res.ok) refresh(); else toast.error(res.error);
   };
   const [validationErrors, setValidationErrors] = React.useState({});
 
@@ -88,14 +90,14 @@ export default function AdminUsuarios() {
                   </span>
                 </td>
                 <td data-label="Controle">
-                  <button className="btn btn-outline" onClick={async()=>{ const res = await UsersRepo.toggleStatus(u.id); if(!res.ok){ alert(res.error||'Falha ao alternar status'); } else { refresh(); } }}>{u.status==='active'?'Desativar':'Ativar'}</button>
+                  <button className="btn btn-outline" onClick={async()=>{ const res = await UsersRepo.toggleStatus(u.id); if(!res.ok){ toast.error(res.error||'Falha ao alternar status'); } else { refresh(); } }}>{u.status==='active'?'Desativar':'Ativar'}</button>
                 </td>
                 <td data-label="Ações">
                   <select aria-label="Alterar perfil" value={u.role} onChange={async (e)=>{
                     const newRole = e.target.value;
                     if (newRole !== u.role) {
                       const res = await UsersRepo.update(u.id, { role: newRole });
-                      if (!res.ok) { alert(res.error || 'Falha ao atualizar perfil'); } else { refresh(); }
+                      if (!res.ok) { toast.error(res.error || 'Falha ao atualizar perfil'); } else { refresh(); }
                     }
                   }} style={{ marginLeft: 8 }}>
                     <option value="admin">admin</option>

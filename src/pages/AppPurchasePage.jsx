@@ -8,6 +8,7 @@ import CardDirectPayment from '../components/CardDirectPayment.jsx';
 import PaymentBrick from '../components/PaymentBrick.jsx';
 import LoginIncentiveBanner from '../components/LoginIncentiveBanner';
 import Navbar from '../components/Navbar/Navbar';
+import { useToast } from '../components/UI/Toast';
 import { useAuth } from '../context/useAuth.js';
 import { getAppById, getPurchaseStatus, registerDownload, submitFeedback, createPaymentPreference, downloadByEmail, activateDeviceLicense } from '../services/appsAPI.js';
 import { captureAppPurchaseLead } from '../services/leadsAPI.js';
@@ -90,6 +91,7 @@ const AppPurchasePage = () => {
   // Checkout em duas etapas: 1 = dados do comprador, 2 = cartão
   const [step, setStep] = useState(1);
   const { user } = useAuth();
+  const toast = useToast();
   const [payerInfo, setPayerInfo] = useState({ name: String(user?.name || ''), email: String(user?.email || ''), identification: '' });
   const [deviceId, setDeviceId] = useState('');
   const [deviceIdReady, setDeviceIdReady] = useState(false);
@@ -223,11 +225,11 @@ const AppPurchasePage = () => {
         window.open(init, '_blank', 'noopener');
       } else {
         console.error('Resposta sem init_point:', pref);
-        alert('Não foi possível iniciar o checkout (Wallet). Verifique os logs ou tente o pagamento direto.');
+        toast.error('Não foi possível iniciar o checkout (Wallet). Verifique os logs ou tente o pagamento direto.');
       }
     } catch (e) {
       console.error('Erro ao criar preferência:', e);
-      alert(e.message || 'Erro ao iniciar checkout (Wallet)');
+      toast.error(e.message || 'Erro ao iniciar checkout (Wallet)');
     }
   };
 
@@ -246,11 +248,11 @@ const AppPurchasePage = () => {
       }
       const hwid = await computeHardwareId();
       const lic = await activateDeviceLicense({ email: existingEmail, appId: Number(id), hardwareId: hwid });
-      if (!lic?.licensed) { alert(lic?.message || 'Licença não validada.'); return; }
+      if (!lic?.licensed) { toast.warning(lic?.message || 'Licença não validada.'); return; }
       const d = await downloadByEmail(id, existingEmail);
       const u = resolveDownloadUrl(d?.download_url || '');
       if (u) window.open(u, '_blank', 'noopener');
-      else alert('Download ainda não liberado para este e-mail.');
+      else toast.warning('Download ainda não liberado para este e-mail.');
       const subject = encodeURIComponent(`Ativação de licença - ${app?.name || app?.titulo || 'Aplicativo'}`);
       const bodyLines = [
         'Olá,',
@@ -265,7 +267,7 @@ const AppPurchasePage = () => {
       const body = encodeURIComponent(bodyLines.join('\n'));
       window.open(`mailto:${existingEmail}?subject=${subject}&body=${body}`, '_blank');
     } catch (e) {
-      alert('Erro ao processar download: ' + e.message);
+      toast.error('Erro ao processar download: ' + e.message);
     }
   };
 
@@ -324,10 +326,10 @@ const AppPurchasePage = () => {
   const sendFeedback = async () => {
     try {
       await submitFeedback(id, feedback);
-      alert('Obrigado pelo feedback!');
+      toast.success('Obrigado pelo feedback!');
       setFeedback({ rating: 5, comment: '' });
     } catch (e) {
-      alert('Erro ao enviar feedback: ' + e.message);
+      toast.error('Erro ao enviar feedback: ' + e.message);
     }
   };
 
@@ -584,7 +586,7 @@ const AppPurchasePage = () => {
                       const em = String(payerInfo.email || '').trim();
                       const cpf = String(payerInfo.identification || '').trim();
                       if (!n || !em || !cpf) {
-                        alert('Por favor, preencha nome, e-mail e CPF.');
+                        toast.warning('Por favor, preencha nome, e-mail e CPF.');
                         return;
                       }
                       // Captura lead quando usuário avança para pagamento

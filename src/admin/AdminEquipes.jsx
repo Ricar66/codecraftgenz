@@ -5,12 +5,14 @@ import { FaUsers, FaUserTie, FaProjectDiagram, FaClipboardList, FaPlus, FaTrash,
 
 import { apiRequest } from '../lib/apiConfig.js';
 import { getAll as getAllProjects } from '../services/projectsAPI.js';
+import { useToast } from '../components/UI/Toast';
 
 import AdminCard from './components/AdminCard';
 import StatusBadge from './components/StatusBadge';
 import styles from './AdminEquipes.module.css';
 
 export default function AdminEquipes() {
+  const toast = useToast();
   const [mentores, setMentores] = useState([]);
   const [projetos, setProjetos] = useState([]);
   const [crafters, setCrafters] = useState([]);
@@ -207,7 +209,7 @@ export default function AdminEquipes() {
       const jaExiste = crafters.some(c => (c.email || '').trim().toLowerCase() === emailNorm);
       if (jaExiste) {
         setMessage('Já existe um crafter com este email.');
-        alert('Já existe um crafter com este email.');
+        toast.warning('Já existe um crafter com este email.');
         return;
       }
 
@@ -246,7 +248,7 @@ export default function AdminEquipes() {
     e.preventDefault();
     try {
       if (novaEquipe.crafter_ids.length === 0) {
-        alert('Selecione pelo menos um crafter para a equipe');
+        toast.warning('Selecione pelo menos um crafter para a equipe');
         return;
       }
 
@@ -274,13 +276,13 @@ export default function AdminEquipes() {
           status_inscricao: 'inscrito'
         });
         carregarDados();
-        alert(`Equipe criada com sucesso! ${novaEquipe.crafter_ids.length} crafter(s) adicionado(s).`);
+        toast.success(`Equipe criada com sucesso! ${novaEquipe.crafter_ids.length} crafter(s) adicionado(s).`);
       } else {
         throw new Error('Algumas equipes não puderam ser criadas');
       }
     } catch (error) {
       console.error('Erro ao criar equipe:', error);
-      alert('Erro ao criar equipe: ' + error.message);
+      toast.error('Erro ao criar equipe: ' + error.message);
     }
   };
 

@@ -4,11 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { FaLightbulb, FaPlus, FaThumbsUp, FaComment, FaTimes, FaSave } from 'react-icons/fa';
 
 import { getIdeias, createIdeia, voteIdeia, addComentario } from '../services/ideiasAPI.js';
+import { useToast } from '../components/UI/Toast';
 import AdminCard from './components/AdminCard';
 import StatusBadge from './components/StatusBadge';
 import styles from './AdminIdeias.module.css';
 
 export default function AdminIdeias() {
+  const toast = useToast();
   const [ideias, setIdeias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -37,7 +39,7 @@ export default function AdminIdeias() {
   const handleCriarIdeia = async (e) => {
     e.preventDefault();
     if (!form.titulo.trim() || !form.descricao.trim()) {
-      alert('Preencha todos os campos obrigatórios');
+      toast.warning('Preencha todos os campos obrigatórios');
       return;
     }
     try {
@@ -46,7 +48,7 @@ export default function AdminIdeias() {
       setFormAberto(false);
       await carregarIdeias();
     } catch (err) {
-      alert('Erro ao criar ideia: ' + err.message);
+      toast.error('Erro ao criar ideia: ' + err.message);
     }
   };
 
@@ -59,13 +61,13 @@ export default function AdminIdeias() {
           : ideia
       ));
     } catch (err) {
-      alert('Erro ao votar: ' + err.message);
+      toast.error('Erro ao votar: ' + err.message);
     }
   };
 
   const handleAdicionarComentario = async (ideiaId) => {
     if (!novoComentario.trim()) {
-      alert('Digite um comentário');
+      toast.warning('Digite um comentário');
       return;
     }
     try {
@@ -74,7 +76,7 @@ export default function AdminIdeias() {
       setComentarioAberto(null);
       await carregarIdeias();
     } catch (err) {
-      alert('Erro ao adicionar comentário: ' + err.message);
+      toast.error('Erro ao adicionar comentário: ' + err.message);
     }
   };
 
