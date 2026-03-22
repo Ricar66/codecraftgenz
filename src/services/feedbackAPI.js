@@ -1,5 +1,5 @@
 // src/services/feedbackAPI.js
-import { API_BASE_URL } from '../lib/apiConfig.js';
+import { API_BASE_URL, apiRequest } from '../lib/apiConfig.js';
 
 // A URL base da API é configurada dinamicamente no apiConfig.js
 // Em produção aponta para o backend no Render
@@ -89,28 +89,12 @@ export async function submitFeedback(feedback, { honeypot = '' } = {}) {
   // Sanitiza os dados antes de enviar
   const sanitizedData = FeedbackValidator.sanitize(feedback);
 
-  console.log('Enviando feedback para API:', sanitizedData);
-
   try {
-    const response = await fetch(`${API_BASE_URL}/api/feedbacks`, {
+    const responseBody = await apiRequest('/api/feedbacks', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(sanitizedData),
+      body: sanitizedData,
     });
 
-    // Tenta ler o corpo da resposta mesmo se não for OK, pode ter detalhes do erro
-    const responseBody = await response.json().catch(() => ({})); // Retorna {} se não for JSON válido
-
-    if (!response.ok) {
-      console.error('Erro da API ao enviar feedback:', response.status, responseBody);
-      // Usa a mensagem de erro da API se disponível, senão uma genérica
-      throw new Error(responseBody.error || `Erro ${response.status} ao enviar feedback.`);
-    }
-
-    console.log('Feedback enviado com sucesso:', responseBody);
     markSubmitted(); // Marca como submetido apenas se a API respondeu OK
     return responseBody; // Retorna o feedback criado pela API (com ID, CreatedAt, etc.)
 
