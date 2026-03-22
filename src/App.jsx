@@ -5,6 +5,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import ProtectedRoute from './admin/ProtectedRoute.jsx';
 import heroBackground from './assets/hero-background.svg';
 import Footer from './components/Footer';
+import Onboarding from './components/Onboarding/Onboarding';
 import { ErrorBoundary } from './components/UI/ErrorBoundary';
 import { ToastProvider } from './components/UI/Toast';
 import NotFoundPage from './pages/NotFoundPage.jsx';
@@ -189,6 +190,7 @@ function App() {
             </Suspense>
           </main>
           <Footer />
+          <Onboarding />
         </div>
       </ErrorBoundary>
     </ToastProvider>

@@ -10,6 +10,8 @@ import styles from './LoginPage.module.css';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+const fieldErrorStyle = { color: '#f87171', fontSize: '0.8rem', marginTop: '4px' };
+
 export default function LoginPage() {
   const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState('');
@@ -17,6 +19,27 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  const validateField = (field, value) => {
+    switch (field) {
+      case 'email':
+        if (!value.trim()) return 'E-mail é obrigatório.';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) return 'Formato de e-mail inválido.';
+        return '';
+      case 'password':
+        if (!value) return 'Senha é obrigatória.';
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  const handleBlur = (field) => {
+    const values = { email, password };
+    const err = validateField(field, values[field]);
+    setFieldErrors(prev => ({ ...prev, [field]: err }));
+  };
 
   const handleGoogleResponse = useCallback(async (response) => {
     if (!response?.credential) return;
@@ -90,10 +113,14 @@ export default function LoginPage() {
                   placeholder="seu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onBlur={() => handleBlur('email')}
                   required
                   autoComplete="email"
+                  aria-invalid={!!fieldErrors.email}
+                  aria-describedby={fieldErrors.email ? 'login-email-error' : undefined}
                 />
               </div>
+              {fieldErrors.email && <span id="login-email-error" style={fieldErrorStyle}>{fieldErrors.email}</span>}
             </div>
 
             <div className={styles.fieldGroup}>
@@ -108,10 +135,14 @@ export default function LoginPage() {
                   placeholder="Sua senha"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onBlur={() => handleBlur('password')}
                   required
                   autoComplete="current-password"
+                  aria-invalid={!!fieldErrors.password}
+                  aria-describedby={fieldErrors.password ? 'login-password-error' : undefined}
                 />
               </div>
+              {fieldErrors.password && <span id="login-password-error" style={fieldErrorStyle}>{fieldErrors.password}</span>}
             </div>
 
             <div className={styles.forgotRow}>

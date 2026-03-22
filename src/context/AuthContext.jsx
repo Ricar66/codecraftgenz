@@ -20,7 +20,7 @@ function hasStoredToken() {
 }
 
 async function fetchMe(retryCount = 0) {
-  const isDebug = import.meta.env.DEV || localStorage.getItem('cc_debug') === '1';
+  const isDebug = import.meta.env.DEV;
   try {
     const json = await apiRequest('/api/auth/me', { method: 'GET' });
     // Backend retorna { success: true, data: { id, email, name, role, ... } }
@@ -67,7 +67,7 @@ function useAuthProvider() {
     if (initRef.current) return;
     initRef.current = true;
 
-    const isDebug = import.meta.env.DEV || localStorage.getItem('cc_debug') === '1';
+    const isDebug = import.meta.env.DEV;
 
     (async () => {
       // Só tenta buscar se tem token
@@ -103,7 +103,7 @@ function useAuthProvider() {
   }, []);
 
   const login = useCallback(async (email, password, redirectTo = null) => {
-    const isDebug = import.meta.env.DEV || localStorage.getItem('cc_debug') === '1';
+    const isDebug = import.meta.env.DEV;
     try {
       const data = await apiRequest('/api/auth/login', {
         method: 'POST',
@@ -168,7 +168,7 @@ function useAuthProvider() {
   }, [navigate]);
 
   const loginWithGoogle = useCallback(async (credential, redirectTo = null) => {
-    const isDebug = import.meta.env.DEV || localStorage.getItem('cc_debug') === '1';
+    const isDebug = import.meta.env.DEV;
     try {
       const data = await apiRequest('/api/auth/google', {
         method: 'POST',
