@@ -7,6 +7,7 @@ import heroBackground from './assets/hero-background.svg';
 import Footer from './components/Footer';
 import { ErrorBoundary } from './components/UI/ErrorBoundary';
 import { ToastProvider } from './components/UI/Toast';
+import NotFoundPage from './pages/NotFoundPage.jsx';
 
 // Lazy load das paginas para melhor performance
 const HomePage = lazy(() => import('./pages/HomePage/HomePage.jsx'));
@@ -176,10 +177,14 @@ function App() {
                       <LeadsDashboard />
                     </ProtectedRoute>
                   } />
-                  <Route path="config" element={<AdminConfig />} />
+                  <Route path="config" element={
+                    <ProtectedRoute allowed={["admin"]}>
+                      <AdminConfig />
+                    </ProtectedRoute>
+                  } />
                 </Route>
-                {/* Fallback: qualquer rota desconhecida redireciona para /admin */}
-                <Route path="*" element={<Navigate to="/admin" replace />} />
+                {/* Fallback: qualquer rota desconhecida mostra 404 */}
+                <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Suspense>
           </main>

@@ -169,33 +169,24 @@ const AppsPage = () => {
   const downloadWithProgress = async (app) => {
     try {
       setPayModal(s => ({ ...s, status: 'downloading', progress: 0, downloadError: '' }));
-      let token = null;
+      let downloadResult;
       try {
-        const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('cc_session') : null;
-        if (raw) { const session = JSON.parse(raw); token = session?.token || null; }
+        downloadResult = await apiRequest(`/api/apps/${encodeURIComponent(app.id)}/download`, {
+          method: 'POST',
+          body: {},
+        });
       } catch {
-        token = null;
+        downloadResult = null;
       }
-      const resp = await fetch(`${API_BASE_URL}/api/apps/${encodeURIComponent(app.id)}/download`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: '{}'
-      });
-      if (!resp.ok) {
-        const statusResp = await fetch(`${API_BASE_URL}/api/apps/${encodeURIComponent(app.id)}/purchase/status?status=approved`);
-        if (!statusResp.ok) throw new Error(`Falha no download (HTTP ${resp.status})`);
-        const js = await statusResp.json().catch(() => ({}));
+      if (!downloadResult) {
+        const js = await apiRequest(`/api/apps/${encodeURIComponent(app.id)}/purchase/status?status=approved`).catch(() => ({}));
         const directUrl = resolveDownloadUrl(js?.download_url || js?.data?.download_url || null);
         if (!directUrl) throw new Error('Download não liberado. Pagamento não aprovado.');
         window.location.href = directUrl;
         setPayModal(s => ({ ...s, status: 'done', progress: 100 }));
         return;
       }
-      const js = await resp.json().catch(() => ({}));
-      const directUrl = resolveDownloadUrl(js?.download_url || null);
+      const directUrl = resolveDownloadUrl(downloadResult?.download_url || null);
       if (!directUrl) throw new Error('Aplicativo sem URL de executável configurada');
       window.location.href = directUrl;
       setPayModal(s => ({ ...s, status: 'done', progress: 100 }));

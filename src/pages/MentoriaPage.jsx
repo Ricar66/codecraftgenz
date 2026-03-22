@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 
 import mentoriaBanner from '../assets/mentoria-banner.jpg';
 import Navbar from '../components/Navbar/Navbar';
-import { API_BASE_URL } from '../lib/apiConfig';
+import { API_BASE_URL, apiRequest } from '../lib/apiConfig';
 import { realtime } from '../lib/realtime';
 import styles from './MentoriaPage.module.css';
 
@@ -177,11 +177,7 @@ export default function MentoriaPage() {
 
   const fetchMentors = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/mentores`);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const json = await response.json();
+      const json = await apiRequest('/api/mentores');
       const list = Array.isArray(json?.data) ? json.data : [];
       setMentors(list.map(normalizeMentor));
     } catch (error) {
