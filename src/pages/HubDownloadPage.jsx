@@ -8,7 +8,7 @@ import { API_BASE_URL } from '../lib/apiConfig.js';
 import styles from './HubDownloadPage.module.css';
 
 const HUB_APP_ID = 13;
-const FALLBACK_URL = 'https://codecraftgenz-monorepo.onrender.com/api/downloads/CodeCraftHub_Setup.exe';
+const FALLBACK_URL = 'https://api.codecraftgenz.com.br/api/downloads/CodeCraftHub_Setup.exe';
 
 const resolveUrl = (url) => {
   if (!url) return FALLBACK_URL;
