@@ -45,13 +45,11 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
     document.body.appendChild(banner)
   })
 
-  // Limpa todos os caches antigos ao carregar para evitar FetchEvent errors
+  // Limpa TODOS os caches ao carregar - migração de Render para VPS
   window.addEventListener('load', () => {
     caches.keys().then((names) => {
       names.forEach((name) => {
-        if (name.includes('workbox') || name.includes('api-') || name.includes('backend-')) {
-          caches.delete(name)
-        }
+        caches.delete(name)
       })
     }).catch(() => {})
 
