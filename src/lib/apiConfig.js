@@ -9,21 +9,12 @@ const PROD_API_URL = 'https://api.codecraftgenz.com.br';
 
 // Detecta o ambiente e configura a URL base da API
 const getApiBaseUrl = () => {
-  const isDev = import.meta.env.DEV;
-  const envApiUrl = import.meta.env.VITE_API_URL;
-
   // Em desenvolvimento, usa variável de ambiente ou localhost
-  if (isDev) {
-    return envApiUrl || 'http://localhost:8080';
+  if (import.meta.env.DEV) {
+    return import.meta.env.VITE_API_URL || 'http://localhost:8080';
   }
 
-  // Em produção: usa variável de ambiente se configurada, senão usa URL hardcoded
-  const allow = toBoolFlag(import.meta.env.VITE_ALLOW_EXTERNAL_API || 'true');
-  if (envApiUrl && allow) {
-    return envApiUrl;
-  }
-
-  // Fallback para URL de produção hardcoded (garante que sempre funciona)
+  // Em produção: SEMPRE usa a URL da VPS
   return PROD_API_URL;
 };
 
