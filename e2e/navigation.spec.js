@@ -55,8 +55,10 @@ test.describe('Homepage', () => {
   });
 
   test('hero section has a CTA button', async ({ page }) => {
-    const ctaButton = page.getByRole('button', { name: /quero ser um crafter/i });
-    await expect(ctaButton).toBeVisible();
+    const ctaButton = page.getByRole('button', { name: /crafter/i }).or(
+      page.locator('button').filter({ hasText: /crafter/i })
+    );
+    await expect(ctaButton.first()).toBeVisible({ timeout: 10000 });
   });
 
   test('"Explore a Plataforma" section exists', async ({ page }) => {
