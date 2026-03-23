@@ -60,6 +60,31 @@ function mapStatusDetail(detail) {
   return dict[d] || (detail ? `Motivo: ${detail}` : 'Pagamento negado. Verifique os dados e tente novamente.');
 }
 
+// --- Input masks (pure JS, no dependencies) ---
+function maskCPF(value) {
+  return value
+    .replace(/\D/g, '')
+    .slice(0, 11)
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+}
+
+function maskPhone(value) {
+  return value
+    .replace(/\D/g, '')
+    .slice(0, 11)
+    .replace(/(\d{2})(\d)/, '($1) $2')
+    .replace(/(\d{5})(\d{1,4})$/, '$1-$2');
+}
+
+function isValidCPF(cpf) {
+  const digits = cpf.replace(/\D/g, '');
+  if (digits.length !== 11) return false;
+  if (/^(\d)\1+$/.test(digits)) return false;
+  return true;
+}
+
 const parsePlatforms = (p) => {
   if (!p) return ['windows'];
   if (Array.isArray(p)) return p;
@@ -93,6 +118,7 @@ const AppPurchasePage = () => {
   const { user } = useAuth();
   const toast = useToast();
   const [payerInfo, setPayerInfo] = useState({ name: String(user?.name || ''), email: String(user?.email || ''), identification: '' });
+  const [cpfError, setCpfError] = useState('');
   const [deviceId, setDeviceId] = useState('');
   const [deviceIdReady, setDeviceIdReady] = useState(false);
   // Controla visibilidade do formulário de cartão via flag de ambiente
@@ -534,9 +560,24 @@ const AppPurchasePage = () => {
                       className={styles.input}
                       aria-label="CPF"
                       placeholder="000.000.000-00"
-                      value={payerInfo.identification}
-                      onChange={e => setPayerInfo(s => ({ ...s, identification: String(e.target.value || '').replace(/[^0-9]/g, '').slice(0, 11) }))}
+                      value={maskCPF(payerInfo.identification)}
+                      onChange={e => {
+                        const raw = String(e.target.value || '').replace(/\D/g, '').slice(0, 11);
+                        setPayerInfo(s => ({ ...s, identification: raw }));
+                        if (cpfError) setCpfError('');
+                      }}
+                      onBlur={() => {
+                        const raw = payerInfo.identification;
+                        if (raw && !isValidCPF(raw)) {
+                          setCpfError('CPF inválido. Verifique os dígitos informados.');
+                        } else {
+                          setCpfError('');
+                        }
+                      }}
                     />
+                    {cpfError && (
+                      <p style={{ color: '#ff4d4f', fontSize: '0.8rem', marginTop: 4, marginBottom: 0 }}>{cpfError}</p>
+                    )}
                   </div>
                 </div>
 
@@ -547,8 +588,11 @@ const AppPurchasePage = () => {
                       className={styles.input}
                       aria-label="Telefone"
                       placeholder="(11) 99999-9999"
-                      value={payerInfo.phone || ''}
-                      onChange={e => setPayerInfo(s => ({ ...s, phone: String(e.target.value || '').replace(/[^0-9+\s-]/g, '') }))}
+                      value={maskPhone(payerInfo.phone || '')}
+                      onChange={e => {
+                        const raw = String(e.target.value || '').replace(/\D/g, '').slice(0, 11);
+                        setPayerInfo(s => ({ ...s, phone: raw }));
+                      }}
                     />
                   </div>
                   <div className={styles.inputWrap}>
@@ -587,6 +631,11 @@ const AppPurchasePage = () => {
                       const cpf = String(payerInfo.identification || '').trim();
                       if (!n || !em || !cpf) {
                         toast.warning('Por favor, preencha nome, e-mail e CPF.');
+                        return;
+                      }
+                      if (!isValidCPF(cpf)) {
+                        setCpfError('CPF inválido. Verifique os dígitos informados.');
+                        toast.warning('CPF inválido. Verifique os dígitos informados.');
                         return;
                       }
                       // Captura lead quando usuário avança para pagamento

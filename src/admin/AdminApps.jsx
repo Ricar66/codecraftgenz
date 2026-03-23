@@ -166,7 +166,7 @@ export default function AdminApps() {
 
   const onToggleStatus = async (a) => {
     const curr = String(a.status || '').toLowerCase();
-    const next = curr === 'available' ? 'draft' : 'available';
+    const next = (curr === 'published' || curr === 'available') ? 'draft' : 'published';
     try {
       await updateApp(a.id, { status: next });
       showToast('Status atualizado!');
@@ -302,8 +302,8 @@ export default function AdminApps() {
 
                     <div className={styles.cardMeta}>
                       <span className={styles.price}>{formatBRL(getAppPrice(a))}</span>
-                      <StatusBadge variant={a.status === 'available' ? 'success' : 'warning'}>
-                        {a.status || 'draft'}
+                      <StatusBadge variant={(a.status === 'published' || a.status === 'available') ? 'success' : 'warning'}>
+                        {a.status === 'published' || a.status === 'available' ? 'Publicado' : 'Rascunho'}
                       </StatusBadge>
                     </div>
                     {a.platforms && a.platforms.length > 0 && (
@@ -319,8 +319,8 @@ export default function AdminApps() {
                     <button onClick={() => onEdit(a)} className={styles.editBtn} title="Editar">
                       <FaEdit />
                     </button>
-                    <button onClick={() => onToggleStatus(a)} className={styles.visibilityBtn} title={a.status === 'available' ? 'Ocultar' : 'Publicar'}>
-                      {a.status === 'available' ? <FaEyeSlash /> : <FaEye />}
+                    <button onClick={() => onToggleStatus(a)} className={styles.visibilityBtn} title={(a.status === 'published' || a.status === 'available') ? 'Ocultar' : 'Publicar'}>
+                      {(a.status === 'published' || a.status === 'available') ? <FaEyeSlash /> : <FaEye />}
                     </button>
                     <button onClick={() => window.open(`/apps/${a.id}/compra`, '_blank')} className={styles.buyBtn} title="Ver compra">
                       <FaShoppingCart />
@@ -457,7 +457,7 @@ export default function AdminApps() {
               <label>Status</label>
               <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} className={styles.select}>
                 <option value="draft">Rascunho</option>
-                <option value="available">Disponível</option>
+                <option value="published">Publicado</option>
               </select>
             </div>
             <div className={styles.formGroup}>
@@ -484,7 +484,7 @@ export default function AdminApps() {
           <button onClick={onSave} disabled={!form.id || !form.name} className={styles.saveBtn}>
             <FaSave /> Salvar
           </button>
-          <button onClick={onCreate} disabled={!!form.id || !form.name || form.price <= 0} className={styles.createBtn}>
+          <button onClick={onCreate} disabled={!!form.id || !form.name} className={styles.createBtn}>
             <FaPlus /> Criar
           </button>
           <button onClick={cancelEdit} className={styles.cancelBtn}>

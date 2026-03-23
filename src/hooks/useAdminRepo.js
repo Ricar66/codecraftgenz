@@ -501,7 +501,7 @@ export const CraftersRepo = {
 
 // Desafios
 export function useDesafios() {
-  return useAsyncList(async () => {
+  const result = useAsyncList(async () => {
     try {
       const data = await apiRequest('/api/desafios?all=1', { method: 'GET' });
       return data?.data || (Array.isArray(data) ? data : []);
@@ -515,6 +515,15 @@ export function useDesafios() {
       throw err;
     }
   });
+
+  useEffect(() => {
+    const unsub = realtime.subscribe('desafios_changed', () => {
+      result.refresh();
+    });
+    return () => unsub();
+  }, [result.refresh]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return result;
 }
 
 export const DesafiosRepo = {
@@ -583,10 +592,19 @@ export const DesafiosRepo = {
 
 // Finanças
 export function useFinance() {
-  return useAsyncList(async () => {
+  const result = useAsyncList(async () => {
     const data = await apiRequest('/api/financas', { method: 'GET' });
     return data?.data || (Array.isArray(data) ? data : []);
   });
+
+  useEffect(() => {
+    const unsub = realtime.subscribe('finance_changed', () => {
+      result.refresh();
+    });
+    return () => unsub();
+  }, [result.refresh]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return result;
 }
 
 export const FinanceRepo = {
