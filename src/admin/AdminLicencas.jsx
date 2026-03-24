@@ -12,7 +12,7 @@ import styles from './AdminLicencas.module.css';
 
 const ADMIN_TOKEN = 'codecraftgenz';
 
-async function fetchLicenses({ app_id, email, page = 1, limit = 50 } = {}) {
+async function fetchLicenses({ app_id, email, page = 1, limit = 15 } = {}) {
   const qp = new URLSearchParams();
   if (app_id) qp.set('app_id', app_id);
   if (email) qp.set('email', email);
