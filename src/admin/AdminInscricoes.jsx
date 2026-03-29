@@ -564,11 +564,12 @@ const AdminInscricoes = () => {
                     </div>
                   )}
                   
-                  {(inscricao.cidade || inscricao.estado) && (
+                  {(inscricao.cidade || inscricao.estado || inscricao.cep) && (
                     <div className={"infoRow"}>
                       <strong>Localização:</strong>
                       <span>
                         {[inscricao.cidade, inscricao.estado].filter(Boolean).join(', ')}
+                        {inscricao.cep && ` — CEP: ${inscricao.cep}`}
                       </span>
                     </div>
                   )}
