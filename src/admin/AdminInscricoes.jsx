@@ -330,9 +330,9 @@ const AdminInscricoes = () => {
             padding: '10px 14px',
             borderRadius: '8px',
             border: '1px solid',
-            borderColor: toast.type === 'success' ? '#27ae60' : '#e74c3c',
-            background: toast.type === 'success' ? '#ecf9f1' : '#fee',
-            color: toast.type === 'success' ? '#2c3e50' : '#8e2f2f'
+            borderColor: toast.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)',
+            background: toast.type === 'success' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+            color: toast.type === 'success' ? '#10B981' : '#ef4444'
           }}
         >
           {toast.message}

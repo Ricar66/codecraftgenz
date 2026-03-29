@@ -100,6 +100,22 @@ const CrafterModal = ({ isOpen, onClose }) => {
       // Envia para o backend interno
       await apiRequest('/api/inscricoes', { method: 'POST', body: JSON.stringify(formData) });
 
+      // Notifica admin por email (não bloqueia se falhar)
+      apiRequest('/api/inscricoes/notify', {
+        method: 'POST',
+        body: JSON.stringify({
+          to: 'codecraftgenz@gmail.com',
+          subject: `Nova inscrição de Crafter: ${formData.nome}`,
+          nome: formData.nome,
+          email: formData.email,
+          telefone: formData.telefone || '',
+          area_interesse: formData.area_interesse || '',
+          cidade: formData.cidade || '',
+          estado: formData.estado || '',
+          mensagem: formData.mensagem || '',
+        }),
+      }).catch(() => {});
+
       // Captura lead para sistema externo (não bloqueia se falhar)
       captureCrafterLead(formData).catch(() => {});
 
