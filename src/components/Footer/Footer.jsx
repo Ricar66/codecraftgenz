@@ -1,6 +1,7 @@
 // src/components/Footer/Footer.jsx
 import React, { memo } from 'react';
-import { FaInstagram, FaGithub, FaWhatsapp, FaEnvelope, FaHeadset } from 'react-icons/fa';
+import { Mail, Headphones } from 'lucide-react';
+import { InstagramIcon, GitHubIcon, WhatsAppIcon } from '../UI/BrandIcons/index.jsx';
 import { Link } from 'react-router-dom';
 
 import styles from './Footer.module.css';
@@ -41,10 +42,10 @@ const Footer = memo(({ showLinks = true }) => {
           <h4 className={styles.columnTitle}>Suporte</h4>
           <nav className={styles.links}>
             <Link to="/ajuda" aria-label="Central de Ajuda">
-              <FaHeadset aria-hidden="true" /> Central de Ajuda
+              <Headphones aria-hidden="true" /> Central de Ajuda
             </Link>
             <a href="mailto:suporte@codecraftgenz.com.br" aria-label="Email de suporte">
-              <FaEnvelope aria-hidden="true" /> suporte@codecraftgenz.com.br
+              <Mail aria-hidden="true" /> suporte@codecraftgenz.com.br
             </a>
           </nav>
         </div>
@@ -69,7 +70,7 @@ const Footer = memo(({ showLinks = true }) => {
               aria-label="Instagram"
               className={`${styles.socialLink} ${styles.instagram}`}
             >
-              <FaInstagram aria-hidden="true" />
+              <InstagramIcon aria-hidden="true" />
             </a>
             <a
               href="https://github.com/CodeCraftgenz"
@@ -78,7 +79,7 @@ const Footer = memo(({ showLinks = true }) => {
               aria-label="GitHub"
               className={`${styles.socialLink} ${styles.github}`}
             >
-              <FaGithub aria-hidden="true" />
+              <GitHubIcon aria-hidden="true" />
             </a>
             <a
               href="https://wa.me/5535999358856"
@@ -87,7 +88,7 @@ const Footer = memo(({ showLinks = true }) => {
               aria-label="WhatsApp"
               className={`${styles.socialLink} ${styles.whatsapp}`}
             >
-              <FaWhatsapp aria-hidden="true" />
+              <WhatsAppIcon aria-hidden="true" />
             </a>
           </div>
         </div>

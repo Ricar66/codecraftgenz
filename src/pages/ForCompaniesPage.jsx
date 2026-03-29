@@ -1,6 +1,6 @@
 // src/pages/ForCompaniesPage.jsx
 import React, { useState, useCallback, memo } from 'react';
-import { FaBuilding, FaUser, FaEnvelope, FaLaptopCode, FaMoneyBillWave, FaFileAlt, FaCheckCircle, FaRocket } from 'react-icons/fa';
+import { Building2, User, Mail, Monitor, Banknote, FileText, CheckCircle, Rocket } from 'lucide-react';
 
 import Navbar from '../components/Navbar/Navbar';
 import { createProposal } from '../services/proposalAPI';
@@ -149,7 +149,7 @@ const ForCompaniesPage = memo(() => {
         <Navbar />
         <div className={`${styles.page} starfield-bg`}>
           <div className={styles.successContainer}>
-            <FaCheckCircle className={styles.successIcon} aria-hidden="true" />
+            <CheckCircle className={styles.successIcon} aria-hidden="true" />
             <h1 className={styles.successTitle}>Solicitação Enviada!</h1>
             <p className={styles.successText}>
               Obrigado pelo interesse! Nossa equipe entrará em contato em até 48 horas úteis para discutir seu projeto.
@@ -171,7 +171,7 @@ const ForCompaniesPage = memo(() => {
         <section className={styles.hero}>
           <div className={styles.heroContent}>
             <span className={styles.heroBadge}>
-              <FaRocket aria-hidden="true" /> Para Empresas
+              <Rocket aria-hidden="true" /> Para Empresas
             </span>
             <h1 className={styles.heroTitle}>
               Transforme sua <span className={styles.highlight}>Ideia</span> em Software
@@ -190,7 +190,7 @@ const ForCompaniesPage = memo(() => {
             {/* Nome da Empresa */}
             <div className={styles.formGroup}>
               <label htmlFor="companyName" className={styles.label}>
-                <FaBuilding aria-hidden="true" /> Nome da Empresa *
+                <Building2 aria-hidden="true" /> Nome da Empresa *
               </label>
               <input
                 type="text"
@@ -212,7 +212,7 @@ const ForCompaniesPage = memo(() => {
             {/* Nome do Responsável */}
             <div className={styles.formGroup}>
               <label htmlFor="responsibleName" className={styles.label}>
-                <FaUser aria-hidden="true" /> Nome do Responsável *
+                <User aria-hidden="true" /> Nome do Responsável *
               </label>
               <input
                 type="text"
@@ -234,7 +234,7 @@ const ForCompaniesPage = memo(() => {
             {/* Email Corporativo */}
             <div className={styles.formGroup}>
               <label htmlFor="email" className={styles.label}>
-                <FaEnvelope aria-hidden="true" /> Email Corporativo *
+                <Mail aria-hidden="true" /> Email Corporativo *
               </label>
               <input
                 type="email"
@@ -256,7 +256,7 @@ const ForCompaniesPage = memo(() => {
             {/* Tipo de Projeto */}
             <div className={styles.formGroup}>
               <label htmlFor="projectType" className={styles.label}>
-                <FaLaptopCode aria-hidden="true" /> Tipo de Projeto *
+                <Monitor aria-hidden="true" /> Tipo de Projeto *
               </label>
               <select
                 id="projectType"
@@ -279,7 +279,7 @@ const ForCompaniesPage = memo(() => {
             {/* Orçamento Estimado */}
             <div className={styles.formGroup}>
               <label htmlFor="budget" className={styles.label}>
-                <FaMoneyBillWave aria-hidden="true" /> Orçamento Estimado
+                <Banknote aria-hidden="true" /> Orçamento Estimado
               </label>
               <select
                 id="budget"
@@ -298,7 +298,7 @@ const ForCompaniesPage = memo(() => {
             {/* Descrição da Ideia */}
             <div className={styles.formGroup}>
               <label htmlFor="description" className={styles.label}>
-                <FaFileAlt aria-hidden="true" /> Descrição do Projeto *
+                <FileText aria-hidden="true" /> Descrição do Projeto *
               </label>
               <textarea
                 id="description"

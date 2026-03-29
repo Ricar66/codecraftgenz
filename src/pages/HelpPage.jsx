@@ -2,19 +2,8 @@
 // Central de Ajuda - FAQ e Suporte
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  FaQuestionCircle,
-  FaChevronDown,
-  FaEnvelope,
-  FaWhatsapp,
-  FaShoppingCart,
-  FaDownload,
-  FaKey,
-  FaUserCircle,
-  FaCreditCard,
-  FaShieldAlt,
-  FaArrowLeft
-} from 'react-icons/fa';
+import { HelpCircle, ChevronDown, Mail, ShoppingCart, Download, Key, User, CreditCard, Shield, ArrowLeft } from 'lucide-react';
+import { WhatsAppIcon } from '../components/UI/BrandIcons/index.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import styles from './LegalPage.module.css';
 
@@ -22,7 +11,7 @@ const faqCategories = [
   {
     id: 'compras',
     title: 'Compras e Pagamentos',
-    icon: FaShoppingCart,
+    icon: ShoppingCart,
     questions: [
       {
         question: 'Quais formas de pagamento são aceitas?',
@@ -45,7 +34,7 @@ const faqCategories = [
   {
     id: 'download',
     title: 'Download e Instalação',
-    icon: FaDownload,
+    icon: Download,
     questions: [
       {
         question: 'Como faço o download após a compra?',
@@ -68,7 +57,7 @@ const faqCategories = [
   {
     id: 'licenca',
     title: 'Licenças e Ativação',
-    icon: FaKey,
+    icon: Key,
     questions: [
       {
         question: 'Como ativo minha licença?',
@@ -91,7 +80,7 @@ const faqCategories = [
   {
     id: 'conta',
     title: 'Minha Conta',
-    icon: FaUserCircle,
+    icon: User,
     questions: [
       {
         question: 'Como criar uma conta?',
@@ -114,7 +103,7 @@ const faqCategories = [
   {
     id: 'reembolso',
     title: 'Reembolso e Garantia',
-    icon: FaCreditCard,
+    icon: CreditCard,
     questions: [
       {
         question: 'Qual a política de reembolso?',
@@ -133,7 +122,7 @@ const faqCategories = [
   {
     id: 'seguranca',
     title: 'Segurança e Privacidade',
-    icon: FaShieldAlt,
+    icon: Shield,
     questions: [
       {
         question: 'Meus dados estão seguros?',
@@ -161,7 +150,7 @@ function FAQItem({ question, answer }) {
         onClick={() => setIsOpen(!isOpen)}
       >
         <span>{question}</span>
-        <FaChevronDown className={`${styles.faqIcon} ${isOpen ? styles.open : ''}`} />
+        <ChevronDown className={`${styles.faqIcon} ${isOpen ? styles.open : ''}`} />
       </button>
       {isOpen && (
         <div className={styles.faqAnswer}>
@@ -181,10 +170,10 @@ function HelpPage() {
       <section className={styles.hero}>
         <div className={styles.heroContent}>
           <Link to="/" className={styles.backLink}>
-            <FaArrowLeft /> Voltar ao início
+            <ArrowLeft /> Voltar ao início
           </Link>
           <div className={styles.heroBadge}>
-            <FaQuestionCircle />
+            <HelpCircle />
             <span>Central de Ajuda</span>
           </div>
           <h1 className={styles.heroTitle}>
@@ -227,7 +216,7 @@ function HelpPage() {
               href="mailto:suporte@codecraftgenz.com.br"
               className={styles.contactLink}
             >
-              <FaEnvelope />
+              <Mail />
               suporte@codecraftgenz.com.br
             </a>
             <a
@@ -236,7 +225,7 @@ function HelpPage() {
               rel="noopener noreferrer"
               className={styles.contactLink}
             >
-              <FaWhatsapp />
+              <WhatsAppIcon />
               WhatsApp
             </a>
           </div>

@@ -1,7 +1,7 @@
 // src/admin/AdminIdeias.jsx
 // Refatorado para usar Design System CodeCraft + API real
 import React, { useState, useEffect } from 'react';
-import { FaLightbulb, FaPlus, FaThumbsUp, FaComment, FaTimes, FaSave } from 'react-icons/fa';
+import { Lightbulb, Plus, ThumbsUp, MessageSquare, X, Save } from 'lucide-react';
 
 import { getIdeias, createIdeia, voteIdeia, addComentario } from '../services/ideiasAPI.js';
 import { useToast } from '../components/UI/Toast';
@@ -122,7 +122,7 @@ export default function AdminIdeias() {
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerTitle}>
-          <FaLightbulb className={styles.headerIcon} />
+          <Lightbulb className={styles.headerIcon} />
           <div>
             <h1>Ideias de Projeto</h1>
             <p>Compartilhe e colabore em ideias para novos projetos</p>
@@ -132,7 +132,7 @@ export default function AdminIdeias() {
           className={styles.newIdeaBtn}
           onClick={() => setFormAberto(!formAberto)}
         >
-          {formAberto ? <><FaTimes /> Cancelar</> : <><FaPlus /> Nova Ideia</>}
+          {formAberto ? <><X /> Cancelar</> : <><Plus /> Nova Ideia</>}
         </button>
       </header>
 
@@ -169,14 +169,14 @@ export default function AdminIdeias() {
 
             <div className={styles.formActions}>
               <button type="submit" className={styles.saveBtn}>
-                <FaSave /> Salvar Ideia
+                <Save /> Salvar Ideia
               </button>
               <button
                 type="button"
                 className={styles.cancelBtn}
                 onClick={() => setFormAberto(false)}
               >
-                <FaTimes /> Cancelar
+                <X /> Cancelar
               </button>
             </div>
           </form>
@@ -188,7 +188,7 @@ export default function AdminIdeias() {
         {ideias.length === 0 ? (
           <AdminCard variant="outlined" className={styles.emptyCard}>
             <div className={styles.emptyState}>
-              <FaLightbulb className={styles.emptyIcon} />
+              <Lightbulb className={styles.emptyIcon} />
               <p>Nenhuma ideia cadastrada ainda.</p>
               <p>Seja o primeiro a compartilhar uma ideia!</p>
             </div>
@@ -214,14 +214,14 @@ export default function AdminIdeias() {
                   onClick={() => handleVotar(ideia.id)}
                   title="Votar nesta ideia"
                 >
-                  <FaThumbsUp /> {ideia.votos}
+                  <ThumbsUp /> {ideia.votos}
                 </button>
 
                 <button
                   className={`${styles.commentBtn} ${comentarioAberto === ideia.id ? styles.active : ''}`}
                   onClick={() => setComentarioAberto(comentarioAberto === ideia.id ? null : ideia.id)}
                 >
-                  <FaComment /> {ideia.comentarios.length}
+                  <MessageSquare /> {ideia.comentarios.length}
                 </button>
               </div>
 
@@ -239,7 +239,7 @@ export default function AdminIdeias() {
                       className={styles.addCommentBtn}
                       onClick={() => handleAdicionarComentario(ideia.id)}
                     >
-                      <FaPlus /> Adicionar
+                      <Plus /> Adicionar
                     </button>
                   </div>
 

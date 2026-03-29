@@ -1,186 +1,150 @@
 // src/components/UI/Icons/index.js
-// Centralizacao de todos os icones do sistema - CodeCraft Gen-Z
-// Usa react-icons/fi (Feather) como padrao + react-icons/fa quando necessario
+// Centralização de todos os ícones do sistema - CodeCraft Gen-Z
+// Usa lucide-react exclusivamente (conforme CLAUDE.md)
+// Ícones de marca (logos) estão em src/components/UI/BrandIcons/index.jsx
 
-// ============================================
-// NAVIGATION & UI
-// ============================================
 export {
-  FiMenu as IconMenu,
-  FiX as IconClose,
-  FiChevronDown as IconChevronDown,
-  FiChevronUp as IconChevronUp,
-  FiChevronLeft as IconChevronLeft,
-  FiChevronRight as IconChevronRight,
-  FiArrowLeft as IconArrowLeft,
-  FiArrowRight as IconArrowRight,
-  FiExternalLink as IconExternalLink,
-  FiMoreVertical as IconMore,
-  FiMoreHorizontal as IconMoreHorizontal,
-} from 'react-icons/fi';
+  // NAVIGATION & UI
+  Menu as IconMenu,
+  X as IconClose,
+  ChevronDown as IconChevronDown,
+  ChevronUp as IconChevronUp,
+  ChevronLeft as IconChevronLeft,
+  ChevronRight as IconChevronRight,
+  ArrowLeft as IconArrowLeft,
+  ArrowRight as IconArrowRight,
+  ArrowUp as IconArrowUp,
+  ArrowDown as IconArrowDown,
+  ExternalLink as IconExternalLink,
+  MoreVertical as IconMore,
+  MoreHorizontal as IconMoreHorizontal,
 
-// ============================================
-// ACTIONS
-// ============================================
-export {
-  FiPlus as IconAdd,
-  FiEdit2 as IconEdit,
-  FiTrash2 as IconDelete,
-  FiCopy as IconCopy,
-  FiDownload as IconDownload,
-  FiUpload as IconUpload,
-  FiRefreshCw as IconRefresh,
-  FiSave as IconSave,
-  FiSend as IconSend,
-  FiShare2 as IconShare,
-} from 'react-icons/fi';
+  // ACTIONS
+  Plus as IconAdd,
+  Pencil as IconEdit,
+  Trash2 as IconDelete,
+  Copy as IconCopy,
+  Download as IconDownload,
+  Upload as IconUpload,
+  RefreshCw as IconRefresh,
+  Save as IconSave,
+  Send as IconSend,
+  Share2 as IconShare,
+  RotateCcw as IconUndo,
+  Link as IconLink,
 
-// ============================================
-// FEEDBACK & STATUS
-// ============================================
-export {
-  FiCheck as IconCheck,
-  FiCheckCircle as IconCheckCircle,
-  FiAlertCircle as IconAlert,
-  FiAlertTriangle as IconWarning,
-  FiInfo as IconInfo,
-  FiXCircle as IconError,
-  FiHelpCircle as IconHelp,
-  FiLoader as IconLoader,
-} from 'react-icons/fi';
+  // FEEDBACK & STATUS
+  Check as IconCheck,
+  CheckCircle as IconCheckCircle,
+  AlertCircle as IconAlert,
+  AlertTriangle as IconWarning,
+  Info as IconInfo,
+  XCircle as IconError,
+  HelpCircle as IconHelp,
+  Loader as IconLoader,
+  Ban as IconBan,
 
-// ============================================
-// USER & AUTH
-// ============================================
-export {
-  FiUser as IconUser,
-  FiUsers as IconUsers,
-  FiUserPlus as IconUserAdd,
-  FiUserCheck as IconUserCheck,
-  FiLogIn as IconLogin,
-  FiLogOut as IconLogout,
-  FiLock as IconLock,
-  FiUnlock as IconUnlock,
-  FiEye as IconEye,
-  FiEyeOff as IconEyeOff,
-  FiShield as IconShield,
-} from 'react-icons/fi';
+  // USER & AUTH
+  User as IconUser,
+  Users as IconUsers,
+  UserPlus as IconUserAdd,
+  UserCheck as IconUserCheck,
+  LogIn as IconLogin,
+  LogOut as IconLogout,
+  Lock as IconLock,
+  Unlock as IconUnlock,
+  Eye as IconEye,
+  EyeOff as IconEyeOff,
+  Shield as IconShield,
 
-// ============================================
-// CONTENT & DATA
-// ============================================
-export {
-  FiSearch as IconSearch,
-  FiFilter as IconFilter,
-  FiFolder as IconFolder,
-  FiFolderPlus as IconFolderAdd,
-  FiFile as IconFile,
-  FiFileText as IconFileText,
-  FiImage as IconImage,
-  FiCode as IconCode,
-  FiDatabase as IconDatabase,
-  FiList as IconList,
-  FiGrid as IconGrid,
-} from 'react-icons/fi';
+  // CONTENT & DATA
+  Search as IconSearch,
+  Filter as IconFilter,
+  Folder as IconFolder,
+  FolderPlus as IconFolderAdd,
+  File as IconFile,
+  FileText as IconFileText,
+  Image as IconImage,
+  Code as IconCode,
+  Database as IconDatabase,
+  List as IconList,
+  LayoutGrid as IconGrid,
+  Table as IconTable,
+  ClipboardList as IconClipboardList,
+  Archive as IconArchive,
 
-// ============================================
-// COMMUNICATION
-// ============================================
-export {
-  FiMail as IconMail,
-  FiBell as IconBell,
-  FiBellOff as IconBellOff,
-  FiMessageSquare as IconMessage,
-  FiMessageCircle as IconChat,
-} from 'react-icons/fi';
+  // COMMUNICATION
+  Mail as IconMail,
+  Bell as IconBell,
+  BellOff as IconBellOff,
+  MessageSquare as IconMessage,
+  MessageCircle as IconChat,
+  Phone as IconPhone,
+  Headphones as IconHeadset,
 
-// ============================================
-// TIME & CALENDAR
-// ============================================
-export {
-  FiClock as IconClock,
-  FiCalendar as IconCalendar,
-} from 'react-icons/fi';
+  // TIME & CALENDAR
+  Clock as IconClock,
+  Calendar as IconCalendar,
+  History as IconHistory,
 
-// ============================================
-// BUSINESS & FINANCE
-// ============================================
-export {
-  FiDollarSign as IconMoney,
-  FiCreditCard as IconCreditCard,
-  FiShoppingCart as IconCart,
-  FiTag as IconTag,
-  FiTrendingUp as IconTrendingUp,
-  FiTrendingDown as IconTrendingDown,
-  FiBarChart2 as IconChart,
-  FiPieChart as IconPieChart,
-} from 'react-icons/fi';
+  // BUSINESS & FINANCE
+  DollarSign as IconMoney,
+  CreditCard as IconCreditCard,
+  ShoppingCart as IconCart,
+  ShoppingBag as IconShoppingBag,
+  Tag as IconTag,
+  TrendingUp as IconTrendingUp,
+  TrendingDown as IconTrendingDown,
+  BarChart2 as IconChart,
+  PieChart as IconPieChart,
+  Banknote as IconBanknote,
+  Percent as IconPercent,
+  Briefcase as IconBriefcase,
 
-// ============================================
-// DEVELOPMENT & TECH
-// ============================================
-export {
-  FiTerminal as IconTerminal,
-  FiGitBranch as IconGitBranch,
-  FiGitCommit as IconGitCommit,
-  FiGitPullRequest as IconGitPR,
-  FiPackage as IconPackage,
-  FiCpu as IconCpu,
-  FiServer as IconServer,
-  FiGlobe as IconGlobe,
-  FiWifi as IconWifi,
-  FiWifiOff as IconWifiOff,
-} from 'react-icons/fi';
+  // DEVELOPMENT & TECH
+  Terminal as IconTerminal,
+  GitBranch as IconGitBranch,
+  GitCommit as IconGitCommit,
+  GitPullRequest as IconGitPR,
+  Package as IconPackage,
+  Cpu as IconCpu,
+  Server as IconServer,
+  Globe as IconGlobe,
+  Wifi as IconWifi,
+  WifiOff as IconWifiOff,
+  Monitor as IconMonitor,
+  Network as IconProject,
 
-// ============================================
-// SETTINGS & CONFIG
-// ============================================
-export {
-  FiSettings as IconSettings,
-  FiSliders as IconSliders,
-  FiToggleLeft as IconToggleOff,
-  FiToggleRight as IconToggleOn,
-} from 'react-icons/fi';
+  // SETTINGS & CONFIG
+  Settings as IconSettings,
+  Sliders as IconSliders,
+  ToggleLeft as IconToggleOff,
+  ToggleRight as IconToggleOn,
 
-// ============================================
-// MISC
-// ============================================
-export {
-  FiStar as IconStar,
-  FiHeart as IconHeart,
-  FiBookmark as IconBookmark,
-  FiAward as IconAward,
-  FiTarget as IconTarget,
-  FiZap as IconZap,
-  FiActivity as IconActivity,
-  FiLayers as IconLayers,
-  FiBox as IconBox,
-  FiHome as IconHome,
-  FiMapPin as IconMapPin,
-  FiCompass as IconCompass,
-} from 'react-icons/fi';
+  // SPECIAL / GAMIFICATION
+  Trophy as IconTrophy,
+  Medal as IconMedal,
+  Rocket as IconRocket,
+  Lightbulb as IconIdea,
+  TrendingUp as IconChartLine,
+  Star as IconStar,
+  Heart as IconHeart,
+  Bookmark as IconBookmark,
+  Award as IconAward,
+  Target as IconTarget,
+  Zap as IconZap,
+  Activity as IconActivity,
+  Layers as IconLayers,
+  Box as IconBox,
+  Key as IconKey,
+  Copyright as IconCopyright,
+  Gavel as IconGavel,
+  Scale as IconScale,
+  Cookie as IconCookie,
+  Building2 as IconBuilding,
 
-// ============================================
-// SOCIAL (FontAwesome)
-// ============================================
-export {
-  FaGithub as IconGithub,
-  FaInstagram as IconInstagram,
-  FaWhatsapp as IconWhatsapp,
-  FaLinkedinIn as IconLinkedin,
-  FaTwitter as IconTwitter,
-  FaDiscord as IconDiscord,
-  FaYoutube as IconYoutube,
-} from 'react-icons/fa';
-
-// ============================================
-// SPECIAL (FontAwesome)
-// ============================================
-export {
-  FaTrophy as IconTrophy,
-  FaMedal as IconMedal,
-  FaRocket as IconRocket,
-  FaLightbulb as IconIdea,
-  FaProjectDiagram as IconProject,
-  FaChartLine as IconChartLine,
-} from 'react-icons/fa';
+  // MISC
+  Home as IconHome,
+  MapPin as IconMapPin,
+  Compass as IconCompass,
+} from 'lucide-react';

@@ -1,8 +1,9 @@
 // src/pages/AppPurchasePage.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { trackFunnelStep } from '../services/analyticsAPI.js';
 
-import { FaWindows, FaApple, FaLinux } from 'react-icons/fa';
+import { WindowsIcon, AppleIcon, LinuxIcon } from '../components/UI/BrandIcons/index.jsx';
 
 import CardDirectPayment from '../components/CardDirectPayment.jsx';
 import PaymentBrick from '../components/PaymentBrick.jsx';
@@ -93,9 +94,9 @@ const parsePlatforms = (p) => {
 };
 
 const PLATFORM_INFO = {
-  windows: { icon: FaWindows, label: 'Windows' },
-  macos: { icon: FaApple, label: 'macOS' },
-  linux: { icon: FaLinux, label: 'Linux' },
+  windows: { icon: WindowsIcon, label: 'Windows' },
+  macos: { icon: AppleIcon, label: 'macOS' },
+  linux: { icon: LinuxIcon, label: 'Linux' },
 };
 
 const AppPurchasePage = () => {
@@ -138,6 +139,23 @@ const AppPurchasePage = () => {
   const [confirmingDownload, setConfirmingDownload] = useState(false);
   // Ref para prevenir múltiplos cliques (mutex)
   const downloadLockRef = React.useRef(false);
+  const paymentCompletedRef = useRef(false);
+
+  // Track checkout started on mount
+  useEffect(() => {
+    trackFunnelStep('purchase_funnel', 'checkout_started', { app_id: id });
+  }, [id]);
+
+  // Track checkout abandoned on page unload
+  useEffect(() => {
+    const handleUnload = () => {
+      if (step > 0 && !paymentCompletedRef.current) {
+        trackFunnelStep('purchase_funnel', 'checkout_abandoned', { app_id: id, step });
+      }
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+  }, [id, step]);
 
   const computeHardwareId = async () => {
     const src = [
@@ -468,21 +486,21 @@ const AppPurchasePage = () => {
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button
                   className={`${styles.btn} ${paymentMethod === 'payment' ? styles.btnPrimary : styles.btnOutline}`}
-                  onClick={() => { setPaymentMethod('payment'); setStep(1); }}
+                  onClick={() => { setPaymentMethod('payment'); setStep(1); trackFunnelStep('purchase_funnel', 'payment_method_selected', { app_id: id, method: 'payment' }); }}
                   style={{ flex: '1 1 auto', minWidth: 140 }}
                 >
                   Todos os Métodos
                 </button>
                 <button
                   className={`${styles.btn} ${paymentMethod === 'card' ? styles.btnPrimary : styles.btnOutline}`}
-                  onClick={() => { setPaymentMethod('card'); setStep(1); }}
+                  onClick={() => { setPaymentMethod('card'); setStep(1); trackFunnelStep('purchase_funnel', 'payment_method_selected', { app_id: id, method: 'card' }); }}
                   style={{ flex: '1 1 auto', minWidth: 140 }}
                 >
                   Cartão de Crédito
                 </button>
                 <button
                   className={`${styles.btn} ${paymentMethod === 'wallet' ? styles.btnPrimary : styles.btnOutline}`}
-                  onClick={() => { setPaymentMethod('wallet'); setStep(1); }}
+                  onClick={() => { setPaymentMethod('wallet'); setStep(1); trackFunnelStep('purchase_funnel', 'payment_method_selected', { app_id: id, method: 'wallet' }); }}
                   style={{ flex: '1 1 auto', minWidth: 140 }}
                 >
                   Conta Mercado Pago
@@ -644,6 +662,7 @@ const AppPurchasePage = () => {
                         id,
                         app?.name || app?.titulo
                       ).catch(() => {});
+                      trackFunnelStep('purchase_funnel', 'checkout_info_completed', { app_id: id, payment_method: paymentMethod });
                       setStep(2);
                       setShowCardForm(true);
                       setTimeout(() => {
@@ -680,14 +699,16 @@ const AppPurchasePage = () => {
                   }}
                   onPaymentSuccess={async (resp) => {
                     setStatus('approved');
+                    paymentCompletedRef.current = true;
                     const payId = resp?.payment_id || resp?.mp_payment_id || resp?.data?.payment_id || resp?.id || resp?.data?.id || '';
+                    trackFunnelStep('purchase_funnel', 'payment_completed', { app_id: id, payment_id: payId });
                     navigate(`/apps/${id}/sucesso?payment_id=${payId}&status=approved&quantity=${licenseQuantity}`);
                   }}
                   onStatus={(resp) => {
                     const s = resp?.status || resp?.data?.status;
                     if (s) setStatus(s);
                   }}
-                  onError={(err) => console.error('Payment error:', err)}
+                  onError={(err) => { trackFunnelStep('purchase_funnel', 'payment_failed', { app_id: id, error: String(err?.message || err || '') }); console.error('Payment error:', err); }}
                 />
               </div>
             )}
@@ -716,7 +737,9 @@ const AppPurchasePage = () => {
                   maxInstallments={4}
                   onPaymentSuccess={async (resp) => {
                     setStatus('approved');
+                    paymentCompletedRef.current = true;
                     const payId = resp?.payment_id || resp?.mp_payment_id || resp?.data?.payment_id || resp?.id || resp?.data?.id || '';
+                    trackFunnelStep('purchase_funnel', 'payment_completed', { app_id: id, payment_id: payId });
                     navigate(`/apps/${id}/sucesso?payment_id=${payId}&status=approved&quantity=${licenseQuantity}`);
                   }}
                 />

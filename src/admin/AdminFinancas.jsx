@@ -2,10 +2,10 @@
 // Refatorado para usar Design System CodeCraft
 import React, { useState, useMemo } from 'react';
 import {
-  FaDollarSign, FaPlus, FaEdit, FaSave, FaTimes, FaDownload,
-  FaTable, FaTh, FaCheck, FaClock, FaPercent, FaChartBar,
-  FaChevronLeft, FaChevronRight, FaTrash, FaProjectDiagram
-} from 'react-icons/fa';
+  DollarSign, Plus, Pencil, Save, X, Download,
+  Table, LayoutGrid, Check, Clock, Percent, BarChart2,
+  ChevronLeft, ChevronRight, Trash2, Network
+} from 'lucide-react';
 
 import { useFinance, FinanceRepo, useProjects } from '../hooks/useAdminRepo';
 import { apiRequest } from '../lib/apiConfig';
@@ -176,7 +176,7 @@ export default function AdminFinancas() {
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerTitle}>
-          <FaDollarSign className={styles.headerIcon} />
+          <DollarSign className={styles.headerIcon} />
           <div>
             <h1>Gestão Financeira</h1>
             <p>Gerencie receitas, despesas e integrações com projetos</p>
@@ -184,10 +184,10 @@ export default function AdminFinancas() {
         </div>
         <div className={styles.headerActions}>
           <button onClick={() => setView(view === 'table' ? 'cards' : 'table')} className={styles.viewBtn}>
-            {view === 'table' ? <><FaTh /> Cards</> : <><FaTable /> Tabela</>}
+            {view === 'table' ? <><LayoutGrid /> Cards</> : <><Table /> Tabela</>}
           </button>
           <button onClick={onExport} className={styles.exportBtn}>
-            <FaDownload /> Exportar CSV
+            <Download /> Exportar CSV
           </button>
         </div>
       </header>
@@ -195,38 +195,38 @@ export default function AdminFinancas() {
       {/* Toast */}
       {toast && (
         <div className={styles.toast}>
-          <FaCheck /> {toast}
+          <Check /> {toast}
         </div>
       )}
 
       {/* KPIs */}
       <div className={styles.kpisGrid}>
         <AdminCard variant="outlined" className={styles.kpiCard}>
-          <h3><FaDollarSign /> Total</h3>
+          <h3><DollarSign /> Total</h3>
           <p className={`${styles.kpiValue} ${styles.kpiTotal}`}>
             R$ {stats.total.toLocaleString('pt-BR')}
           </p>
         </AdminCard>
         <AdminCard variant="outlined" className={styles.kpiCard}>
-          <h3><FaCheck /> Pago</h3>
+          <h3><Check /> Pago</h3>
           <p className={`${styles.kpiValue} ${styles.kpiPaid}`}>
             R$ {stats.paid.toLocaleString('pt-BR')}
           </p>
         </AdminCard>
         <AdminCard variant="outlined" className={styles.kpiCard}>
-          <h3><FaClock /> Pendente</h3>
+          <h3><Clock /> Pendente</h3>
           <p className={`${styles.kpiValue} ${styles.kpiPending}`}>
             R$ {stats.pending.toLocaleString('pt-BR')}
           </p>
         </AdminCard>
         <AdminCard variant="outlined" className={styles.kpiCard}>
-          <h3><FaPercent /> Descontos</h3>
+          <h3><Percent /> Descontos</h3>
           <p className={`${styles.kpiValue} ${styles.kpiDiscount}`}>
             R$ {stats.discount.toLocaleString('pt-BR')}
           </p>
         </AdminCard>
         <AdminCard variant="outlined" className={styles.kpiCard}>
-          <h3><FaChartBar /> Registros</h3>
+          <h3><BarChart2 /> Registros</h3>
           <p className={`${styles.kpiValue} ${styles.kpiCount}`}>
             {stats.count}
           </p>
@@ -276,11 +276,11 @@ export default function AdminFinancas() {
           </select>
           <div className={styles.pagination}>
             <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className={styles.pageBtn}>
-              <FaChevronLeft />
+              <ChevronLeft />
             </button>
             <span>Página {page} de {totalPages}</span>
             <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} className={styles.pageBtn}>
-              <FaChevronRight />
+              <ChevronRight />
             </button>
           </div>
         </div>
@@ -306,7 +306,7 @@ export default function AdminFinancas() {
                 <div>
                   <h3>{f.item}</h3>
                   <p className={styles.cardType}>
-                    <FaProjectDiagram /> {typeLabels[f.type] || f.type}
+                    <Network /> {typeLabels[f.type] || f.type}
                   </p>
                 </div>
                 <StatusBadge variant={getStatusVariant(f.status)}>{f.status}</StatusBadge>
@@ -318,7 +318,7 @@ export default function AdminFinancas() {
 
               {f.project_id && (
                 <p className={styles.cardProject}>
-                  <FaProjectDiagram /> {getProjectName(f.project_id)}
+                  <Network /> {getProjectName(f.project_id)}
                 </p>
               )}
 
@@ -336,13 +336,13 @@ export default function AdminFinancas() {
 
               <div className={styles.cardActions}>
                 <button onClick={() => onEdit(f)} className={styles.editBtn} title="Editar">
-                  <FaEdit />
+                  <Pencil />
                 </button>
                 <button onClick={() => onToggleStatus(f)} className={styles.toggleBtn} title={f.status === 'paid' ? 'Marcar pendente' : 'Marcar pago'}>
-                  {f.status === 'paid' ? <FaClock /> : <FaCheck />}
+                  {f.status === 'paid' ? <Clock /> : <Check />}
                 </button>
                 <button onClick={() => onDelete(f.id)} className={styles.deleteBtn} title="Excluir">
-                  <FaTrash />
+                  <Trash2 />
                 </button>
               </div>
             </AdminCard>
@@ -398,13 +398,13 @@ export default function AdminFinancas() {
                   <td>
                     <div className={styles.cardActions} style={{ marginTop: 0, paddingTop: 0, borderTop: 'none' }}>
                       <button onClick={() => onEdit(f)} className={styles.editBtn} title="Editar">
-                        <FaEdit />
+                        <Pencil />
                       </button>
                       <button onClick={() => onToggleStatus(f)} className={styles.toggleBtn} title={f.status === 'paid' ? 'Marcar pendente' : 'Marcar pago'}>
-                        {f.status === 'paid' ? <FaClock /> : <FaCheck />}
+                        {f.status === 'paid' ? <Clock /> : <Check />}
                       </button>
                       <button onClick={() => onDelete(f.id)} className={styles.deleteBtn} title="Excluir">
-                        <FaTrash />
+                        <Trash2 />
                       </button>
                     </div>
                   </td>
@@ -418,7 +418,7 @@ export default function AdminFinancas() {
       {/* Form */}
       <AdminCard variant="elevated" className={styles.formCard} id="finance-form">
         <h2 className={styles.formTitle}>
-          {editingId ? <><FaEdit /> Editar Registro</> : <><FaPlus /> Novo Registro Financeiro</>}
+          {editingId ? <><Pencil /> Editar Registro</> : <><Plus /> Novo Registro Financeiro</>}
         </h2>
 
         <div className={styles.formGrid}>
@@ -506,11 +506,11 @@ export default function AdminFinancas() {
             disabled={busy || !form.item || !form.valor}
             className={styles.saveBtn}
           >
-            <FaSave /> {editingId ? 'Atualizar' : 'Criar'} Registro
+            <Save /> {editingId ? 'Atualizar' : 'Criar'} Registro
           </button>
           {editingId && (
             <button onClick={cancelEdit} className={styles.cancelBtn}>
-              <FaTimes /> Cancelar
+              <X /> Cancelar
             </button>
           )}
         </div>

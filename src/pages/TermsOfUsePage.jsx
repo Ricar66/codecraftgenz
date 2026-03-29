@@ -1,17 +1,6 @@
 // src/pages/TermsOfUsePage.jsx
 // Termos de Uso do Site e Serviços
-import {
-  FaFileContract,
-  FaArrowLeft,
-  FaCheckCircle,
-  FaUserCheck,
-  FaShoppingBag,
-  FaKey,
-  FaBan,
-  FaCopyright,
-  FaGavel,
-  FaEnvelope
-} from 'react-icons/fa';
+import { FileText, ArrowLeft, CheckCircle, UserCheck, ShoppingBag, Key, Ban, Copyright, Gavel, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import Navbar from '../components/Navbar/Navbar';
@@ -27,7 +16,7 @@ function TermsOfUsePage() {
       <section className={styles.hero}>
         <div className={styles.heroContent}>
           <div className={styles.heroBadge}>
-            <FaFileContract />
+            <FileText />
             <span>Termos Legais</span>
           </div>
           <h1 className={styles.heroTitle}>
@@ -64,7 +53,7 @@ function TermsOfUsePage() {
         {/* Acceptance */}
         <div id="aceitacao" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaCheckCircle />
+            <CheckCircle />
             1. Aceitação dos Termos
           </h2>
           <p className={styles.text}>
@@ -81,7 +70,7 @@ function TermsOfUsePage() {
         {/* Services */}
         <div id="servicos" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaShoppingBag />
+            <ShoppingBag />
             2. Descrição dos Serviços
           </h2>
           <p className={styles.text}>
@@ -101,7 +90,7 @@ function TermsOfUsePage() {
         {/* Registration */}
         <div id="cadastro" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaUserCheck />
+            <UserCheck />
             3. Cadastro e Conta
           </h2>
           <p className={styles.text}>
@@ -125,7 +114,7 @@ function TermsOfUsePage() {
         {/* Purchases */}
         <div id="compras" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaShoppingBag />
+            <ShoppingBag />
             4. Compras e Pagamentos
           </h2>
           <p className={styles.text}>
@@ -159,7 +148,7 @@ function TermsOfUsePage() {
         {/* Licenses */}
         <div id="licencas" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaKey />
+            <Key />
             5. Licenças de Uso
           </h2>
           <p className={styles.text}>
@@ -189,7 +178,7 @@ function TermsOfUsePage() {
         {/* Prohibited Conduct */}
         <div id="proibicoes" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaBan />
+            <Ban />
             6. Condutas Proibidas
           </h2>
           <p className={styles.text}>
@@ -214,7 +203,7 @@ function TermsOfUsePage() {
         {/* Intellectual Property */}
         <div id="propriedade" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaCopyright />
+            <Copyright />
             7. Propriedade Intelectual
           </h2>
           <p className={styles.text}>
@@ -231,7 +220,7 @@ function TermsOfUsePage() {
         {/* Liability */}
         <div id="responsabilidade" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaGavel />
+            <Gavel />
             8. Limitação de Responsabilidade
           </h2>
           <p className={styles.text}>
@@ -260,7 +249,7 @@ function TermsOfUsePage() {
         {/* Termination */}
         <div id="rescisao" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaBan />
+            <Ban />
             9. Rescisão
           </h2>
           <p className={styles.text}>
@@ -286,7 +275,7 @@ function TermsOfUsePage() {
         {/* General Provisions */}
         <div id="disposicoes" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaFileContract />
+            <FileText />
             10. Disposições Gerais
           </h2>
           <p className={styles.text}>
@@ -326,7 +315,7 @@ function TermsOfUsePage() {
               href="mailto:suporte@codecraftgenz.com.br?subject=Dúvida sobre Termos de Uso"
               className={styles.contactLink}
             >
-              <FaEnvelope />
+              <Mail />
               Contatar Suporte
             </a>
             <Link to="/ajuda" className={styles.contactLink}>

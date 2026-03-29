@@ -2,9 +2,9 @@
 // Refatorado para usar Design System CodeCraft
 import React, { useState, useMemo } from 'react';
 import {
-  FaProjectDiagram, FaPlus, FaEdit, FaTrash, FaEye, FaEyeSlash,
-  FaSearch, FaSave, FaTimes, FaDownload, FaUpload, FaChevronLeft, FaChevronRight, FaTag
-} from 'react-icons/fa';
+  Network, Plus, Pencil, Trash2, Eye, EyeOff,
+  Search, Save, X, Download, Upload, ChevronLeft, ChevronRight, Tag
+} from 'lucide-react';
 
 import { useProjects, ProjectsRepo } from '../hooks/useAdminRepo';
 import { deleteProject as deleteProjectApi } from '../services/projectsAPI';
@@ -229,21 +229,21 @@ export default function AdminProjetos() {
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerTitle}>
-          <FaProjectDiagram className={styles.headerIcon} />
+          <Network className={styles.headerIcon} />
           <div>
             <h1>Gestão de Projetos</h1>
             <p>{(list || []).length} projetos cadastrados</p>
           </div>
         </div>
         <button onClick={exportCSV} className={styles.exportBtn}>
-          <FaDownload /> Exportar CSV
+          <Download /> Exportar CSV
         </button>
       </header>
 
       {/* Notice */}
       {notice.msg && (
         <div className={`${styles.notice} ${notice.type === 'error' ? styles.error : styles.success}`}>
-          {notice.type === 'error' ? <FaTimes /> : <FaSave />}
+          {notice.type === 'error' ? <X /> : <Save />}
           {notice.msg}
         </div>
       )}
@@ -252,7 +252,7 @@ export default function AdminProjetos() {
       <AdminCard variant="elevated" className={styles.filtersCard}>
         <div className={styles.filters}>
           <div className={styles.searchBox}>
-            <FaSearch className={styles.searchIcon} />
+            <Search className={styles.searchIcon} />
             <input
               type="text"
               placeholder="Buscar (título/owner/status)..."
@@ -267,7 +267,7 @@ export default function AdminProjetos() {
               disabled={page === 1}
               className={styles.pageBtn}
             >
-              <FaChevronLeft />
+              <ChevronLeft />
             </button>
             <span>Página {page} de {totalPages}</span>
             <button
@@ -275,7 +275,7 @@ export default function AdminProjetos() {
               disabled={page === totalPages}
               className={styles.pageBtn}
             >
-              <FaChevronRight />
+              <ChevronRight />
             </button>
           </div>
         </div>
@@ -299,7 +299,7 @@ export default function AdminProjetos() {
               {pageItems.length === 0 ? (
                 <tr>
                   <td colSpan="6" className={styles.emptyRow}>
-                    <FaProjectDiagram /> Nenhum projeto encontrado
+                    <Network /> Nenhum projeto encontrado
                   </td>
                 </tr>
               ) : pageItems.map(p => (
@@ -328,17 +328,17 @@ export default function AdminProjetos() {
                   <td data-label="Ações">
                     <div className={styles.actionBtns}>
                       <button onClick={() => onEdit(p)} className={styles.editBtn} title="Editar">
-                        <FaEdit />
+                        <Pencil />
                       </button>
                       <button
                         onClick={() => onToggleVisibility(p)}
                         className={styles.visibilityBtn}
                         title={p.status === 'rascunho' ? 'Publicar' : 'Ocultar'}
                       >
-                        {p.status === 'rascunho' ? <FaEye /> : <FaEyeSlash />}
+                        {p.status === 'rascunho' ? <Eye /> : <EyeOff />}
                       </button>
                       <button onClick={() => onDelete(p)} className={styles.deleteBtn} title="Deletar">
-                        <FaTrash />
+                        <Trash2 />
                       </button>
                     </div>
                   </td>
@@ -352,7 +352,7 @@ export default function AdminProjetos() {
       {/* Form */}
       <AdminCard variant="elevated" className={styles.formCard} id="project-form">
         <h2 className={styles.formTitle}>
-          {form.id ? <><FaEdit /> Editar Projeto</> : <><FaPlus /> Novo Projeto</>}
+          {form.id ? <><Pencil /> Editar Projeto</> : <><Plus /> Novo Projeto</>}
         </h2>
 
         <div className={styles.formGrid}>
@@ -388,11 +388,11 @@ export default function AdminProjetos() {
               />
               <div className={styles.uploadRow} style={{ marginTop: 8 }}>
                 <label className={styles.fileUpload}>
-                  <FaUpload /> {thumbFile ? thumbFile.name : 'Enviar imagem'}
+                  <Upload /> {thumbFile ? thumbFile.name : 'Enviar imagem'}
                   <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" onChange={e => { setThumbFile(e.target.files?.[0] || null); setThumbUploadError(''); }} />
                 </label>
                 <button onClick={handleThumbnailUpload} disabled={thumbUploadBusy || !thumbFile} className={styles.uploadBtn}>
-                  {thumbUploadBusy ? 'Enviando...' : <><FaUpload /> Enviar</>}
+                  {thumbUploadBusy ? 'Enviando...' : <><Upload /> Enviar</>}
                 </button>
               </div>
               {thumbUploadError && <span className={styles.uploadError}>{thumbUploadError}</span>}
@@ -456,7 +456,7 @@ export default function AdminProjetos() {
           </div>
 
           <div className={styles.formGroup}>
-            <label><FaTag style={{ marginRight: 6 }} />Tecnologias</label>
+            <label><Tag style={{ marginRight: 6 }} />Tecnologias</label>
             <div className={styles.tagsContainer}>
               {form.tags.map((tag, idx) => (
                 <span key={idx} className={styles.tag}>
@@ -467,7 +467,7 @@ export default function AdminProjetos() {
                     className={styles.tagRemove}
                     title="Remover"
                   >
-                    <FaTimes />
+                    <X />
                   </button>
                 </span>
               ))}
@@ -482,7 +482,7 @@ export default function AdminProjetos() {
                 className={styles.input}
               />
               <button type="button" onClick={addTag} className={styles.addTagBtn}>
-                <FaPlus /> Adicionar
+                <Plus /> Adicionar
               </button>
             </div>
             <small className={styles.hint}>Pressione Enter ou clique em Adicionar para incluir uma tecnologia</small>
@@ -491,17 +491,17 @@ export default function AdminProjetos() {
 
         {form.preco > 0 && (
           <div className={styles.financeNote}>
-            <FaSave /> Registro financeiro será criado: R$ {form.preco.toLocaleString('pt-BR')}
+            <Save /> Registro financeiro será criado: R$ {form.preco.toLocaleString('pt-BR')}
           </div>
         )}
 
         <div className={styles.formActions}>
           <button onClick={onSave} className={styles.saveBtn}>
-            <FaSave /> {form.id ? 'Atualizar' : 'Criar'} Projeto
+            <Save /> {form.id ? 'Atualizar' : 'Criar'} Projeto
           </button>
           {form.id && (
             <button onClick={cancelEdit} className={styles.cancelBtn}>
-              <FaTimes /> Cancelar
+              <X /> Cancelar
             </button>
           )}
         </div>

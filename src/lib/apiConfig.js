@@ -48,12 +48,7 @@ export function shouldFallbackPublic(err, overrideEnabled) {
 }
 
 export async function apiRequest(endpoint, options = {}) {
-  const isDebug = (
-    import.meta.env.DEV ||
-    toBoolFlag(import.meta.env.VITE_DEBUG_ADMIN || '') ||
-    (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1') ||
-    (typeof localStorage !== 'undefined' && localStorage.getItem('cc_debug') === '1')
-  );
+  const isDebug = import.meta.env.DEV || toBoolFlag(import.meta.env.VITE_DEBUG_ADMIN || '');
   // Agora o endpoint DEVE começar com /api/ (ex: /api/projetos)
   const url = `${API_BASE_URL}${endpoint}`;
   
@@ -144,12 +139,7 @@ export async function apiRequest(endpoint, options = {}) {
 }
 
 export async function apiRequestMultipart(endpoint, formData, options = {}) {
-  const isDebug = (
-    import.meta.env.DEV ||
-    toBoolFlag(import.meta.env.VITE_DEBUG_ADMIN || '') ||
-    (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1') ||
-    (typeof localStorage !== 'undefined' && localStorage.getItem('cc_debug') === '1')
-  );
+  const isDebug = import.meta.env.DEV || toBoolFlag(import.meta.env.VITE_DEBUG_ADMIN || '');
   const url = `${API_BASE_URL}${endpoint}`;
   const headers = {
     ...getAuthHeader(),

@@ -1,10 +1,12 @@
 // src/pages/AppHubPage.jsx
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { FaDownload, FaWindows } from 'react-icons/fa';
+import { Download } from 'lucide-react';
+import { WindowsIcon } from '../components/UI/BrandIcons/index.jsx';
 
 import AppCard from '../components/AppCard/AppCard.jsx';
 import AppDetailModal from '../components/AppDetailModal/AppDetailModal.jsx';
+import { trackPageView, trackEvent } from '../services/analyticsAPI.js';
 import Navbar from '../components/Navbar/Navbar.jsx';
 import { getPublicApps } from '../services/appsAPI.js';
 import { getAppImageUrl } from '../utils/appModel.js';
@@ -38,6 +40,9 @@ const AppHubPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, sortBy, sortOrder]);
 
+  useEffect(() => {
+    trackPageView('AppHubPage');
+  }, []);
 
   const loadApps = async () => {
     try {
@@ -247,7 +252,7 @@ const AppHubPage = () => {
               id="app-search"
               placeholder="Buscar aplicativos..."
               value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+              onChange={(e) => { const v = e.target.value; setSearchTerm(v); setPage(1); if (v.length >= 3) trackEvent('search_used', { query: v, page: 'AppHubPage' }, 'interaction'); }}
               className={styles.searchInput}
             />
             <div className={styles.searchIcon} aria-hidden="true">&#128269;</div>
@@ -271,8 +276,8 @@ const AppHubPage = () => {
             <p>Launcher desktop — gerencie todos os seus apps em um só lugar.</p>
           </div>
           <Link to="/aplicativos/hub" className={styles.hubBannerButton}>
-            <FaDownload />
-            <span>Baixar para <FaWindows /> Windows</span>
+            <Download />
+            <span>Baixar para <WindowsIcon /> Windows</span>
           </Link>
         </div>
       </section>
@@ -285,7 +290,7 @@ const AppHubPage = () => {
             {categories.map(category => (
               <button
                 key={category}
-                onClick={() => setFilter(category)}
+                onClick={() => { setFilter(category); trackEvent('filter_used', { category, page: 'AppHubPage' }, 'interaction'); }}
                 className={`${styles.filterButton} ${filter === category ? styles.active : ''}`}
                 aria-pressed={filter === category}
                 type="button"

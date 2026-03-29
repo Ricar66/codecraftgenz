@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX } from 'react-icons/fi';
+import { X } from 'lucide-react';
 
 import styles from './Modal.module.css';
 
@@ -157,7 +157,7 @@ function Modal({
                 onClick={onClose}
                 aria-label="Fechar modal"
               >
-                <FiX />
+                <X />
               </button>
             )}
           </div>

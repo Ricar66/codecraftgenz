@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Rocket } from 'lucide-react';
 
 import { useAnalytics } from '../../hooks/useAnalytics';
+import { trackFunnelStep } from '../../services/analyticsAPI.js';
 import Button from '../Button/Button';
 
 import styles from './Hero.module.css';
@@ -41,6 +42,7 @@ const Hero = ({ onCrafterClick }) => {
     trackButtonClick('cta_quero_ser_crafter', 'hero_section', {
       cta_text: 'Quero ser um Crafter',
     });
+    trackFunnelStep('crafter_funnel', 'crafter_cta_clicked', { location: 'hero_section' });
     if (onCrafterClick) onCrafterClick();
   }, [trackButtonClick, onCrafterClick]);
 

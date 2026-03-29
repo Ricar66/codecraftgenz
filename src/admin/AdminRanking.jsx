@@ -2,9 +2,9 @@
 // Refatorado para usar Design System CodeCraft
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  FaTrophy, FaMedal, FaPlus, FaEdit, FaSave, FaTimes, FaSearch,
-  FaStar, FaFilter, FaSync, FaUser, FaChevronLeft, FaChevronRight
-} from 'react-icons/fa';
+  Trophy, Medal, Plus, Pencil, Save, X, Search,
+  Star, Filter, RefreshCw, User, ChevronLeft, ChevronRight
+} from 'lucide-react';
 
 import { useRanking, RankingRepo, useCrafters } from '../hooks/useAdminRepo';
 import { useAuth } from '../context/useAuth';
@@ -220,27 +220,27 @@ export default function AdminRanking() {
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerTitle}>
-          <FaTrophy className={styles.headerIcon} />
+          <Trophy className={styles.headerIcon} />
           <div>
             <h1>Ranking de Crafters</h1>
             <p>{allList.length} crafters no ranking</p>
           </div>
         </div>
         <button onClick={() => setCrafterModalOpen(true)} className={styles.newBtn}>
-          <FaPlus /> Novo Crafter
+          <Plus /> Novo Crafter
         </button>
       </header>
 
       {/* Toast */}
       {toast && (
         <div className={styles.toast}>
-          <FaStar /> {toast}
+          <Star /> {toast}
         </div>
       )}
 
       {/* Podium Editor */}
       <AdminCard variant="elevated" className={styles.podiumCard}>
-        <h2 className={styles.sectionTitle}><FaMedal /> Editor de Pódio</h2>
+        <h2 className={styles.sectionTitle}><Medal /> Editor de Pódio</h2>
 
         <div className={styles.podiumGrid}>
           {[1, 2, 3].map(position => {
@@ -293,7 +293,7 @@ export default function AdminRanking() {
 
                 {isSelected && (
                   <div className={styles.podiumPoints}>
-                    <FaStar /> {crafter.points} pontos
+                    <Star /> {crafter.points} pontos
                   </div>
                 )}
               </div>
@@ -304,12 +304,12 @@ export default function AdminRanking() {
         {/* Podium Status */}
         {hasDuplicates && (
           <div className={styles.podiumError}>
-            <FaTimes /> Não é possível selecionar o mesmo crafter em múltiplas posições
+            <X /> Não é possível selecionar o mesmo crafter em múltiplas posições
           </div>
         )}
         {isPodiumComplete && !hasDuplicates && (
           <div className={styles.podiumSuccess}>
-            <FaStar /> Pódio completo! Pronto para salvar
+            <Star /> Pódio completo! Pronto para salvar
           </div>
         )}
 
@@ -319,24 +319,24 @@ export default function AdminRanking() {
             disabled={busy || !isPodiumComplete || hasDuplicates}
             className={styles.saveBtn}
           >
-            <FaSave /> Salvar Pódio
+            <Save /> Salvar Pódio
           </button>
           <button
             onClick={() => { setTop3([]); setPodiumRewards({}); }}
             disabled={busy || selectedIds.length === 0}
             className={styles.clearBtn}
           >
-            <FaTimes /> Limpar
+            <X /> Limpar
           </button>
         </div>
       </AdminCard>
 
       {/* Filters */}
       <AdminCard variant="elevated" className={styles.filtersCard}>
-        <h3 className={styles.sectionTitle}><FaFilter /> Filtros</h3>
+        <h3 className={styles.sectionTitle}><Filter /> Filtros</h3>
         <div className={styles.filtersGrid}>
           <div className={styles.searchBox}>
-            <FaSearch className={styles.searchIcon} />
+            <Search className={styles.searchIcon} />
             <input
               type="text"
               placeholder="Buscar por nome..."
@@ -378,14 +378,14 @@ export default function AdminRanking() {
             Apenas ativos
           </label>
           <button onClick={resetFilters} className={styles.resetBtn}>
-            <FaSync /> Resetar
+            <RefreshCw /> Resetar
           </button>
         </div>
       </AdminCard>
 
       {/* Crafters Table */}
       <AdminCard variant="elevated" className={styles.tableCard}>
-        <h3 className={styles.sectionTitle}><FaTrophy /> Tabela Geral</h3>
+        <h3 className={styles.sectionTitle}><Trophy /> Tabela Geral</h3>
         <div className={styles.tableWrapper}>
           <table className={styles.table}>
             <thead>
@@ -402,7 +402,7 @@ export default function AdminRanking() {
               {filteredCrafters.length === 0 ? (
                 <tr>
                   <td colSpan="6" className={styles.emptyRow}>
-                    <FaUser /> Nenhum crafter encontrado
+                    <User /> Nenhum crafter encontrado
                   </td>
                 </tr>
               ) : filteredCrafters.map((c, index) => (
@@ -420,7 +420,7 @@ export default function AdminRanking() {
                   <td data-label="Nome">{c.name}</td>
                   <td data-label="Pontos">
                     <span className={styles.pointsBadge}>
-                      <FaStar /> {c.points} pts
+                      <Star /> {c.points} pts
                     </span>
                   </td>
                   <td data-label="Status">
@@ -470,9 +470,9 @@ export default function AdminRanking() {
         <div className={styles.modalBackdrop}>
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
-              <h3><FaPlus /> Novo Crafter</h3>
+              <h3><Plus /> Novo Crafter</h3>
               <button onClick={() => { setCrafterModalOpen(false); setCrafterErrors({}); }} className={styles.closeBtn}>
-                <FaTimes />
+                <X />
               </button>
             </div>
 
@@ -539,7 +539,7 @@ export default function AdminRanking() {
                 disabled={busy || !crafterForm.name}
                 className={styles.saveBtn}
               >
-                {busy ? 'Salvando...' : <><FaSave /> Salvar</>}
+                {busy ? 'Salvando...' : <><Save /> Salvar</>}
               </button>
               <button onClick={() => { setCrafterModalOpen(false); setCrafterErrors({}); }} className={styles.cancelBtn}>
                 Cancelar
@@ -554,9 +554,9 @@ export default function AdminRanking() {
         <div className={styles.modalBackdrop}>
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
-              <h3><FaEdit /> Editar Crafter</h3>
+              <h3><Pencil /> Editar Crafter</h3>
               <button onClick={() => setEditModal({ open: false, item: null, saving: false, error: '' })} className={styles.closeBtn}>
-                <FaTimes />
+                <X />
               </button>
             </div>
 

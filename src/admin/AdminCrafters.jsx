@@ -1,7 +1,7 @@
 // src/admin/AdminCrafters.jsx
 // Refatorado para usar Design System CodeCraft
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaUsers, FaSearch, FaEdit, FaTrash, FaStar } from 'react-icons/fa';
+import { Users, Search, Pencil, Trash2, Star } from 'lucide-react';
 
 import { useCrafters, CraftersRepo } from '../hooks/useAdminRepo';
 import { useToast } from '../components/UI/Toast';
@@ -111,7 +111,7 @@ export default function AdminCrafters() {
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerTitle}>
-          <FaUsers className={styles.headerIcon} />
+          <Users className={styles.headerIcon} />
           <div>
             <h1>Gerenciar Crafters</h1>
             <p>Total: {pagination.total} | Página {pagination.page} de {pagination.totalPages}</p>
@@ -122,7 +122,7 @@ export default function AdminCrafters() {
       {/* Filtros */}
       <section className={styles.filters}>
         <div className={styles.searchBox}>
-          <FaSearch className={styles.searchIcon} />
+          <Search className={styles.searchIcon} />
           <input
             type="text"
             placeholder="Buscar por nome ou email..."
@@ -221,7 +221,7 @@ export default function AdminCrafters() {
                 <div className={styles.infoRow}>
                   <span className={styles.infoLabel}>Pontos</span>
                   <span className={styles.pointsBadge}>
-                    <FaStar className={styles.starIcon} /> {crafter.points || 0}
+                    <Star className={styles.starIcon} /> {crafter.points || 0}
                   </span>
                 </div>
               </div>
@@ -232,14 +232,14 @@ export default function AdminCrafters() {
                   onClick={() => {/* TODO: Edição */}}
                   title="Editar crafter"
                 >
-                  <FaEdit /> Editar
+                  <Pencil /> Editar
                 </button>
                 <button
                   className={styles.deleteBtn}
                   onClick={() => handleDeleteCrafter(crafter.id)}
                   title="Excluir crafter"
                 >
-                  <FaTrash /> Excluir
+                  <Trash2 /> Excluir
                 </button>
               </div>
             </AdminCard>

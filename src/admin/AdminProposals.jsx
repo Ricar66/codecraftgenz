@@ -3,9 +3,9 @@
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
-  FaBriefcase, FaEye, FaTimes, FaCheck, FaArchive, FaSearch,
-  FaFilter, FaPlus, FaSync, FaExclamationTriangle, FaTrash
-} from 'react-icons/fa';
+  Briefcase, Eye, X, Check, Archive, Search,
+  Filter, Plus, RefreshCw, AlertTriangle, Trash2
+} from 'lucide-react';
 
 import AdminCard from './components/AdminCard';
 import AdminTable from './components/AdminTable';
@@ -279,7 +279,7 @@ const AdminProposals = () => {
             onClick={(e) => { e.stopPropagation(); handleViewDetails(row); }}
             title="Ver detalhes"
           >
-            <FaEye />
+            <Eye />
           </button>
         </div>
       )
@@ -300,11 +300,11 @@ const AdminProposals = () => {
   if (error && proposals.length === 0) {
     return (
       <div className={styles.errorState}>
-        <FaExclamationTriangle size={48} />
+        <AlertTriangle size={48} />
         <h2>Erro ao carregar propostas</h2>
         <p>{error}</p>
         <button onClick={fetchProposals} className={styles.retryBtn}>
-          <FaSync /> Tentar novamente
+          <RefreshCw /> Tentar novamente
         </button>
       </div>
     );
@@ -315,7 +315,7 @@ const AdminProposals = () => {
       {/* Toast */}
       {toast && (
         <div className={`${styles.toast} ${styles[`toast${toast.type === 'error' ? 'Error' : 'Success'}`]}`}>
-          {toast.type === 'error' ? <FaExclamationTriangle /> : <FaCheck />}
+          {toast.type === 'error' ? <AlertTriangle /> : <Check />}
           {toast.message}
         </div>
       )}
@@ -323,7 +323,7 @@ const AdminProposals = () => {
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerTitle}>
-          <FaBriefcase className={styles.headerIcon} />
+          <Briefcase className={styles.headerIcon} />
           <div>
             <h1>Gestão de Propostas B2B</h1>
             <p>Gerencie as solicitações de orçamento recebidas</p>
@@ -336,13 +336,13 @@ const AdminProposals = () => {
             disabled={loading}
             title="Atualizar"
           >
-            <FaSync className={loading ? styles.spinning : ''} />
+            <RefreshCw className={loading ? styles.spinning : ''} />
           </button>
           <button
             onClick={() => setIsCreateModalOpen(true)}
             className={styles.createBtn}
           >
-            <FaPlus /> Nova Proposta
+            <Plus /> Nova Proposta
           </button>
         </div>
       </header>
@@ -378,7 +378,7 @@ const AdminProposals = () => {
       {/* Filters */}
       <section className={styles.filters}>
         <div className={styles.searchBox}>
-          <FaSearch className={styles.searchIcon} />
+          <Search className={styles.searchIcon} />
           <input
             type="text"
             placeholder="Buscar empresa, contato ou email..."
@@ -388,7 +388,7 @@ const AdminProposals = () => {
           />
         </div>
         <div className={styles.filterGroup}>
-          <FaFilter className={styles.filterIcon} />
+          <Filter className={styles.filterIcon} />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -456,7 +456,7 @@ const AdminProposals = () => {
             <header className={styles.modalHeader}>
               <h2>Detalhes da Proposta</h2>
               <button className={styles.modalClose} onClick={handleCloseModal}>
-                <FaTimes />
+                <X />
               </button>
             </header>
 
@@ -520,7 +520,7 @@ const AdminProposals = () => {
                   className={styles.deleteBtn}
                   onClick={() => handleDeleteProposal(selectedProposal.id)}
                 >
-                  <FaTrash /> Excluir
+                  <Trash2 /> Excluir
                 </button>
               </div>
               <div className={styles.statusButtons}>
@@ -551,14 +551,14 @@ const AdminProposals = () => {
                   onClick={() => handleStatusChange(selectedProposal.id, 'approved')}
                   disabled={selectedProposal.status === 'approved'}
                 >
-                  <FaCheck /> Aprovado
+                  <Check /> Aprovado
                 </button>
                 <button
                   className={`${styles.statusBtn} ${styles.statusRejected}`}
                   onClick={() => handleStatusChange(selectedProposal.id, 'rejected')}
                   disabled={selectedProposal.status === 'rejected'}
                 >
-                  <FaArchive /> Rejeitado
+                  <Archive /> Rejeitado
                 </button>
               </div>
             </footer>
@@ -573,7 +573,7 @@ const AdminProposals = () => {
             <header className={styles.modalHeader}>
               <h2>Nova Proposta B2B</h2>
               <button className={styles.modalClose} onClick={handleCloseCreateModal}>
-                <FaTimes />
+                <X />
               </button>
             </header>
 
@@ -661,7 +661,7 @@ const AdminProposals = () => {
                   Cancelar
                 </button>
                 <button type="submit" className={styles.submitBtn}>
-                  <FaPlus /> Criar Proposta
+                  <Plus /> Criar Proposta
                 </button>
               </div>
             </form>

@@ -1,7 +1,7 @@
 // src/admin/AdminLicencas.jsx
 // Gestao de Licencas - Permite listar, criar e remover licencas manualmente
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaKey, FaPlus, FaSearch, FaSync, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
+import { Key, Plus, Search, RefreshCw, Trash2, Save, X } from 'lucide-react';
 
 import { apiRequest } from '../lib/apiConfig.js';
 import { getAllApps } from '../services/appsAPI.js';
@@ -143,7 +143,7 @@ export default function AdminLicencas() {
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerTitle}>
-          <FaKey className={styles.headerIcon} />
+          <Key className={styles.headerIcon} />
           <div>
             <h1>Gestao de Licencas</h1>
             <p>{total} licencas encontradas</p>
@@ -151,22 +151,22 @@ export default function AdminLicencas() {
         </div>
         <div className={styles.headerActions}>
           <button onClick={() => setShowForm(!showForm)} className={styles.newBtn}>
-            <FaPlus /> Nova Licenca
+            <Plus /> Nova Licenca
           </button>
           <button onClick={() => loadLicenses(page)} className={styles.refreshBtn}>
-            <FaSync /> Atualizar
+            <RefreshCw /> Atualizar
           </button>
         </div>
       </header>
 
       {/* Toast & Error */}
-      {toast && <div className={styles.toast}><FaSave /> {toast}</div>}
-      {error && <div className={styles.error}><FaTimes /> {error}</div>}
+      {toast && <div className={styles.toast}><Save /> {toast}</div>}
+      {error && <div className={styles.error}><X /> {error}</div>}
 
       {/* Form Nova Licenca */}
       {showForm && (
         <AdminCard variant="elevated" className={styles.formCard}>
-          <h2 className={styles.formTitle}><FaPlus /> Provisionar Nova Licenca</h2>
+          <h2 className={styles.formTitle}><Plus /> Provisionar Nova Licenca</h2>
           <form onSubmit={handleCreate} className={styles.formGrid}>
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
@@ -207,10 +207,10 @@ export default function AdminLicencas() {
             </div>
             <div className={styles.formActions}>
               <button type="submit" disabled={creating} className={styles.saveBtn}>
-                {creating ? 'Criando...' : <><FaKey /> Gerar Licenca</>}
+                {creating ? 'Criando...' : <><Key /> Gerar Licenca</>}
               </button>
               <button type="button" onClick={() => setShowForm(false)} className={styles.cancelBtn}>
-                <FaTimes /> Cancelar
+                <X /> Cancelar
               </button>
             </div>
           </form>
@@ -244,7 +244,7 @@ export default function AdminLicencas() {
             />
           </div>
           <button type="submit" className={styles.searchBtn}>
-            <FaSearch /> Buscar
+            <Search /> Buscar
           </button>
         </form>
       </AdminCard>
@@ -258,7 +258,7 @@ export default function AdminLicencas() {
       ) : licenses.length === 0 ? (
         <AdminCard variant="outlined">
           <div className={styles.emptyState}>
-            <FaKey className={styles.emptyIcon} />
+            <Key className={styles.emptyIcon} />
             <p>Nenhuma licenca encontrada</p>
           </div>
         </AdminCard>
@@ -303,7 +303,7 @@ export default function AdminLicencas() {
                       className={styles.deleteBtn}
                       title="Remover licenca"
                     >
-                      <FaTrash />
+                      <Trash2 />
                     </button>
                   </td>
                 </tr>

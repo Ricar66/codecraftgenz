@@ -1,9 +1,10 @@
 // src/pages/FeedbacksPage.jsx
 // Feedback Page - Cyberpunk/Glassmorphism Design
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import FeedbackForm from '../components/Feedbacks/FeedbackForm';
 import Navbar from '../components/Navbar/Navbar';
+import { trackPageView, trackFunnelStep } from '../services/analyticsAPI.js';
 import styles from './FeedbacksPage.module.css';
 
 // Features data
@@ -26,6 +27,11 @@ const FEATURES = [
 ];
 
 export default function FeedbacksPage() {
+  useEffect(() => {
+    trackPageView('FeedbacksPage');
+    trackFunnelStep('feedback_funnel', 'feedback_page_viewed', {});
+  }, []);
+
   return (
     <div className={`${styles.page} starfield-bg`}>
       <Navbar />

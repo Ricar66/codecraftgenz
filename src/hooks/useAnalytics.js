@@ -1,8 +1,10 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import * as analyticsAPI from '../services/analyticsAPI.js';
 
 export const useAnalytics = () => {
   const [events, setEvents] = useState([]);
   const [sessionStartTime] = useState(Date.now());
+  const initializedRef = useRef(false);
 
   const trackEvent = useCallback((eventName, properties = {}, category = 'general') => {
     const event = {
@@ -13,37 +15,23 @@ export const useAnalytics = () => {
         ...properties,
         timestamp: new Date().toISOString(),
         sessionTime: Date.now() - sessionStartTime,
-        userAgent: navigator.userAgent,
         url: window.location.href,
-        referrer: document.referrer
-      }
+        referrer: document.referrer,
+      },
     };
 
-    setEvents(prevEvents => [...prevEvents, event]);
+    setEvents(prev => [...prev, event]);
 
-    // Log para desenvolvimento
-    console.log('📊 Analytics Event:', event);
+    // Envia para o backend via analyticsAPI (com buffer)
+    analyticsAPI.trackEvent(eventName, properties, category);
 
     // Google Analytics 4
     if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
       window.gtag('event', eventName, {
         event_category: category,
-        ...properties
+        ...properties,
       });
     }
-
-    // Mixpanel
-    // if (typeof mixpanel !== 'undefined') {
-    //   mixpanel.track(eventName, {
-    //     category,
-    //     ...properties
-    //   });
-    // }
-
-    // Facebook Pixel
-    // if (typeof fbq !== 'undefined') {
-    //   fbq('track', eventName, properties);
-    // }
 
     return event.id;
   }, [sessionStartTime]);
@@ -52,14 +40,14 @@ export const useAnalytics = () => {
     return trackEvent('button_click', {
       button_name: buttonName,
       location,
-      ...additionalData
+      ...additionalData,
     }, 'interaction');
   }, [trackEvent]);
 
   const trackPageNavigation = useCallback((fromPage, toPage) => {
     return trackEvent('page_navigation', {
       from_page: fromPage,
-      to_page: toPage
+      to_page: toPage,
     }, 'navigation');
   }, [trackEvent]);
 
@@ -67,7 +55,7 @@ export const useAnalytics = () => {
     return trackEvent('time_spent', {
       section: sectionName,
       duration_ms: timeSpent,
-      duration_seconds: Math.round(timeSpent / 1000)
+      duration_seconds: Math.round(timeSpent / 1000),
     }, 'engagement');
   }, [trackEvent]);
 
@@ -75,14 +63,25 @@ export const useAnalytics = () => {
     return trackEvent('error_occurred', {
       error_message: errorMessage,
       error_location: errorLocation,
-      ...errorDetails
+      ...errorDetails,
     }, 'error');
+  }, [trackEvent]);
+
+  // ── Novos métodos ─────────────────────────────────────────
+
+  /** Rastreia um passo de funil (compra, crafter, feedback) */
+  const trackFunnelStep = useCallback((funnelName, stepName, properties = {}) => {
+    return trackEvent(stepName, { funnel: funnelName, ...properties }, funnelName);
+  }, [trackEvent]);
+
+  /** Rastreia page view */
+  const trackPageView = useCallback((pageName, properties = {}) => {
+    return trackEvent('page_view', { page_name: pageName, ...properties }, 'navigation');
   }, [trackEvent]);
 
   const getSessionStats = useCallback(() => {
     const currentTime = Date.now();
     const sessionDuration = currentTime - sessionStartTime;
-
     return {
       sessionDuration,
       sessionDurationMinutes: Math.round(sessionDuration / 60000),
@@ -91,7 +90,7 @@ export const useAnalytics = () => {
         acc[event.category] = (acc[event.category] || 0) + 1;
         return acc;
       }, {}),
-      lastEventTime: events.length > 0 ? events[events.length - 1].properties.timestamp : null
+      lastEventTime: events.length > 0 ? events[events.length - 1].properties.timestamp : null,
     };
   }, [events, sessionStartTime]);
 
@@ -101,34 +100,13 @@ export const useAnalytics = () => {
 
   // Registra inicio da sessao
   useEffect(() => {
-    const sessionEvent = {
-      name: 'session_start',
-      category: 'session',
-      properties: {
-        platform: 'web',
-        device_type: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop',
-        timestamp: new Date().toISOString(),
-        sessionTime: 0,
-        userAgent: navigator.userAgent,
-        url: window.location.href,
-        referrer: document.referrer
-      }
-    };
+    if (initializedRef.current) return;
+    initializedRef.current = true;
 
-    setEvents(prevEvents => [...prevEvents, sessionEvent]);
-    console.log('📊 Analytics Event:', sessionEvent);
-
-    const handleBeforeUnload = () => {
-      const stats = getSessionStats();
-      console.log('📊 Session End:', stats);
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    analyticsAPI.trackEvent('session_start', {
+      platform: 'web',
+      device_type: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop',
+    }, 'session');
   }, []);
 
   return {
@@ -137,10 +115,12 @@ export const useAnalytics = () => {
     trackPageNavigation,
     trackTimeSpent,
     trackError,
+    trackFunnelStep,
+    trackPageView,
     events,
     getSessionStats,
     clearEvents,
     sessionStartTime,
-    sessionDuration: Date.now() - sessionStartTime
+    sessionDuration: Date.now() - sessionStartTime,
   };
 };

@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 
 import { apiConfig, apiRequest } from '../lib/apiConfig.js';
 import { realtime } from '../lib/realtime';
+import { normalizeMentor, denormalizeMentor, denormalizeProject } from '../utils/normalizers.js';
 import * as mentorAPI from '../services/mentorAPI';
 import * as projectsAPI from '../services/projectsAPI';
 import * as rankingAPI from '../services/rankingAPI';
@@ -68,18 +69,8 @@ function useAsyncList(asyncFn, deps = []) {
 // Users
 export function useUsers() {
   const result = useAsyncList(() => userAPI.getUsers());
-  const isDebug = (
-    import.meta.env.DEV ||
-    toBoolFlag(import.meta.env.VITE_DEBUG_ADMIN || '') ||
-    (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1') ||
-    (typeof localStorage !== 'undefined' && localStorage.getItem('cc_debug') === '1')
-  );
-  if (isDebug) {
-    console.log('[Admin:Users:init]');
-  }
   useEffect(() => {
     const unsub = realtime.subscribe('users_changed', () => {
-      if (isDebug) console.log('[Admin:Users:realtime]');
       result.refresh();
     });
     return () => unsub();
@@ -89,43 +80,39 @@ export function useUsers() {
 
 export const UsersRepo = {
   async create(u) {
-    const res = await userAPI.createUser(u);
-    if (res.ok) realtime.publish('users_changed', { users: null });
-    return res;
+    try {
+      const user = await userAPI.createUser(u);
+      realtime.publish('users_changed', { users: null });
+      return { ok: true, data: user };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
   },
   async update(id, patch) {
-    const res = await userAPI.updateUser(id, patch);
-    if (res.ok) realtime.publish('users_changed', { users: null });
-    return res;
+    try {
+      const user = await userAPI.updateUser(id, patch);
+      realtime.publish('users_changed', { users: null });
+      return { ok: true, data: user };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
   },
   async toggleStatus(id) {
-    const res = await userAPI.toggleUserStatus(id);
-    if (res.ok) realtime.publish('users_changed', { users: null });
-    return res;
+    try {
+      const user = await userAPI.toggleUserStatus(id);
+      realtime.publish('users_changed', { users: null });
+      return { ok: true, data: user };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
   },
 };
 
 // Mentores
 export function useMentors() {
-  // Normaliza campos do backend (pt-BR) para o frontend (en-US)
-  const normalize = (m) => ({
-    id: m.id,
-    name: m.name ?? m.nome ?? '',
-    specialty: m.specialty ?? m.especialidade ?? '',
-    bio: m.bio ?? m.descricao ?? '',
-    email: m.email ?? '',
-    phone: m.phone ?? m.telefone ?? '',
-    avatar_url: m.avatar_url ?? m.foto_url ?? m.photo ?? '',
-    photo: m.photo ?? '',
-    status: m.status ?? 'published',
-    visible: m.visible !== false,
-    created_at: m.created_at,
-    updated_at: m.updated_at,
-  });
-
   const result = useAsyncList(async () => {
     const list = await mentorAPI.getMentors({ all: true });
-    return Array.isArray(list) ? list.map(normalize) : [];
+    return Array.isArray(list) ? list.map(normalizeMentor) : [];
   });
 
   useEffect(() => {
@@ -141,17 +128,7 @@ export function useMentors() {
 export const MentorsRepo = {
   async upsert(m) {
     try {
-      // Mapeia campos do formulário para o backend (pt-BR)
-      const payload = {
-        nome: m.nome ?? m.name,
-        especialidade: m.especialidade ?? m.specialty,
-        bio: m.bio ?? m.descricao,
-        email: m.email,
-        telefone: m.telefone ?? m.phone,
-        avatar_url: m.avatar_url ?? m.photo ?? '',
-        status: m.status ?? 'published',
-        visible: m.visible !== false,
-      };
+      const payload = denormalizeMentor(m);
       let mentor;
       if (m.id) {
         mentor = await mentorAPI.updateMentor(m.id, payload);
@@ -254,19 +231,7 @@ export function useProjects() {
 export const ProjectsRepo = {
   async create(project) {
     try {
-      const apiProject = {
-        titulo: project.titulo || project.title,
-        owner: project.owner,
-        descricao: project.descricao || project.description,
-        data_inicio: project.data_inicio || project.startDate,
-        status: project.status,
-        preco: project.preco || project.price,
-        progresso: project.progresso || project.progress,
-        thumb_url: project.thumb_url,
-        tecnologias: project.tags || []
-      };
-
-      const saved = await projectsAPI.createProject(apiProject);
+      const saved = await projectsAPI.createProject(denormalizeProject(project));
       realtime.publish('projects_changed', { projects: null });
       return { ok: true, project: saved };
     } catch (err) {
@@ -276,19 +241,7 @@ export const ProjectsRepo = {
 
   async update(id, updates) {
     try {
-      const apiUpdates = {
-        titulo: updates.titulo || updates.title,
-        owner: updates.owner,
-        descricao: updates.descricao || updates.description,
-        data_inicio: updates.data_inicio || updates.startDate,
-        status: updates.status,
-        preco: updates.preco || updates.price,
-        progresso: updates.progresso || updates.progress,
-        thumb_url: updates.thumb_url,
-        tecnologias: updates.tags || []
-      };
-
-      const updated = await projectsAPI.updateProject(id, apiUpdates);
+      const updated = await projectsAPI.updateProject(id, denormalizeProject(updates));
       realtime.publish('projects_changed', { projects: null });
       return { ok: true, project: updated };
     } catch (err) {
@@ -311,19 +264,9 @@ export const ProjectsRepo = {
   async upsert(project) {
     try {
       const isUpdate = !!project.id;
-      const apiProject = {
-        titulo: project.titulo || project.title,
-        owner: project.owner,
-        descricao: project.descricao || project.description,
-        data_inicio: project.data_inicio || project.startDate,
-        status: project.status,
-        preco: project.preco || project.price,
-        progresso: project.progresso || project.progress,
-        thumb_url: project.thumb_url,
-        tecnologias: project.tags || []
-      };
-
-      const result = isUpdate ? await projectsAPI.updateProject(project.id, apiProject) : await projectsAPI.createProject(apiProject);
+      const result = isUpdate
+        ? await projectsAPI.updateProject(project.id, denormalizeProject(project))
+        : await projectsAPI.createProject(denormalizeProject(project));
       realtime.publish('projects_changed', { projects: null });
       return result;
     } catch (err) {

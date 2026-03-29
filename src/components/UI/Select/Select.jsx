@@ -2,7 +2,7 @@
 // Componente de Select reutilizavel
 
 import { forwardRef, useState } from 'react';
-import { FiChevronDown, FiAlertCircle } from 'react-icons/fi';
+import { ChevronDown, AlertCircle } from 'lucide-react';
 
 import styles from './Select.module.css';
 
@@ -134,9 +134,9 @@ const Select = forwardRef(({
 
         <span className={styles.iconWrapper}>
           {hasError ? (
-            <FiAlertCircle className={styles.iconError} />
+            <AlertCircle className={styles.iconError} />
           ) : (
-            <FiChevronDown className={styles.iconChevron} />
+            <ChevronDown className={styles.iconChevron} />
           )}
         </span>
       </div>
