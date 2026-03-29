@@ -554,6 +554,15 @@ const AdminInscricoes = () => {
                       <span>{inscricao.telefone}</span>
                     </div>
                   )}
+
+                  {inscricao.rede_social && (
+                    <div className={"infoRow"}>
+                      <strong>Rede Social:</strong>
+                      <a href={inscricao.rede_social.startsWith('http') ? inscricao.rede_social : `https://${inscricao.rede_social}`} target="_blank" rel="noopener noreferrer">
+                        {inscricao.rede_social}
+                      </a>
+                    </div>
+                  )}
                   
                   {(inscricao.cidade || inscricao.estado) && (
                     <div className={"infoRow"}>
