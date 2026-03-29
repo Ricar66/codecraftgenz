@@ -183,6 +183,58 @@
   margin-top: 0.25rem;
 }
 
+.fieldHint {
+  color: #00E4F2;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+/* Rede social com prefixo */
+.socialInputWrapper {
+  display: flex;
+  align-items: stretch;
+  border-radius: var(--raio-md, 8px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  transition: border-color 0.2s;
+}
+
+.socialInputWrapper:focus-within {
+  border-color: var(--cor-primaria, #D12BF2);
+  box-shadow: 0 0 0 2px rgba(209, 43, 242, 0.1);
+}
+
+.socialPrefix {
+  display: flex;
+  align-items: center;
+  padding: 0 0.5rem 0 0.75rem;
+  font-size: 0.75rem;
+  color: #666;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.03);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  -webkit-user-select: all;
+  user-select: all;
+}
+
+.socialInputWithPrefix {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.socialInputWrapper input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  color: var(--texto-branco, #ffffff);
+  outline: none;
+}
+
 .errorMessage {
   background: rgba(255, 77, 77, 0.1);
   border: 1px solid rgba(255, 77, 77, 0.3);

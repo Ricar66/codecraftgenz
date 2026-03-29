@@ -1,5 +1,5 @@
 // src/components/CrafterModal/CrafterModal.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { apiRequest } from '../../lib/apiConfig.js';
 import { trackFunnelStep } from '../../services/analyticsAPI.js';
@@ -7,29 +7,36 @@ import { captureCrafterLead } from '../../services/leadsAPI.js';
 
 import styles from './CrafterModal.module.css';
 
+const REDES_SOCIAIS = [
+  { value: 'linkedin', label: 'LinkedIn', prefix: 'https://linkedin.com/in/' },
+  { value: 'github', label: 'GitHub', prefix: 'https://github.com/' },
+  { value: 'instagram', label: 'Instagram', prefix: 'https://instagram.com/' },
+  { value: 'twitter', label: 'X (Twitter)', prefix: 'https://x.com/' },
+  { value: 'behance', label: 'Behance', prefix: 'https://behance.net/' },
+  { value: 'outro', label: 'Outro', prefix: '' },
+];
+
 const CrafterModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
     telefone: '',
-    rede_social: '',
+    rede_social_tipo: '',
+    rede_social_user: '',
+    cep: '',
     cidade: '',
     estado: '',
     area_interesse: '',
     mensagem: '',
   });
   const [loading, setLoading] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
 
   const areasInteresse = [
-    'Front-end',
-    'Back-end',
-    'Dados',
-    'Design',
-    'DevOps',
-    'Outros',
+    'Front-end', 'Back-end', 'Dados', 'Design', 'DevOps', 'Outros',
   ];
 
   const handleInputChange = (e) => {
@@ -37,40 +44,70 @@ const CrafterModal = ({ isOpen, onClose }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Busca CEP na API ViaCEP
+  const handleCepBlur = useCallback(async () => {
+    const cep = formData.cep.replace(/\D/g, '');
+    if (cep.length !== 8) return;
+
+    setCepLoading(true);
+    try {
+      const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await resp.json();
+      if (!data.erro) {
+        setFormData(prev => ({
+          ...prev,
+          cidade: data.localidade || prev.cidade,
+          estado: data.uf || prev.estado,
+        }));
+        setFieldErrors(prev => ({ ...prev, cep: undefined, cidade: undefined, estado: undefined }));
+      } else {
+        setFieldErrors(prev => ({ ...prev, cep: 'CEP nao encontrado' }));
+      }
+    } catch {
+      // silently fail — user pode preencher manualmente
+    }
+    setCepLoading(false);
+  }, [formData.cep]);
+
+  // Monta URL completa da rede social
+  const getRedeSocialUrl = () => {
+    if (!formData.rede_social_tipo || !formData.rede_social_user) return '';
+    const rede = REDES_SOCIAIS.find(r => r.value === formData.rede_social_tipo);
+    if (!rede) return '';
+    if (formData.rede_social_tipo === 'outro') return formData.rede_social_user;
+    return `${rede.prefix}${formData.rede_social_user}`;
+  };
+
   const validateForm = () => {
     const errors = [];
     const fErrors = {};
 
-    if (!formData.nome.trim()) {
-      errors.push('Nome e obrigatorio');
+    if (!formData.nome.trim() || formData.nome.trim().length < 2) {
+      errors.push('Nome e obrigatorio (min. 2 caracteres)');
       fErrors.nome = 'Informe seu nome completo';
-    } else if (formData.nome.trim().length < 2) {
-      errors.push('Nome deve ter pelo menos 2 caracteres');
-      fErrors.nome = 'Pelo menos 2 caracteres';
     }
 
     if (!formData.email.trim()) {
       errors.push('E-mail e obrigatorio');
       fErrors.email = 'Informe um e-mail valido';
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email.trim())) {
-        errors.push('E-mail deve ter um formato valido');
-        fErrors.email = 'Formato de e-mail invalido';
-      }
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      errors.push('E-mail invalido');
+      fErrors.email = 'Formato de e-mail invalido';
     }
 
-    if (formData.telefone.trim()) {
-      const phoneRegex = /^[\d\s()-+]{10,}$/;
-      if (!phoneRegex.test(formData.telefone.trim())) {
-        errors.push('Telefone deve ter um formato valido');
-        fErrors.telefone = 'Telefone invalido';
-      }
+    if (formData.telefone.trim() && !/^[\d\s()-+]{10,}$/.test(formData.telefone.trim())) {
+      errors.push('Telefone invalido');
+      fErrors.telefone = 'Telefone invalido';
     }
 
-    if (formData.estado.trim() && formData.estado.trim().length !== 2) {
-      errors.push('Estado deve conter 2 letras (UF)');
-      fErrors.estado = 'Use 2 letras, ex: SP';
+    if (!formData.cidade.trim()) {
+      errors.push('Cidade e obrigatoria');
+      fErrors.cidade = 'Informe sua cidade';
+    }
+
+    if (!formData.estado.trim() || formData.estado.trim().length !== 2) {
+      errors.push('UF e obrigatoria (2 letras)');
+      fErrors.estado = 'Informe a UF (2 letras)';
     }
 
     setFieldErrors(fErrors);
@@ -89,11 +126,16 @@ const CrafterModal = ({ isOpen, onClose }) => {
     setLoading(true);
     setError(null);
 
-    try {
-      // Envia para o backend interno
-      await apiRequest('/api/inscricoes', { method: 'POST', body: JSON.stringify(formData) });
+    const redeSocialUrl = getRedeSocialUrl();
+    const payload = {
+      ...formData,
+      rede_social: redeSocialUrl,
+    };
 
-      // Notifica admin por email
+    try {
+      await apiRequest('/api/inscricoes', { method: 'POST', body: JSON.stringify(payload) });
+
+      // Notifica admin
       apiRequest('/api/inscricoes/notify', {
         method: 'POST',
         body: JSON.stringify({
@@ -102,42 +144,32 @@ const CrafterModal = ({ isOpen, onClose }) => {
           nome: formData.nome,
           email: formData.email,
           telefone: formData.telefone || '',
-          rede_social: formData.rede_social || '',
+          rede_social: redeSocialUrl,
           area_interesse: formData.area_interesse || '',
-          cidade: formData.cidade || '',
-          estado: formData.estado || '',
+          cidade: formData.cidade,
+          estado: formData.estado,
           mensagem: formData.mensagem || '',
         }),
       }).catch(() => {});
 
-      // Envia email de boas-vindas para o candidato
+      // Email de boas-vindas ao candidato
       apiRequest('/api/inscricoes/welcome', {
         method: 'POST',
-        body: JSON.stringify({
-          to: formData.email,
-          nome: formData.nome,
-        }),
+        body: JSON.stringify({ to: formData.email, nome: formData.nome }),
       }).catch(() => {});
 
-      // Captura lead externo
-      captureCrafterLead(formData).catch(() => {});
-
+      captureCrafterLead(payload).catch(() => {});
       trackFunnelStep('crafter_funnel', 'crafter_form_submitted', {
-        area_interesse: formData.area_interesse,
-        cidade: formData.cidade,
+        area_interesse: formData.area_interesse, cidade: formData.cidade,
       });
 
       setSuccess(true);
       setFormData({
-        nome: '', email: '', telefone: '', rede_social: '',
-        cidade: '', estado: '', area_interesse: '', mensagem: '',
+        nome: '', email: '', telefone: '', rede_social_tipo: '', rede_social_user: '',
+        cep: '', cidade: '', estado: '', area_interesse: '', mensagem: '',
       });
 
-      setTimeout(() => {
-        setSuccess(false);
-        onClose();
-      }, 4000);
-
+      setTimeout(() => { setSuccess(false); onClose(); }, 4000);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -146,41 +178,23 @@ const CrafterModal = ({ isOpen, onClose }) => {
   };
 
   const handleClose = () => {
-    if (!loading) {
-      setSuccess(false);
-      setError(null);
-      onClose();
-    }
+    if (!loading) { setSuccess(false); setError(null); onClose(); }
   };
 
   useEffect(() => {
-    if (isOpen) {
-      trackFunnelStep('crafter_funnel', 'crafter_modal_opened', {});
-    }
+    if (isOpen) trackFunnelStep('crafter_funnel', 'crafter_modal_opened', {});
   }, [isOpen]);
 
   if (!isOpen) return null;
 
+  const selectedRede = REDES_SOCIAIS.find(r => r.value === formData.rede_social_tipo);
+
   return (
-    <div
-      className={styles.modalOverlay}
-      onClick={handleClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="crafter-modal-title"
-    >
+    <div className={styles.modalOverlay} onClick={handleClose} role="dialog" aria-modal="true" aria-labelledby="crafter-modal-title">
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 id="crafter-modal-title">Quero ser um Crafter</h2>
-          <button
-            className={styles.closeBtn}
-            onClick={handleClose}
-            disabled={loading}
-            aria-label="Fechar modal"
-            type="button"
-          >
-            &times;
-          </button>
+          <button className={styles.closeBtn} onClick={handleClose} disabled={loading} aria-label="Fechar modal" type="button">&times;</button>
         </div>
 
         {success ? (
@@ -191,115 +205,104 @@ const CrafterModal = ({ isOpen, onClose }) => {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className={styles.crafterForm}>
-            {/* Aviso de seleção mensal */}
             <div className={styles.selectionNotice}>
               <span className={styles.noticeIcon}>📅</span>
               <p>A selecao de novos Crafters acontece <strong>mensalmente</strong>. Preencha seus dados e aguarde nosso contato!</p>
             </div>
 
+            {/* Nome */}
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
                 <label htmlFor="nome">Nome completo *</label>
-                <input
-                  type="text"
-                  id="nome"
-                  name="nome"
-                  value={formData.nome}
-                  onChange={handleInputChange}
-                  placeholder="Seu nome completo"
-                  required
-                />
-                {fieldErrors.nome && (
-                  <div className={styles.fieldError}>{fieldErrors.nome}</div>
-                )}
+                <input type="text" id="nome" name="nome" value={formData.nome} onChange={handleInputChange} placeholder="Seu nome completo" required />
+                {fieldErrors.nome && <div className={styles.fieldError}>{fieldErrors.nome}</div>}
               </div>
             </div>
 
+            {/* Email + Telefone */}
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
                 <label htmlFor="email">E-mail *</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="seu@email.com"
-                  required
-                />
-                {fieldErrors.email && (
-                  <div className={styles.fieldError}>{fieldErrors.email}</div>
-                )}
+                <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="seu@email.com" required />
+                {fieldErrors.email && <div className={styles.fieldError}>{fieldErrors.email}</div>}
               </div>
               <div className={styles.formGroup}>
                 <label htmlFor="telefone">Telefone</label>
-                <input
-                  type="tel"
-                  id="telefone"
-                  name="telefone"
-                  value={formData.telefone}
-                  onChange={handleInputChange}
-                  placeholder="(11) 99999-9999"
-                />
-                {fieldErrors.telefone && (
-                  <div className={styles.fieldError}>{fieldErrors.telefone}</div>
-                )}
+                <input type="tel" id="telefone" name="telefone" value={formData.telefone} onChange={handleInputChange} placeholder="(11) 99999-9999" />
+                {fieldErrors.telefone && <div className={styles.fieldError}>{fieldErrors.telefone}</div>}
               </div>
             </div>
 
+            {/* Rede Social: select + usuario */}
             <div className={styles.formRow}>
+              <div className={styles.formGroup} style={{ flex: '0 0 160px' }}>
+                <label htmlFor="rede_social_tipo">Rede Social</label>
+                <select id="rede_social_tipo" name="rede_social_tipo" value={formData.rede_social_tipo} onChange={handleInputChange}>
+                  <option value="">Selecione...</option>
+                  {REDES_SOCIAIS.map(r => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+              </div>
               <div className={styles.formGroup}>
-                <label htmlFor="rede_social">Rede Social (LinkedIn, GitHub, Instagram...)</label>
-                <input
-                  type="text"
-                  id="rede_social"
-                  name="rede_social"
-                  value={formData.rede_social}
-                  onChange={handleInputChange}
-                  placeholder="https://linkedin.com/in/seu-perfil"
-                />
+                <label htmlFor="rede_social_user">
+                  {formData.rede_social_tipo === 'outro' ? 'Link completo' : 'Seu usuario'}
+                </label>
+                <div className={styles.socialInputWrapper}>
+                  {selectedRede && selectedRede.prefix && (
+                    <span className={styles.socialPrefix}>{selectedRede.prefix}</span>
+                  )}
+                  <input
+                    type="text"
+                    id="rede_social_user"
+                    name="rede_social_user"
+                    value={formData.rede_social_user}
+                    onChange={handleInputChange}
+                    placeholder={formData.rede_social_tipo === 'outro' ? 'https://...' : 'seu-usuario'}
+                    className={selectedRede?.prefix ? styles.socialInputWithPrefix : ''}
+                  />
+                </div>
               </div>
             </div>
 
+            {/* CEP + Cidade + UF */}
             <div className={styles.formRow}>
-              <div className={styles.formGroup}>
-                <label htmlFor="cidade">Cidade</label>
+              <div className={styles.formGroup} style={{ flex: '0 0 130px' }}>
+                <label htmlFor="cep">CEP</label>
                 <input
                   type="text"
-                  id="cidade"
-                  name="cidade"
-                  value={formData.cidade}
-                  onChange={handleInputChange}
-                  placeholder="Sua cidade"
+                  id="cep"
+                  name="cep"
+                  value={formData.cep}
+                  onChange={(e) => {
+                    let v = e.target.value.replace(/\D/g, '').slice(0, 8);
+                    if (v.length > 5) v = v.slice(0, 5) + '-' + v.slice(5);
+                    setFormData(prev => ({ ...prev, cep: v }));
+                  }}
+                  onBlur={handleCepBlur}
+                  placeholder="00000-000"
+                  maxLength={9}
                 />
+                {cepLoading && <div className={styles.fieldHint}>Buscando...</div>}
+                {fieldErrors.cep && <div className={styles.fieldError}>{fieldErrors.cep}</div>}
+              </div>
+              <div className={styles.formGroup}>
+                <label htmlFor="cidade">Cidade *</label>
+                <input type="text" id="cidade" name="cidade" value={formData.cidade} onChange={handleInputChange} placeholder="Sua cidade" required />
+                {fieldErrors.cidade && <div className={styles.fieldError}>{fieldErrors.cidade}</div>}
               </div>
               <div className={styles.formGroup} style={{ flex: '0 0 80px' }}>
-                <label htmlFor="estado">UF</label>
-                <input
-                  type="text"
-                  id="estado"
-                  name="estado"
-                  value={formData.estado}
-                  onChange={handleInputChange}
-                  placeholder="SP"
-                  maxLength={2}
-                  style={{ textTransform: 'uppercase' }}
-                />
-                {fieldErrors.estado && (
-                  <div className={styles.fieldError}>{fieldErrors.estado}</div>
-                )}
+                <label htmlFor="estado">UF *</label>
+                <input type="text" id="estado" name="estado" value={formData.estado} onChange={handleInputChange} placeholder="SP" maxLength={2} style={{ textTransform: 'uppercase' }} required />
+                {fieldErrors.estado && <div className={styles.fieldError}>{fieldErrors.estado}</div>}
               </div>
             </div>
 
+            {/* Area de interesse */}
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
                 <label htmlFor="area_interesse">Area de Interesse</label>
-                <select
-                  id="area_interesse"
-                  name="area_interesse"
-                  value={formData.area_interesse}
-                  onChange={handleInputChange}
-                >
+                <select id="area_interesse" name="area_interesse" value={formData.area_interesse} onChange={handleInputChange}>
                   <option value="">Selecione uma area...</option>
                   {areasInteresse.map(area => (
                     <option key={area} value={area}>{area}</option>
@@ -308,15 +311,10 @@ const CrafterModal = ({ isOpen, onClose }) => {
               </div>
             </div>
 
+            {/* Mensagem */}
             <div className={styles.formGroup}>
               <label htmlFor="mensagem">Mensagem (Opcional)</label>
-              <textarea
-                id="mensagem"
-                name="mensagem"
-                value={formData.mensagem}
-                onChange={handleInputChange}
-                placeholder="Conte um pouco sobre voce ou seus objetivos..."
-              />
+              <textarea id="mensagem" name="mensagem" value={formData.mensagem} onChange={handleInputChange} placeholder="Conte um pouco sobre voce ou seus objetivos..." />
             </div>
 
             {error && <div className={styles.errorMessage} role="alert">{error}</div>}
