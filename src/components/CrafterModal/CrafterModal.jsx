@@ -61,7 +61,7 @@ const CrafterModal = ({ isOpen, onClose }) => {
         }));
         setFieldErrors(prev => ({ ...prev, cep: undefined, cidade: undefined, estado: undefined }));
       } else {
-        setFieldErrors(prev => ({ ...prev, cep: 'CEP nao encontrado' }));
+        setFieldErrors(prev => ({ ...prev, cep: 'CEP não encontrado' }));
       }
     } catch {
       // silently fail — user pode preencher manualmente
@@ -83,30 +83,30 @@ const CrafterModal = ({ isOpen, onClose }) => {
     const fErrors = {};
 
     if (!formData.nome.trim() || formData.nome.trim().length < 2) {
-      errors.push('Nome e obrigatorio (min. 2 caracteres)');
+      errors.push('Nome é obrigatório (min. 2 caracteres)');
       fErrors.nome = 'Informe seu nome completo';
     }
 
     if (!formData.email.trim()) {
-      errors.push('E-mail e obrigatorio');
-      fErrors.email = 'Informe um e-mail valido';
+      errors.push('E-mail é obrigatório');
+      fErrors.email = 'Informe um e-mail válido';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      errors.push('E-mail invalido');
-      fErrors.email = 'Formato de e-mail invalido';
+      errors.push('E-mail inválido');
+      fErrors.email = 'Formato de e-mail inválido';
     }
 
     if (formData.telefone.trim() && !/^[\d\s()-+]{10,}$/.test(formData.telefone.trim())) {
-      errors.push('Telefone invalido');
-      fErrors.telefone = 'Telefone invalido';
+      errors.push('Telefone inválido');
+      fErrors.telefone = 'Telefone inválido';
     }
 
     if (!formData.cidade.trim()) {
-      errors.push('Cidade e obrigatoria');
+      errors.push('Cidade é obrigatória');
       fErrors.cidade = 'Informe sua cidade';
     }
 
     if (!formData.estado.trim() || formData.estado.trim().length !== 2) {
-      errors.push('UF e obrigatoria (2 letras)');
+      errors.push('UF é obrigatória (2 letras)');
       fErrors.estado = 'Informe a UF (2 letras)';
     }
 
@@ -140,7 +140,7 @@ const CrafterModal = ({ isOpen, onClose }) => {
         method: 'POST',
         body: JSON.stringify({
           to: 'codecraftgenz@gmail.com',
-          subject: `Nova inscricao de Crafter: ${formData.nome}`,
+          subject: `Nova inscrição de Crafter: ${formData.nome}`,
           nome: formData.nome,
           email: formData.email,
           telefone: formData.telefone || '',
@@ -204,14 +204,14 @@ const CrafterModal = ({ isOpen, onClose }) => {
         {success ? (
           <div className={styles.successContent} role="status" aria-live="polite">
             <div className={styles.successIcon} aria-hidden="true">🎉</div>
-            <h3>Inscricao recebida com sucesso!</h3>
-            <p>Enviamos um e-mail de confirmacao para voce. Nossa selecao acontece <strong>mensalmente</strong> — fique atento ao seu e-mail!</p>
+            <h3>Inscrição recebida com sucesso!</h3>
+            <p>Enviamos um e-mail de confirmação para você. Nossa seleção acontece <strong>mensalmente</strong> — fique atento ao seu e-mail!</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className={styles.crafterForm}>
             <div className={styles.selectionNotice}>
               <span className={styles.noticeIcon}>📅</span>
-              <p>A selecao de novos Crafters acontece <strong>mensalmente</strong>. Preencha seus dados e aguarde nosso contato!</p>
+              <p>A seleção de novos Crafters acontece <strong>mensalmente</strong>. Preencha seus dados e aguarde nosso contato!</p>
             </div>
 
             {/* Nome */}
@@ -232,7 +232,21 @@ const CrafterModal = ({ isOpen, onClose }) => {
               </div>
               <div className={styles.formGroup}>
                 <label htmlFor="telefone">Telefone</label>
-                <input type="tel" id="telefone" name="telefone" value={formData.telefone} onChange={handleInputChange} placeholder="(11) 99999-9999" />
+                <input
+                  type="tel"
+                  id="telefone"
+                  name="telefone"
+                  value={formData.telefone}
+                  onChange={(e) => {
+                    let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+                    if (v.length > 6) v = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+                    else if (v.length > 2) v = `(${v.slice(0,2)}) ${v.slice(2)}`;
+                    else if (v.length > 0) v = `(${v}`;
+                    setFormData(prev => ({ ...prev, telefone: v }));
+                  }}
+                  placeholder="(11) 99999-9999"
+                  maxLength={15}
+                />
                 {fieldErrors.telefone && <div className={styles.fieldError}>{fieldErrors.telefone}</div>}
               </div>
             </div>
@@ -295,9 +309,9 @@ const CrafterModal = ({ isOpen, onClose }) => {
                 <input type="text" id="cidade" name="cidade" value={formData.cidade} onChange={handleInputChange} placeholder="Sua cidade" required />
                 {fieldErrors.cidade && <div className={styles.fieldError}>{fieldErrors.cidade}</div>}
               </div>
-              <div className={styles.formGroup} style={{ flex: '0 0 80px' }}>
+              <div className={styles.formGroup} style={{ flex: '0 0 60px' }}>
                 <label htmlFor="estado">UF *</label>
-                <input type="text" id="estado" name="estado" value={formData.estado} onChange={handleInputChange} placeholder="SP" maxLength={2} style={{ textTransform: 'uppercase' }} required />
+                <input type="text" id="estado" name="estado" value={formData.estado} onChange={handleInputChange} placeholder="SP" maxLength={2} style={{ textTransform: 'uppercase', textAlign: 'center', padding: '0.6rem 0.4rem' }} required />
                 {fieldErrors.estado && <div className={styles.fieldError}>{fieldErrors.estado}</div>}
               </div>
             </div>
@@ -305,9 +319,9 @@ const CrafterModal = ({ isOpen, onClose }) => {
             {/* Area de interesse */}
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
-                <label htmlFor="area_interesse">Area de Interesse</label>
+                <label htmlFor="area_interesse">Área de Interesse</label>
                 <select id="area_interesse" name="area_interesse" value={formData.area_interesse} onChange={handleInputChange}>
-                  <option value="">Selecione uma area...</option>
+                  <option value="">Selecione uma área...</option>
                   {areasInteresse.map(area => (
                     <option key={area} value={area}>{area}</option>
                   ))}
@@ -318,13 +332,13 @@ const CrafterModal = ({ isOpen, onClose }) => {
             {/* Mensagem */}
             <div className={styles.formGroup}>
               <label htmlFor="mensagem">Mensagem (Opcional)</label>
-              <textarea id="mensagem" name="mensagem" value={formData.mensagem} onChange={handleInputChange} placeholder="Conte um pouco sobre voce ou seus objetivos..." />
+              <textarea id="mensagem" name="mensagem" value={formData.mensagem} onChange={handleInputChange} placeholder="Conte um pouco sobre você ou seus objetivos..." />
             </div>
 
             {error && <div className={styles.errorMessage} role="alert">{error}</div>}
 
             <button type="submit" className={styles.submitBtn} disabled={loading}>
-              {loading ? 'Enviando...' : 'Enviar Inscricao'}
+              {loading ? 'Enviando...' : 'Enviar Inscrição'}
             </button>
           </form>
         )}
