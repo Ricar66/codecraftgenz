@@ -12,10 +12,11 @@ const CrafterModal = ({ isOpen, onClose }) => {
     nome: '',
     email: '',
     telefone: '',
+    rede_social: '',
     cidade: '',
     estado: '',
     area_interesse: '',
-    mensagem: ''
+    mensagem: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -28,52 +29,45 @@ const CrafterModal = ({ isOpen, onClose }) => {
     'Dados',
     'Design',
     'DevOps',
-    'Outros'
+    'Outros',
   ];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const validateForm = () => {
     const errors = [];
     const fErrors = {};
 
-    // Validação do nome
     if (!formData.nome.trim()) {
-      errors.push('Nome é obrigatório');
+      errors.push('Nome e obrigatorio');
       fErrors.nome = 'Informe seu nome completo';
     } else if (formData.nome.trim().length < 2) {
       errors.push('Nome deve ter pelo menos 2 caracteres');
       fErrors.nome = 'Pelo menos 2 caracteres';
     }
 
-    // Validação do email
     if (!formData.email.trim()) {
-      errors.push('E-mail é obrigatório');
-      fErrors.email = 'Informe um e-mail válido';
+      errors.push('E-mail e obrigatorio');
+      fErrors.email = 'Informe um e-mail valido';
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email.trim())) {
-        errors.push('E-mail deve ter um formato válido');
-        fErrors.email = 'Formato de e-mail inválido';
+        errors.push('E-mail deve ter um formato valido');
+        fErrors.email = 'Formato de e-mail invalido';
       }
     }
 
-    // Validação do telefone (opcional, mas se preenchido deve ser válido)
     if (formData.telefone.trim()) {
       const phoneRegex = /^[\d\s()-+]{10,}$/;
       if (!phoneRegex.test(formData.telefone.trim())) {
-        errors.push('Telefone deve ter um formato válido');
-        fErrors.telefone = 'Telefone inválido';
+        errors.push('Telefone deve ter um formato valido');
+        fErrors.telefone = 'Telefone invalido';
       }
     }
 
-    // Estado (UF) se preenchido deve ter 2 letras
     if (formData.estado.trim() && formData.estado.trim().length !== 2) {
       errors.push('Estado deve conter 2 letras (UF)');
       fErrors.estado = 'Use 2 letras, ex: SP';
@@ -85,8 +79,7 @@ const CrafterModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validação robusta
+
     const validationErrors = validateForm();
     if (validationErrors.length > 0) {
       setError(validationErrors.join(', '));
@@ -100,15 +93,16 @@ const CrafterModal = ({ isOpen, onClose }) => {
       // Envia para o backend interno
       await apiRequest('/api/inscricoes', { method: 'POST', body: JSON.stringify(formData) });
 
-      // Notifica admin por email (não bloqueia se falhar)
+      // Notifica admin por email
       apiRequest('/api/inscricoes/notify', {
         method: 'POST',
         body: JSON.stringify({
           to: 'codecraftgenz@gmail.com',
-          subject: `Nova inscrição de Crafter: ${formData.nome}`,
+          subject: `Nova inscricao de Crafter: ${formData.nome}`,
           nome: formData.nome,
           email: formData.email,
           telefone: formData.telefone || '',
+          rede_social: formData.rede_social || '',
           area_interesse: formData.area_interesse || '',
           cidade: formData.cidade || '',
           estado: formData.estado || '',
@@ -116,27 +110,33 @@ const CrafterModal = ({ isOpen, onClose }) => {
         }),
       }).catch(() => {});
 
-      // Captura lead para sistema externo (não bloqueia se falhar)
+      // Envia email de boas-vindas para o candidato
+      apiRequest('/api/inscricoes/welcome', {
+        method: 'POST',
+        body: JSON.stringify({
+          to: formData.email,
+          nome: formData.nome,
+        }),
+      }).catch(() => {});
+
+      // Captura lead externo
       captureCrafterLead(formData).catch(() => {});
 
-      trackFunnelStep('crafter_funnel', 'crafter_form_submitted', { area_interesse: formData.area_interesse, cidade: formData.cidade });
+      trackFunnelStep('crafter_funnel', 'crafter_form_submitted', {
+        area_interesse: formData.area_interesse,
+        cidade: formData.cidade,
+      });
 
       setSuccess(true);
       setFormData({
-        nome: '',
-        email: '',
-        telefone: '',
-        cidade: '',
-        estado: '',
-        area_interesse: '',
-        mensagem: ''
+        nome: '', email: '', telefone: '', rede_social: '',
+        cidade: '', estado: '', area_interesse: '', mensagem: '',
       });
 
-      // Fechar modal após 3 segundos
       setTimeout(() => {
         setSuccess(false);
         onClose();
-      }, 3000);
+      }, 4000);
 
     } catch (err) {
       setError(err.message);
@@ -179,18 +179,24 @@ const CrafterModal = ({ isOpen, onClose }) => {
             aria-label="Fechar modal"
             type="button"
           >
-            ×
+            &times;
           </button>
         </div>
 
         {success ? (
           <div className={styles.successContent} role="status" aria-live="polite">
             <div className={styles.successIcon} aria-hidden="true">🎉</div>
-            <h3>Inscrição recebida com sucesso!</h3>
-            <p>Entraremos em contato em breve. Obrigado pelo seu interesse!</p>
+            <h3>Inscricao recebida com sucesso!</h3>
+            <p>Enviamos um e-mail de confirmacao para voce. Nossa selecao acontece <strong>mensalmente</strong> — fique atento ao seu e-mail!</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className={styles.crafterForm}>
+            {/* Aviso de seleção mensal */}
+            <div className={styles.selectionNotice}>
+              <span className={styles.noticeIcon}>📅</span>
+              <p>A selecao de novos Crafters acontece <strong>mensalmente</strong>. Preencha seus dados e aguarde nosso contato!</p>
+            </div>
+
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
                 <label htmlFor="nome">Nome completo *</label>
@@ -243,6 +249,20 @@ const CrafterModal = ({ isOpen, onClose }) => {
 
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
+                <label htmlFor="rede_social">Rede Social (LinkedIn, GitHub, Instagram...)</label>
+                <input
+                  type="text"
+                  id="rede_social"
+                  name="rede_social"
+                  value={formData.rede_social}
+                  onChange={handleInputChange}
+                  placeholder="https://linkedin.com/in/seu-perfil"
+                />
+              </div>
+            </div>
+
+            <div className={styles.formRow}>
+              <div className={styles.formGroup}>
                 <label htmlFor="cidade">Cidade</label>
                 <input
                   type="text"
@@ -273,14 +293,14 @@ const CrafterModal = ({ isOpen, onClose }) => {
 
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
-                <label htmlFor="area_interesse">Área de Interesse</label>
+                <label htmlFor="area_interesse">Area de Interesse</label>
                 <select
                   id="area_interesse"
                   name="area_interesse"
                   value={formData.area_interesse}
                   onChange={handleInputChange}
                 >
-                  <option value="">Selecione uma área...</option>
+                  <option value="">Selecione uma area...</option>
                   {areasInteresse.map(area => (
                     <option key={area} value={area}>{area}</option>
                   ))}
@@ -295,14 +315,14 @@ const CrafterModal = ({ isOpen, onClose }) => {
                 name="mensagem"
                 value={formData.mensagem}
                 onChange={handleInputChange}
-                placeholder="Conte um pouco sobre você ou seus objetivos..."
+                placeholder="Conte um pouco sobre voce ou seus objetivos..."
               />
             </div>
 
             {error && <div className={styles.errorMessage} role="alert">{error}</div>}
 
             <button type="submit" className={styles.submitBtn} disabled={loading}>
-              {loading ? 'Enviando...' : 'Enviar Inscrição'}
+              {loading ? 'Enviando...' : 'Enviar Inscricao'}
             </button>
           </form>
         )}
