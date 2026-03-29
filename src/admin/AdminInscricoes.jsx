@@ -547,47 +547,47 @@ const AdminInscricoes = () => {
                     <strong>Email:</strong>
                     <a href={`mailto:${inscricao.email}`}>{inscricao.email}</a>
                   </div>
-                  
-                  {inscricao.telefone && (
-                    <div className={"infoRow"}>
-                      <strong>Telefone:</strong>
-                      <span>{inscricao.telefone}</span>
-                    </div>
-                  )}
 
-                  {inscricao.rede_social && (
-                    <div className={"infoRow"}>
-                      <strong>Rede Social:</strong>
+                  <div className={"infoRow"}>
+                    <strong>Telefone:</strong>
+                    <span>{inscricao.telefone || <em style={{ color: '#555' }}>Nao informado</em>}</span>
+                  </div>
+
+                  <div className={"infoRow"}>
+                    <strong>Rede Social:</strong>
+                    {inscricao.rede_social ? (
                       <a href={inscricao.rede_social.startsWith('http') ? inscricao.rede_social : `https://${inscricao.rede_social}`} target="_blank" rel="noopener noreferrer">
                         {inscricao.rede_social}
                       </a>
-                    </div>
-                  )}
-                  
-                  {(inscricao.cidade || inscricao.estado || inscricao.cep) && (
-                    <div className={"infoRow"}>
-                      <strong>Localização:</strong>
-                      <span>
-                        {[inscricao.cidade, inscricao.estado].filter(Boolean).join(', ')}
-                        {inscricao.cep && ` — CEP: ${inscricao.cep}`}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {inscricao.area_interesse && (
-                    <div className={"infoRow"}>
-                      <strong>Área de Interesse:</strong>
-                      <span className={"areaTag"}>{inscricao.area_interesse}</span>
-                    </div>
-                  )}
-                  
-                  {inscricao.mensagem && (
-                    <div className={"infoRow messageRow"}>
-                      <strong>Mensagem:</strong>
-                      <p className={"messageText"}>{inscricao.mensagem}</p>
-                    </div>
-                  )}
-                  
+                    ) : (
+                      <span><em style={{ color: '#555' }}>Nao informado</em></span>
+                    )}
+                  </div>
+
+                  <div className={"infoRow"}>
+                    <strong>Localização:</strong>
+                    <span>
+                      {inscricao.cidade || inscricao.estado
+                        ? [inscricao.cidade, inscricao.estado].filter(Boolean).join(', ')
+                        : <em style={{ color: '#555' }}>Nao informado</em>}
+                      {inscricao.cep && ` — CEP: ${inscricao.cep}`}
+                    </span>
+                  </div>
+
+                  <div className={"infoRow"}>
+                    <strong>Área de Interesse:</strong>
+                    {inscricao.area_interesse
+                      ? <span className={"areaTag"}>{inscricao.area_interesse}</span>
+                      : <span><em style={{ color: '#555' }}>Nao informado</em></span>}
+                  </div>
+
+                  <div className={"infoRow messageRow"}>
+                    <strong>Mensagem:</strong>
+                    <p className={"messageText"}>
+                      {inscricao.mensagem || <em style={{ color: '#555' }}>Sem mensagem</em>}
+                    </p>
+                  </div>
+
                   <div className={"infoRow"}>
                     <strong>Data da Inscrição:</strong>
                     <span>{formatDate(inscricao.data_inscricao || inscricao.created_at || inscricao.createdAt || inscricao.dataInscricao)}</span>
