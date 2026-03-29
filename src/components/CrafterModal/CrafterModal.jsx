@@ -95,9 +95,12 @@ const CrafterModal = ({ isOpen, onClose }) => {
       fErrors.email = 'Formato de e-mail inválido';
     }
 
-    if (formData.telefone.trim() && !/^[\d\s()-+]{10,}$/.test(formData.telefone.trim())) {
-      errors.push('Telefone inválido');
-      fErrors.telefone = 'Telefone inválido';
+    if (formData.telefone.trim()) {
+      const digits = formData.telefone.replace(/\D/g, '');
+      if (digits.length < 10 || digits.length > 11) {
+        errors.push('Telefone inválido');
+        fErrors.telefone = 'Informe DDD + número (10 ou 11 dígitos)';
+      }
     }
 
     if (!formData.cidade.trim()) {
