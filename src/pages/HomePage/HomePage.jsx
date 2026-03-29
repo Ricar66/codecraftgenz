@@ -14,6 +14,7 @@ import hero3dImg from '../../assets/hero-3d.jpg';
 import logoCodecraft from '../../assets/logo-principal.png';
 import CompanySection from '../../components/CompanySection/CompanySection';
 import CrafterModal from '../../components/CrafterModal/CrafterModal';
+import PartnerModal from '../../components/PartnerModal/PartnerModal';
 import FeaturesSection from '../../components/FeaturesSection/FeaturesSection';
 import FeedbackShowcase from '../../components/Feedbacks/FeedbackShowcase';
 import Hero from '../../components/Hero/Hero';
@@ -90,6 +91,7 @@ const showcaseData = [
 
 const HomePage = () => {
   const [isCrafterModalOpen, setIsCrafterModalOpen] = useState(false);
+  const [isPartnerModalOpen, setIsPartnerModalOpen] = useState(false);
   const { canonical, ogUrl, ogImageUrl, twitterHandle } = useMemo(() => {
     const BASE_URL = 'https://codecraftgenz.com.br';
     const url = typeof window !== 'undefined' ? window.location.href : BASE_URL;
@@ -118,7 +120,7 @@ const HomePage = () => {
       <Navbar />
       <main>
         <div className={styles.sectionBlock}>
-          <Hero onCrafterClick={() => setIsCrafterModalOpen(true)} />
+          <Hero onCrafterClick={() => setIsCrafterModalOpen(true)} onPartnerClick={() => setIsPartnerModalOpen(true)} />
         </div>
 
         {showcaseData.map((item, i) => (
@@ -201,6 +203,10 @@ const HomePage = () => {
         <CrafterModal
           isOpen={isCrafterModalOpen}
           onClose={() => setIsCrafterModalOpen(false)}
+        />
+        <PartnerModal
+          isOpen={isPartnerModalOpen}
+          onClose={() => setIsPartnerModalOpen(false)}
         />
       </main>
     </div>

@@ -1,7 +1,7 @@
 // src/components/Hero/Hero.jsx
 import { useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Rocket } from 'lucide-react';
+import { Rocket, Handshake } from 'lucide-react';
 
 import { useAnalytics } from '../../hooks/useAnalytics';
 import { trackFunnelStep } from '../../services/analyticsAPI.js';
@@ -35,7 +35,7 @@ const hashtagVariant = {
 
 const hashtags = ['Comunidade Dev', 'Inovacao Tech', 'Oportunidades Tech'];
 
-const Hero = ({ onCrafterClick }) => {
+const Hero = ({ onCrafterClick, onPartnerClick }) => {
   const { trackButtonClick } = useAnalytics();
 
   const handleCtaClick = useCallback(() => {
@@ -45,6 +45,14 @@ const Hero = ({ onCrafterClick }) => {
     trackFunnelStep('crafter_funnel', 'crafter_cta_clicked', { location: 'hero_section' });
     if (onCrafterClick) onCrafterClick();
   }, [trackButtonClick, onCrafterClick]);
+
+  const handlePartnerClick = useCallback(() => {
+    trackButtonClick('cta_seja_parceiro', 'hero_section', {
+      cta_text: 'Seja um Parceiro',
+    });
+    trackFunnelStep('partnership_funnel', 'partner_cta_clicked', { location: 'hero_section' });
+    if (onPartnerClick) onPartnerClick();
+  }, [trackButtonClick, onPartnerClick]);
 
   return (
     <section
@@ -107,6 +115,20 @@ const Hero = ({ onCrafterClick }) => {
               aria-label="Cadastrar-se na plataforma CodeCraft"
             >
               <Rocket size={18} /> Quero ser um Crafter
+            </Button>
+          </motion.div>
+          <motion.div
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+          >
+            <Button
+              onClick={handlePartnerClick}
+              variant="outline"
+              className={styles.partnerButton}
+              aria-label="Propor parceria com a CodeCraft"
+            >
+              <Handshake size={18} /> Seja um Parceiro
             </Button>
           </motion.div>
         </motion.div>

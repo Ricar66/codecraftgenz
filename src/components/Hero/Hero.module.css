@@ -118,9 +118,11 @@
 
 .actionArea {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   margin-top: 12px;
 }
 
@@ -150,6 +152,32 @@
 }
 
 .ctaButton:active {
+  transform: scale(0.98);
+}
+
+/* Partner CTA — outline ciano */
+.partnerButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  padding: 16px 32px;
+  border-radius: 12px;
+  background: transparent;
+  color: #00E4F2;
+  border: 2px solid rgba(0, 228, 242, 0.4);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.partnerButton:hover {
+  background: rgba(0, 228, 242, 0.1);
+  border-color: #00E4F2;
+  box-shadow: 0 8px 28px rgba(0, 228, 242, 0.2);
+}
+
+.partnerButton:active {
   transform: scale(0.98);
 }
 
