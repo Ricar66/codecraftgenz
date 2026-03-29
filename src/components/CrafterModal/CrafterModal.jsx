@@ -152,10 +152,14 @@ const CrafterModal = ({ isOpen, onClose }) => {
         }),
       }).catch(() => {});
 
-      // Email de boas-vindas ao candidato
+      // Email de boas-vindas ao candidato (enviado via team@codecraftgenz.com.br)
       apiRequest('/api/inscricoes/welcome', {
         method: 'POST',
-        body: JSON.stringify({ to: formData.email, nome: formData.nome }),
+        body: JSON.stringify({
+          to: formData.email,
+          from: 'team@codecraftgenz.com.br',
+          nome: formData.nome,
+        }),
       }).catch(() => {});
 
       captureCrafterLead(payload).catch(() => {});
