@@ -2,10 +2,10 @@
 // Refatorado para usar Design System CodeCraft
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  FaBullseye, FaPlus, FaEdit, FaEye, FaEyeSlash, FaLock, FaUnlock,
-  FaSearch, FaSave, FaTimes, FaDownload, FaChevronLeft, FaChevronRight,
-  FaInfoCircle, FaCheck
-} from 'react-icons/fa';
+  Target, Plus, Pencil, Eye, EyeOff, Lock, Unlock,
+  Search, Save, X, Download, ChevronLeft, ChevronRight,
+  Info, Check
+} from 'lucide-react';
 
 import { useDesafios, DesafiosRepo } from '../hooks/useAdminRepo';
 import { apiRequest } from '../lib/apiConfig';
@@ -192,21 +192,21 @@ export default function AdminDesafios() {
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerTitle}>
-          <FaBullseye className={styles.headerIcon} />
+          <Target className={styles.headerIcon} />
           <div>
             <h1>Gestão de Desafios</h1>
             <p>{(list || []).length} desafios cadastrados</p>
           </div>
         </div>
         <button onClick={exportCSV} className={styles.exportBtn}>
-          <FaDownload /> Exportar CSV
+          <Download /> Exportar CSV
         </button>
       </header>
 
       {/* Toast */}
       {toast && (
         <div className={styles.toast}>
-          <FaCheck /> {toast}
+          <Check /> {toast}
         </div>
       )}
 
@@ -214,7 +214,7 @@ export default function AdminDesafios() {
       <AdminCard variant="elevated" className={styles.filtersCard}>
         <div className={styles.filters}>
           <div className={styles.searchBox}>
-            <FaSearch className={styles.searchIcon} />
+            <Search className={styles.searchIcon} />
             <input
               type="text"
               placeholder="Buscar (nome/objetivo/status)..."
@@ -225,11 +225,11 @@ export default function AdminDesafios() {
           </div>
           <div className={styles.pagination}>
             <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className={styles.pageBtn}>
-              <FaChevronLeft />
+              <ChevronLeft />
             </button>
             <span>Página {page} de {totalPages}</span>
             <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} className={styles.pageBtn}>
-              <FaChevronRight />
+              <ChevronRight />
             </button>
           </div>
         </div>
@@ -240,7 +240,7 @@ export default function AdminDesafios() {
         {pageItems.length === 0 ? (
           <AdminCard variant="outlined" className={styles.emptyCard}>
             <div className={styles.emptyState}>
-              <FaBullseye className={styles.emptyIcon} />
+              <Target className={styles.emptyIcon} />
               <p>Nenhum desafio encontrado</p>
             </div>
           </AdminCard>
@@ -254,7 +254,7 @@ export default function AdminDesafios() {
             <p className={styles.objective}>{d.objective || 'Sem objetivo definido'}</p>
 
             <div className={styles.cardMeta}>
-              <span><FaBullseye /> {d.base_points ?? 0} pts</span>
+              <span><Target /> {d.base_points ?? 0} pts</span>
               <span>{d.deadline ? new Date(d.deadline).toLocaleDateString('pt-BR') : 'Sem prazo'}</span>
               <StatusBadge variant={d.visible ? 'info' : 'neutral'} size="sm">
                 {d.visible ? 'Visível' : 'Oculto'}
@@ -263,16 +263,16 @@ export default function AdminDesafios() {
 
             <div className={styles.cardActions}>
               <button onClick={() => onEdit(d)} className={styles.editBtn} title="Editar">
-                <FaEdit />
+                <Pencil />
               </button>
               <button onClick={() => toggleVisible(d)} disabled={busy} className={styles.visibilityBtn} title={d.visible ? 'Ocultar' : 'Exibir'}>
-                {d.visible ? <FaEyeSlash /> : <FaEye />}
+                {d.visible ? <EyeOff /> : <Eye />}
               </button>
               <button onClick={() => toggleStatus(d)} disabled={busy} className={styles.statusBtn} title={d.status === 'closed' ? 'Reabrir' : 'Encerrar'}>
-                {d.status === 'closed' ? <FaUnlock /> : <FaLock />}
+                {d.status === 'closed' ? <Unlock /> : <Lock />}
               </button>
               <button onClick={() => openDetails(d)} className={styles.detailsBtn} title="Detalhes">
-                <FaInfoCircle />
+                <Info />
               </button>
             </div>
 
@@ -344,7 +344,7 @@ export default function AdminDesafios() {
       {/* Form */}
       <AdminCard variant="elevated" className={styles.formCard} id="desafio-form">
         <h2 className={styles.formTitle}>
-          {editingId ? <><FaEdit /> Editar Desafio</> : <><FaPlus /> Novo Desafio</>}
+          {editingId ? <><Pencil /> Editar Desafio</> : <><Plus /> Novo Desafio</>}
         </h2>
 
         <div className={styles.formGrid}>
@@ -433,11 +433,11 @@ export default function AdminDesafios() {
 
         <div className={styles.formActions}>
           <button onClick={onSave} disabled={busy || !form.name} className={styles.saveBtn}>
-            <FaSave /> {editingId ? 'Atualizar' : 'Criar'} Desafio
+            <Save /> {editingId ? 'Atualizar' : 'Criar'} Desafio
           </button>
           {editingId && (
             <button onClick={cancelEdit} className={styles.cancelBtn}>
-              <FaTimes /> Cancelar
+              <X /> Cancelar
             </button>
           )}
         </div>

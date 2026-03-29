@@ -1,6 +1,7 @@
 // src/pages/HubDownloadPage.jsx
 import React, { useEffect, useState } from 'react';
-import { FaWindows, FaApple, FaLinux, FaDownload, FaShieldAlt, FaRocket, FaLayerGroup } from 'react-icons/fa';
+import { Download, Shield, Rocket, Layers } from 'lucide-react';
+import { WindowsIcon, AppleIcon, LinuxIcon } from '../components/UI/BrandIcons/index.jsx';
 import Navbar from '../components/Navbar/Navbar.jsx';
 import SecuritySection from '../components/SecuritySection/SecuritySection.jsx';
 import { getAppById } from '../services/appsAPI.js';
@@ -18,22 +19,22 @@ const resolveUrl = (url) => {
 
 const features = [
   {
-    icon: FaLayerGroup,
+    icon: Layers,
     title: 'Todos os seus apps',
     description: 'Veja todos os aplicativos CodeCraft em um só lugar. Apps comprados ficam liberados, os demais ficam disponíveis para compra.'
   },
   {
-    icon: FaDownload,
+    icon: Download,
     title: 'Download direto',
     description: 'Baixe e instale seus apps com um clique. Acompanhe o progresso do download em tempo real.'
   },
   {
-    icon: FaRocket,
+    icon: Rocket,
     title: 'Abra com um clique',
     description: 'Acesse seus apps instalados instantaneamente. O Hub detecta atualizações automaticamente.'
   },
   {
-    icon: FaShieldAlt,
+    icon: Shield,
     title: 'Licença automática',
     description: 'Suas licenças são gerenciadas automaticamente. Faça login e todos os seus apps ficam disponíveis.'
   },
@@ -90,7 +91,7 @@ const HubDownloadPage = () => {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <FaDownload />
+              <Download />
               <span>Download Gratuito para Windows</span>
             </a>
 
@@ -101,13 +102,13 @@ const HubDownloadPage = () => {
             {/* Platform badges */}
             <div className={styles.platforms}>
               <span className={`${styles.platformBadge} ${styles.active}`}>
-                <FaWindows /> Windows
+                <WindowsIcon /> Windows
               </span>
               <span className={styles.platformBadge}>
-                <FaApple /> macOS <small>(em breve)</small>
+                <AppleIcon /> macOS <small>(em breve)</small>
               </span>
               <span className={styles.platformBadge}>
-                <FaLinux /> Linux <small>(em breve)</small>
+                <LinuxIcon /> Linux <small>(em breve)</small>
               </span>
             </div>
           </div>

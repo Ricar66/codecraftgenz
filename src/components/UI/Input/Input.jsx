@@ -2,7 +2,7 @@
 // Componente de Input reutilizavel com todas as variantes
 
 import { forwardRef, useState } from 'react';
-import { FiEye, FiEyeOff, FiAlertCircle, FiCheck } from 'react-icons/fi';
+import { Eye, EyeOff, AlertCircle, Check } from 'lucide-react';
 
 import styles from './Input.module.css';
 
@@ -116,15 +116,15 @@ const Input = forwardRef(({
           tabIndex={-1}
           aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
         >
-          {showPassword ? <FiEyeOff /> : <FiEye />}
+          {showPassword ? <EyeOff /> : <Eye />}
         </button>
       );
     }
     if (hasError) {
-      return <FiAlertCircle className={styles.iconError} />;
+      return <AlertCircle className={styles.iconError} />;
     }
     if (hasSuccess) {
-      return <FiCheck className={styles.iconSuccess} />;
+      return <Check className={styles.iconSuccess} />;
     }
     if (rightIcon) {
       return rightIcon;

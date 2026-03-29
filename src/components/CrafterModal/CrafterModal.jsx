@@ -1,7 +1,8 @@
 // src/components/CrafterModal/CrafterModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { apiRequest } from '../../lib/apiConfig.js';
+import { trackFunnelStep } from '../../services/analyticsAPI.js';
 import { captureCrafterLead } from '../../services/leadsAPI.js';
 
 import styles from './CrafterModal.module.css';
@@ -102,6 +103,8 @@ const CrafterModal = ({ isOpen, onClose }) => {
       // Captura lead para sistema externo (não bloqueia se falhar)
       captureCrafterLead(formData).catch(() => {});
 
+      trackFunnelStep('crafter_funnel', 'crafter_form_submitted', { area_interesse: formData.area_interesse, cidade: formData.cidade });
+
       setSuccess(true);
       setFormData({
         nome: '',
@@ -133,6 +136,12 @@ const CrafterModal = ({ isOpen, onClose }) => {
       onClose();
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      trackFunnelStep('crafter_funnel', 'crafter_modal_opened', {});
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

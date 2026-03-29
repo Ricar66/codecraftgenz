@@ -3,9 +3,9 @@
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
-  FaFileInvoiceDollar, FaEye, FaPaperPlane, FaSearch,
-  FaSync, FaTimes, FaCheck, FaCode, FaFilter
-} from 'react-icons/fa';
+  FileText, Eye, Send, Search,
+  RefreshCw, X, Check, Code, Filter
+} from 'lucide-react';
 
 import AdminCard from './components/AdminCard';
 import AdminTable from './components/AdminTable';
@@ -243,7 +243,7 @@ const AdminNFSe = () => {
             onClick={(e) => { e.stopPropagation(); handleViewDetails(row); }}
             title="Ver detalhes"
           >
-            <FaEye />
+            <Eye />
           </button>
           {row.status === 'pending' && (
             <button
@@ -252,7 +252,7 @@ const AdminNFSe = () => {
               disabled={actionLoading === row.id}
               title="Enviar para prefeitura"
             >
-              <FaPaperPlane />
+              <Send />
             </button>
           )}
           {row.status === 'submitted' && (
@@ -262,7 +262,7 @@ const AdminNFSe = () => {
               disabled={actionLoading === row.id}
               title="Consultar status"
             >
-              <FaSync />
+              <RefreshCw />
             </button>
           )}
           {row.status === 'error' && (
@@ -272,7 +272,7 @@ const AdminNFSe = () => {
               disabled={actionLoading === row.id}
               title="Reenviar"
             >
-              <FaPaperPlane />
+              <Send />
             </button>
           )}
         </div>
@@ -285,7 +285,7 @@ const AdminNFSe = () => {
       {/* Toast */}
       {toast && (
         <div className={`${styles.toast} ${styles[toast.type] || ''}`}>
-          {toast.type === 'error' ? <FaTimes /> : <FaCheck />}
+          {toast.type === 'error' ? <X /> : <Check />}
           <span>{toast.message}</span>
         </div>
       )}
@@ -293,14 +293,14 @@ const AdminNFSe = () => {
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerTitle}>
-          <div className={styles.headerIcon}><FaFileInvoiceDollar /></div>
+          <div className={styles.headerIcon}><FileText /></div>
           <div>
             <h1>Notas Fiscais (NFS-e)</h1>
             <p>Gestao de notas fiscais de servico eletronica</p>
           </div>
         </div>
         <button className={styles.btnRefresh} onClick={fetchInvoices} disabled={loading}>
-          <FaSync className={loading ? styles.spinning : ''} /> Atualizar
+          <RefreshCw className={loading ? styles.spinning : ''} /> Atualizar
         </button>
       </div>
 
@@ -336,7 +336,7 @@ const AdminNFSe = () => {
       <AdminCard variant="outlined" className={styles.filtersCard}>
         <div className={styles.filters}>
           <div className={styles.searchBox}>
-            <FaSearch className={styles.searchIcon} />
+            <Search className={styles.searchIcon} />
             <input
               type="text"
               placeholder="Buscar por venda, documento, email..."
@@ -346,7 +346,7 @@ const AdminNFSe = () => {
             />
           </div>
           <div className={styles.filterGroup}>
-            <FaFilter className={styles.filterIcon} />
+            <Filter className={styles.filterIcon} />
             <select
               value={statusFilter}
               onChange={e => { setStatusFilter(e.target.value); setPagination(p => ({ ...p, page: 1 })); }}
@@ -364,7 +364,7 @@ const AdminNFSe = () => {
       {/* Error */}
       {error && (
         <div className={styles.errorBox}>
-          <FaTimes /> {error}
+          <X /> {error}
           <button onClick={fetchInvoices} className={styles.retryBtn}>Tentar novamente</button>
         </div>
       )}
@@ -410,7 +410,7 @@ const AdminNFSe = () => {
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2>Detalhes da NFS-e</h2>
-              <button onClick={handleCloseModal} className={styles.closeBtn}><FaTimes /></button>
+              <button onClick={handleCloseModal} className={styles.closeBtn}><X /></button>
             </div>
 
             <div className={styles.modalBody}>
@@ -520,7 +520,7 @@ const AdminNFSe = () => {
                 </div>
                 {selectedInvoice.mensagem_erro && (
                   <div className={styles.errorMsg}>
-                    <FaTimes /> {selectedInvoice.mensagem_erro}
+                    <X /> {selectedInvoice.mensagem_erro}
                   </div>
                 )}
               </div>
@@ -532,7 +532,7 @@ const AdminNFSe = () => {
                 className={styles.btnXml}
                 onClick={() => handleVerXml(selectedInvoice.id)}
               >
-                <FaCode /> Ver XML
+                <Code /> Ver XML
               </button>
 
               {(selectedInvoice.status === 'pending' || selectedInvoice.status === 'error') && (
@@ -541,7 +541,7 @@ const AdminNFSe = () => {
                   onClick={() => handleEnviar(selectedInvoice.id)}
                   disabled={actionLoading === selectedInvoice.id}
                 >
-                  <FaPaperPlane /> {actionLoading === selectedInvoice.id ? 'Enviando...' : 'Enviar para Prefeitura'}
+                  <Send /> {actionLoading === selectedInvoice.id ? 'Enviando...' : 'Enviar para Prefeitura'}
                 </button>
               )}
 
@@ -551,7 +551,7 @@ const AdminNFSe = () => {
                   onClick={() => handleConsultar(selectedInvoice.id)}
                   disabled={actionLoading === selectedInvoice.id}
                 >
-                  <FaSync /> {actionLoading === selectedInvoice.id ? 'Consultando...' : 'Consultar Status'}
+                  <RefreshCw /> {actionLoading === selectedInvoice.id ? 'Consultando...' : 'Consultar Status'}
                 </button>
               )}
 
@@ -561,7 +561,7 @@ const AdminNFSe = () => {
                   onClick={() => handleCancelar(selectedInvoice.id)}
                   disabled={actionLoading === selectedInvoice.id}
                 >
-                  <FaTimes /> {actionLoading === selectedInvoice.id ? 'Cancelando...' : 'Cancelar NFS-e'}
+                  <X /> {actionLoading === selectedInvoice.id ? 'Cancelando...' : 'Cancelar NFS-e'}
                 </button>
               )}
             </div>
@@ -575,7 +575,7 @@ const AdminNFSe = () => {
           <div className={`${styles.modal} ${styles.xmlModal}`} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2>XML da NFS-e</h2>
-              <button onClick={() => setIsXmlModalOpen(false)} className={styles.closeBtn}><FaTimes /></button>
+              <button onClick={() => setIsXmlModalOpen(false)} className={styles.closeBtn}><X /></button>
             </div>
             <div className={styles.modalBody}>
               {xmlData.xmlEnvio && (

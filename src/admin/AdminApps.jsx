@@ -2,11 +2,11 @@
 // Refatorado para usar Design System CodeCraft
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  FaCube, FaPlus, FaEdit, FaEye, FaEyeSlash, FaTrash,
-  FaSave, FaTimes, FaSync, FaShoppingCart, FaUpload, FaDownload,
-  FaWindows, FaApple, FaLinux,
-  FaChevronLeft, FaChevronRight
-} from 'react-icons/fa';
+  Box, Plus, Pencil, Eye, EyeOff, Trash2,
+  Save, X, RefreshCw, ShoppingCart, Upload, Download,
+  ChevronLeft, ChevronRight
+} from 'lucide-react';
+import { WindowsIcon, AppleIcon, LinuxIcon } from '../components/UI/BrandIcons/index.jsx';
 
 import { useAuth } from '../context/useAuth';
 import { getAllApps, updateApp, createApp, deleteApp, uploadAppExecutable } from '../services/appsAPI';
@@ -255,22 +255,22 @@ export default function AdminApps() {
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerTitle}>
-          <FaCube className={styles.headerIcon} />
+          <Box className={styles.headerIcon} />
           <div>
             <h1>Gestão de Aplicativos</h1>
             <p>{apps.length} apps cadastrados</p>
           </div>
         </div>
         <button onClick={refresh} className={styles.refreshBtn}>
-          <FaSync /> Atualizar
+          <RefreshCw /> Atualizar
         </button>
       </header>
 
       {/* Toast */}
-      {toast && <div className={styles.toast}><FaSave /> {toast}</div>}
+      {toast && <div className={styles.toast}><Save /> {toast}</div>}
 
       {/* Error */}
-      {error && <div className={styles.error}><FaTimes /> {error}</div>}
+      {error && <div className={styles.error}><X /> {error}</div>}
 
       {/* Apps Grid */}
       {(() => {
@@ -282,7 +282,7 @@ export default function AdminApps() {
               {apps.length === 0 ? (
                 <AdminCard variant="outlined" className={styles.emptyCard}>
                   <div className={styles.emptyState}>
-                    <FaCube className={styles.emptyIcon} />
+                    <Box className={styles.emptyIcon} />
                     <p>Nenhum aplicativo cadastrado</p>
                   </div>
                 </AdminCard>
@@ -308,25 +308,25 @@ export default function AdminApps() {
                     </div>
                     {a.platforms && a.platforms.length > 0 && (
                       <div className={styles.platformBadges}>
-                        {a.platforms.includes('windows') && <span className={styles.platformBadge}><FaWindows /> Win</span>}
-                        {a.platforms.includes('macos') && <span className={styles.platformBadge}><FaApple /> Mac</span>}
-                        {a.platforms.includes('linux') && <span className={styles.platformBadge}><FaLinux /> Linux</span>}
+                        {a.platforms.includes('windows') && <span className={styles.platformBadge}><WindowsIcon /> Win</span>}
+                        {a.platforms.includes('macos') && <span className={styles.platformBadge}><AppleIcon /> Mac</span>}
+                        {a.platforms.includes('linux') && <span className={styles.platformBadge}><LinuxIcon /> Linux</span>}
                       </div>
                     )}
                   </div>
 
                   <div className={styles.cardActions}>
                     <button onClick={() => onEdit(a)} className={styles.editBtn} title="Editar">
-                      <FaEdit />
+                      <Pencil />
                     </button>
                     <button onClick={() => onToggleStatus(a)} className={styles.visibilityBtn} title={(a.status === 'published' || a.status === 'available') ? 'Ocultar' : 'Publicar'}>
-                      {(a.status === 'published' || a.status === 'available') ? <FaEyeSlash /> : <FaEye />}
+                      {(a.status === 'published' || a.status === 'available') ? <EyeOff /> : <Eye />}
                     </button>
                     <button onClick={() => window.open(`/apps/${a.id}/compra`, '_blank')} className={styles.buyBtn} title="Ver compra">
-                      <FaShoppingCart />
+                      <ShoppingCart />
                     </button>
                     <button onClick={() => onDelete(a)} className={styles.deleteBtn} title="Excluir">
-                      <FaTrash />
+                      <Trash2 />
                     </button>
                   </div>
                 </AdminCard>
@@ -341,7 +341,7 @@ export default function AdminApps() {
                   disabled={currentPage === 1}
                   className={styles.pageBtn}
                 >
-                  <FaChevronLeft />
+                  <ChevronLeft />
                 </button>
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                   <button
@@ -357,7 +357,7 @@ export default function AdminApps() {
                   disabled={currentPage === totalPages}
                   className={styles.pageBtn}
                 >
-                  <FaChevronRight />
+                  <ChevronRight />
                 </button>
                 <span className={styles.pageInfo}>
                   {(currentPage - 1) * appsPerPage + 1}-{Math.min(currentPage * appsPerPage, apps.length)} de {apps.length}
@@ -371,7 +371,7 @@ export default function AdminApps() {
       {/* Form */}
       <AdminCard variant="elevated" className={styles.formCard} id="app-form">
         <h2 className={styles.formTitle}>
-          {form.id ? <><FaEdit /> Editar App</> : <><FaPlus /> Criar Novo App</>}
+          {form.id ? <><Pencil /> Editar App</> : <><Plus /> Criar Novo App</>}
         </h2>
 
         <div className={styles.formGrid}>
@@ -401,11 +401,11 @@ export default function AdminApps() {
               <input type="url" placeholder="https://... (ou envie abaixo)" value={form.thumbnail} onChange={e => setForm({ ...form, thumbnail: e.target.value })} className={styles.input} />
               <div className={styles.uploadRow} style={{ marginTop: 8 }}>
                 <label className={styles.fileUpload}>
-                  <FaUpload /> {thumbFile ? thumbFile.name : 'Enviar imagem'}
+                  <Upload /> {thumbFile ? thumbFile.name : 'Enviar imagem'}
                   <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" onChange={e => { setThumbFile(e.target.files?.[0] || null); setThumbUploadError(''); }} />
                 </label>
                 <button onClick={handleThumbnailUpload} disabled={thumbUploadBusy || !thumbFile} className={styles.uploadBtn}>
-                  {thumbUploadBusy ? 'Enviando...' : <><FaUpload /> Enviar</>}
+                  {thumbUploadBusy ? 'Enviando...' : <><Upload /> Enviar</>}
                 </button>
               </div>
               {thumbUploadError && <span className={styles.uploadError}>{thumbUploadError}</span>}
@@ -422,7 +422,7 @@ export default function AdminApps() {
                 <label>Enviar Executável (.exe)</label>
                 <div className={styles.uploadRow}>
                   <label className={styles.fileUpload}>
-                    <FaUpload /> {exeFile ? exeFile.name : 'Selecionar arquivo'}
+                    <Upload /> {exeFile ? exeFile.name : 'Selecionar arquivo'}
                     <input
                       type="file"
                       accept=".exe"
@@ -438,7 +438,7 @@ export default function AdminApps() {
                     />
                   </label>
                   <button onClick={handleFileUpload} disabled={uploadBusy || !exeFile} className={styles.uploadBtn}>
-                    {uploadBusy ? 'Enviando...' : <><FaDownload /> Enviar</>}
+                    {uploadBusy ? 'Enviando...' : <><Download /> Enviar</>}
                   </button>
                 </div>
                 {uploadError && <span className={styles.uploadError}>{uploadError}</span>}
@@ -465,15 +465,15 @@ export default function AdminApps() {
               <div className={styles.platformChecks}>
                 <label className={styles.platformCheck}>
                   <input type="checkbox" checked={form.platforms?.includes('windows')} onChange={() => togglePlatform('windows')} />
-                  <FaWindows /> Windows
+                  <WindowsIcon /> Windows
                 </label>
                 <label className={styles.platformCheck}>
                   <input type="checkbox" checked={form.platforms?.includes('macos')} onChange={() => togglePlatform('macos')} />
-                  <FaApple /> macOS
+                  <AppleIcon /> macOS
                 </label>
                 <label className={styles.platformCheck}>
                   <input type="checkbox" checked={form.platforms?.includes('linux')} onChange={() => togglePlatform('linux')} />
-                  <FaLinux /> Linux
+                  <LinuxIcon /> Linux
                 </label>
               </div>
             </div>
@@ -482,13 +482,13 @@ export default function AdminApps() {
 
         <div className={styles.formActions}>
           <button onClick={onSave} disabled={!form.id || !form.name} className={styles.saveBtn}>
-            <FaSave /> Salvar
+            <Save /> Salvar
           </button>
           <button onClick={onCreate} disabled={!!form.id || !form.name} className={styles.createBtn}>
-            <FaPlus /> Criar
+            <Plus /> Criar
           </button>
           <button onClick={cancelEdit} className={styles.cancelBtn}>
-            <FaTimes /> Limpar
+            <X /> Limpar
           </button>
         </div>
       </AdminCard>

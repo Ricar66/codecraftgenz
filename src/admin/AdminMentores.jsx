@@ -2,10 +2,10 @@
 // Refatorado para usar Design System CodeCraft
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  FaUserTie, FaPlus, FaEdit, FaTrash, FaEye, FaEyeSlash,
-  FaHistory, FaSearch, FaCheck, FaTimes, FaSave, FaUndo,
-  FaPhone, FaEnvelope, FaChevronLeft, FaChevronRight, FaUpload
-} from 'react-icons/fa';
+  UserCheck, Plus, Pencil, Trash2, Eye, EyeOff,
+  History, Search, Check, X, Save, RotateCcw,
+  Phone, Mail, ChevronLeft, ChevronRight, Upload
+} from 'lucide-react';
 
 import { useMentors, MentorsRepo } from '../hooks/useAdminRepo';
 import { sanitizeImageUrl } from '../utils/urlSanitize.js';
@@ -223,7 +223,7 @@ export default function AdminMentores() {
                   onClick={() => revertHistory(h.id)}
                   className={styles.historyBtn}
                 >
-                  <FaUndo /> Reverter
+                  <RotateCcw /> Reverter
                 </button>
               </li>
             ))}
@@ -265,7 +265,7 @@ export default function AdminMentores() {
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerTitle}>
-          <FaUserTie className={styles.headerIcon} />
+          <UserCheck className={styles.headerIcon} />
           <div>
             <h1>Gestão de Mentores</h1>
             <p>{(list || []).length} mentores cadastrados</p>
@@ -276,7 +276,7 @@ export default function AdminMentores() {
       {/* Toast */}
       {toastMsg && (
         <div className={`${styles.toast} ${toastMsg.includes('Erro') ? styles.error : styles.success}`}>
-          {toastMsg.includes('Erro') ? <FaTimes /> : <FaCheck />}
+          {toastMsg.includes('Erro') ? <X /> : <Check />}
           {toastMsg}
         </div>
       )}
@@ -285,7 +285,7 @@ export default function AdminMentores() {
       <AdminCard variant="elevated" className={styles.filtersCard}>
         <div className={styles.filters}>
           <div className={styles.searchBox}>
-            <FaSearch className={styles.searchIcon} />
+            <Search className={styles.searchIcon} />
             <input
               type="text"
               placeholder="Buscar por nome..."
@@ -326,16 +326,16 @@ export default function AdminMentores() {
             <div className={styles.bulkButtons}>
               <span className={styles.selectedCount}>{selected.size} selecionado(s)</span>
               <button onClick={() => applyBulkStatus('published')} className={styles.bulkBtn}>
-                <FaCheck /> Publicar
+                <Check /> Publicar
               </button>
               <button onClick={() => applyBulkStatus('draft')} className={styles.bulkBtnOutline}>
                 Rascunho
               </button>
               <button onClick={() => applyBulkVisibility(true)} className={styles.bulkBtn}>
-                <FaEye /> Exibir
+                <Eye /> Exibir
               </button>
               <button onClick={() => applyBulkVisibility(false)} className={styles.bulkBtnOutline}>
-                <FaEyeSlash /> Ocultar
+                <EyeOff /> Ocultar
               </button>
             </div>
           )}
@@ -345,13 +345,13 @@ export default function AdminMentores() {
       {/* Grid Navigation */}
       <div className={styles.gridNav}>
         <button onClick={() => scrollGrid(-1)} className={styles.navBtn}>
-          <FaChevronLeft />
+          <ChevronLeft />
         </button>
         <span className={styles.pageInfo}>
           Página {page} de {totalPages} ({filtered.length} mentores)
         </span>
         <button onClick={() => scrollGrid(1)} className={styles.navBtn}>
-          <FaChevronRight />
+          <ChevronRight />
         </button>
       </div>
 
@@ -360,7 +360,7 @@ export default function AdminMentores() {
         {pageItems.length === 0 ? (
           <AdminCard variant="outlined" className={styles.emptyCard}>
             <div className={styles.emptyState}>
-              <FaUserTie className={styles.emptyIcon} />
+              <UserCheck className={styles.emptyIcon} />
               <p>Nenhum mentor encontrado</p>
             </div>
           </AdminCard>
@@ -398,8 +398,8 @@ export default function AdminMentores() {
                 <p className={styles.mentorSpecialty}>{mentor.specialty}</p>
 
                 <div className={styles.contactInfo}>
-                  <span><FaPhone /> {mentor.phone || '(00) 00000-0000'}</span>
-                  <span><FaEnvelope /> {mentor.email || 'email@exemplo.com'}</span>
+                  <span><Phone /> {mentor.phone || '(00) 00000-0000'}</span>
+                  <span><Mail /> {mentor.email || 'email@exemplo.com'}</span>
                 </div>
 
                 <div className={styles.metaInfo}>
@@ -414,16 +414,16 @@ export default function AdminMentores() {
 
               <div className={styles.cardFooter}>
                 <button onClick={() => onEdit(mentor)} className={styles.editBtn} title="Editar">
-                  <FaEdit /> Editar
+                  <Pencil /> Editar
                 </button>
                 <button onClick={() => toggleVisible(mentor)} className={styles.visibilityBtn} title={mentor.visible ? 'Ocultar' : 'Exibir'}>
-                  {mentor.visible ? <FaEyeSlash /> : <FaEye />}
+                  {mentor.visible ? <EyeOff /> : <Eye />}
                 </button>
                 <button onClick={() => setHistoryOpen(historyOpen === mentor.id ? null : mentor.id)} className={styles.historyBtn} title="Histórico">
-                  <FaHistory />
+                  <History />
                 </button>
                 <button onClick={() => onDelete(mentor.id)} className={styles.deleteBtn} title="Remover">
-                  <FaTrash />
+                  <Trash2 />
                 </button>
               </div>
 
@@ -444,7 +444,7 @@ export default function AdminMentores() {
           disabled={page === 1}
           className={styles.pageBtn}
         >
-          <FaChevronLeft /> Anterior
+          <ChevronLeft /> Anterior
         </button>
         <div className={styles.pageNumbers}>
           {Array.from({ length: totalPages }, (_, i) => i + 1).map(num => (
@@ -462,14 +462,14 @@ export default function AdminMentores() {
           disabled={page === totalPages}
           className={styles.pageBtn}
         >
-          Próximo <FaChevronRight />
+          Próximo <ChevronRight />
         </button>
       </div>
 
       {/* Form Section */}
       <AdminCard variant="elevated" className={styles.formCard} id="mentor-form">
         <h2 className={styles.formTitle}>
-          {editingId ? <><FaEdit /> Editar Mentor</> : <><FaPlus /> Novo Mentor</>}
+          {editingId ? <><Pencil /> Editar Mentor</> : <><Plus /> Novo Mentor</>}
         </h2>
 
         <div className={styles.formContainer}>
@@ -553,7 +553,7 @@ export default function AdminMentores() {
               <div className={styles.formGroup}>
                 <label>Ou envie um arquivo</label>
                 <label className={styles.fileUpload}>
-                  <FaUpload /> Escolher imagem
+                  <Upload /> Escolher imagem
                   <input
                     type="file"
                     accept={ACCEPT_TYPES.join(',')}
@@ -611,8 +611,8 @@ export default function AdminMentores() {
                 <p>{form.bio || 'Descrição curta...'}</p>
               </div>
               <div className={styles.previewContact}>
-                <span><FaPhone /> {form.phone || '(00) 00000-0000'}</span>
-                <span><FaEnvelope /> {form.email || 'email@exemplo.com'}</span>
+                <span><Phone /> {form.phone || '(00) 00000-0000'}</span>
+                <span><Mail /> {form.email || 'email@exemplo.com'}</span>
               </div>
             </div>
           </div>
@@ -624,11 +624,11 @@ export default function AdminMentores() {
             disabled={busy || Object.keys(errors).length > 0}
             className={styles.saveBtn}
           >
-            {busy ? 'Salvando...' : <><FaSave /> {editingId ? 'Atualizar' : 'Salvar'}</>}
+            {busy ? 'Salvando...' : <><Save /> {editingId ? 'Atualizar' : 'Salvar'}</>}
           </button>
           {editingId && (
             <button onClick={cancelEdit} className={styles.cancelBtn}>
-              <FaTimes /> Cancelar
+              <X /> Cancelar
             </button>
           )}
         </div>
@@ -636,7 +636,7 @@ export default function AdminMentores() {
         {Object.keys(errors).length > 0 && (
           <div className={styles.errorsList}>
             {Object.values(errors).map((msg, i) => (
-              <span key={i} className={styles.errorItem}><FaTimes /> {msg}</span>
+              <span key={i} className={styles.errorItem}><X /> {msg}</span>
             ))}
           </div>
         )}

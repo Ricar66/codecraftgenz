@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { FaArrowRight, FaCheckCircle, FaEnvelope, FaHome, FaSpinner, FaWindows } from 'react-icons/fa';
+import { ArrowRight, CheckCircle, Mail, Home, Loader } from 'lucide-react';
+import { WindowsIcon } from '../components/UI/BrandIcons/index.jsx';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import Navbar from '../components/Navbar/Navbar';
 import { useToast } from '../components/UI/Toast';
 import { useAnalytics } from '../hooks/useAnalytics.js';
+import { trackFunnelStep, trackPageView } from '../services/analyticsAPI.js';
 import { API_BASE_URL } from '../lib/apiConfig.js';
 import { getAppById, getPurchaseStatus, registerDownload, resendPurchaseEmail } from '../services/appsAPI.js';
 
@@ -45,6 +47,10 @@ const OrderSuccessPage = () => {
   const [emailMessage, setEmailMessage] = useState('');
   const { trackEvent } = useAnalytics();
   const toast = useToast();
+
+  useEffect(() => {
+    trackPageView('OrderSuccessPage');
+  }, []);
 
   useEffect(() => {
     const init = async () => {
@@ -117,6 +123,7 @@ const OrderSuccessPage = () => {
   }, [id, searchParams, trackEvent]);
 
   const handleDownload = async () => {
+    trackFunnelStep('purchase_funnel', 'app_downloaded', { app_id: id, app_name: app?.name });
     // Se já temos URL de download, abre direto
     if (downloadUrl) {
       window.open(downloadUrl, '_blank', 'noopener');
@@ -193,7 +200,7 @@ const OrderSuccessPage = () => {
     return (
       <div className={`${styles.container} page-with-background`}>
         <div className={styles.loading}>
-          <FaSpinner className="icon-spin" /> Verificando pedido...
+          <Loader className="icon-spin" /> Verificando pedido...
         </div>
       </div>
     );
@@ -221,7 +228,7 @@ const OrderSuccessPage = () => {
       <div className={`${styles.container} page-with-background`}>
         <div className={styles.card}>
           <div className={styles.iconWrapper} style={{ color: '#ffbb33', borderColor: '#ffbb33' }}>
-            <FaSpinner className="icon-spin" />
+            <Loader className="icon-spin" />
           </div>
           <h1 className={styles.title}>Pagamento em Processamento</h1>
           <p className={styles.message}>Estamos aguardando a confirmação do seu pagamento. Assim que aprovado, o download será liberado automaticamente.</p>
@@ -239,7 +246,7 @@ const OrderSuccessPage = () => {
       <div className={`${styles.container} page-with-background`}>
         <div className={styles.card}>
           <div className={styles.iconWrapper}>
-            <FaCheckCircle />
+            <CheckCircle />
           </div>
           
           <h1 className={styles.title}>
@@ -262,13 +269,13 @@ const OrderSuccessPage = () => {
               className={styles.downloadButton}
               disabled={!status === 'approved'}
             >
-              <FaWindows size={24} /> Baixar Executável
+              <WindowsIcon size={24} /> Baixar Executável
             </button>
           </div>
 
           <div className={styles.instructions}>
             <h3 className={styles.instructionsTitle}>
-              <FaArrowRight size={14} color="var(--cor-primaria)" /> Como instalar:
+              <ArrowRight size={14} color="var(--cor-primaria)" /> Como instalar:
             </h3>
             <ol className={styles.steps}>
               <li>Clique no botão acima para baixar o instalador.</li>
@@ -280,7 +287,7 @@ const OrderSuccessPage = () => {
 
           <div className={styles.emailSection}>
             <h4 className={styles.emailTitle}>
-              <FaEnvelope style={{ marginRight: 8, verticalAlign: 'middle' }} />
+              <Mail style={{ marginRight: 8, verticalAlign: 'middle' }} />
               Reenviar link por e-mail
             </h4>
             <form onSubmit={handleResendEmail} className={styles.emailForm}>
@@ -305,7 +312,7 @@ const OrderSuccessPage = () => {
           </div>
 
           <Link to="/" className={styles.homeLink}>
-            <FaHome /> Voltar para a página inicial
+            <Home /> Voltar para a página inicial
           </Link>
         </div>
       </div>

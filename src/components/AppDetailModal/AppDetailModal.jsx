@@ -1,10 +1,12 @@
 // src/components/AppDetailModal/AppDetailModal.jsx
 // Modal de detalhes do app - exibe descricao completa estilo marketing
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaWindows, FaApple, FaLinux, FaShoppingCart } from 'react-icons/fa';
+import { ShoppingCart } from 'lucide-react';
+import { WindowsIcon, AppleIcon, LinuxIcon } from '../UI/BrandIcons/index.jsx';
 
 import Modal from '../UI/Modal/Modal.jsx';
+import { trackFunnelStep } from '../../services/analyticsAPI.js';
 import { getAppImageUrl, getAppPrice } from '../../utils/appModel.js';
 import { sanitizeImageUrl } from '../../utils/urlSanitize.js';
 
@@ -38,12 +40,18 @@ const parseScreenshots = (s) => {
 };
 
 const platformIcons = {
-  windows: { icon: <FaWindows />, label: 'Windows' },
-  macos: { icon: <FaApple />, label: 'macOS' },
-  linux: { icon: <FaLinux />, label: 'Linux' },
+  windows: { icon: <WindowsIcon />, label: 'Windows' },
+  macos: { icon: <AppleIcon />, label: 'macOS' },
+  linux: { icon: <LinuxIcon />, label: 'Linux' },
 };
 
 export default function AppDetailModal({ app, onClose }) {
+  useEffect(() => {
+    if (app) {
+      trackFunnelStep('purchase_funnel', 'app_viewed', { app_id: app.id, app_name: app.name || app.titulo });
+    }
+  }, [app]);
+
   if (!app) return null;
 
   const imageUrl = sanitizeImageUrl(getAppImageUrl(app));
@@ -169,8 +177,8 @@ export default function AppDetailModal({ app, onClose }) {
           <span className={styles.ctaPriceLabel}>A partir de</span>
           <span className={styles.ctaPriceValue}>{displayPrice}</span>
         </div>
-        <Link to={`/apps/${app.id}/compra`} className={styles.ctaButton} onClick={onClose}>
-          <FaShoppingCart /> Comprar Agora
+        <Link to={`/apps/${app.id}/compra`} className={styles.ctaButton} onClick={() => { trackFunnelStep('purchase_funnel', 'app_buy_clicked', { app_id: app.id, app_name: app.name || app.titulo, price: app.price || app.preco }); onClose(); }}>
+          <ShoppingCart /> Comprar Agora
         </Link>
       </div>
     </Modal>

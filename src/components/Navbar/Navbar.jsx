@@ -1,6 +1,6 @@
 // src/components/Navbar/Navbar.jsx
 import React, { useState, useRef, useEffect, memo, useCallback } from 'react';
-import { FaBars, FaTimes, FaUser, FaSignOutAlt, FaShoppingBag, FaChevronDown, FaBuilding } from 'react-icons/fa';
+import { Menu, X, User, LogOut, ShoppingBag, ChevronDown, Building2 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 import logo from '../../assets/logo-principal.png';
@@ -133,7 +133,7 @@ const Navbar = memo(() => {
               className={`${styles.navLink} ${styles.navLinkB2B} ${isActiveLink('/para-empresas') ? styles.navLinkActive : ''}`}
               onClick={closeMobileMenu}
             >
-              <FaBuilding aria-hidden="true" /> Para Empresas
+              <Building2 aria-hidden="true" /> Para Empresas
             </Link>
           </li>
 
@@ -149,10 +149,10 @@ const Navbar = memo(() => {
                   aria-haspopup="true"
                 >
                   <span className={styles.userAvatar}>
-                    <FaUser />
+                    <User />
                   </span>
                   <span className={styles.userName}>Ola, {firstName}</span>
-                  <FaChevronDown className={`${styles.userChevron} ${isUserMenuOpen ? styles.userChevronOpen : ''}`} />
+                  <ChevronDown className={`${styles.userChevron} ${isUserMenuOpen ? styles.userChevronOpen : ''}`} />
                 </button>
 
                 {/* Dropdown Menu */}
@@ -168,7 +168,7 @@ const Navbar = memo(() => {
                       className={styles.userDropdownItem}
                       onClick={() => { setIsUserMenuOpen(false); closeMobileMenu(); }}
                     >
-                      <FaShoppingBag />
+                      <ShoppingBag />
                       Minhas Compras
                     </Link>
                     <Link
@@ -176,7 +176,7 @@ const Navbar = memo(() => {
                       className={styles.userDropdownItem}
                       onClick={() => { setIsUserMenuOpen(false); closeMobileMenu(); }}
                     >
-                      <FaUser />
+                      <User />
                       Meu Perfil
                     </Link>
                     <div className={styles.userDropdownDivider} />
@@ -184,7 +184,7 @@ const Navbar = memo(() => {
                       className={styles.userDropdownItemLogout}
                       onClick={handleLogout}
                     >
-                      <FaSignOutAlt />
+                      <LogOut />
                       Sair
                     </button>
                   </div>
@@ -197,13 +197,13 @@ const Navbar = memo(() => {
                     className={styles.navLink}
                     onClick={closeMobileMenu}
                   >
-                    <FaShoppingBag /> Minhas Compras
+                    <ShoppingBag /> Minhas Compras
                   </Link>
                   <button
                     className={`${styles.navLink} ${styles.logoutMobileBtn}`}
                     onClick={handleLogout}
                   >
-                    <FaSignOutAlt /> Sair
+                    <LogOut /> Sair
                   </button>
                 </div>
               </li>
@@ -230,7 +230,7 @@ const Navbar = memo(() => {
           aria-expanded={isMobileMenuOpen}
           aria-controls="nav-menu"
         >
-          {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
+          {isMobileMenuOpen ? <X /> : <Menu />}
         </button>
 
       </div>

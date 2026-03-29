@@ -1,8 +1,9 @@
 // src/components/AppCard/AppCard.jsx
 import React from 'react';
-import { FaWindows, FaApple, FaLinux } from 'react-icons/fa';
+import { WindowsIcon, AppleIcon, LinuxIcon } from '../UI/BrandIcons/index.jsx';
 import { Link } from 'react-router-dom';
 
+import { trackFunnelStep } from '../../services/analyticsAPI.js';
 import { getAppImageUrl, getAppPrice } from '../../utils/appModel.js';
 import styles from './AppCard.module.css';
 
@@ -65,16 +66,16 @@ const AppCard = ({ app, onDownload, onAbout, mode = 'owned', featured = false })
 
         {platforms.length > 0 && (
           <div className={styles.platforms} aria-label="Plataformas disponíveis">
-            {platforms.includes('windows') && <span className={styles.platformTag}><FaWindows /> Win</span>}
-            {platforms.includes('macos') && <span className={styles.platformTag}><FaApple /> Mac</span>}
-            {platforms.includes('linux') && <span className={styles.platformTag}><FaLinux /> Linux</span>}
+            {platforms.includes('windows') && <span className={styles.platformTag}><WindowsIcon /> Win</span>}
+            {platforms.includes('macos') && <span className={styles.platformTag}><AppleIcon /> Mac</span>}
+            {platforms.includes('linux') && <span className={styles.platformTag}><LinuxIcon /> Linux</span>}
           </div>
         )}
 
         <div className={styles.actions}>
           {mode === 'public' ? (
             <>
-              <Link className={`${styles.btn} ${styles.btnPrimary}`} to={`/apps/${id}/compra`} aria-label={`Comprar ${name}`} data-qa="appcard-buy-btn">
+              <Link className={`${styles.btn} ${styles.btnPrimary}`} to={`/apps/${id}/compra`} aria-label={`Comprar ${name}`} data-qa="appcard-buy-btn" onClick={() => trackFunnelStep('purchase_funnel', 'app_buy_clicked', { app_id: app.id, app_name: app.name || app.titulo, price: app.price || app.preco })}>
                 Comprar Agora
               </Link>
               {onAbout ? (
@@ -92,6 +93,7 @@ const AppCard = ({ app, onDownload, onAbout, mode = 'owned', featured = false })
               <button
                 className={`${styles.btn} ${styles.btnPrimary}`}
                 onClick={() => {
+                  trackFunnelStep('purchase_funnel', 'app_downloaded', { app_id: app.id });
                   try { navigator.vibrate?.(10); } catch (e) {
                     if (import.meta.env?.DEV) console.warn('Vibrate não suportado ou bloqueado:', e);
                   }

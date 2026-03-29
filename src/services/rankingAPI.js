@@ -1,6 +1,7 @@
 // src/services/rankingAPI.js
 // Serviço centralizado para operações com ranking
 import { apiRequest } from '../lib/apiConfig.js';
+import { normalizeTop3Entry } from '../utils/normalizers.js';
 
 /**
  * Busca dados do ranking
@@ -19,11 +20,7 @@ export async function getRanking() {
     const top3Raw = top3Resp?.data || top3Resp || [];
 
     // Formata top3 para o formato esperado pelo frontend
-    const top3 = Array.isArray(top3Raw) ? top3Raw.map((t, idx) => ({
-      crafter_id: t.crafter_id || t.crafterId || t.id,
-      position: t.position || t.posicao || (idx + 1),
-      reward: t.reward || t.recompensa || ''
-    })) : [];
+    const top3 = Array.isArray(top3Raw) ? top3Raw.map(normalizeTop3Entry) : [];
 
     return { crafters: Array.isArray(crafters) ? crafters : [], top3 };
   } catch (error) {

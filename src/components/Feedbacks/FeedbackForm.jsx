@@ -1,8 +1,9 @@
 // src/components/Feedbacks/FeedbackForm.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import useFeedbacks from '../../hooks/useFeedbacks';
+import { trackFunnelStep } from '../../services/analyticsAPI.js';
 import { captureFeedbackLead } from '../../services/leadsAPI';
 
 export default function FeedbackForm() {
@@ -16,6 +17,15 @@ export default function FeedbackForm() {
   const [success, setSuccess] = useState(null);
   const [honeypot, setHoneypot] = useState(''); // anti-spam
   const [validationErrors, setValidationErrors] = useState({});
+
+  const formStartedRef = useRef(false);
+
+  const handleFieldFocus = () => {
+    if (!formStartedRef.current) {
+      formStartedRef.current = true;
+      trackFunnelStep('feedback_funnel', 'feedback_form_started', {});
+    }
+  };
 
   const maxChars = 500;
   const remaining = maxChars - mensagem.length;
@@ -72,6 +82,8 @@ export default function FeedbackForm() {
         });
       }
 
+      trackFunnelStep('feedback_funnel', 'feedback_form_submitted', { has_email: !!email });
+
       setSuccess('Feedback enviado com sucesso! Redirecionando...');
       setNome(''); 
       setEmail(''); 
@@ -96,15 +108,16 @@ export default function FeedbackForm() {
         <label htmlFor="nome" className="form-label">
           Nome *
         </label>
-        <input 
-          id="nome" 
-          name="nome" 
-          type="text" 
-          value={nome} 
-          onChange={(e) => setNome(e.target.value)} 
-          placeholder="Seu nome" 
+        <input
+          id="nome"
+          name="nome"
+          type="text"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          onFocus={handleFieldFocus}
+          placeholder="Seu nome"
           className="form-input"
-          aria-required="true" 
+          aria-required="true"
           required
         />
       </div>
@@ -113,15 +126,16 @@ export default function FeedbackForm() {
         <label htmlFor="email" className="form-label">
           Email
         </label>
-        <input 
-          id="email" 
-          name="email" 
-          type="email" 
-          value={email} 
-          onChange={(e) => setEmail(e.target.value)} 
-          placeholder="seu@email.com" 
+        <input
+          id="email"
+          name="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          onFocus={handleFieldFocus}
+          placeholder="seu@email.com"
           className={`form-input ${validationErrors.email ? 'error' : ''}`}
-          aria-required="false" 
+          aria-required="false"
         />
         {validationErrors.email && (
           <span className="error-message">{validationErrors.email}</span>
@@ -135,12 +149,13 @@ export default function FeedbackForm() {
             {remaining} caracteres restantes
           </span>
         </label>
-        <textarea 
-          id="mensagem" 
-          name="mensagem" 
-          value={mensagem} 
-          onChange={(e) => setMensagem(e.target.value)} 
-          placeholder="Compartilhe sua experiência, sugestão ou feedback..." 
+        <textarea
+          id="mensagem"
+          name="mensagem"
+          value={mensagem}
+          onChange={(e) => setMensagem(e.target.value)}
+          onFocus={handleFieldFocus}
+          placeholder="Compartilhe sua experiência, sugestão ou feedback..."
           className={`form-textarea ${validationErrors.mensagem ? 'error' : ''}`}
           maxLength={maxChars}
           rows="6"

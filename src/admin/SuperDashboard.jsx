@@ -7,11 +7,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend
 } from 'recharts';
-import {
-  FaDollarSign, FaBriefcase, FaUsers, FaShoppingCart,
-  FaArrowUp, FaArrowDown, FaUserPlus, FaProjectDiagram,
-  FaClock, FaSync, FaExclamationTriangle
-} from 'react-icons/fa';
+import { DollarSign, Briefcase, Users, ShoppingCart, ArrowUp, ArrowDown, UserPlus, Network, Clock, RefreshCw, AlertTriangle } from 'lucide-react';
 
 import AdminCard from './components/AdminCard';
 import { getDashboardStats } from '../services/dashboardAPI';
@@ -143,10 +139,10 @@ const SuperDashboard = () => {
   // Ícone para atividades
   const getActivityIcon = (tipo) => {
     switch (tipo) {
-      case 'venda': return <FaShoppingCart className={styles.activityIconVenda} />;
-      case 'usuario': return <FaUserPlus className={styles.activityIconUsuario} />;
-      case 'proposta': return <FaBriefcase className={styles.activityIconProposta} />;
-      default: return <FaClock className={styles.activityIconDefault} />;
+      case 'venda': return <ShoppingCart className={styles.activityIconVenda} />;
+      case 'usuario': return <UserPlus className={styles.activityIconUsuario} />;
+      case 'proposta': return <Briefcase className={styles.activityIconProposta} />;
+      default: return <Clock className={styles.activityIconDefault} />;
     }
   };
 
@@ -164,11 +160,11 @@ const SuperDashboard = () => {
   if (error && !data) {
     return (
       <div className={styles.errorState}>
-        <FaExclamationTriangle size={48} color={COLORS.danger} />
+        <AlertTriangle size={48} color={COLORS.danger} />
         <h2>Erro ao carregar dashboard</h2>
         <p>{error}</p>
         <button onClick={fetchData} className={styles.retryBtn}>
-          <FaSync /> Tentar novamente
+          <RefreshCw /> Tentar novamente
         </button>
       </div>
     );
@@ -189,7 +185,7 @@ const SuperDashboard = () => {
             disabled={loading}
             title="Atualizar dados"
           >
-            <FaSync className={loading ? styles.spinning : ''} />
+            <RefreshCw className={loading ? styles.spinning : ''} />
           </button>
           <select
             value={periodo}
@@ -210,7 +206,7 @@ const SuperDashboard = () => {
         <AdminCard variant="elevated" className={styles.kpiCard}>
           <div className={styles.kpiContent}>
             <div className={styles.kpiIcon} style={{ background: 'rgba(16, 185, 129, 0.15)' }}>
-              <FaDollarSign style={{ color: COLORS.success }} />
+              <DollarSign style={{ color: COLORS.success }} />
             </div>
             <div className={styles.kpiInfo}>
               <span className={styles.kpiLabel}>Faturamento Pago</span>
@@ -230,14 +226,14 @@ const SuperDashboard = () => {
         <AdminCard variant="elevated" className={styles.kpiCard}>
           <div className={styles.kpiContent}>
             <div className={styles.kpiIcon} style={{ background: 'rgba(209, 43, 242, 0.15)' }}>
-              <FaBriefcase style={{ color: COLORS.primary }} />
+              <Briefcase style={{ color: COLORS.primary }} />
             </div>
             <div className={styles.kpiInfo}>
               <span className={styles.kpiLabel}>Propostas B2B</span>
               <span className={styles.kpiValue}>{kpis?.pipelineB2B || 0}</span>
               {kpis?.novasPropostas > 0 && (
                 <span className={styles.kpiTrend}>
-                  <FaArrowUp className={styles.trendUp} />
+                  <ArrowUp className={styles.trendUp} />
                   +{kpis.novasPropostas} novas (7d)
                 </span>
               )}
@@ -249,7 +245,7 @@ const SuperDashboard = () => {
         <AdminCard variant="elevated" className={styles.kpiCard}>
           <div className={styles.kpiContent}>
             <div className={styles.kpiIcon} style={{ background: 'rgba(0, 228, 242, 0.15)' }}>
-              <FaUsers style={{ color: COLORS.secondary }} />
+              <Users style={{ color: COLORS.secondary }} />
             </div>
             <div className={styles.kpiInfo}>
               <span className={styles.kpiLabel}>Usuários / Crafters</span>
@@ -265,7 +261,7 @@ const SuperDashboard = () => {
         <AdminCard variant="elevated" className={styles.kpiCard}>
           <div className={styles.kpiContent}>
             <div className={styles.kpiIcon} style={{ background: 'rgba(122, 62, 245, 0.15)' }}>
-              <FaProjectDiagram style={{ color: COLORS.purple }} />
+              <Network style={{ color: COLORS.purple }} />
             </div>
             <div className={styles.kpiInfo}>
               <span className={styles.kpiLabel}>Projetos</span>

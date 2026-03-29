@@ -1,5 +1,6 @@
 import { apiRequest } from '../lib/apiConfig.js'; // Importa a função central
 import { projectsCache, ProjectDataValidator } from '../utils/dataCache.js';
+import { normalizeProject } from '../utils/normalizers.js';
 
 /**
  * Serviço de API para gerenciamento de projetos
@@ -201,20 +202,7 @@ export const getProjects = async (options = {}) => {
     const projects = Array.isArray(data?.data) ? data.data : (Array.isArray(data?.projects) ? data.projects : []);
     console.log('🔍 Dados originais do banco:', projects);
     
-    let mappedProjects = projects.map(project => ({
-      ...project,
-      title: project.titulo || project.title || project.nome, // Adiciona 'nome'
-      description: project.descricao || project.description,
-      createdAt: project.created_at || project.createdAt,
-      updatedAt: project.updated_at || project.updatedAt,
-      startDate: project.data_inicio || project.startDate,
-      thumbUrl: project.thumb_url || project.thumbUrl,
-      mentorId: project.mentor_id || project.mentorId,
-      mentorName: project.mentor_nome || project.mentorName,
-      mentorEmail: project.mentor_email || project.mentorEmail,
-      price: project.preco || project.price, // Adiciona 'preco'
-      progress: project.progresso || project.progress // Adiciona 'progresso'
-    }));
+    let mappedProjects = projects.map(normalizeProject);
     if (options.publicOnly) {
       mappedProjects = mappedProjects.filter(p => {
         const s = String(p.status || '').toLowerCase();

@@ -1,6 +1,7 @@
 // src/services/userAPI.js
 // Serviço centralizado para operações com usuários administrativos
 import { apiRequest } from '../lib/apiConfig.js'; // Importa a função central
+import { normalizeUser } from '../utils/normalizers.js';
 
 /**
  * Busca todos os usuários administrativos
@@ -17,13 +18,7 @@ export async function getUsers() {
         )
       )
     );
-    return list.map(user => ({
-      id: String(user.id ?? user.user_id ?? ''),
-      name: user.nome ?? user.name ?? '',
-      email: user.email ?? '',
-      role: user.role ?? 'viewer',
-      status: (user.status === 'ativo' || user.status === 'active') ? 'active' : 'inactive'
-    }));
+    return list.map(normalizeUser);
   } catch (error) {
     console.error('Erro ao buscar usuários:', error);
     throw error;
@@ -42,42 +37,18 @@ export async function getAllUsers() {
  * @returns {Promise<Object>} Usuário criado
  */
 export async function createUser(user) {
-  try {
-    // CORREÇÃO: Usa apiRequest
-    const response = await apiRequest('/api/auth/users', {
-      method: 'POST',
-      body: JSON.stringify({
-        nome: user.name,
-        email: user.email,
-        senha: user.password,
-        role: user.role || 'viewer'
-      })
-    });
-
-    // Backend retorna { success: true, data: { user: {...} } }
-    const userData = response?.data?.user || response?.user || response?.data;
-    if (!userData) {
-      throw new Error('Resposta inválida do servidor');
-    }
-
-    // Mapear o resultado para o formato esperado
-    return {
-      ok: true,
-      data: {
-        id: String(userData.id),
-        name: userData.name || userData.nome,
-        email: userData.email,
-        role: userData.role,
-        status: userData.status === 'ativo' ? 'active' : 'inactive'
-      }
-    };
-  } catch (error) {
-    console.error('Erro ao criar usuário:', error);
-    return {
-      ok: false,
-      error: error.message
-    };
-  }
+  const response = await apiRequest('/api/auth/users', {
+    method: 'POST',
+    body: JSON.stringify({
+      nome: user.name,
+      email: user.email,
+      senha: user.password,
+      role: user.role || 'viewer'
+    })
+  });
+  const userData = response?.data?.user || response?.user || response?.data;
+  if (!userData) throw new Error('Resposta inválida do servidor');
+  return normalizeUser(userData);
 }
 
 /**
@@ -87,46 +58,20 @@ export async function createUser(user) {
  * @returns {Promise<Object>} Usuário atualizado
  */
 export async function updateUser(id, updates) {
-  try {
-    // CORREÇÃO: Usa apiRequest
-    const payload = {
-      nome: updates.name,
-      email: updates.email,
-      role: updates.role,
-      status: updates.status === 'active' ? 'ativo' : 'inativo'
-    };
-    // Permitir alteração de senha quando fornecida
-    if (updates.password) {
-      payload.senha = updates.password;
-    }
-    const response = await apiRequest(`/api/auth/users/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload)
-    });
-
-    // Backend retorna { success: true, data: { user: {...} } }
-    const userData = response?.data?.user || response?.user || response?.data;
-    if (!userData) {
-      throw new Error('Resposta inválida do servidor');
-    }
-
-    return {
-      ok: true,
-      data: {
-        id: String(userData.id),
-        name: userData.name || userData.nome,
-        email: userData.email,
-        role: userData.role,
-        status: userData.status === 'ativo' ? 'active' : 'inactive'
-      }
-    };
-  } catch (error) {
-    console.error('Erro ao atualizar usuário:', error);
-    return {
-      ok: false,
-      error: error.message
-    };
-  }
+  const payload = {
+    nome: updates.name,
+    email: updates.email,
+    role: updates.role,
+    status: updates.status === 'active' ? 'ativo' : 'inativo'
+  };
+  if (updates.password) payload.senha = updates.password;
+  const response = await apiRequest(`/api/auth/users/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload)
+  });
+  const userData = response?.data?.user || response?.user || response?.data;
+  if (!userData) throw new Error('Resposta inválida do servidor');
+  return normalizeUser(userData);
 }
 
 /**
@@ -135,35 +80,12 @@ export async function updateUser(id, updates) {
  * @returns {Promise<Object>} Resultado da operação
  */
 export async function toggleUserStatus(id) {
-  try {
-    // CORREÇÃO: Usa apiRequest
-    const response = await apiRequest(`/api/auth/users/${id}/toggle-status`, {
-      method: 'PATCH'
-    });
-
-    // Backend retorna { success: true, data: { user: {...} } }
-    const userData = response?.data?.user || response?.user || response?.data;
-    if (!userData) {
-      throw new Error('Resposta inválida do servidor');
-    }
-
-    return {
-      ok: true,
-      data: {
-        id: String(userData.id),
-        name: userData.name || userData.nome,
-        email: userData.email,
-        role: userData.role,
-        status: userData.status === 'ativo' ? 'active' : 'inactive'
-      }
-    };
-  } catch (error) {
-    console.error('Erro ao alternar status do usuário:', error);
-    return {
-      ok: false,
-      error: error.message
-    };
-  }
+  const response = await apiRequest(`/api/auth/users/${id}/toggle-status`, {
+    method: 'PATCH'
+  });
+  const userData = response?.data?.user || response?.user || response?.data;
+  if (!userData) throw new Error('Resposta inválida do servidor');
+  return normalizeUser(userData);
 }
 
 /**

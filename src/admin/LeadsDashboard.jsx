@@ -7,14 +7,12 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import {
-  FaUsers, FaUserPlus, FaCheckCircle, FaPercent,
-  FaSync, FaExclamationTriangle, FaArrowUp,
-} from 'react-icons/fa';
+import { Users, UserPlus, CheckCircle, Percent, RefreshCw, AlertTriangle, ArrowUp, ShoppingCart, Sparkles, MessageSquare, Eye, MousePointer, CreditCard, Download, Target } from 'lucide-react';
 
 import AdminCard from './components/AdminCard';
 import StatusBadge from './components/StatusBadge';
 import { getLeadsDashboard, getLeadsList, updateLeadStatus } from '../services/leadsAdminAPI';
+import { FUNNELS, getFunnelData, getAnalyticsEvents, getAnalyticsSummary } from '../services/analyticsAPI';
 import styles from './LeadsDashboard.module.css';
 
 // Cores do tema
@@ -81,7 +79,76 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
+// Ícone por step do funil
+const STEP_ICONS = {
+  app_viewed: Eye,
+  app_buy_clicked: MousePointer,
+  checkout_started: ShoppingCart,
+  checkout_info_completed: Users,
+  payment_method_selected: CreditCard,
+  payment_initiated: CreditCard,
+  payment_completed: CheckCircle,
+  app_downloaded: Download,
+  crafter_cta_clicked: MousePointer,
+  crafter_modal_opened: Eye,
+  crafter_form_submitted: CheckCircle,
+  feedback_page_viewed: Eye,
+  feedback_form_started: MousePointer,
+  feedback_form_submitted: CheckCircle,
+};
+
+// Funnel chart component
+const FunnelChart = ({ data, title, icon: Icon, color }) => {
+  const maxCount = Math.max(...data.map(d => d.count), 1);
+  return (
+    <AdminCard variant="elevated" className={styles.chartCard}>
+      <AdminCard.Header
+        title={title}
+        subtitle={data.length > 0 ? `${data[0]?.count || 0} → ${data[data.length - 1]?.count || 0}` : 'Sem dados'}
+        actions={Icon && <Icon size={20} style={{ color }} />}
+        noBorder
+      />
+      <AdminCard.Body>
+        {data.length > 0 && data.some(d => d.count > 0) ? (
+          <div className={styles.funnelSteps}>
+            {data.map((step, i) => {
+              const pct = maxCount > 0 ? (step.count / maxCount) * 100 : 0;
+              const conversionFromPrev = i > 0 && data[i - 1].count > 0
+                ? ((step.count / data[i - 1].count) * 100).toFixed(1)
+                : null;
+              const StepIcon = STEP_ICONS[step.name] || Target;
+              return (
+                <div key={step.name} className={styles.funnelStep}>
+                  <div className={styles.funnelStepLabel}>
+                    <StepIcon size={14} style={{ color, opacity: 0.8 }} />
+                    <span>{step.label}</span>
+                  </div>
+                  <div className={styles.funnelBarContainer}>
+                    <div
+                      className={styles.funnelBar}
+                      style={{ width: `${Math.max(pct, 2)}%`, background: color }}
+                    />
+                    <span className={styles.funnelCount}>{step.count}</span>
+                  </div>
+                  {conversionFromPrev && (
+                    <span className={styles.funnelConversion}>
+                      {conversionFromPrev}%
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className={styles.noData}>Sem dados de funil no período</div>
+        )}
+      </AdminCard.Body>
+    </AdminCard>
+  );
+};
+
 const LeadsDashboard = () => {
+  const [activeTab, setActiveTab] = useState('leads');
   const [periodo, setPeriodo] = useState('30d');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -92,6 +159,15 @@ const LeadsDashboard = () => {
   const [originFilter, setOriginFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Conversão tab states
+  const [funnelLoading, setFunnelLoading] = useState(false);
+  const [purchaseFunnel, setPurchaseFunnel] = useState([]);
+  const [crafterFunnel, setCrafterFunnel] = useState([]);
+  const [feedbackFunnel, setFeedbackFunnel] = useState([]);
+  const [recentEvents, setRecentEvents] = useState([]);
+  const [analyticsSummary, setAnalyticsSummary] = useState(null);
+  const [eventFilter, setEventFilter] = useState('');
 
   // Carregar dados do dashboard
   const fetchData = useCallback(async () => {
@@ -115,6 +191,39 @@ const LeadsDashboard = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Carregar dados de conversão (funis)
+  const fetchFunnelData = useCallback(async () => {
+    setFunnelLoading(true);
+    try {
+      const [purchase, crafter, feedback, events, summary] = await Promise.all([
+        getFunnelData('purchase_funnel', periodo).catch(() => ({ data: [] })),
+        getFunnelData('crafter_funnel', periodo).catch(() => ({ data: [] })),
+        getFunnelData('feedback_funnel', periodo).catch(() => ({ data: [] })),
+        getAnalyticsEvents({ limit: 50, period: periodo, category: eventFilter || undefined }).catch(() => ({ data: [] })),
+        getAnalyticsSummary(periodo).catch(() => null),
+      ]);
+
+      const mapSteps = (resp, funnelDef) => {
+        const steps = resp?.data || resp?.steps || [];
+        return funnelDef.steps.map(s => ({
+          ...s,
+          count: steps.find(x => x.name === s.name)?.count || 0,
+        }));
+      };
+
+      setPurchaseFunnel(mapSteps(purchase, FUNNELS.purchase_funnel));
+      setCrafterFunnel(mapSteps(crafter, FUNNELS.crafter_funnel));
+      setFeedbackFunnel(mapSteps(feedback, FUNNELS.feedback_funnel));
+      setRecentEvents(events?.data || []);
+      setAnalyticsSummary(summary);
+    } catch { /* silently fail */ }
+    setFunnelLoading(false);
+  }, [periodo, eventFilter]);
+
+  useEffect(() => {
+    if (activeTab === 'conversao') fetchFunnelData();
+  }, [activeTab, fetchFunnelData]);
 
   // Debounce para busca
   const [searchDebounce, setSearchDebounce] = useState('');
@@ -189,11 +298,11 @@ const LeadsDashboard = () => {
   if (error && !dashData) {
     return (
       <div className={styles.errorState}>
-        <FaExclamationTriangle size={48} color={COLORS.danger} />
+        <AlertTriangle size={48} color={COLORS.danger} />
         <h2>Erro ao carregar leads</h2>
         <p>{error}</p>
         <button onClick={fetchData} className={styles.retryBtn}>
-          <FaSync /> Tentar novamente
+          <RefreshCw /> Tentar novamente
         </button>
       </div>
     );
@@ -214,7 +323,7 @@ const LeadsDashboard = () => {
             disabled={loading}
             title="Atualizar"
           >
-            <FaSync className={loading ? styles.spinning : ''} />
+            <RefreshCw className={loading ? styles.spinning : ''} />
           </button>
           <select
             value={periodo}
@@ -229,12 +338,31 @@ const LeadsDashboard = () => {
         </div>
       </header>
 
+      {/* Tabs */}
+      <div className={styles.tabBar}>
+        <button
+          className={`${styles.tab} ${activeTab === 'leads' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('leads')}
+        >
+          <Users size={16} /> Leads
+        </button>
+        <button
+          className={`${styles.tab} ${activeTab === 'conversao' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('conversao')}
+        >
+          <Target size={16} /> Conversão
+        </button>
+      </div>
+
+      {/* Tab: Leads */}
+      {activeTab === 'leads' && <>
+
       {/* KPI Cards */}
       <section className={styles.kpiGrid}>
         <AdminCard variant="elevated" className={styles.kpiCard}>
           <div className={styles.kpiContent}>
             <div className={styles.kpiIcon} style={{ background: 'rgba(0, 228, 242, 0.15)' }}>
-              <FaUsers style={{ color: COLORS.secondary }} />
+              <Users style={{ color: COLORS.secondary }} />
             </div>
             <div className={styles.kpiInfo}>
               <span className={styles.kpiLabel}>Total de Leads</span>
@@ -247,14 +375,14 @@ const LeadsDashboard = () => {
         <AdminCard variant="elevated" className={styles.kpiCard}>
           <div className={styles.kpiContent}>
             <div className={styles.kpiIcon} style={{ background: 'rgba(209, 43, 242, 0.15)' }}>
-              <FaUserPlus style={{ color: COLORS.primary }} />
+              <UserPlus style={{ color: COLORS.primary }} />
             </div>
             <div className={styles.kpiInfo}>
               <span className={styles.kpiLabel}>Novos ({periodo})</span>
               <span className={styles.kpiValue}>{kpis?.new_period || 0}</span>
               {kpis?.new_period > 0 && (
                 <span className={styles.kpiTrend}>
-                  <FaArrowUp className={styles.trendUp} />
+                  <ArrowUp className={styles.trendUp} />
                   +{kpis.new_period} captados
                 </span>
               )}
@@ -265,7 +393,7 @@ const LeadsDashboard = () => {
         <AdminCard variant="elevated" className={styles.kpiCard}>
           <div className={styles.kpiContent}>
             <div className={styles.kpiIcon} style={{ background: 'rgba(16, 185, 129, 0.15)' }}>
-              <FaCheckCircle style={{ color: COLORS.success }} />
+              <CheckCircle style={{ color: COLORS.success }} />
             </div>
             <div className={styles.kpiInfo}>
               <span className={styles.kpiLabel}>Convertidos</span>
@@ -278,7 +406,7 @@ const LeadsDashboard = () => {
         <AdminCard variant="elevated" className={styles.kpiCard}>
           <div className={styles.kpiContent}>
             <div className={styles.kpiIcon} style={{ background: 'rgba(122, 62, 245, 0.15)' }}>
-              <FaPercent style={{ color: COLORS.purple }} />
+              <Percent style={{ color: COLORS.purple }} />
             </div>
             <div className={styles.kpiInfo}>
               <span className={styles.kpiLabel}>Taxa de Conversão</span>
@@ -533,6 +661,175 @@ const LeadsDashboard = () => {
           </AdminCard.Body>
         </AdminCard>
       </section>
+
+      </>}
+
+      {/* Tab: Conversão */}
+      {activeTab === 'conversao' && (
+        <>
+          {/* KPIs de Conversão */}
+          <section className={styles.kpiGrid}>
+            <AdminCard variant="elevated" className={styles.kpiCard}>
+              <div className={styles.kpiContent}>
+                <div className={styles.kpiIcon} style={{ background: 'rgba(0, 228, 242, 0.15)' }}>
+                  <Eye style={{ color: COLORS.secondary }} />
+                </div>
+                <div className={styles.kpiInfo}>
+                  <span className={styles.kpiLabel}>Apps Visualizados</span>
+                  <span className={styles.kpiValue}>{purchaseFunnel[0]?.count || 0}</span>
+                </div>
+              </div>
+            </AdminCard>
+            <AdminCard variant="elevated" className={styles.kpiCard}>
+              <div className={styles.kpiContent}>
+                <div className={styles.kpiIcon} style={{ background: 'rgba(209, 43, 242, 0.15)' }}>
+                  <ShoppingCart style={{ color: COLORS.primary }} />
+                </div>
+                <div className={styles.kpiInfo}>
+                  <span className={styles.kpiLabel}>Cliques em Comprar</span>
+                  <span className={styles.kpiValue}>{purchaseFunnel[1]?.count || 0}</span>
+                </div>
+              </div>
+            </AdminCard>
+            <AdminCard variant="elevated" className={styles.kpiCard}>
+              <div className={styles.kpiContent}>
+                <div className={styles.kpiIcon} style={{ background: 'rgba(16, 185, 129, 0.15)' }}>
+                  <CheckCircle style={{ color: COLORS.success }} />
+                </div>
+                <div className={styles.kpiInfo}>
+                  <span className={styles.kpiLabel}>Compras Finalizadas</span>
+                  <span className={styles.kpiValue}>{purchaseFunnel[6]?.count || 0}</span>
+                </div>
+              </div>
+            </AdminCard>
+            <AdminCard variant="elevated" className={styles.kpiCard}>
+              <div className={styles.kpiContent}>
+                <div className={styles.kpiIcon} style={{ background: 'rgba(122, 62, 245, 0.15)' }}>
+                  <Percent style={{ color: COLORS.purple }} />
+                </div>
+                <div className={styles.kpiInfo}>
+                  <span className={styles.kpiLabel}>Conversão View→Compra</span>
+                  <span className={styles.kpiValue}>
+                    {purchaseFunnel[0]?.count > 0
+                      ? ((purchaseFunnel[6]?.count || 0) / purchaseFunnel[0].count * 100).toFixed(1)
+                      : '0'}%
+                  </span>
+                </div>
+              </div>
+            </AdminCard>
+          </section>
+
+          {funnelLoading ? (
+            <div className={styles.loadingState}>
+              <div className={styles.spinner} />
+              <span>Carregando funis...</span>
+            </div>
+          ) : (
+            <>
+              {/* Funnel Charts */}
+              <section className={styles.chartsGrid}>
+                <FunnelChart
+                  data={purchaseFunnel}
+                  title="Funil de Compra"
+                  icon={ShoppingCart}
+                  color={COLORS.secondary}
+                />
+                <FunnelChart
+                  data={crafterFunnel}
+                  title="Funil de Crafter"
+                  icon={Sparkles}
+                  color={COLORS.primary}
+                />
+                <FunnelChart
+                  data={feedbackFunnel}
+                  title="Funil de Feedback"
+                  icon={MessageSquare}
+                  color={COLORS.purple}
+                />
+              </section>
+
+              {/* Eventos Recentes */}
+              <section>
+                <AdminCard variant="elevated" className={styles.tableCard}>
+                  <AdminCard.Header
+                    title="Eventos Recentes"
+                    subtitle={`${recentEvents.length} eventos`}
+                    noBorder
+                  />
+                  <AdminCard.Body noPadding>
+                    <div className={styles.filterBar} style={{ padding: '0 16px' }}>
+                      <select
+                        value={eventFilter}
+                        onChange={(e) => setEventFilter(e.target.value)}
+                        className={styles.filterSelect}
+                      >
+                        <option value="">Todos os funis</option>
+                        <option value="purchase_funnel">Compra</option>
+                        <option value="crafter_funnel">Crafter</option>
+                        <option value="feedback_funnel">Feedback</option>
+                        <option value="navigation">Navegação</option>
+                        <option value="interaction">Interação</option>
+                      </select>
+                      <button onClick={fetchFunnelData} className={styles.refreshBtn} disabled={funnelLoading}>
+                        <RefreshCw className={funnelLoading ? styles.spinning : ''} size={16} /> Atualizar
+                      </button>
+                    </div>
+                    <div className={styles.tableWrap}>
+                      <table className={styles.leadsTable}>
+                        <thead>
+                          <tr>
+                            <th>Evento</th>
+                            <th>Categoria</th>
+                            <th>Página</th>
+                            <th>Sessão</th>
+                            <th>Data</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {recentEvents.length > 0 ? recentEvents.map((evt, i) => (
+                            <tr key={evt.id || i}>
+                              <td>
+                                <div className={styles.leadName}>
+                                  {FUNNELS[evt.event_category]?.steps?.find(s => s.name === evt.event_name)?.label || evt.event_name}
+                                </div>
+                                <div className={styles.leadEmail}>{evt.event_name}</div>
+                              </td>
+                              <td>
+                                <span className={styles.originBadge}>
+                                  {FUNNELS[evt.event_category]?.label || evt.event_category}
+                                </span>
+                              </td>
+                              <td style={{ fontSize: '0.85rem', color: COLORS.muted }}>
+                                {evt.page_path || evt.page_url || '—'}
+                              </td>
+                              <td style={{ fontSize: '0.8rem', color: COLORS.muted, fontFamily: 'monospace' }}>
+                                {(evt.session_id || '').slice(0, 8)}
+                              </td>
+                              <td className={styles.dateCell}>
+                                {evt.timestamp ? new Date(evt.timestamp).toLocaleString('pt-BR', {
+                                  day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                                }) : '—'}
+                              </td>
+                            </tr>
+                          )) : (
+                            <tr>
+                              <td colSpan={5}>
+                                <div className={styles.noData}>
+                                  Nenhum evento registrado ainda. Os eventos aparecerão aqui conforme os usuários navegam pelo site.
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </AdminCard.Body>
+                </AdminCard>
+              </section>
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 };

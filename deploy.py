@@ -29,11 +29,33 @@ import time
 import subprocess
 import paramiko
 
+
+def _load_env_file(path):
+    """Carrega variaveis de um arquivo .env simples para os.environ."""
+    if not os.path.exists(path):
+        return
+    with open(path, encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            key, _, value = line.partition('=')
+            os.environ.setdefault(key.strip(), value.strip())
+
+
+# Carrega .env.deploy se existir (credenciais locais nao versionadas)
+_load_env_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env.deploy'))
+
 # ── Configuracao ──────────────────────────────────────────────
-SFTP_HOST = '147.93.37.67'
-SFTP_PORT = 65002
-SFTP_USER = 'u984096926'
-SFTP_PASS = 'MafagafaGenZ@23'
+SFTP_HOST = os.environ.get('SFTP_HOST', '')
+SFTP_PORT = int(os.environ.get('SFTP_PORT', 65002))
+SFTP_USER = os.environ.get('SFTP_USER', '')
+SFTP_PASS = os.environ.get('SFTP_PASS', '')
+
+if not SFTP_USER or not SFTP_PASS:
+    print("  [X] ERRO: SFTP_USER e SFTP_PASS sao obrigatorios.")
+    print("      Crie o arquivo .env.deploy com as credenciais (veja .env.deploy.example)")
+    sys.exit(1)
 
 BASE_DIR = '/home/u984096926/domains/codecraftgenz.com.br'
 REMOTE_NODEJS = f'{BASE_DIR}/nodejs'

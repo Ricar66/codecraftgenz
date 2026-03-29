@@ -1,16 +1,6 @@
 // src/pages/PrivacyPolicyPage.jsx
 // Política de Privacidade - Conforme LGPD
-import {
-  FaShieldAlt,
-  FaArrowLeft,
-  FaDatabase,
-  FaUserShield,
-  FaLock,
-  FaCookieBite,
-  FaUserCog,
-  FaEnvelope,
-  FaBalanceScale
-} from 'react-icons/fa';
+import { Shield, ArrowLeft, Database, UserCheck, Lock, Cookie, Settings, Mail, Scale } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import Navbar from '../components/Navbar/Navbar';
@@ -26,7 +16,7 @@ function PrivacyPolicyPage() {
       <section className={styles.hero}>
         <div className={styles.heroContent}>
           <div className={styles.heroBadge}>
-            <FaShieldAlt />
+            <Shield />
             <span>Privacidade</span>
           </div>
           <h1 className={styles.heroTitle}>
@@ -61,7 +51,7 @@ function PrivacyPolicyPage() {
         {/* Introduction */}
         <div id="introducao" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaShieldAlt />
+            <Shield />
             1. Introdução
           </h2>
           <p className={styles.text}>
@@ -75,7 +65,7 @@ function PrivacyPolicyPage() {
         {/* Data Collected */}
         <div id="dados-coletados" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaDatabase />
+            <Database />
             2. Dados Coletados
           </h2>
           <p className={styles.text}>
@@ -106,7 +96,7 @@ function PrivacyPolicyPage() {
         {/* Data Usage */}
         <div id="uso-dados" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaUserShield />
+            <UserCheck />
             3. Uso dos Dados
           </h2>
           <p className={styles.text}>
@@ -127,7 +117,7 @@ function PrivacyPolicyPage() {
         {/* Data Sharing */}
         <div id="compartilhamento" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaUserCog />
+            <Settings />
             4. Compartilhamento de Dados
           </h2>
           <p className={styles.text}>
@@ -147,7 +137,7 @@ function PrivacyPolicyPage() {
         {/* Storage and Security */}
         <div id="armazenamento" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaLock />
+            <Lock />
             5. Armazenamento e Segurança
           </h2>
           <p className={styles.text}>
@@ -168,7 +158,7 @@ function PrivacyPolicyPage() {
         {/* Cookies */}
         <div id="cookies" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaCookieBite />
+            <Cookie />
             6. Cookies e Tecnologias Similares
           </h2>
           <p className={styles.text}>
@@ -187,7 +177,7 @@ function PrivacyPolicyPage() {
         {/* User Rights */}
         <div id="direitos" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaBalanceScale />
+            <Scale />
             7. Seus Direitos (LGPD)
           </h2>
           <p className={styles.text}>
@@ -211,7 +201,7 @@ function PrivacyPolicyPage() {
         {/* Contact */}
         <div id="contato" className={styles.card}>
           <h2 className={styles.sectionTitle}>
-            <FaEnvelope />
+            <Mail />
             8. Contato do Encarregado (DPO)
           </h2>
           <p className={styles.text}>
@@ -237,7 +227,7 @@ function PrivacyPolicyPage() {
               href="mailto:suporte@codecraftgenz.com.br?subject=Solicitação LGPD"
               className={styles.contactLink}
             >
-              <FaEnvelope />
+              <Mail />
               Contatar Encarregado (DPO)
             </a>
           </div>

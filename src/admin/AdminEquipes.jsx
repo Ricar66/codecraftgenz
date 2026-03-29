@@ -1,7 +1,7 @@
 // src/admin/AdminEquipes.jsx
 // Refatorado para usar Design System CodeCraft
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaUsers, FaUserTie, FaProjectDiagram, FaClipboardList, FaPlus, FaTrash, FaLink, FaDownload, FaCheck, FaSearch } from 'react-icons/fa';
+import { Users, UserCheck, Network, ClipboardList, Plus, Trash2, Link, Download, Check, Search } from 'lucide-react';
 
 import { apiRequest } from '../lib/apiConfig.js';
 import { getAll as getAllProjects } from '../services/projectsAPI.js';
@@ -383,7 +383,7 @@ export default function AdminEquipes() {
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerTitle}>
-          <FaUsers className={styles.headerIcon} />
+          <Users className={styles.headerIcon} />
           <div>
             <h1>Gerenciamento de Equipes</h1>
             <p>{mentores.length} mentores | {crafters.length} crafters | {equipes.length} equipes</p>
@@ -405,25 +405,25 @@ export default function AdminEquipes() {
           className={`${styles.tab} ${activeTab === 'mentores' ? styles.active : ''}`}
           onClick={() => setActiveTab('mentores')}
         >
-          <FaUserTie /> Mentores
+          <UserCheck /> Mentores
         </button>
         <button
           className={`${styles.tab} ${activeTab === 'associacoes' ? styles.active : ''}`}
           onClick={() => setActiveTab('associacoes')}
         >
-          <FaLink /> Associações
+          <Link /> Associações
         </button>
         <button
           className={`${styles.tab} ${activeTab === 'equipes' ? styles.active : ''}`}
           onClick={() => setActiveTab('equipes')}
         >
-          <FaProjectDiagram /> Equipes
+          <Network /> Equipes
         </button>
         <button
           className={`${styles.tab} ${activeTab === 'auditoria' ? styles.active : ''}`}
           onClick={() => setActiveTab('auditoria')}
         >
-          <FaClipboardList /> Auditoria
+          <ClipboardList /> Auditoria
         </button>
       </div>
 
@@ -466,7 +466,7 @@ export default function AdminEquipes() {
           </AdminCard>
 
           <AdminCard variant="elevated" className={styles.section} id="create-crafter">
-            <h2 className={styles.sectionTitle}><FaPlus /> Criar Novo Crafter</h2>
+            <h2 className={styles.sectionTitle}><Plus /> Criar Novo Crafter</h2>
             <form onSubmit={criarCrafter} className={styles.form}>
               <div className={styles.formRow}>
                 <input
@@ -496,13 +496,13 @@ export default function AdminEquipes() {
                 />
               </div>
               <button type="submit" className={styles.primaryBtn}>
-                <FaPlus /> Criar Crafter
+                <Plus /> Criar Crafter
               </button>
             </form>
           </AdminCard>
 
           <AdminCard variant="elevated" className={styles.section}>
-            <h2 className={styles.sectionTitle}><FaProjectDiagram /> Equipes Existentes</h2>
+            <h2 className={styles.sectionTitle}><Network /> Equipes Existentes</h2>
             <p className={styles.infoText}>
               Visualize e edite as equipes já formadas.
             </p>
@@ -516,7 +516,7 @@ export default function AdminEquipes() {
                 {Object.entries(equipesAgrupadas).map(([projetoId, projetos]) => (
                   <div key={projetoId} className={styles.projectGroup}>
                     <h3 className={styles.projectTitle}>
-                      <FaProjectDiagram /> {projetos[0]?.projeto_titulo || 'Projeto sem título'}
+                      <Network /> {projetos[0]?.projeto_titulo || 'Projeto sem título'}
                     </h3>
 
                     {Object.entries(projetos.reduce((acc, equipe) => {
@@ -529,7 +529,7 @@ export default function AdminEquipes() {
                       return (
                         <div key={mentorKey} className={styles.mentorTeamGroup}>
                           <div className={styles.mentorHeader}>
-                            <h4><FaUserTie /> {mentorNome}</h4>
+                            <h4><UserCheck /> {mentorNome}</h4>
                             <StatusBadge variant="info">
                               {equipesDoMentor.length} crafter{equipesDoMentor.length !== 1 ? 's' : ''}
                             </StatusBadge>
@@ -581,7 +581,7 @@ export default function AdminEquipes() {
                                     className={styles.dangerBtn}
                                     title="Remover crafter da equipe"
                                   >
-                                    <FaTrash />
+                                    <Trash2 />
                                   </button>
                                 </div>
                               </div>
@@ -589,7 +589,7 @@ export default function AdminEquipes() {
                           </div>
 
                           <div className={styles.addCrafterSection}>
-                            <h5><FaPlus /> Adicionar Crafter à Equipe</h5>
+                            <h5><Plus /> Adicionar Crafter à Equipe</h5>
                             <select
                               value=""
                               onChange={(e) => adicionarCrafterNaEquipe(mentorId, projetoId, e.target.value)}
@@ -621,10 +621,10 @@ export default function AdminEquipes() {
         <div className={styles.tabContent}>
           {/* Mentores Disponíveis */}
           <AdminCard variant="elevated" className={styles.section}>
-            <h2 className={styles.sectionTitle}><FaUserTie /> Mentores Disponíveis</h2>
+            <h2 className={styles.sectionTitle}><UserCheck /> Mentores Disponíveis</h2>
             <div className={styles.filterBar}>
               <div className={styles.searchBox}>
-                <FaSearch className={styles.searchIcon} />
+                <Search className={styles.searchIcon} />
                 <input
                   type="text"
                   placeholder="Buscar por nome ou email..."
@@ -692,10 +692,10 @@ export default function AdminEquipes() {
 
           {/* Crafters Cadastrados */}
           <AdminCard variant="elevated" className={styles.section}>
-            <h2 className={styles.sectionTitle}><FaUsers /> Crafters Cadastrados</h2>
+            <h2 className={styles.sectionTitle}><Users /> Crafters Cadastrados</h2>
             <div className={styles.filterBar}>
               <div className={styles.searchBox}>
-                <FaSearch className={styles.searchIcon} />
+                <Search className={styles.searchIcon} />
                 <input
                   type="text"
                   placeholder="Buscar por nome ou email..."
@@ -771,11 +771,11 @@ export default function AdminEquipes() {
 
           {/* Criar Nova Equipe */}
           <AdminCard variant="elevated" className={styles.section}>
-            <h2 className={styles.sectionTitle}><FaProjectDiagram /> Criar Nova Equipe</h2>
+            <h2 className={styles.sectionTitle}><Network /> Criar Nova Equipe</h2>
             <form onSubmit={criarEquipe} className={styles.form}>
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
-                  <label><FaProjectDiagram /> Projeto</label>
+                  <label><Network /> Projeto</label>
                   <select
                     value={novaEquipe.projeto_id}
                     onChange={(e) => setNovaEquipe({...novaEquipe, projeto_id: e.target.value})}
@@ -789,7 +789,7 @@ export default function AdminEquipes() {
                   </select>
                 </div>
                 <div className={styles.formGroup}>
-                  <label><FaUserTie /> Mentor</label>
+                  <label><UserCheck /> Mentor</label>
                   <select
                     value={novaEquipe.mentor_id}
                     onChange={(e) => setNovaEquipe({...novaEquipe, mentor_id: e.target.value})}
@@ -805,7 +805,7 @@ export default function AdminEquipes() {
               </div>
 
               <div className={styles.formGroup}>
-                <label><FaUsers /> Crafters da Equipe</label>
+                <label><Users /> Crafters da Equipe</label>
                 <div className={styles.craftersSelection}>
                   {crafters.map(crafter => (
                     <label key={crafter.id} className={`${styles.crafterCheckbox} ${novaEquipe.crafter_ids.includes(crafter.id) ? styles.selected : ''}`}>
@@ -828,7 +828,7 @@ export default function AdminEquipes() {
                   ))}
                 </div>
                 <div className={styles.selectionSummary}>
-                  <FaCheck /> {novaEquipe.crafter_ids.length} crafter(s) selecionado(s)
+                  <Check /> {novaEquipe.crafter_ids.length} crafter(s) selecionado(s)
                 </div>
               </div>
 
@@ -865,18 +865,18 @@ export default function AdminEquipes() {
                 className={styles.primaryBtn}
                 disabled={novaEquipe.crafter_ids.length === 0}
               >
-                <FaProjectDiagram /> Criar Equipe ({novaEquipe.crafter_ids.length} crafter{novaEquipe.crafter_ids.length !== 1 ? 's' : ''})
+                <Network /> Criar Equipe ({novaEquipe.crafter_ids.length} crafter{novaEquipe.crafter_ids.length !== 1 ? 's' : ''})
               </button>
             </form>
           </AdminCard>
 
           {/* Associar Mentor a Projeto */}
           <AdminCard variant="elevated" className={styles.section}>
-            <h2 className={styles.sectionTitle}><FaLink /> Associar Mentor a Projeto</h2>
+            <h2 className={styles.sectionTitle}><Link /> Associar Mentor a Projeto</h2>
             <form onSubmit={associarMentorProjeto} className={styles.form}>
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
-                  <label><FaProjectDiagram /> Projeto</label>
+                  <label><Network /> Projeto</label>
                   <select
                     value={mentorProjeto.projeto_id}
                     onChange={(e) => setMentorProjeto({...mentorProjeto, projeto_id: e.target.value})}
@@ -890,7 +890,7 @@ export default function AdminEquipes() {
                   </select>
                 </div>
                 <div className={styles.formGroup}>
-                  <label><FaUserTie /> Mentor</label>
+                  <label><UserCheck /> Mentor</label>
                   <select
                     value={mentorProjeto.mentor_id}
                     onChange={(e) => setMentorProjeto({...mentorProjeto, mentor_id: e.target.value})}
@@ -905,7 +905,7 @@ export default function AdminEquipes() {
                 </div>
               </div>
               <button type="submit" className={styles.secondaryBtn}>
-                <FaLink /> Associar Mentor ao Projeto
+                <Link /> Associar Mentor ao Projeto
               </button>
             </form>
           </AdminCard>
@@ -925,7 +925,7 @@ export default function AdminEquipes() {
               Object.entries(equipesAgrupadas).map(([projetoId, equipes]) => (
                 <div key={projetoId} className={styles.projectSection}>
                   <h3 className={styles.projectSectionTitle}>
-                    <FaProjectDiagram /> {equipes[0]?.projeto_titulo || 'Projeto sem título'}
+                    <Network /> {equipes[0]?.projeto_titulo || 'Projeto sem título'}
                   </h3>
                   <div className={styles.teamsGrid}>
                     {Object.entries(
@@ -937,7 +937,7 @@ export default function AdminEquipes() {
                       }, {})
                     ).map(([mentorNome, equipesDoMentor]) => (
                       <AdminCard key={mentorNome} variant="outlined" className={styles.teamCard}>
-                        <h4><FaUserTie /> {mentorNome}</h4>
+                        <h4><UserCheck /> {mentorNome}</h4>
                         <div className={styles.teamMembersList}>
                           {equipesDoMentor.map(equipe => (
                             <div key={equipe.id} className={styles.memberItem}>
@@ -968,12 +968,12 @@ export default function AdminEquipes() {
       {activeTab === 'auditoria' && (
         <div className={styles.tabContent}>
           <AdminCard variant="elevated" className={styles.section}>
-            <h2 className={styles.sectionTitle}><FaClipboardList /> Auditoria de Relacionamentos</h2>
+            <h2 className={styles.sectionTitle}><ClipboardList /> Auditoria de Relacionamentos</h2>
             <p className={styles.infoText}>
               Esta seção destaca inconsistências nas relações entre Mentores, Projetos, Crafters e Equipes.
             </p>
             <button onClick={exportarAuditoria} className={styles.secondaryBtn}>
-              <FaDownload /> Exportar CSV das inconsistências
+              <Download /> Exportar CSV das inconsistências
             </button>
 
             <div className={styles.tableWrapper}>
@@ -1066,7 +1066,7 @@ export default function AdminEquipes() {
             {mentoresSemProjeto.length === 0 && projetosSemMentor.length === 0 && craftersSemEquipe.length === 0 &&
              craftersEmMultEquipes.length === 0 && equipesRefsInvalidas.length === 0 && equipesDuplicadas.length === 0 && (
               <div className={styles.successState}>
-                <FaCheck className={styles.successIcon} />
+                <Check className={styles.successIcon} />
                 <p>Nenhuma inconsistência encontrada. Tudo certo!</p>
               </div>
             )}

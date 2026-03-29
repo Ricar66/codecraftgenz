@@ -1,9 +1,6 @@
 // src/pages/MyAccountPage.jsx
 import React, { useState, useEffect } from 'react';
-import {
-  FaUser, FaShoppingBag, FaDownload, FaCalendar,
-  FaCheckCircle, FaClock, FaExclamationCircle, FaBoxOpen, FaShieldAlt
-} from 'react-icons/fa';
+import { User, ShoppingBag, Download, Calendar, CheckCircle, Clock, AlertCircle, Package, Shield } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 
 import Navbar from '../components/Navbar/Navbar';
@@ -79,13 +76,13 @@ export default function MyAccountPage() {
           <div className={styles.headerBg} />
           <div className={styles.headerContent}>
             <div className={styles.avatar}>
-              <FaUser />
+              <User />
             </div>
             <div className={styles.userInfo}>
               <h1 className={styles.userName}>{user?.name || 'Usuario'}</h1>
               <p className={styles.userEmail}>{user?.email}</p>
               <span className={styles.userBadge}>
-                <FaShieldAlt /> Membro CodeCraft
+                <Shield /> Membro CodeCraft
               </span>
             </div>
           </div>
@@ -113,13 +110,13 @@ export default function MyAccountPage() {
             className={`${styles.tab} ${activeTab === 'purchases' ? styles.tabActive : ''}`}
             onClick={() => setActiveTab('purchases')}
           >
-            <FaShoppingBag /> Minhas Compras
+            <ShoppingBag /> Minhas Compras
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'profile' ? styles.tabActive : ''}`}
             onClick={() => setActiveTab('profile')}
           >
-            <FaUser /> Meu Perfil
+            <User /> Meu Perfil
           </button>
         </div>
 
@@ -133,12 +130,12 @@ export default function MyAccountPage() {
               </div>
             ) : error ? (
               <div className={styles.error}>
-                <FaExclamationCircle />
+                <AlertCircle />
                 <span>{error}</span>
               </div>
             ) : purchases.length === 0 ? (
               <div className={styles.empty}>
-                <FaBoxOpen className={styles.emptyIcon} />
+                <Package className={styles.emptyIcon} />
                 <h3 className={styles.emptyTitle}>Nenhuma compra encontrada</h3>
                 <p className={styles.emptyText}>Explore nossos aplicativos e encontre a ferramenta ideal para voce.</p>
                 <Link to="/aplicativos" className={styles.browseBtn}>
@@ -162,7 +159,7 @@ export default function MyAccountPage() {
                         />
                       ) : (
                         <div className={styles.purchasePlaceholder}>
-                          <FaBoxOpen />
+                          <Package />
                         </div>
                       )}
                       <div className={styles.purchaseBody}>
@@ -176,10 +173,10 @@ export default function MyAccountPage() {
                         </div>
                         <div className={styles.purchaseMeta}>
                           <span className={styles.purchaseDate}>
-                            <FaCalendar /> {formatDate(purchase.purchased_at)}
+                            <Calendar /> {formatDate(purchase.purchased_at)}
                           </span>
                           <span className={`${styles.statusBadge} ${styles.statusApproved}`}>
-                            <FaCheckCircle /> Aprovado
+                            <CheckCircle /> Aprovado
                           </span>
                         </div>
                       </div>
@@ -193,7 +190,7 @@ export default function MyAccountPage() {
                             if (hasDownload) window.open(purchase.executable_url, '_blank');
                           }}
                         >
-                          <FaDownload />
+                          <Download />
                         </button>
                       </div>
                     </article>
