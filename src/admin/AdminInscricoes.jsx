@@ -580,7 +580,7 @@ const AdminInscricoes = () => {
                   
                   <div className={"infoRow"}>
                     <strong>Data da Inscrição:</strong>
-                    <span>{formatDate(inscricao.data_inscricao)}</span>
+                    <span>{formatDate(inscricao.data_inscricao || inscricao.created_at || inscricao.createdAt || inscricao.dataInscricao)}</span>
                   </div>
                 </div>
 
