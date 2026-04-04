@@ -20,7 +20,7 @@ import FeedbackShowcase from '../../components/Feedbacks/FeedbackShowcase';
 import Hero from '../../components/Hero/Hero';
 import MetricsSection from '../../components/MetricsSection/MetricsSection';
 import Navbar from '../../components/Navbar/Navbar';
-// OSSPSection removida — não somos open source ainda
+import NewsSection from '../../components/NewsSection/NewsSection';
 import ShowcaseBlock from '../../components/ShowcaseBlock/ShowcaseBlock.jsx';
 
 import styles from './HomePage.module.css';
@@ -185,6 +185,12 @@ const HomePage = () => {
         <div className={styles.sectionBlock}>
           <div className={styles.sectionCard}>
             <MetricsSection />
+          </div>
+        </div>
+
+        <div className={styles.sectionBlock}>
+          <div className={styles.sectionCard}>
+            <NewsSection />
           </div>
         </div>
 
