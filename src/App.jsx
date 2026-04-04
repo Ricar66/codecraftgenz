@@ -4,6 +4,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import ProtectedRoute from './admin/ProtectedRoute.jsx';
 import heroBackground from './assets/hero-background.svg';
+import CookieConsent from './components/CookieConsent/CookieConsent';
 import Footer from './components/Footer';
 import Onboarding from './components/Onboarding/Onboarding';
 import { ErrorBoundary } from './components/UI/ErrorBoundary';
@@ -193,6 +194,7 @@ function App() {
           </main>
           <Footer />
           <Onboarding />
+          <CookieConsent />
         </div>
       </ErrorBoundary>
     </ToastProvider>
