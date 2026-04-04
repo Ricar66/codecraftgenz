@@ -129,7 +129,7 @@ const HomePage = () => {
           </div>
         ))}
 
-        {/* CardCraft Banner */}
+        {/* CraftCard Banner */}
         <motion.div
           className={styles.sectionBlock}
           initial="hidden"
@@ -151,18 +151,18 @@ const HomePage = () => {
                 <span className={styles.cardcraftAccent}>É posicionamento.</span>
               </h2>
               <p className={styles.cardcraftDesc}>
-                CardCraft é o cartão virtual profissional feito para quem leva carreira e mercado a sério.
+                CraftCard é o cartão virtual profissional feito para quem leva carreira e mercado a sério.
                 Compartilhe seus dados, portfólio e presença digital em um formato atual, rápido e alinhado ao mercado.
               </p>
               <div className={styles.cardcraftCta}>
-                <span className={styles.cardcraftCtaText}>Conhecer CardCraft</span>
+                <span className={styles.cardcraftCtaText}>Conhecer CraftCard</span>
                 <span className={styles.cardcraftArrow}>&#8594;</span>
               </div>
             </div>
             <div className={styles.cardcraftVisual}>
               <div className={styles.cardcraftCard}>
                 <div className={styles.cardcraftCardInner}>
-                  <span className={styles.cardcraftLogo}>CardCraft</span>
+                  <span className={styles.cardcraftLogo}>CraftCard</span>
                   <span className={styles.cardcraftTagline}>Seu cartão virtual profissional</span>
                 </div>
               </div>
