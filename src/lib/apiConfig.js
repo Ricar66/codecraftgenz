@@ -20,17 +20,9 @@ const getApiBaseUrl = () => {
 
 export const API_BASE_URL = getApiBaseUrl();
 
-// Função para fazer requisições com tratamento de erro melhorado
+// Autenticação via HTTPOnly cookie — token gerenciado pelo browser automaticamente
+// credentials: 'include' nas requests envia o cookie sem JavaScript acessar o token
 export function getAuthHeader() {
-  try {
-    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('cc_session') : null;
-    if (raw) {
-      const session = JSON.parse(raw);
-      if (session?.token) {
-        return { Authorization: `Bearer ${session.token}` };
-      }
-    }
-  } catch (e) { void e }
   return {};
 }
 
