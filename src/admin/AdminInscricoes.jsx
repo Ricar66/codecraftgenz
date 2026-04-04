@@ -18,6 +18,8 @@ const AdminInscricoes = () => {
   const [toast, setToast] = useState(null); // { type: 'success'|'error', message: string }
   const [updatingId, setUpdatingId] = useState(null);
   const [crafters, setCrafters] = useState([]);
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 6;
   const navigate = useNavigate();
 
   const areasInteresse = [
@@ -278,6 +280,9 @@ const AdminInscricoes = () => {
     return matchesStatus && matchesSearch && matchesArea && matchesData;
   });
 
+  const totalPages = Math.ceil(filteredInscricoes.length / ITEMS_PER_PAGE);
+  const paginatedInscricoes = filteredInscricoes.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
   const getStatusInfo = (status) => {
     return statusOptions.find(opt => opt.value === status) || 
            { value: status, label: status, color: '#95a5a6' };
@@ -349,7 +354,7 @@ const AdminInscricoes = () => {
             type="text"
             placeholder="Buscar por nome, email, cidade, estado ou área..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
             className={"searchInput search-input"}
           />
         </div>
@@ -358,7 +363,7 @@ const AdminInscricoes = () => {
           <div className={"statusFilter"}>
             <select
               value={filtroStatus}
-              onChange={(e) => setFiltroStatus(e.target.value)}
+              onChange={(e) => { setFiltroStatus(e.target.value); setPage(1); }}
               className={"statusSelect filter-select"}
             >
               <option value="">Todos os status</option>
@@ -381,7 +386,7 @@ const AdminInscricoes = () => {
           <div className={"areaFilter"}>
             <select
               value={filtroArea}
-              onChange={(e) => setFiltroArea(e.target.value)}
+              onChange={(e) => { setFiltroArea(e.target.value); setPage(1); }}
               className={"areaSelect filter-select"}
             >
               <option value="">Todas as áreas</option>
@@ -396,7 +401,7 @@ const AdminInscricoes = () => {
           <div className={"dateFilter"}>
             <select
               value={filtroData}
-              onChange={(e) => setFiltroData(e.target.value)}
+              onChange={(e) => { setFiltroData(e.target.value); setPage(1); }}
               className={"dateSelect filter-select"}
             >
               <option value="">Todas as datas</option>
@@ -411,7 +416,8 @@ const AdminInscricoes = () => {
 
       <div className={"stats"}>
         <span className="stat-item">
-          Total: {filteredInscricoes.length}
+          {filteredInscricoes.length} inscrições encontradas
+          {totalPages > 1 && ` — Página ${page} de ${totalPages}`}
         </span>
       </div>
 
@@ -527,7 +533,7 @@ const AdminInscricoes = () => {
             </p>
           </div>
         ) : (
-          filteredInscricoes.map(inscricao => {
+          paginatedInscricoes.map(inscricao => {
             const statusInfo = getStatusInfo(inscricao.status);
             
             return (
@@ -621,6 +627,29 @@ const AdminInscricoes = () => {
           })
         )}
       </div>
+
+      {/* Paginação */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', padding: '24px 0' }}>
+          <button
+            className="btn btn-outline"
+            disabled={page <= 1}
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+          >
+            Anterior
+          </button>
+          <span style={{ color: '#a0a0b0', fontSize: '0.85rem', padding: '0 12px' }}>
+            {page} / {totalPages}
+          </span>
+          <button
+            className="btn btn-outline"
+            disabled={page >= totalPages}
+            onClick={() => setPage(p => p + 1)}
+          >
+            Próximo
+          </button>
+        </div>
+      )}
     </div>
   );
 };
