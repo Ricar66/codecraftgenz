@@ -3,6 +3,7 @@ import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 import { useAuth } from '../context/useAuth';
+import { getMetas } from '../services/metasAPI';
 
 import SuperDashboard from './SuperDashboard.jsx';
 import styles from './AdminLayout.module.css';
@@ -17,6 +18,7 @@ export function Dashboard() {
 export default function AdminLayout() {
   const { user, logout, hasRole } = useAuth();
   const [globalErr, setGlobalErr] = React.useState(null);
+  const [newMetasBadge, setNewMetasBadge] = React.useState(0);
   const [sidebarOpen, setSidebarOpen] = React.useState(() => {
     if (typeof window === 'undefined') return true;
     const saved = window.localStorage.getItem('admin_sidebar_open');
@@ -37,6 +39,15 @@ export default function AdminLayout() {
     };
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
+  }, []);
+
+  // Badge: metas criadas nas últimas 24h
+  React.useEffect(() => {
+    getMetas().then(metas => {
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+      const recent = metas.filter(m => new Date(m.createdAt).getTime() > cutoff);
+      setNewMetasBadge(recent.length);
+    }).catch(() => { /* silent */ });
   }, []);
   return (
     <div className={`${styles.adminContainer} ${sidebarOpen ? '' : styles.collapsed} page-with-background`}>
@@ -123,6 +134,24 @@ export default function AdminLayout() {
               <span className={styles.menuText}>Leads</span>
             </NavLink>
           )}
+          <NavLink to="/admin/metas" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>🎯</span>
+            <span className={styles.menuText}>
+              Metas
+              {newMetasBadge > 0 && (
+                <span style={{
+                  marginLeft: 6,
+                  background: '#D12BF2',
+                  color: '#fff',
+                  borderRadius: 10,
+                  padding: '1px 7px',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  verticalAlign: 'middle',
+                }}>{newMetasBadge}</span>
+              )}
+            </span>
+          </NavLink>
           <NavLink to="/admin/config" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
             <span className={styles.menuIcon}>⚙️</span>
             <span className={styles.menuText}>Config</span>

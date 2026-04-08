@@ -102,6 +102,7 @@ export default function AdminUsuarios() {
                   }} style={{ marginLeft: 8 }}>
                     <option value="admin">admin</option>
                     <option value="editor">editor</option>
+                    <option value="team">team</option>
                     <option value="viewer">viewer</option>
                   </select>
                   <button
@@ -130,6 +131,7 @@ export default function AdminUsuarios() {
           <select aria-label="Perfil" value={form.role} onChange={e=>setForm({...form,role:e.target.value})}>
             <option value="admin">admin</option>
             <option value="editor">editor</option>
+            <option value="team">team</option>
             <option value="viewer">viewer</option>
           </select>
           <button className="btn btn-primary" onClick={handleCreateUser} disabled={busy || Object.keys(validate()).length > 0}>{busy?'Criando...':'Criar usuário'}</button>
