@@ -1,6 +1,6 @@
 // src/components/Navbar/Navbar.jsx
 import React, { useState, useRef, useEffect, memo, useCallback } from 'react';
-import { Menu, X, User, LogOut, ShoppingBag, ChevronDown, Building2 } from 'lucide-react';
+import { Menu, X, User, LogOut, ShoppingBag, ChevronDown, Building2, LayoutDashboard } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 import logo from '../../assets/logo-principal.png';
@@ -18,7 +18,8 @@ const Navbar = memo(() => {
   const userMenuRef = useRef(null);
 
   const location = useLocation();
-  const { user, isAuthenticated, logout, loading } = useAuth();
+  const { user, isAuthenticated, logout, loading, hasRole } = useAuth();
+  const isStaff = hasRole(['admin', 'editor', 'team']);
 
   // Fecha o menu do usuario ao clicar fora
   useEffect(() => {
@@ -163,14 +164,26 @@ const Navbar = memo(() => {
                       <span className={styles.userDropdownEmail}>{user?.email}</span>
                     </div>
                     <div className={styles.userDropdownDivider} />
-                    <Link
-                      to="/minha-conta"
-                      className={styles.userDropdownItem}
-                      onClick={() => { setIsUserMenuOpen(false); closeMobileMenu(); }}
-                    >
-                      <ShoppingBag />
-                      Minhas Compras
-                    </Link>
+                    {isStaff && (
+                      <Link
+                        to="/admin"
+                        className={styles.userDropdownItem}
+                        onClick={() => { setIsUserMenuOpen(false); closeMobileMenu(); }}
+                      >
+                        <LayoutDashboard />
+                        Painel Admin
+                      </Link>
+                    )}
+                    {!isStaff && (
+                      <Link
+                        to="/minha-conta"
+                        className={styles.userDropdownItem}
+                        onClick={() => { setIsUserMenuOpen(false); closeMobileMenu(); }}
+                      >
+                        <ShoppingBag />
+                        Minhas Compras
+                      </Link>
+                    )}
                     <Link
                       to="/minha-conta"
                       className={styles.userDropdownItem}
@@ -192,12 +205,18 @@ const Navbar = memo(() => {
 
                 {/* Menu Mobile - Links diretos */}
                 <div className={styles.userMobileLinks}>
-                  <Link
-                    to="/minha-conta"
-                    className={styles.navLink}
-                    onClick={closeMobileMenu}
-                  >
-                    <ShoppingBag /> Minhas Compras
+                  {isStaff && (
+                    <Link to="/admin" className={styles.navLink} onClick={closeMobileMenu}>
+                      <LayoutDashboard /> Painel Admin
+                    </Link>
+                  )}
+                  {!isStaff && (
+                    <Link to="/minha-conta" className={styles.navLink} onClick={closeMobileMenu}>
+                      <ShoppingBag /> Minhas Compras
+                    </Link>
+                  )}
+                  <Link to="/minha-conta" className={styles.navLink} onClick={closeMobileMenu}>
+                    <User /> Meu Perfil
                   </Link>
                   <button
                     className={`${styles.navLink} ${styles.logoutMobileBtn}`}

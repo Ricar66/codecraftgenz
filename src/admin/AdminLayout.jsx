@@ -1,6 +1,6 @@
 // src/admin/AdminLayout.jsx
 import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, Link } from 'react-router-dom';
 
 import { useAuth } from '../context/useAuth';
 import { getMetas } from '../services/metasAPI';
@@ -164,7 +164,10 @@ export default function AdminLayout() {
       <main className={styles.main}>
         <header className={styles.topbar}>
           <div className={styles.welcome}>Olá, {user?.name} {user?.role ? `(${user.role})` : ''}</div>
-          <button className={`${styles.btn} ${styles.btnDanger}`} onClick={logout}>Sair</button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <Link to="/" className={`${styles.btn} ${styles.btnOutline}`} title="Voltar ao site">← Site</Link>
+            <button className={`${styles.btn} ${styles.btnDanger}`} onClick={logout}>Sair</button>
+          </div>
         </header>
         <div className={styles.content}>
           {globalErr && (
