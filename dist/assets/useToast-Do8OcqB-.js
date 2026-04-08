@@ -1,1 +1,0 @@
-import{r}from"./router-CiDplONn.js";import{h as o}from"./index-w6b9yhNl.js";function t(){const t=r.useContext(o);if(!t)throw new Error("useToast must be used within a ToastProvider");return t}export{t as u};

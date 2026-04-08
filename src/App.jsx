@@ -59,6 +59,7 @@ const LeadsDashboard = lazy(() => import('./admin/LeadsDashboard.jsx'));
 const Dashboard = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ default: m.Dashboard })));
 const AdminUsuarios = lazy(() => import('./admin/AdminUsuarios.jsx'));
 const AdminConfig = lazy(() => import('./admin/AdminConfig.jsx'));
+const AdminMetas = lazy(() => import('./admin/AdminMetas.jsx'));
 
 /**
  * Componente de fallback leve para carregamento de paginas
@@ -139,7 +140,7 @@ function App() {
                 <Route path="/apps/:id/sucesso" element={<OrderSuccessPage />} />
                 <Route path="/minha-conta" element={<MyAccountPage />} />
                 <Route path="/admin" element={
-                  <ProtectedRoute allowed={["admin","editor"]}>
+                  <ProtectedRoute allowed={["admin","editor","team"]}>
                     <AdminLayout />
                   </ProtectedRoute>
                 }>
@@ -179,6 +180,11 @@ function App() {
                   <Route path="leads" element={
                     <ProtectedRoute allowed={["admin"]}>
                       <LeadsDashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="metas" element={
+                    <ProtectedRoute allowed={["admin","editor","team"]}>
+                      <AdminMetas />
                     </ProtectedRoute>
                   } />
                   <Route path="config" element={

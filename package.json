@@ -15,6 +15,12 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@fullcalendar/core": "^6.1.20",
+    "@fullcalendar/daygrid": "^6.1.20",
+    "@fullcalendar/interaction": "^6.1.20",
+    "@fullcalendar/list": "^6.1.20",
+    "@fullcalendar/react": "^6.1.20",
+    "@fullcalendar/timegrid": "^6.1.20",
     "@mercadopago/sdk-react": "^1.0.6",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.577.0",
