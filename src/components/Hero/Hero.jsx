@@ -33,7 +33,7 @@ const hashtagVariant = {
   }),
 };
 
-const hashtags = ['Comunidade Dev', 'Inovacao Tech', 'Oportunidades Tech'];
+const hashtags = ['Comunidade Dev', 'Inovação Tech', 'Oportunidades Reais'];
 
 const Hero = ({ onCrafterClick, onPartnerClick }) => {
   const { trackButtonClick } = useAnalytics();
@@ -77,8 +77,8 @@ const Hero = ({ onCrafterClick, onPartnerClick }) => {
             animate="visible"
             variants={fadeUp(0.25)}
           >
-            Conectamos talentos Gen-Z como você às melhores
-            oportunidades e desafios do mundo tech.
+            Mostre seus projetos, complete desafios reais
+            e seja descoberto por empresas que contratam.
           </motion.p>
 
           <div className={styles.hashtags}>

@@ -103,17 +103,17 @@ const HomePage = () => {
   return (
     <div className={`${styles.homePage} starfield-bg`}>
       <Helmet>
-        <title>CodeCraft Gen-Z | Soluções de Software do Futuro</title>
-        <meta name="description" content="A CodeCraft Gen-Z cria soluções de software modernas, escaláveis e seguras, combinando IA, experiências digitais e engenharia de alto desempenho." />
-        <meta property="og:title" content="CodeCraft Gen-Z | Soluções de Software do Futuro" />
-        <meta property="og:description" content="Soluções de software com foco em performance, segurança e experiência — impulsionadas por design e tecnologia de ponta." />
+        <title>CodeCraft Gen-Z | Plataforma para Devs que Querem Crescer</title>
+        <meta name="description" content="Mostre seus projetos, complete desafios reais e seja descoberto por empresas que contratam. Comunidade dev com apps, mentoria e ranking." />
+        <meta property="og:title" content="CodeCraft Gen-Z | Plataforma para Devs que Querem Crescer" />
+        <meta property="og:description" content="Mostre seus projetos, complete desafios reais e seja descoberto por empresas. Comunidade dev com apps, mentoria e ranking." />
         <meta property="og:image" content={ogImageUrl} />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={ogUrl} />
         <link rel="canonical" href={canonical} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="CodeCraft Gen-Z | Soluções de Software do Futuro" />
-        <meta name="twitter:description" content="Soluções de software com foco em performance, segurança e experiência — impulsionadas por design e tecnologia de ponta." />
+        <meta name="twitter:title" content="CodeCraft Gen-Z | Plataforma para Devs que Querem Crescer" />
+        <meta name="twitter:description" content="Mostre seus projetos, complete desafios reais e seja descoberto por empresas. Comunidade dev com apps, mentoria e ranking." />
         <meta name="twitter:image" content={ogImageUrl} />
         {twitterHandle && <meta name="twitter:site" content={twitterHandle} />}
       </Helmet>
@@ -121,6 +121,12 @@ const HomePage = () => {
       <main>
         <div className={styles.sectionBlock}>
           <Hero onCrafterClick={() => setIsCrafterModalOpen(true)} onPartnerClick={() => setIsPartnerModalOpen(true)} />
+        </div>
+
+        <div className={styles.sectionBlock}>
+          <div className={styles.sectionCard}>
+            <MetricsSection />
+          </div>
         </div>
 
         {showcaseData.map((item, i) => (
@@ -145,14 +151,14 @@ const HomePage = () => {
           >
             <div className={styles.cardcraftGlow} />
             <div className={styles.cardcraftContent}>
-              <span className={styles.cardcraftBadge}>Novo Produto</span>
+              <span className={styles.cardcraftBadge}>Produto CodeCraft Gen-Z</span>
               <h2 className={styles.cardcraftHeadline}>
                 Apresentação não é detalhe.<br />
                 <span className={styles.cardcraftAccent}>É posicionamento.</span>
               </h2>
               <p className={styles.cardcraftDesc}>
-                CraftCard é o cartão virtual profissional feito para quem leva carreira e mercado a sério.
-                Compartilhe seus dados, portfólio e presença digital em um formato atual, rápido e alinhado ao mercado.
+                CraftCard é o cartão digital profissional da CodeCraft Gen-Z — feito para quem leva carreira a sério.
+                QR Code, portfólio, agendamento e analytics em um único link.
               </p>
               <div className={styles.cardcraftCta}>
                 <span className={styles.cardcraftCtaText}>Conhecer CraftCard</span>
@@ -179,12 +185,6 @@ const HomePage = () => {
         <div className={styles.sectionBlock}>
           <div className={styles.sectionCard}>
             <CompanySection />
-          </div>
-        </div>
-
-        <div className={styles.sectionBlock}>
-          <div className={styles.sectionCard}>
-            <MetricsSection />
           </div>
         </div>
 
