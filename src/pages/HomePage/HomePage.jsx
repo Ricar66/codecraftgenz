@@ -149,7 +149,7 @@ const HomePage = () => {
       <Navbar />
       <main>
         <div className={styles.sectionBlock}>
-          <Hero onCrafterClick={() => setIsCrafterModalOpen(true)} onPartnerClick={() => setIsPartnerModalOpen(true)} />
+          <Hero />
         </div>
 
         <div className={styles.sectionBlock}>

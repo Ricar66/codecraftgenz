@@ -87,6 +87,12 @@
   margin: 0 auto;
 }
 
+/* Trecho do subtítulo em destaque */
+.subtitleAccent {
+  color: #c7d2fe;
+  font-weight: 500;
+}
+
 /* Badges profissionais — retangulares, sem # */
 .hashtags {
   display: flex;
