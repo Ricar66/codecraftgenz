@@ -1,14 +1,16 @@
 // src/pages/HomePage/HomePage.jsx
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   Zap, Palette, Rocket, Target, BarChart3, MessageSquare,
   Smartphone, RefreshCw, Shield, Handshake, Settings, Phone,
-  UserPlus, Code2, LayoutDashboard, Building2
+  UserPlus, Code2, LayoutDashboard, Building2,
+  Trophy, ArrowRight, Star, CheckCircle
 } from 'lucide-react';
 
+import { apiRequest } from '../../lib/apiConfig.js';
 import appsBanner from '../../assets/apps-banner.jpg';
 import companiesBanner from '../../assets/companies-banner.jpg';
 import desafiosBanner from '../../assets/desafios-banner.jpg';
@@ -62,6 +64,46 @@ const howItWorksSteps = [
     description: 'Empresas buscam talentos diretamente pelo ranking. Quem entrega, aparece.',
   },
 ];
+
+const cicloSteps = [
+  {
+    icon: <Building2 size={26} />,
+    step: '01',
+    title: 'Empresa posta o desafio',
+    description: 'Define o problema real, a stack e o prazo. Sem burocracia.',
+    color: '#D12BF2',
+  },
+  {
+    icon: <Code2 size={26} />,
+    step: '02',
+    title: 'Crafter aceita e resolve',
+    description: 'Escolhe o desafio, escreve código de verdade e entrega com qualidade.',
+    color: '#00E4F2',
+  },
+  {
+    icon: <Trophy size={26} />,
+    step: '03',
+    title: 'Entrega avaliada',
+    description: 'Mentor revisa, empresa recebe os melhores perfis filtrados por performance.',
+    color: '#818cf8',
+  },
+  {
+    icon: <Handshake size={26} />,
+    step: '04',
+    title: 'Conexão acontece',
+    description: 'Empresa contrata, faz parceria ou convida para projeto. Crafter cresce.',
+    color: '#10b981',
+  },
+];
+
+const caseData = {
+  empresa: 'Startup FinTech',
+  desafio: 'API REST para controle financeiro com autenticação JWT e relatórios em PDF',
+  stack: ['Node.js', 'PostgreSQL', 'Docker', 'JWT'],
+  resultado: '5 crafters entregaram em 2 semanas. 2 foram convidados para o projeto.',
+  quote: 'Encontramos talentos que o LinkedIn não nos daria.',
+  autor: 'CTO da empresa',
+};
 
 const showcaseData = [
   {
@@ -121,6 +163,17 @@ const showcaseData = [
 const HomePage = () => {
   const [isCrafterModalOpen, setIsCrafterModalOpen] = useState(false);
   const [isPartnerModalOpen, setIsPartnerModalOpen] = useState(false);
+  const [mentores, setMentores] = useState([]);
+
+  useEffect(() => {
+    apiRequest('/api/mentores')
+      .then(data => {
+        const list = data?.data || data || [];
+        setMentores(Array.isArray(list) ? list.slice(0, 3) : []);
+      })
+      .catch(() => {});
+  }, []);
+
   const { canonical, ogUrl, ogImageUrl, twitterHandle } = useMemo(() => {
     const BASE_URL = 'https://codecraftgenz.com.br';
     const url = typeof window !== 'undefined' ? window.location.href : BASE_URL;
@@ -148,17 +201,126 @@ const HomePage = () => {
       </Helmet>
       <Navbar />
       <main>
+        {/* 1. Hero */}
         <div className={styles.sectionBlock}>
           <Hero onCrafterClick={() => setIsCrafterModalOpen(true)} />
         </div>
 
-        <div className={styles.sectionBlock}>
-          <div className={styles.sectionCard}>
-            <MetricsSection />
-          </div>
-        </div>
+        {/* 2. Dois caminhos */}
+        <motion.div
+          className={styles.sectionBlock}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={sectionReveal}
+        >
+          <div className={styles.doisCaminhosSection}>
+            <div className={styles.doisCaminhosHeader}>
+              <h2 className={styles.doisCaminhosTitle}>Por onde você começa?</h2>
+              <p className={styles.doisCaminhosLead}>Cada lado tem sua jornada. Os dois se encontram na plataforma.</p>
+            </div>
+            <div className={styles.doisCaminhosGrid}>
+              {/* Card Crafter */}
+              <motion.div
+                className={`${styles.caminhoCard} ${styles.caminhoCardCrafter}`}
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <div className={styles.caminhoIcon}><Code2 size={32} /></div>
+                <h3 className={styles.caminhoTitle}>Sou um Crafter</h3>
+                <p className={styles.caminhoDesc}>Quero crescer como dev, construir portfólio real e ser visto por empresas</p>
+                <ul className={styles.caminhoList}>
+                  <li><CheckCircle size={15} /> Desafios reais de mercado</li>
+                  <li><CheckCircle size={15} /> Projetos em squad</li>
+                  <li><CheckCircle size={15} /> Mentorias com sêniores</li>
+                  <li><CheckCircle size={15} /> Ranking e badges</li>
+                  <li><CheckCircle size={15} /> Visibilidade para empresas</li>
+                </ul>
+                <button
+                  className={styles.caminhoBtn}
+                  onClick={() => setIsCrafterModalOpen(true)}
+                >
+                  Criar conta grátis <ArrowRight size={16} />
+                </button>
+              </motion.div>
 
-        {/* Como funciona */}
+              {/* Separador central */}
+              <div className={styles.caminhoSeparador}>
+                <span className={styles.caminhoSeparadorLabel}>ou</span>
+              </div>
+
+              {/* Card Empresa */}
+              <motion.div
+                className={`${styles.caminhoCard} ${styles.caminhoCardEmpresa}`}
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <div className={styles.caminhoIcon}><Building2 size={32} /></div>
+                <h3 className={styles.caminhoTitle}>Sou uma Empresa</h3>
+                <p className={styles.caminhoDesc}>Quero encontrar talentos validados por código real, não por currículo</p>
+                <ul className={styles.caminhoList}>
+                  <li><CheckCircle size={15} /> Perfis filtrados por performance</li>
+                  <li><CheckCircle size={15} /> Desafios sob demanda</li>
+                  <li><CheckCircle size={15} /> Squads montados para o seu projeto</li>
+                  <li><CheckCircle size={15} /> Mentores sêniores disponíveis</li>
+                  <li><CheckCircle size={15} /> Parceria ou contratação direta</li>
+                </ul>
+                <Link to="/para-empresas" className={`${styles.caminhoBtn} ${styles.caminhoBtnEmpresa}`}>
+                  Conhecer planos <ArrowRight size={16} />
+                </Link>
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* 3. O ciclo completo */}
+        <motion.div
+          className={styles.sectionBlock}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={sectionReveal}
+        >
+          <div className={styles.cicloSection}>
+            <div className={styles.cicloHeader}>
+              <span className={styles.cicloBadge}>Como funciona o ecossistema</span>
+              <h2 className={styles.cicloTitle}>Empresa define. Crafter resolve. Os dois crescem.</h2>
+              <p className={styles.cicloLead}>Um ciclo que une o mercado e o talento de forma direta.</p>
+            </div>
+            <div className={styles.cicloGrid}>
+              {cicloSteps.map((s, i) => (
+                <React.Fragment key={i}>
+                  <motion.div
+                    className={styles.cicloCard}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <div className={styles.cicloIconWrap} style={{ color: s.color, borderColor: `${s.color}30`, background: `${s.color}10` }}>
+                      {s.icon}
+                    </div>
+                    <span className={styles.cicloStep}>{s.step}</span>
+                    <h3 className={styles.cicloCardTitle}>{s.title}</h3>
+                    <p className={styles.cicloCardDesc}>{s.description}</p>
+                  </motion.div>
+                  {i < cicloSteps.length - 1 && (
+                    <div className={styles.cicloArrow} aria-hidden="true">
+                      <ArrowRight size={20} />
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+            <p className={styles.cicloQuote}>"A empresa define o problema. O crafter resolve. Os melhores são descobertos."</p>
+          </div>
+        </motion.div>
+
+        {/* 4. Como funciona */}
         <motion.div
           className={styles.sectionBlock}
           initial="hidden"
@@ -198,13 +360,118 @@ const HomePage = () => {
           </div>
         </motion.div>
 
+        {/* 5. MetricsSection */}
+        <div className={styles.sectionBlock}>
+          <div className={styles.sectionCard}>
+            <MetricsSection />
+          </div>
+        </div>
+
+        {/* 6. ShowcaseBlocks */}
         {showcaseData.map((item, i) => (
           <div key={i} className={styles.sectionBlock}>
             <ShowcaseBlock {...item} />
           </div>
         ))}
 
-        {/* CraftCard Banner */}
+        {/* 7. Cases reais */}
+        <motion.div
+          className={styles.sectionBlock}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={sectionReveal}
+        >
+          <div className={styles.casesSection}>
+            <div className={styles.casesHeader}>
+              <span className={styles.casesBadge}>Casos reais</span>
+              <h2 className={styles.casesTitle}>Do desafio à contratação</h2>
+              <p className={styles.casesLead}>Veja como o ciclo funciona na prática</p>
+            </div>
+            <div className={styles.caseCard}>
+              <div className={styles.caseCardLeft}>
+                <div className={styles.caseLabel}>🏢 Empresa</div>
+                <div className={styles.caseEmpresa}>{caseData.empresa}</div>
+                <div className={styles.caseDesafioLabel}>Desafio postado</div>
+                <p className={styles.caseDesafio}>{caseData.desafio}</p>
+                <div className={styles.caseStack}>
+                  {caseData.stack.map(t => (
+                    <span key={t} className={styles.caseTag}>{t}</span>
+                  ))}
+                </div>
+              </div>
+              <div className={styles.caseCardDivider} />
+              <div className={styles.caseCardRight}>
+                <div className={styles.caseLabel}>👨‍💻 Resultado</div>
+                <p className={styles.caseResultado}>{caseData.resultado}</p>
+                <blockquote className={styles.caseQuote}>
+                  <p>"{caseData.quote}"</p>
+                  <cite>— {caseData.autor}</cite>
+                </blockquote>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* 8. Mentorias em destaque */}
+        {mentores.length > 0 && (
+          <motion.div
+            className={styles.sectionBlock}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.1 }}
+            variants={sectionReveal}
+          >
+            <div className={styles.mentoriasSection}>
+              <div className={styles.mentoriasHeader}>
+                <span className={styles.mentoriasBadge}>Mentorias</span>
+                <h2 className={styles.mentoriasTitle}>Aprenda com quem já está no mercado</h2>
+                <p className={styles.mentoriasLead}>Mentores sêniores que já passaram pelo que você vai enfrentar</p>
+              </div>
+              <div className={styles.mentoriasGrid}>
+                {mentores.map((m, i) => {
+                  const name = m.nome || m.name || 'Mentor';
+                  const initials = name.trim().split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+                  return (
+                    <motion.div
+                      key={m.id || i}
+                      className={styles.mentorCard}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, amount: 0.3 }}
+                      transition={{ duration: 0.5, delay: i * 0.1 }}
+                      whileHover={{ y: -6, transition: { type: 'spring', stiffness: 250, damping: 15 } }}
+                    >
+                      <div className={styles.mentorAvatar}>
+                        {m.avatar ? (
+                          <img src={m.avatar} alt={name} className={styles.mentorAvatarImg} />
+                        ) : (
+                          <span className={styles.mentorAvatarInitials}>{initials}</span>
+                        )}
+                      </div>
+                      <div className={styles.mentorInfo}>
+                        <h3 className={styles.mentorName}>{name}</h3>
+                        {(m.especialidade || m.stack) && (
+                          <p className={styles.mentorEspecialidade}>{m.especialidade || m.stack}</p>
+                        )}
+                        {m.bio && (
+                          <p className={styles.mentorBio}>{m.bio.length > 100 ? m.bio.slice(0, 100) + '…' : m.bio}</p>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+              <div className={styles.mentoriasCta}>
+                <Link to="/mentoria" className={styles.mentoriasCtaBtn}>
+                  Ver todos os mentores <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* 9. CraftCard Banner */}
         <motion.div
           className={styles.sectionBlock}
           initial="hidden"
@@ -245,24 +512,28 @@ const HomePage = () => {
           </a>
         </motion.div>
 
+        {/* 10. FeaturesSection */}
         <div className={styles.sectionBlock}>
           <div className={styles.sectionCard}>
             <FeaturesSection />
           </div>
         </div>
 
+        {/* 11. CompanySection */}
         <div className={styles.sectionBlock}>
           <div className={styles.sectionCard}>
             <CompanySection />
           </div>
         </div>
 
+        {/* 12. NewsSection */}
         <div className={styles.sectionBlock}>
           <div className={styles.sectionCard}>
             <NewsSection />
           </div>
         </div>
 
+        {/* 13. FeedbackShowcase */}
         <motion.div
           className={styles.feedbackFullWidth}
           initial="hidden"
@@ -273,6 +544,31 @@ const HomePage = () => {
           <h2 className={styles.sectionTitle}>O que dizem sobre nós</h2>
           <p className={styles.sectionSubtitle}>Feedbacks reais de quem já usou nossos serviços</p>
           <FeedbackShowcase autoIntervalMs={5000} showControls={true} />
+        </motion.div>
+
+        {/* 14. CTA Final Duplo */}
+        <motion.div
+          className={styles.ctaFinalSection}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={sectionReveal}
+        >
+          <div className={styles.ctaFinalInner}>
+            <h2 className={styles.ctaFinalTitle}>Pronto para fazer parte do ciclo?</h2>
+            <p className={styles.ctaFinalDesc}>Crafters constroem portfólio. Empresas encontram talentos. O ciclo nunca para.</p>
+            <div className={styles.ctaFinalBtns}>
+              <button
+                className={styles.ctaFinalBtnCrafter}
+                onClick={() => setIsCrafterModalOpen(true)}
+              >
+                <Rocket size={18} /> Quero ser Crafter
+              </button>
+              <Link to="/para-empresas" className={styles.ctaFinalBtnEmpresa}>
+                <Building2 size={18} /> Quero contratar →
+              </Link>
+            </div>
+          </div>
         </motion.div>
 
         <CrafterModal
