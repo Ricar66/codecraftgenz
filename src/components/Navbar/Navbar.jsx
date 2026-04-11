@@ -103,24 +103,6 @@ const Navbar = memo(() => {
           </li>
           <li className={styles.navItem}>
             <Link
-              to="/ranking"
-              className={`${styles.navLink} ${isActiveLink('/ranking') ? styles.navLinkActive : ''}`}
-              onClick={closeMobileMenu}
-            >
-              Ranking
-            </Link>
-          </li>
-          <li className={styles.navItem}>
-            <Link
-              to="/feedbacks"
-              className={`${styles.navLink} ${isActiveLink('/feedbacks') ? styles.navLinkActive : ''}`}
-              onClick={closeMobileMenu}
-            >
-              Feedbacks
-            </Link>
-          </li>
-          <li className={styles.navItem}>
-            <Link
               to="/aplicativos"
               className={`${styles.navLink} ${isActiveLink('/aplicativos') ? styles.navLinkActive : ''}`}
               onClick={closeMobileMenu}
@@ -129,6 +111,15 @@ const Navbar = memo(() => {
             </Link>
           </li>
           <li className={styles.navItem}>
+            <Link
+              to="/sobre"
+              className={`${styles.navLink} ${isActiveLink('/sobre') ? styles.navLinkActive : ''}`}
+              onClick={closeMobileMenu}
+            >
+              Sobre
+            </Link>
+          </li>
+          <li className={`${styles.navItem} ${styles.navItemPush}`}>
             <Link
               to="/para-empresas"
               className={`${styles.navLink} ${styles.navLinkB2B} ${isActiveLink('/para-empresas') ? styles.navLinkActive : ''}`}
@@ -227,16 +218,27 @@ const Navbar = memo(() => {
                 </div>
               </li>
             ) : (
-              /* Usuario Nao Logado - Botao de Entrar */
-              <li className={styles.navItem}>
-                <Link
-                  to="/login"
-                  className={`${styles.navLink} ${styles.navLinkCta}`}
-                  onClick={closeMobileMenu}
-                >
-                  Entrar
-                </Link>
-              </li>
+              /* Usuario Nao Logado - Entrar + Ser Crafter */
+              <>
+                <li className={styles.navItem}>
+                  <Link
+                    to="/login"
+                    className={`${styles.navLink} ${styles.navLinkLogin}`}
+                    onClick={closeMobileMenu}
+                  >
+                    Entrar
+                  </Link>
+                </li>
+                <li className={styles.navItem}>
+                  <Link
+                    to="/register"
+                    className={`${styles.navLink} ${styles.navLinkCta}`}
+                    onClick={closeMobileMenu}
+                  >
+                    Ser Crafter →
+                  </Link>
+                </li>
+              </>
             )
           )}
         </ul>
