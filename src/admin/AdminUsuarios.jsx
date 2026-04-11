@@ -83,14 +83,14 @@ export default function AdminUsuarios() {
                 <td data-label="Perfil">{u.role}</td>
                 <td data-label="Status">
                   <span style={{
-                    background: u.status==='active' ? '#00E4F2' : '#666',
+                    background: u.status==='ativo' ? '#00E4F2' : '#666',
                     color: '#fff', padding: '4px 8px', borderRadius: '12px', fontSize: '0.8em', fontWeight: 'bold'
                   }}>
                     {u.status}
                   </span>
                 </td>
                 <td data-label="Controle">
-                  <button className="btn btn-outline" onClick={async()=>{ const res = await UsersRepo.toggleStatus(u.id); if(!res.ok){ toast.error(res.error||'Falha ao alternar status'); } else { refresh(); } }}>{u.status==='active'?'Desativar':'Ativar'}</button>
+                  <button className="btn btn-outline" onClick={async()=>{ const res = await UsersRepo.toggleStatus(u.id); if(!res.ok){ toast.error(res.error||'Falha ao alternar status'); } else { refresh(); } }}>{u.status==='ativo'?'Desativar':'Ativar'}</button>
                 </td>
                 <td data-label="Ações">
                   <select aria-label="Alterar perfil" value={u.role} onChange={async (e)=>{
