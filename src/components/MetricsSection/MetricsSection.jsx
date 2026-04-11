@@ -60,6 +60,7 @@ const MetricsSection = () => {
     { label: 'Apps publicados', target: 0 },
     { label: 'Mentores', target: 0 },
   ]);
+  const [fetched, setFetched] = useState(false);
 
   const gridRef = useRef(null);
   const gridInView = useInView(gridRef, { amount: 0.2, once: true });
@@ -89,12 +90,17 @@ const MetricsSection = () => {
           { label: 'Apps publicados', target: Array.isArray(appsList) ? appsList.length : 0 },
           { label: 'Mentores', target: Array.isArray(mentoresList) ? mentoresList.length : 0 },
         ]);
+        setFetched(true);
       } catch (err) {
         console.error('Erro ao buscar métricas:', err);
+        setFetched(true);
       }
     }
     fetchMetrics();
   }, []);
+
+  const visibleMetrics = metrics.filter(m => m.target > 0);
+  if (fetched && visibleMetrics.length === 0) return null;
 
   return (
     <section className={styles.metricsSection} aria-label="Métricas e resultados">
@@ -119,7 +125,7 @@ const MetricsSection = () => {
         viewport={{ once: true, amount: 0.1 }}
         variants={stagger(0.12)}
       >
-        {metrics.map((m, i) => (
+        {visibleMetrics.map((m, i) => (
           <Metric key={i} label={m.label} target={m.target} inView={gridInView} />
         ))}
       </motion.div>
