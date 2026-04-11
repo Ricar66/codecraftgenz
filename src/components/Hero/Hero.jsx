@@ -1,7 +1,8 @@
 // src/components/Hero/Hero.jsx
 import { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Rocket, Handshake } from 'lucide-react';
+import { Rocket, Building2 } from 'lucide-react';
 
 import { useAnalytics } from '../../hooks/useAnalytics';
 import { trackFunnelStep } from '../../services/analyticsAPI.js';
@@ -35,24 +36,25 @@ const hashtagVariant = {
 
 const hashtags = ['Comunidade Dev', 'Inovação Tech', 'Oportunidades Reais'];
 
-const Hero = ({ onCrafterClick, onPartnerClick }) => {
+const Hero = () => {
   const { trackButtonClick } = useAnalytics();
+  const navigate = useNavigate();
 
   const handleCtaClick = useCallback(() => {
     trackButtonClick('cta_quero_ser_crafter', 'hero_section', {
       cta_text: 'Quero ser um Crafter',
     });
     trackFunnelStep('crafter_funnel', 'crafter_cta_clicked', { location: 'hero_section' });
-    if (onCrafterClick) onCrafterClick();
-  }, [trackButtonClick, onCrafterClick]);
+    navigate('/register');
+  }, [trackButtonClick, navigate]);
 
   const handlePartnerClick = useCallback(() => {
-    trackButtonClick('cta_seja_parceiro', 'hero_section', {
-      cta_text: 'Seja um Parceiro',
+    trackButtonClick('cta_sou_empresa', 'hero_section', {
+      cta_text: 'Sou uma Empresa',
     });
-    trackFunnelStep('partnership_funnel', 'partner_cta_clicked', { location: 'hero_section' });
-    if (onPartnerClick) onPartnerClick();
-  }, [trackButtonClick, onPartnerClick]);
+    trackFunnelStep('company_funnel', 'company_cta_clicked', { location: 'hero_section' });
+    navigate('/para-empresas');
+  }, [trackButtonClick, navigate]);
 
   return (
     <section
@@ -77,8 +79,8 @@ const Hero = ({ onCrafterClick, onPartnerClick }) => {
             animate="visible"
             variants={fadeUp(0.25)}
           >
-            Mostre seus projetos, complete desafios reais
-            e seja descoberto por empresas que contratam.
+            Complete desafios reais, entre em projetos e seja descoberto.{' '}
+            <span className={styles.subtitleAccent}>Empresas encontram talentos. Crafters encontram oportunidades.</span>
           </motion.p>
 
           <div className={styles.hashtags}>
@@ -126,9 +128,9 @@ const Hero = ({ onCrafterClick, onPartnerClick }) => {
               onClick={handlePartnerClick}
               variant="outline"
               className={styles.partnerButton}
-              aria-label="Propor parceria com a CodeCraft"
+              aria-label="Conhecer soluções para empresas"
             >
-              <Handshake size={18} /> Seja um Parceiro
+              <Building2 size={18} /> Sou uma Empresa →
             </Button>
           </motion.div>
         </motion.div>
