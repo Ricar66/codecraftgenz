@@ -1,6 +1,6 @@
 // src/services/analyticsAPI.js
 // Serviço de tracking de eventos com buffer e envio em batch para o backend
-import { apiRequest } from '../lib/apiConfig.js';
+import { apiRequest, API_BASE_URL } from '../lib/apiConfig.js';
 
 // ── Session ID ──────────────────────────────────────────────
 function getSessionId() {
@@ -109,7 +109,6 @@ if (typeof window !== 'undefined') {
     const body = JSON.stringify({ events: eventBuffer });
     const blob = new Blob([body], { type: 'application/json' });
     try {
-      const { API_BASE_URL } = require('../lib/apiConfig.js');
       navigator.sendBeacon?.(`${API_BASE_URL}/api/analytics/events`, blob);
     } catch { /* silently fail */ }
     eventBuffer = [];

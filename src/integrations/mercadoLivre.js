@@ -1,8 +1,12 @@
-// Integração independente com API do Mercado Livre/Mercado Pago
-// - OAuth 2.0: troca de código e refresh
-// - Validação de dados de transação
-// - Logs detalhados por operação
-// - Envio de transação para endpoint configurável (fallback Merchant Orders)
+// ⚠️ ATENÇÃO: Este arquivo contém código Node.js (fs, path, process.env) e NÃO deve
+// ser importado pelo bundle do frontend (Vite/React). Ele é um utilitário server-side
+// que pertence ao backend. Mova para o repositório backend antes de usar.
+//
+// MOTIVO: importa `fs` e `path` nativos do Node, e usa process.env.MERCADO_PAGO_ACCESS_TOKEN
+// (token privado de servidor). Se bundled, causaria crash no browser ou vazaria o token.
+//
+// STATUS: Não está importado por nenhum componente — apenas mantido aqui por histórico.
+// TODO: Mover para backend/src/integrations/ e remover deste repositório.
 
 import fs from 'fs';
 import path from 'path';

@@ -39,23 +39,33 @@ export function shouldFallbackPublic(err, overrideEnabled) {
   return unauthorized || network || serverError || nonJson;
 }
 
+// Timeout padrão: 30s para uploads, 15s para requests normais
+const DEFAULT_TIMEOUT_MS = 15_000;
+const UPLOAD_TIMEOUT_MS = 60_000;
+
 export async function apiRequest(endpoint, options = {}) {
   const isDebug = import.meta.env.DEV || toBoolFlag(import.meta.env.VITE_DEBUG_ADMIN || '');
   // Agora o endpoint DEVE começar com /api/ (ex: /api/projetos)
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   // Recupera token da sessão se existir
   const authHeader = getAuthHeader();
-  
+
+  // Timeout via AbortController — evita hangs indefinidos em backend lento
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     const suppressLog = options.suppressLog === true;
     if (isDebug) {
       const m = String(options.method || 'GET').toUpperCase();
       console.log('[API:req]', m, endpoint);
     }
-    const { headers: optHeaders, ...restOptions } = options;
+    const { headers: optHeaders, timeoutMs: _t, ...restOptions } = options;
     const response = await fetch(url, {
       ...restOptions,
+      signal: restOptions.signal || controller.signal,
       credentials: restOptions.credentials || 'include',
       headers: {
         'Content-Type': 'application/json',
@@ -63,6 +73,7 @@ export async function apiRequest(endpoint, options = {}) {
                 ...optHeaders,
       },
     });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       // Tenta extrair mensagem de erro do servidor e propaga detalhes
@@ -114,6 +125,14 @@ export async function apiRequest(endpoint, options = {}) {
     throw new Error('Resposta da API não é JSON');
 
   } catch (error) {
+    clearTimeout(timeoutId);
+    // Timeout atingido — AbortError
+    if (error.name === 'AbortError') {
+      const timeoutError = new Error('Requisição cancelada por timeout. Tente novamente.');
+      timeoutError.type = 'timeout';
+      timeoutError.status = 0;
+      throw timeoutError;
+    }
     // Se for erro de rede (ex: ERR_CONNECTION_REFUSED)
     if (error.name === 'TypeError' && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
       const networkError = new Error('Erro de conexão: Verifique sua internet e tente novamente');
@@ -121,7 +140,7 @@ export async function apiRequest(endpoint, options = {}) {
       networkError.status = 0;
       throw networkError;
     }
-    
+
     if (isDebug && options.suppressLog !== true) {
       console.error('[API:catch]', endpoint, error?.status || 0, error?.message || error);
     }
@@ -136,6 +155,10 @@ export async function apiRequestMultipart(endpoint, formData, options = {}) {
     ...getAuthHeader(),
         ...options.headers,
   };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
+
   try {
     if (isDebug) {
       console.log('[API:req:multipart]', 'POST', endpoint);
@@ -144,9 +167,11 @@ export async function apiRequestMultipart(endpoint, formData, options = {}) {
       method: options.method || 'POST',
       headers,
       body: formData,
+      signal: options.signal || controller.signal,
       credentials: options.credentials || 'include',
       ...options,
     });
+    clearTimeout(timeoutId);
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}`;
       let errorDetails = null;
@@ -188,6 +213,13 @@ export async function apiRequestMultipart(endpoint, formData, options = {}) {
     }
     throw new Error('Resposta da API não é JSON');
   } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      const timeoutError = new Error('Upload cancelado por timeout. Tente novamente.');
+      timeoutError.type = 'timeout';
+      timeoutError.status = 0;
+      throw timeoutError;
+    }
     if (error.name === 'TypeError' && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
       const networkError = new Error('Erro de conexão: Verifique sua internet e tente novamente');
       networkError.type = 'network';

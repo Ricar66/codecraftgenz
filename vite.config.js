@@ -5,9 +5,9 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Expõe também variáveis que começam com 'MERCADO_' para o frontend
-  // Isso permite usar MERCADO_PAGO_PUBLIC_KEY vindo do ambiente de build
-  envPrefix: ['VITE_', 'MERCADO_'],
+  // Apenas variáveis prefixadas com VITE_ são expostas ao bundle do cliente
+  // Usar VITE_MERCADO_PAGO_PUBLIC_KEY em vez de MERCADO_PAGO_PUBLIC_KEY
+  envPrefix: ['VITE_'],
   plugins: [
     react(),
     // Legacy plugin desabilitado - 95%+ dos usuarios tem browsers modernos
@@ -34,8 +34,8 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB max
         runtimeCaching: [
           {
-            // Requests cross-origin ao backend Render devem ir direto para a rede
-            urlPattern: ({ url }) => url.origin === 'https://codecraftgenz-monorepo.onrender.com',
+            // Requests ao backend de produção (VPS) nunca devem ser cacheadas
+            urlPattern: ({ url }) => url.origin === 'https://api.codecraftgenz.com.br',
             handler: 'NetworkOnly',
             options: {
               cacheName: 'backend-network-only'
@@ -154,9 +154,7 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 600
   },
-  // Configurações específicas para produção
-  define: {
-    'process.env.NODE_ENV': '"production"',
-    __DEV__: false
-  }
+  // Não sobrescrever process.env.NODE_ENV — Vite já injeta import.meta.env.MODE e import.meta.env.DEV
+  // O define anterior causava NODE_ENV="production" em todos os ambientes, inclusive dev
+  define: {}
 })
