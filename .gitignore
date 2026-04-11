@@ -5,6 +5,7 @@
 .env.development
 .env*.local
 .env.deploy
+*.env
 
 # Logs
 logs
@@ -104,3 +105,6 @@ generate_favicon.py
 
 # Deploy artifacts
 codecraft-deploy.zip
+
+# AI agent (não faz parte do frontend)
+ai-agent/
