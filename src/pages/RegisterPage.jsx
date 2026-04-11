@@ -124,13 +124,9 @@ export default function RegisterPage() {
         body: JSON.stringify({ name, email, password }),
       });
 
-      if (response?.token || response?.data?.token) {
-        const token = response.token || response.data.token;
-        localStorage.setItem('cc_session', JSON.stringify({ token }));
-        await login(email, password);
-      } else {
-        setError('Registro realizado, mas houve erro ao fazer login automático. Tente fazer login manualmente.');
-      }
+      // Auth é gerenciada via HTTPOnly cookie definido pelo backend
+      // O cookie já está ativo após o registro — apenas faz login para popular o contexto
+      await login(email, password);
     } catch (err) {
       setError(err?.message || 'Erro ao criar conta. Tente novamente.');
     } finally {

@@ -17,7 +17,7 @@ const LEADS_API_URL = (() => {
   return envLeadsUrl;
 })();
 
-const LEADS_API_KEY = import.meta.env.VITE_LEADS_API_KEY || 'tp_d50cddbcae54fc3c57608ca271b2a6470b7b3a7878421a07';
+const LEADS_API_KEY = import.meta.env.VITE_LEADS_API_KEY || '';
 
 /**
  * Envia evento para TrackPro (se disponível)

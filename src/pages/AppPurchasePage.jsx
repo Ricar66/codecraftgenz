@@ -83,6 +83,20 @@ function isValidCPF(cpf) {
   const digits = cpf.replace(/\D/g, '');
   if (digits.length !== 11) return false;
   if (/^(\d)\1+$/.test(digits)) return false;
+
+  // Validação dos dígitos verificadores (módulo 11)
+  const calcDigit = (slice, factor) => {
+    const sum = slice.split('').reduce((acc, d, i) => acc + Number(d) * (factor - i), 0);
+    const rem = sum % 11;
+    return rem < 2 ? 0 : 11 - rem;
+  };
+
+  const d1 = calcDigit(digits.slice(0, 9), 10);
+  if (d1 !== Number(digits[9])) return false;
+
+  const d2 = calcDigit(digits.slice(0, 10), 11);
+  if (d2 !== Number(digits[10])) return false;
+
   return true;
 }
 

@@ -3,3 +3,54 @@ RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 RewriteRule ^(.*)$ /nodejs/$1 [L]
+
+# ── Security Headers ──────────────────────────────────────────
+<IfModule mod_headers.c>
+  # Evita clickjacking
+  Header always set X-Frame-Options "SAMEORIGIN"
+
+  # Evita MIME sniffing
+  Header always set X-Content-Type-Options "nosniff"
+
+  # Força HTTPS por 1 ano, inclui subdomínios
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+  # Controle de referrer
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # Permissões de browser APIs (câmera, mic etc.)
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+
+  # Content Security Policy
+  # Ajuste os domínios conforme necessário ao adicionar novos serviços
+  Header always set Content-Security-Policy "\
+    default-src 'self'; \
+    script-src 'self' 'unsafe-inline' \
+      https://sdk.mercadopago.com \
+      https://accounts.google.com \
+      https://cdn.trackpro.io \
+      https://www.google.com \
+      https://www.gstatic.com; \
+    style-src 'self' 'unsafe-inline' \
+      https://fonts.googleapis.com; \
+    font-src 'self' \
+      https://fonts.gstatic.com; \
+    img-src 'self' data: https:; \
+    connect-src 'self' \
+      https://api.codecraftgenz.com.br \
+      https://app.trackpro.com.br \
+      https://oauth2.googleapis.com \
+      https://sdk.mercadopago.com \
+      https://api.mercadopago.com \
+      https://brasilapi.com.br \
+      https://viacep.com.br; \
+    frame-src \
+      https://www.mercadopago.com.br \
+      https://www.mercadopago.com \
+      https://accounts.google.com; \
+    object-src 'none'; \
+    base-uri 'self'; \
+    form-action 'self'; \
+    upgrade-insecure-requests; \
+  "
+</IfModule>
