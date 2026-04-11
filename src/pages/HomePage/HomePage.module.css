@@ -302,3 +302,140 @@
   .sectionCard { animation: none; }
   .sectionCard:hover { transform: none; }
 }
+
+/* ===== COMO FUNCIONA ===== */
+.howItWorksSection {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.howItWorksHeader {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.howItWorksBadge {
+  display: inline-block;
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #00E4F2;
+  background: rgba(0, 228, 242, 0.08);
+  border: 1px solid rgba(0, 228, 242, 0.2);
+  margin-bottom: 16px;
+}
+
+.howItWorksTitle {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-size: clamp(1.75rem, 4vw, 2.4rem);
+  font-weight: 800;
+  color: #f1f5f9;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+
+.howItWorksLead {
+  color: #94a3b8;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.howItWorksGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  position: relative;
+}
+
+.howItWorksCard {
+  padding: 32px 24px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: border-color 0.3s ease;
+  cursor: default;
+}
+
+.howItWorksCard:hover {
+  border-color: rgba(0, 228, 242, 0.15);
+}
+
+.howItWorksNumber {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #00E4F2;
+  opacity: 0.7;
+}
+
+.howItWorksIconWrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: rgba(0, 228, 242, 0.06);
+  border: 1px solid rgba(0, 228, 242, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00E4F2;
+  margin-bottom: 4px;
+}
+
+.howItWorksCardTitle {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0;
+}
+
+.howItWorksCardDesc {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.howItWorksCta {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.howItWorksCtaBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 36px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #0a0a0f;
+  background: #00E4F2;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 0 24px rgba(0, 228, 242, 0.2);
+}
+
+.howItWorksCtaBtn:hover {
+  background: #00cdd9;
+  transform: translateY(-2px);
+  box-shadow: 0 0 36px rgba(0, 228, 242, 0.35);
+}
+
+@media (max-width: 900px) {
+  .howItWorksGrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .howItWorksGrid { grid-template-columns: 1fr; }
+  .howItWorksHeader { margin-bottom: 32px; }
+  .howItWorksCard { padding: 24px 20px; }
+}

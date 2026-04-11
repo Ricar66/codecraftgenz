@@ -2,9 +2,11 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import {
   Zap, Palette, Rocket, Target, BarChart3, MessageSquare,
-  Smartphone, RefreshCw, Shield, Handshake, Settings, Phone
+  Smartphone, RefreshCw, Shield, Handshake, Settings, Phone,
+  UserPlus, Code2, LayoutDashboard, Building2
 } from 'lucide-react';
 
 import appsBanner from '../../assets/apps-banner.jpg';
@@ -33,6 +35,33 @@ const sectionReveal = {
     transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
   },
 };
+
+const howItWorksSteps = [
+  {
+    icon: <UserPlus size={28} />,
+    number: '01',
+    title: 'Crie sua conta',
+    description: 'Cadastro gratuito. Monte seu perfil, defina suas stacks e mostre o que você já sabe fazer.',
+  },
+  {
+    icon: <Code2 size={28} />,
+    number: '02',
+    title: 'Complete desafios reais',
+    description: 'Problemas de empresas reais com prazo, critérios e feedback de um mentor.',
+  },
+  {
+    icon: <LayoutDashboard size={28} />,
+    number: '03',
+    title: 'Construa seu portfólio',
+    description: 'Cada entrega fica no seu perfil público — um portfólio vivo, não um PDF que ninguém lê.',
+  },
+  {
+    icon: <Building2 size={28} />,
+    number: '04',
+    title: 'Seja descoberto',
+    description: 'Empresas buscam talentos diretamente pelo ranking. Quem entrega, aparece.',
+  },
+];
 
 const showcaseData = [
   {
@@ -77,14 +106,14 @@ const showcaseData = [
   {
     badge: 'Para Empresas',
     title: 'Soluções sob medida',
-    description: 'Da ideação ao deploy, construímos soluções que combinam tecnologia de ponta com design intuitivo para entregar resultados reais.',
+    description: 'Você tem uma ideia ou um problema. Nós temos o time. Do briefing ao deploy, com código limpo, design sólido e comunicação sem ruído.',
     image: companiesBanner,
     imageAlt: 'Soluções empresariais CodeCraft',
     reverse: true,
     features: [
-      { icon: <Handshake size={18} />, text: 'Consultoria personalizada' },
-      { icon: <Settings size={18} />, text: 'Desenvolvimento full-stack' },
-      { icon: <Phone size={18} />, text: 'Suporte 24/7' },
+      { icon: <Handshake size={18} />, text: 'Briefing em 24h' },
+      { icon: <Settings size={18} />, text: 'Dev full-stack, design e infra' },
+      { icon: <Phone size={18} />, text: 'Acompanhamento pós-entrega' },
     ],
   },
 ];
@@ -128,6 +157,46 @@ const HomePage = () => {
             <MetricsSection />
           </div>
         </div>
+
+        {/* Como funciona */}
+        <motion.div
+          className={styles.sectionBlock}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={sectionReveal}
+        >
+          <div className={styles.howItWorksSection}>
+            <div className={styles.howItWorksHeader}>
+              <span className={styles.howItWorksBadge}>Como funciona</span>
+              <h2 className={styles.howItWorksTitle}>Da prática ao trabalho, em 4 etapas</h2>
+              <p className={styles.howItWorksLead}>Uma jornada clara do aprendizado à oportunidade real</p>
+            </div>
+            <div className={styles.howItWorksGrid}>
+              {howItWorksSteps.map((step, i) => (
+                <motion.div
+                  key={i}
+                  className={styles.howItWorksCard}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                  whileHover={{ y: -6, transition: { type: 'spring', stiffness: 250, damping: 15 } }}
+                >
+                  <div className={styles.howItWorksNumber}>{step.number}</div>
+                  <div className={styles.howItWorksIconWrap}>{step.icon}</div>
+                  <h3 className={styles.howItWorksCardTitle}>{step.title}</h3>
+                  <p className={styles.howItWorksCardDesc}>{step.description}</p>
+                </motion.div>
+              ))}
+            </div>
+            <div className={styles.howItWorksCta}>
+              <Link to="/register" className={styles.howItWorksCtaBtn}>
+                Começar agora — é grátis
+              </Link>
+            </div>
+          </div>
+        </motion.div>
 
         {showcaseData.map((item, i) => (
           <div key={i} className={styles.sectionBlock}>
