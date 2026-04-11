@@ -36,7 +36,7 @@ const hashtagVariant = {
 
 const hashtags = ['Comunidade Dev', 'Inovação Tech', 'Oportunidades Reais'];
 
-const Hero = () => {
+const Hero = ({ onCrafterClick }) => {
   const { trackButtonClick } = useAnalytics();
   const navigate = useNavigate();
 
@@ -45,8 +45,8 @@ const Hero = () => {
       cta_text: 'Quero ser um Crafter',
     });
     trackFunnelStep('crafter_funnel', 'crafter_cta_clicked', { location: 'hero_section' });
-    navigate('/register');
-  }, [trackButtonClick, navigate]);
+    if (onCrafterClick) onCrafterClick();
+  }, [trackButtonClick, onCrafterClick]);
 
   const handlePartnerClick = useCallback(() => {
     trackButtonClick('cta_sou_empresa', 'hero_section', {
