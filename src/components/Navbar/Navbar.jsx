@@ -157,6 +157,14 @@ const Navbar = memo(() => {
                       <span className={styles.userDropdownEmail}>{user?.email}</span>
                     </div>
                     <div className={styles.userDropdownDivider} />
+                    <Link
+                      to="/perfil"
+                      className={styles.userDropdownItem}
+                      onClick={() => { setIsUserMenuOpen(false); closeMobileMenu(); }}
+                    >
+                      <User />
+                      Meu Perfil
+                    </Link>
                     {isStaff && (
                       <Link
                         to="/admin"
