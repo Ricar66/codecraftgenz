@@ -1,0 +1,458 @@
+/* src/pages/CrafterProfilePage.module.css */
+
+/* ===== PAGE ===== */
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ===== BACK NAV ===== */
+.backNav {
+  padding: 20px 24px;
+  z-index: 2;
+  position: relative;
+}
+
+.backLink {
+  color: #64748b;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.backLink:hover {
+  color: #94a3b8;
+}
+
+/* ===== HERO ===== */
+.hero {
+  display: flex;
+  justify-content: center;
+  padding: 60px 24px 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.heroInner {
+  max-width: 860px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* ===== AVATAR ===== */
+.avatarWrap {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5 0%, #818cf8 50%, #00E4F2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 3px solid rgba(129, 140, 248, 0.4);
+  box-shadow: 0 0 32px rgba(79, 70, 229, 0.25);
+}
+
+.avatarImg {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.avatarInitials {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+/* ===== NAME ===== */
+.name {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 800;
+  color: #f1f5f9;
+  margin: 0 0 16px;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+/* ===== BADGES ROW ===== */
+.badgesRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.teamBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  background: rgba(129, 140, 248, 0.15);
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #818cf8;
+  letter-spacing: 0.3px;
+}
+
+.pointsBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 14px;
+  background: rgba(0, 228, 242, 0.1);
+  border: 1px solid rgba(0, 228, 242, 0.3);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #00E4F2;
+}
+
+/* ===== BIO ===== */
+.bio {
+  font-size: 1rem;
+  color: #94a3b8;
+  max-width: 520px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ===== SECTION INNER ===== */
+.sectionInner {
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 16px;
+  letter-spacing: -0.01em;
+}
+
+/* ===== SKILLS SECTION ===== */
+.skillsSection {
+  padding: 0 24px 32px;
+  position: relative;
+  z-index: 1;
+}
+
+.skillsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.areaInteresseBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, rgba(0, 228, 242, 0.15) 0%, rgba(79, 70, 229, 0.15) 100%);
+  border: 1px solid rgba(0, 228, 242, 0.4);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #00E4F2;
+  letter-spacing: 0.3px;
+}
+
+.skillPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #94a3b8;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.skillPill:hover {
+  border-color: rgba(129, 140, 248, 0.4);
+  color: #818cf8;
+}
+
+/* ===== STATS ROW ===== */
+.statsSection {
+  padding: 0 24px 32px;
+  position: relative;
+  z-index: 1;
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  text-align: center;
+  gap: 8px;
+  transition: border-color 0.2s ease;
+}
+
+.statCard:hover {
+  border-color: rgba(129, 140, 248, 0.25);
+}
+
+.statValue {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ===== SOCIAL LINKS ===== */
+.socialSection {
+  padding: 0 24px 32px;
+  position: relative;
+  z-index: 1;
+}
+
+.socialLinks {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.socialBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.socialBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #f1f5f9;
+  transform: translateY(-2px);
+}
+
+.socialBtnLinkedin {
+  border-color: rgba(10, 102, 194, 0.3);
+  color: #7db8f7;
+}
+
+.socialBtnLinkedin:hover {
+  background: rgba(10, 102, 194, 0.1);
+  border-color: rgba(10, 102, 194, 0.5);
+  color: #93c5fd;
+}
+
+/* ===== CTA SECTION ===== */
+.ctaSection {
+  padding: 8px 24px 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.ctaButtons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ctaBtnPrimary {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #4f46e5 0%, #818cf8 100%);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);
+}
+
+.ctaBtnPrimary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4);
+}
+
+.ctaBtnSecondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 28px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.ctaBtnSecondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #f1f5f9;
+  transform: translateY(-2px);
+}
+
+/* ===== NOT FOUND ===== */
+.notFound {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 100px 24px;
+  flex: 1;
+}
+
+.notFoundIcon {
+  font-size: 3.5rem;
+  margin-bottom: 20px;
+  opacity: 0.6;
+}
+
+.notFoundTitle {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 12px;
+}
+
+.notFoundText {
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0 0 28px;
+}
+
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 11px 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.backBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+}
+
+/* ===== LOADING SKELETON ===== */
+.skeletonWrap {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+.skeletonBlock {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  animation: skeletonPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .hero {
+    padding: 40px 16px 24px;
+  }
+
+  .statsRow {
+    grid-template-columns: 1fr;
+  }
+
+  .ctaButtons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ctaBtnPrimary,
+  .ctaBtnSecondary {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .skillsSection,
+  .statsSection,
+  .socialSection,
+  .ctaSection {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  .skeletonBlock {
+    animation: none;
+    opacity: 0.5;
+  }
+
+  .ctaBtnPrimary:hover,
+  .ctaBtnSecondary:hover,
+  .socialBtn:hover {
+    transform: none;
+  }
+}
