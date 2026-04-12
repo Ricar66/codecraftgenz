@@ -129,6 +129,11 @@
   border-color: #25D366;
 }
 
+.discord:hover {
+  background: #5865F2;
+  border-color: #5865F2;
+}
+
 /* Copyright */
 .copyright {
   border-top: 1px solid rgba(255, 255, 255, 0.08);

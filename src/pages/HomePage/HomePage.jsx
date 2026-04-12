@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 
 import { apiRequest } from '../../lib/apiConfig.js';
+import { DiscordIcon } from '../../components/UI/BrandIcons/index.jsx';
 import appsBanner from '../../assets/apps-banner.jpg';
 import companiesBanner from '../../assets/companies-banner.jpg';
 import desafiosBanner from '../../assets/desafios-banner.jpg';
@@ -536,7 +537,32 @@ const HomePage = () => {
           <FeedbackShowcase />
         </motion.div>
 
-        {/* 14. CTA Final Duplo */}
+        {/* 14. Discord Community */}
+        <motion.div
+          className={styles.discordSection}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={sectionReveal}
+        >
+          <div className={styles.discordInner}>
+            <DiscordIcon size={40} className={styles.discordIcon} />
+            <div className={styles.discordText}>
+              <h2 className={styles.discordTitle}>Junte-se à comunidade</h2>
+              <p className={styles.discordDesc}>Devs que constroem, aprendem e evoluem juntos. Tire dúvidas, mostre seus projetos e conecte-se com outros Crafters.</p>
+            </div>
+            <a
+              href="https://discord.gg/uK6Ufuy9gc"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.discordBtn}
+            >
+              <DiscordIcon size={18} /> Entrar no Discord
+            </a>
+          </div>
+        </motion.div>
+
+        {/* 15. CTA Final Duplo */}
         <motion.div
           className={styles.ctaFinalSection}
           initial="hidden"

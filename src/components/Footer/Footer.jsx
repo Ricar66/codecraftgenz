@@ -1,7 +1,7 @@
 // src/components/Footer/Footer.jsx
 import React, { memo } from 'react';
 import { Mail, Headphones } from 'lucide-react';
-import { InstagramIcon, GitHubIcon, WhatsAppIcon } from '../UI/BrandIcons/index.jsx';
+import { InstagramIcon, GitHubIcon, WhatsAppIcon, DiscordIcon } from '../UI/BrandIcons/index.jsx';
 import { Link } from 'react-router-dom';
 
 import styles from './Footer.module.css';
@@ -89,6 +89,15 @@ const Footer = memo(({ showLinks = true }) => {
               className={`${styles.socialLink} ${styles.whatsapp}`}
             >
               <WhatsAppIcon aria-hidden="true" />
+            </a>
+            <a
+              href="https://discord.gg/uK6Ufuy9gc"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Discord"
+              className={`${styles.socialLink} ${styles.discord}`}
+            >
+              <DiscordIcon aria-hidden="true" />
             </a>
           </div>
         </div>
