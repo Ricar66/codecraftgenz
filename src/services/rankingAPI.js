@@ -137,7 +137,7 @@ export async function createCrafter(crafter) {
     method: 'POST',
     body: JSON.stringify(crafter),
   });
-  return data.crafter;
+  return data?.data || data;
 }
 
 /**
@@ -151,7 +151,7 @@ export async function updateCrafter(id, updates) {
     method: 'PUT',
     body: JSON.stringify(updates),
   });
-  return data.crafter;
+  return data?.data || data;
 }
 
 /**
