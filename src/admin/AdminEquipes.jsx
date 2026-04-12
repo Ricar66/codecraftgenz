@@ -213,9 +213,12 @@ export default function AdminEquipes() {
         return;
       }
 
+      const payload = Object.fromEntries(
+        Object.entries(novoCrafter).filter(([, v]) => v !== '' && v != null)
+      );
       const response = await apiRequest('/api/crafters', {
         method: 'POST',
-        body: JSON.stringify(novoCrafter)
+        body: JSON.stringify(payload)
       });
 
       if (response) {
