@@ -85,7 +85,15 @@ function useAuthProvider() {
         const isAdmin = ['admin', 'administrator', 'superadmin', 'owner', 'editor'].includes(
           String(u.role || '').toLowerCase()
         );
-        navigate(redirectTo || (isAdmin ? '/admin' : '/'));
+        if (redirectTo) {
+          navigate(redirectTo);
+        } else if (isAdmin) {
+          navigate('/admin');
+        } else if (!u.onboardingCompleted) {
+          navigate('/onboarding');
+        } else {
+          navigate('/');
+        }
       }
       return { ok: true };
     } catch (error) {
@@ -112,7 +120,15 @@ function useAuthProvider() {
         const isAdmin = ['admin', 'administrator', 'superadmin', 'owner', 'editor'].includes(
           String(u.role || '').toLowerCase()
         );
-        navigate(redirectTo || (isAdmin ? '/admin' : '/'));
+        if (redirectTo) {
+          navigate(redirectTo);
+        } else if (isAdmin) {
+          navigate('/admin');
+        } else if (!u.onboardingCompleted) {
+          navigate('/onboarding');
+        } else {
+          navigate('/');
+        }
       }
       return { ok: true };
     } catch (error) {

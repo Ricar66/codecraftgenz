@@ -41,6 +41,8 @@ export default function Onboarding() {
 
   useEffect(() => {
     if (!user) return;
+    // If the server tracks onboarding, use that — the new OnboardingPage handles it
+    if (user.onboardingCompleted !== undefined) return;
     const key = `cc_onboarding_${user.id}`;
     if (!localStorage.getItem(key)) {
       setVisible(true);
