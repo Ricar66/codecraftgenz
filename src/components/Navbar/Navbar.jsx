@@ -175,24 +175,6 @@ const Navbar = memo(() => {
                         Painel Admin
                       </Link>
                     )}
-                    {!isStaff && (
-                      <Link
-                        to="/minha-conta"
-                        className={styles.userDropdownItem}
-                        onClick={() => { setIsUserMenuOpen(false); closeMobileMenu(); }}
-                      >
-                        <ShoppingBag />
-                        Minhas Compras
-                      </Link>
-                    )}
-                    <Link
-                      to="/minha-conta"
-                      className={styles.userDropdownItem}
-                      onClick={() => { setIsUserMenuOpen(false); closeMobileMenu(); }}
-                    >
-                      <User />
-                      Meu Perfil
-                    </Link>
                     <div className={styles.userDropdownDivider} />
                     <button
                       className={styles.userDropdownItemLogout}
@@ -211,12 +193,7 @@ const Navbar = memo(() => {
                       <LayoutDashboard /> Painel Admin
                     </Link>
                   )}
-                  {!isStaff && (
-                    <Link to="/minha-conta" className={styles.navLink} onClick={closeMobileMenu}>
-                      <ShoppingBag /> Minhas Compras
-                    </Link>
-                  )}
-                  <Link to="/minha-conta" className={styles.navLink} onClick={closeMobileMenu}>
+                  <Link to="/perfil" className={styles.navLink} onClick={closeMobileMenu}>
                     <User /> Meu Perfil
                   </Link>
                   <button
