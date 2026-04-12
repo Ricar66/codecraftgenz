@@ -1,11 +1,65 @@
 // src/pages/ForCompaniesPage.jsx
 import React, { useState, useCallback, memo } from 'react';
-import { Building2, User, Mail, Monitor, Banknote, FileText, CheckCircle, Rocket } from 'lucide-react';
-
+import { motion } from 'framer-motion';
+import {
+  Building2, User, Mail, Monitor, Banknote, FileText,
+  CheckCircle, Rocket, ArrowRight, Code2, Trophy,
+  Target, Users, Shield, Zap
+} from 'lucide-react';
 import Navbar from '../components/Navbar/Navbar';
 import { createProposal } from '../services/proposalAPI';
-
 import styles from './ForCompaniesPage.module.css';
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
+};
+
+const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.1 } } };
+
+const comoFuncionaSteps = [
+  {
+    icon: <Target size={28} />,
+    number: '01',
+    title: 'Você posta o desafio',
+    description: 'Define o problema, a stack e o prazo. Em minutos, sem burocracia.',
+  },
+  {
+    icon: <Code2 size={28} />,
+    number: '02',
+    title: 'Crafters resolvem',
+    description: 'Nossa comunidade aceita o desafio e entrega código real, revisado por mentor sênior.',
+  },
+  {
+    icon: <Trophy size={28} />,
+    number: '03',
+    title: 'Você escolhe os melhores',
+    description: 'Veja perfis, entregas e histórico. Contrate com segurança, baseado em performance real.',
+  },
+];
+
+const beneficios = [
+  {
+    icon: <Trophy size={22} />,
+    title: 'Talentos filtrados por performance',
+    description: 'Você não vê currículo. Você vê código entregue, prazo cumprido e revisão de mentor.',
+  },
+  {
+    icon: <Zap size={22} />,
+    title: 'Zero burocracia',
+    description: 'Sem processo seletivo longo. O desafio já faz a triagem. Você só avalia os resultados.',
+  },
+  {
+    icon: <Users size={22} />,
+    title: 'Squad sob demanda',
+    description: 'Precisa de um time? Montamos um squad dedicado, full-stack, para o seu projeto.',
+  },
+  {
+    icon: <Shield size={22} />,
+    title: 'Mentoria inclusa',
+    description: 'Cada entrega é revisada por um mentor sênior antes de chegar até você.',
+  },
+];
 
 /**
  * Página B2B para solicitação de orçamentos
@@ -167,23 +221,109 @@ const ForCompaniesPage = memo(() => {
     <>
       <Navbar />
       <div className={`${styles.page} starfield-bg`}>
-        {/* Hero Section */}
+
+        {/* ── HERO ── */}
         <section className={styles.hero}>
-          <div className={styles.heroContent}>
-            <span className={styles.heroBadge}>
-              <Rocket aria-hidden="true" /> Para Empresas
-            </span>
-            <h1 className={styles.heroTitle}>
-              Transforme sua <span className={styles.highlight}>Ideia</span> em Software
-            </h1>
-            <p className={styles.heroSubtitle}>
-              Desenvolvemos soluções tecnológicas sob medida para empresas que buscam inovação, qualidade e resultados.
-            </p>
-          </div>
+          <motion.div
+            className={styles.heroContent}
+            initial="hidden"
+            animate="visible"
+            variants={stagger}
+          >
+            <motion.span className={styles.heroBadge} variants={fadeUp}>
+              <Building2 size={14} aria-hidden="true" /> Para Empresas
+            </motion.span>
+            <motion.h1 className={styles.heroTitle} variants={fadeUp}>
+              Encontre talentos validados por{' '}
+              <span className={styles.highlight}>código real</span>,{' '}
+              não por currículo.
+            </motion.h1>
+            <motion.p className={styles.heroSubtitle} variants={fadeUp}>
+              Poste um desafio real, receba entregas de crafters, escolha os melhores.
+              Sem processo seletivo longo. Sem currículo bonito que não entrega.
+            </motion.p>
+            <motion.div className={styles.heroCtas} variants={fadeUp}>
+              <button
+                className={styles.heroCtaPrimary}
+                onClick={() => document.getElementById('orcamento')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                Solicitar orçamento <ArrowRight size={16} />
+              </button>
+              <button
+                className={styles.heroCtaSecondary}
+                onClick={() => document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                Ver como funciona
+              </button>
+            </motion.div>
+          </motion.div>
         </section>
 
-        {/* Formulário */}
-        <section className={styles.formSection}>
+        {/* ── COMO FUNCIONA ── */}
+        <section id="como-funciona" className={styles.comoFuncionaSection}>
+          <motion.div
+            className={styles.comoFuncionaInner}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={stagger}
+          >
+            <motion.div className={styles.sectionHeader} variants={fadeUp}>
+              <span className={styles.sectionBadge}>Processo</span>
+              <h2 className={styles.sectionTitle}>Como funciona em 3 passos</h2>
+              <p className={styles.sectionLead}>Do briefing à contratação, sem fricção.</p>
+            </motion.div>
+            <div className={styles.comoFuncionaGrid}>
+              {comoFuncionaSteps.map((s, i) => (
+                <React.Fragment key={i}>
+                  <motion.div
+                    className={styles.comoFuncionaCard}
+                    variants={fadeUp}
+                  >
+                    <div className={styles.comoFuncionaIconWrap}>{s.icon}</div>
+                    <span className={styles.comoFuncionaNumber}>{s.number}</span>
+                    <h3 className={styles.comoFuncionaCardTitle}>{s.title}</h3>
+                    <p className={styles.comoFuncionaCardDesc}>{s.description}</p>
+                  </motion.div>
+                  {i < comoFuncionaSteps.length - 1 && (
+                    <div className={styles.comoFuncionaArrow} aria-hidden="true">
+                      <ArrowRight size={20} />
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          </motion.div>
+        </section>
+
+        {/* ── BENEFÍCIOS ── */}
+        <section className={styles.beneficiosSection}>
+          <motion.div
+            className={styles.beneficiosInner}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={stagger}
+          >
+            <motion.div className={styles.sectionHeader} variants={fadeUp}>
+              <span className={styles.sectionBadge}>Vantagens</span>
+              <h2 className={styles.sectionTitle}>O que você ganha</h2>
+              <p className={styles.sectionLead}>Por que empresas que querem resultado usam a CodeCraft.</p>
+            </motion.div>
+            <div className={styles.beneficiosGrid}>
+              {beneficios.map((b, i) => (
+                <motion.div key={i} className={styles.beneficioCard} variants={fadeUp}>
+                  <div className={styles.beneficioIconWrap}>{b.icon}</div>
+                  <h3 className={styles.beneficioTitle}>{b.title}</h3>
+                  <p className={styles.beneficioDesc}>{b.description}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </section>
+
+        {/* ── FORMULÁRIO ── */}
+        <section id="orcamento" className={styles.formSection}>
           <form onSubmit={handleSubmit} className={styles.form} noValidate>
             <h2 className={styles.formTitle}>Solicite um Orçamento</h2>
 
@@ -319,14 +459,12 @@ const ForCompaniesPage = memo(() => {
               </span>
             </div>
 
-            {/* Erro geral */}
             {errors.submit && (
               <p className={styles.errorMessage} style={{ textAlign: 'center', marginBottom: '1rem' }}>
                 {errors.submit}
               </p>
             )}
 
-            {/* Botão Submit */}
             <button
               type="submit"
               className={styles.submitButton}
@@ -340,6 +478,7 @@ const ForCompaniesPage = memo(() => {
             </p>
           </form>
         </section>
+
       </div>
     </>
   );

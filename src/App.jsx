@@ -29,6 +29,7 @@ const OrderSuccessPage = lazy(() => import('./pages/OrderSuccessPage.jsx'));
 const CacheMaintenancePage = lazy(() => import('./pages/CacheMaintenancePage.jsx'));
 const MyAccountPage = lazy(() => import('./pages/MyAccountPage.jsx'));
 const ForCompaniesPage = lazy(() => import('./pages/ForCompaniesPage.jsx'));
+const SobrePage = lazy(() => import('./pages/SobrePage.jsx'));
 const HubDownloadPage = lazy(() => import('./pages/HubDownloadPage.jsx'));
 
 // Legal pages
@@ -132,6 +133,7 @@ function App() {
                 <Route path="/aplicativos" element={<AppHubPage />} />
                 <Route path="/aplicativos/hub" element={<HubDownloadPage />} />
                 <Route path="/para-empresas" element={<ForCompaniesPage />} />
+                <Route path="/sobre" element={<SobrePage />} />
                 <Route path="/ajuda" element={<HelpPage />} />
                 <Route path="/politica-privacidade" element={<PrivacyPolicyPage />} />
                 <Route path="/termos-uso" element={<TermsOfUsePage />} />
