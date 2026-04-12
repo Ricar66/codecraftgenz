@@ -153,7 +153,7 @@ function App() {
                 <Route path="/cache/clear" element={<CacheMaintenancePage />} />
                 <Route path="/apps/:id/compra" element={<AppPurchasePage />} />
                 <Route path="/apps/:id/sucesso" element={<OrderSuccessPage />} />
-                <Route path="/minha-conta" element={<MyAccountPage />} />
+                <Route path="/minha-conta" element={<Navigate to="/perfil" replace />} />
                 <Route path="/admin" element={
                   <ProtectedRoute allowed={["admin","editor","team"]}>
                     <AdminLayout />
