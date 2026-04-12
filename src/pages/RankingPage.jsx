@@ -1,6 +1,7 @@
 // src/pages/RankingPage.jsx
 // Leaderboard Estilo Game - Cyberpunk/Glassmorphism Design
 import React, { useEffect, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 
 import ChallengesSubNav from '../components/ChallengesSubNav/ChallengesSubNav.jsx';
 import Navbar from '../components/Navbar/Navbar';
@@ -78,12 +79,8 @@ const PodiumItem = ({ data, position }) => {
 const RankCard = ({ data, position }) => {
   const isTop10 = position <= 10;
 
-  return (
-    <li className={styles.rankCard}>
-      <div className={`${styles.rankPosition} ${isTop10 ? styles.rankTop10 : ''}`}>
-        #{position}
-      </div>
-
+  const avatarAndInfo = (
+    <>
       <div className={styles.rankAvatar}>
         {data.avatar ? (
           <img
@@ -102,6 +99,22 @@ const RankCard = ({ data, position }) => {
         <h4 className={styles.rankName}>{data.name}</h4>
         {data.area && <span className={styles.rankArea}>{data.area}</span>}
       </div>
+    </>
+  );
+
+  return (
+    <li className={styles.rankCard}>
+      <div className={`${styles.rankPosition} ${isTop10 ? styles.rankTop10 : ''}`}>
+        #{position}
+      </div>
+
+      {data.id ? (
+        <Link to={`/crafter/${data.id}`} className={styles.rankCardLink}>
+          {avatarAndInfo}
+        </Link>
+      ) : (
+        avatarAndInfo
+      )}
 
       <div className={styles.rankScore}>
         <span className={styles.scoreIcon}>⭐</span>
