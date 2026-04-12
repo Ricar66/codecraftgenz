@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 
 import { trackFunnelStep } from '../../services/analyticsAPI.js';
 import { getAppImageUrl, getAppPrice } from '../../utils/appModel.js';
+import { stripMarkdown } from '../../utils/textUtils.js';
 import styles from './AppCard.module.css';
 
 const parsePlatforms = (p) => {
@@ -62,6 +63,9 @@ const AppCard = ({ app, onDownload, onAbout, mode = 'owned', featured = false })
 
         <div className={styles.pricingRow} aria-label="Preço">
           <span className={`${styles.price} ${safePrice === 0 ? styles.priceFree : ''}`}>{displayPrice}</span>
+          {safePrice > 0 && (
+            <span className={styles.licenseType}>{app.license_type === 'assinatura' ? 'Assinatura' : 'Licença vitalícia'}</span>
+          )}
         </div>
 
         {platforms.length > 0 && (

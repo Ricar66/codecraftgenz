@@ -9,6 +9,7 @@ import Modal from '../UI/Modal/Modal.jsx';
 import { trackFunnelStep } from '../../services/analyticsAPI.js';
 import { getAppImageUrl, getAppPrice } from '../../utils/appModel.js';
 import { sanitizeImageUrl } from '../../utils/urlSanitize.js';
+import { stripMarkdown } from '../../utils/textUtils.js';
 
 import styles from './AppDetailModal.module.css';
 
@@ -60,7 +61,7 @@ export default function AppDetailModal({ app, onClose }) {
   const platforms = parsePlatforms(app.platforms);
   const tags = parseTags(app.tags);
   const screenshots = parseScreenshots(app.screenshots);
-  const description = app.description || app.shortDescription || app.mainFeature || '';
+  const description = stripMarkdown(app.description || app.shortDescription || app.mainFeature || '');
 
   return (
     <Modal isOpen onClose={onClose} size="xl" title={null} showCloseButton>
@@ -176,6 +177,9 @@ export default function AppDetailModal({ app, onClose }) {
         <div className={styles.ctaPrice}>
           <span className={styles.ctaPriceLabel}>A partir de</span>
           <span className={styles.ctaPriceValue}>{displayPrice}</span>
+          {price > 0 && (
+            <span className={styles.licenseType}>{app.license_type === 'assinatura' ? 'Assinatura mensal' : 'Licença vitalícia · 1 PC'}</span>
+          )}
         </div>
         <Link to={`/apps/${app.id}/compra`} className={styles.ctaButton} onClick={() => { trackFunnelStep('purchase_funnel', 'app_buy_clicked', { app_id: app.id, app_name: app.name || app.titulo, price: app.price || app.preco }); onClose(); }}>
           <ShoppingCart /> Comprar Agora

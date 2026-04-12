@@ -92,11 +92,12 @@ const AdminInscricoes = () => {
           const emailNorm = normalizaEmail(atual?.email);
           const jaExiste = !!(emailNorm && craftersPorEmail[emailNorm] && craftersPorEmail[emailNorm].length > 0);
           if (!jaExiste && emailNorm) {
-            const payload = {
-              nome: String(atual?.nome || '').trim(),
-              email: String(atual?.email || '').trim(),
-              avatar_url: ''
-            };
+            const payload = Object.fromEntries(
+              Object.entries({
+                nome: String(atual?.nome || '').trim(),
+                email: String(atual?.email || '').trim(),
+              }).filter(([, v]) => v !== '' && v != null)
+            );
             await apiRequest('/api/crafters', { method: 'POST', body: JSON.stringify(payload) });
             // Atualiza lista de crafters para refletir criação
             try {

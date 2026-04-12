@@ -12,6 +12,7 @@ import { getPublicApps } from '../services/appsAPI.js';
 import { getAppImageUrl } from '../utils/appModel.js';
 import { appsCache } from '../utils/dataCache.js';
 import { sanitizeSrcSet } from '../utils/urlSanitize.js';
+import { stripMarkdown } from '../utils/textUtils.js';
 
 import styles from './AppHubPage.module.css';
 
@@ -362,7 +363,7 @@ const AppHubPage = () => {
                   <div className={styles.highlightOverlay}>
                     <div className={styles.highlightInfo}>
                       <h4 className={styles.highlightTitle}>{app.name}</h4>
-                      <p className={styles.highlightDesc}>{(app.description || app.mainFeature || '').slice(0, 120)}</p>
+                      <p className={styles.highlightDesc}>{stripMarkdown(app.description || app.mainFeature || '').slice(0, 120)}</p>
                     </div>
                     <div className={styles.highlightActions}>
                       <Link to={`/apps/${app.id}/compra`} className={styles.ctaPrimary}>Comprar Agora</Link>
