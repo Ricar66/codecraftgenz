@@ -1,60 +1,71 @@
-import React from 'react';
-
+// src/components/Challenges/ChallengeCard.jsx
 import { sanitizeImageUrl } from '../../utils/urlSanitize.js';
-
 import styles from './ChallengeCard.module.css';
 
-function formatDate(iso) {
-  try { return new Date(iso).toLocaleString('pt-BR'); } catch { return '—'; }
-}
+const DIFF_MAP = {
+  starter:      { label: 'Starter',       cls: styles.pillGreen },
+  intermediate: { label: 'Intermediário', cls: styles.pillYellow },
+  pro:          { label: 'Pro',           cls: styles.pillRed },
+};
 
-function countdown(iso) {
-  try {
-    const end = new Date(iso).getTime();
-    const diff = Math.max(0, end - Date.now());
-    const d = Math.floor(diff / (24*60*60*1000));
-    const h = Math.floor((diff % (24*60*60*1000)) / (60*60*1000));
-    const m = Math.floor((diff % (60*60*1000)) / (60*1000));
-    return `${d}d ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}h`;
-  } catch { return '—'; }
-}
+const STATUS_MAP = {
+  active:   { label: 'Ativo',     cls: styles.pillGreen },
+  closed:   { label: 'Encerrado', cls: styles.pillGray },
+  archived: { label: 'Arquivado', cls: styles.pillGray },
+  draft:    { label: 'Rascunho',  cls: styles.pillYellow },
+};
 
 export default function ChallengeCard({ challenge }) {
   const c = challenge || {};
-  const diffLabel = (d) => {
-    const v = String(d || '').toLowerCase();
-    if (v==='starter') return 'Starter';
-    if (v==='intermediate') return 'Intermediário';
-    if (v==='pro') return 'Pro';
-    return '—';
-  };
-  const statusLabel = (s) => {
-    const v = String(s || '').toLowerCase();
-    if (v==='active') return 'Ativo';
-    if (v==='closed') return 'Encerrado';
-    if (v==='archived') return 'Arquivado';
-    if (v==='draft') return 'Rascunho';
-    return '—';
-  };
+  const tags = Array.isArray(c.tags) ? c.tags : [];
+  const diff   = DIFF_MAP[String(c.difficulty || '').toLowerCase()] || { label: '—', cls: '' };
+  const status = STATUS_MAP[String(c.status || '').toLowerCase()]   || { label: '—', cls: '' };
+  const hasPoints = typeof c.base_points === 'number' && c.base_points > 0;
 
   return (
     <article className={styles.card}>
+      {/* ── Header ── */}
       <div className={styles.header}>
-        {c.thumb_url ? (<img className={styles.thumb} src={sanitizeImageUrl(c.thumb_url)} alt="Thumb" />) : null}
-        <h3 className={styles.name}>{c.name}</h3>
-        <span className={styles.pill}>{diffLabel(c.difficulty)}</span>
+        {c.thumb_url && (
+          <img
+            className={styles.thumb}
+            src={sanitizeImageUrl(c.thumb_url)}
+            alt={c.name}
+            loading="lazy"
+          />
+        )}
+        <div className={styles.headerText}>
+          <h3 className={styles.name}>{c.name}</h3>
+          <div className={styles.badges}>
+            <span className={`${styles.pill} ${diff.cls}`}>{diff.label}</span>
+            <span className={`${styles.pill} ${status.cls}`}>{status.label}</span>
+          </div>
+        </div>
       </div>
-      <div className={styles.tags}>
-        {(Array.isArray(c.tags)?c.tags:[]).map((t,i)=>(<span key={i} className={styles.pill}>{t}</span>))}
+
+      {/* ── Tags ── */}
+      {tags.length > 0 && (
+        <div className={styles.tags}>
+          {tags.map((t, i) => (
+            <span key={i} className={`${styles.pill} ${styles.pillCyan}`}>{t}</span>
+          ))}
+        </div>
+      )}
+
+      {/* ── Objective — expands to fill ── */}
+      <p className={styles.objective}>
+        {c.objective || c.description || ''}
+      </p>
+
+      {/* ── Footer: points + reward ── */}
+      <div className={styles.footer}>
+        {hasPoints && (
+          <span className={`${styles.pill} ${styles.pillIndigo}`}>+{c.base_points} pts</span>
+        )}
+        {c.reward && (
+          <span className={styles.reward}>🎁 {c.reward}</span>
+        )}
       </div>
-      <p className={styles.objective}>{c.objective || c.description || ''}</p>
-      <div className={styles.meta}>
-        <span className={styles.countdown}>⏳ {countdown(c.deadline)}</span>
-        {c.reward ? (<span className={styles.reward}>🎁 {c.reward}</span>) : null}
-        {typeof c.base_points==='number' && c.base_points>0 ? (<span className={styles.pill}>+{c.base_points} pts</span>) : null}
-        <span className={styles.pill}>{statusLabel(c.status)}</span>
-      </div>
-      <div className={styles.meta}><span>Deadline: {formatDate(c.deadline)}</span></div>
     </article>
   );
 }

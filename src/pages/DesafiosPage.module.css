@@ -60,11 +60,12 @@
 
 .carouselTrack {
   display: flex;
-  gap: 24px;
+  align-items: stretch;
+  gap: 20px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
-  padding: 20px 10px;
+  padding: 20px 10px 24px;
   scrollbar-width: thin;
   scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
 }
@@ -103,9 +104,10 @@
 
 .challengeSnap {
   scroll-snap-align: start;
-  flex: 0 0 auto;
-  min-width: 340px;
-  max-width: 380px;
+  flex: 0 0 320px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Challenge Actions */
@@ -235,7 +237,7 @@
 @media (max-width: 900px) {
   .carouselContainer { padding: 0 40px; }
   .navBtn { width: 38px; height: 38px; }
-  .challengeSnap { min-width: 300px; max-width: 340px; }
+  .challengeSnap { flex: 0 0 290px; width: 290px; }
 }
 
 @media (max-width: 768px) {
@@ -243,14 +245,14 @@
   .heroTitle { font-size: clamp(2rem, 7vw, 3rem); }
   .carouselContainer { padding: 0; }
   .navBtn { display: none; }
-  .challengeSnap { min-width: 280px; max-width: 320px; }
+  .challengeSnap { flex: 0 0 270px; width: 270px; }
   .deliveryForm { flex-direction: column; }
   .deliveryBtn { width: 100%; }
 }
 
 @media (max-width: 480px) {
   .challengesSection { padding: 0 16px 40px; }
-  .challengeSnap { min-width: 260px; max-width: 300px; }
+  .challengeSnap { flex: 0 0 256px; width: 256px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

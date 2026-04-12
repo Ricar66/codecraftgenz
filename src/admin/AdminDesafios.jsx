@@ -304,7 +304,12 @@ export default function AdminDesafios() {
                             <li key={s.id} className={styles.submissionItem}>
                               <div>
                                 <strong>Crafter #{s.crafter_id}</strong>
-                                <small>{s.delivery?.url || '-'}</small>
+                                <small>{s.delivery?.url || s.delivery_url || '-'}</small>
+                                {(s.submitted_at || s.submittedAt || s.created_at || s.createdAt) && (
+                                  <small style={{ color: '#64748b', display: 'block', marginTop: 2 }}>
+                                    {new Date(s.submitted_at || s.submittedAt || s.created_at || s.createdAt).toLocaleString('pt-BR')}
+                                  </small>
+                                )}
                               </div>
                               <StatusBadge variant={s.status === 'approved' ? 'success' : s.status === 'rejected' ? 'error' : 'warning'} size="sm">
                                 {s.status || 'submitted'}
