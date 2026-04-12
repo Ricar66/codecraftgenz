@@ -71,6 +71,7 @@ const Dashboard = lazy(() => import('./admin/AdminLayout.jsx').then(m => ({ defa
 const AdminUsuarios = lazy(() => import('./admin/AdminUsuarios.jsx'));
 const AdminConfig = lazy(() => import('./admin/AdminConfig.jsx'));
 const AdminMetas = lazy(() => import('./admin/AdminMetas.jsx'));
+const AdminDiscord = lazy(() => import('./admin/AdminDiscord.jsx'));
 
 /**
  * Componente de fallback leve para carregamento de paginas
@@ -200,6 +201,11 @@ function App() {
                   <Route path="metas" element={
                     <ProtectedRoute allowed={["admin","editor","team"]}>
                       <AdminMetas />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="discord" element={
+                    <ProtectedRoute allowed={["admin"]}>
+                      <AdminDiscord />
                     </ProtectedRoute>
                   } />
                   <Route path="config" element={

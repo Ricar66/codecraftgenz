@@ -152,6 +152,12 @@ export default function AdminLayout() {
               )}
             </span>
           </NavLink>
+          {hasRole(['admin']) && (
+            <NavLink to="/admin/discord" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+              <span className={styles.menuIcon}>🤖</span>
+              <span className={styles.menuText}>Discord Bot</span>
+            </NavLink>
+          )}
           <NavLink to="/admin/config" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
             <span className={styles.menuIcon}>⚙️</span>
             <span className={styles.menuText}>Config</span>
