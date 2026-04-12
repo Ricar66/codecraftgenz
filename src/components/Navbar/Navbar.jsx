@@ -5,6 +5,7 @@ import { Link, useLocation } from 'react-router-dom';
 
 import logo from '../../assets/logo-principal.png';
 import { useAuth } from '../../context/useAuth';
+import { useCrafterModal } from '../../context/CrafterModalContext.jsx';
 
 import styles from './Navbar.module.css';
 
@@ -20,6 +21,7 @@ const Navbar = memo(() => {
   const location = useLocation();
   const { user, isAuthenticated, logout, loading, hasRole } = useAuth();
   const isStaff = hasRole(['admin', 'editor', 'team']);
+  const { open: openCrafterModal } = useCrafterModal();
 
   // Fecha o menu do usuario ao clicar fora
   useEffect(() => {
@@ -230,13 +232,12 @@ const Navbar = memo(() => {
                   </Link>
                 </li>
                 <li className={styles.navItem}>
-                  <Link
-                    to="/register"
+                  <button
                     className={`${styles.navLink} ${styles.navLinkCta}`}
-                    onClick={closeMobileMenu}
+                    onClick={() => { openCrafterModal(); closeMobileMenu(); }}
                   >
                     Ser Crafter →
-                  </Link>
+                  </button>
                 </li>
               </>
             )

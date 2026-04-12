@@ -4,12 +4,19 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import ProtectedRoute from './admin/ProtectedRoute.jsx';
 import heroBackground from './assets/hero-background.svg';
+import CrafterModal from './components/CrafterModal/CrafterModal.jsx';
 import CookieConsent from './components/CookieConsent/CookieConsent';
 import Footer from './components/Footer';
 import Onboarding from './components/Onboarding/Onboarding';
 import { ErrorBoundary } from './components/UI/ErrorBoundary';
 import { ToastProvider } from './components/UI/Toast';
+import { CrafterModalProvider, useCrafterModal } from './context/CrafterModalContext.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
+
+function GlobalCrafterModal() {
+  const { isOpen, close } = useCrafterModal();
+  return <CrafterModal isOpen={isOpen} onClose={close} />;
+}
 
 // Lazy load das paginas para melhor performance
 const HomePage = lazy(() => import('./pages/HomePage/HomePage.jsx'));
@@ -107,6 +114,7 @@ function App() {
   const shouldShowHeroBackground = !pagesWithoutHeroBackground.includes(location.pathname);
 
   return (
+    <CrafterModalProvider>
     <ToastProvider position="top-right" maxToasts={5}>
       <ErrorBoundary variant="page" showDetails={process.env.NODE_ENV === 'development'}>
         <div
@@ -207,9 +215,11 @@ function App() {
           <Footer />
           <Onboarding />
           <CookieConsent />
+          <GlobalCrafterModal />
         </div>
       </ErrorBoundary>
     </ToastProvider>
+    </CrafterModalProvider>
   );
 }
 

@@ -17,8 +17,8 @@ import desafiosBanner from '../../assets/desafios-banner.jpg';
 import hero3dImg from '../../assets/hero-3d.jpg';
 import logoCodecraft from '../../assets/logo-principal.png';
 import CompanySection from '../../components/CompanySection/CompanySection';
-import CrafterModal from '../../components/CrafterModal/CrafterModal';
 import PartnerModal from '../../components/PartnerModal/PartnerModal';
+import { useCrafterModal } from '../../context/CrafterModalContext.jsx';
 import FeaturesSection from '../../components/FeaturesSection/FeaturesSection';
 import FeedbackShowcase from '../../components/Feedbacks/FeedbackShowcase';
 import Hero from '../../components/Hero/Hero';
@@ -160,7 +160,7 @@ const showcaseData = [
 ];
 
 const HomePage = () => {
-  const [isCrafterModalOpen, setIsCrafterModalOpen] = useState(false);
+  const { open: openCrafterModal } = useCrafterModal();
   const [isPartnerModalOpen, setIsPartnerModalOpen] = useState(false);
   const [mentores, setMentores] = useState([]);
 
@@ -202,7 +202,7 @@ const HomePage = () => {
       <main>
         {/* 1. Hero */}
         <div className={styles.sectionBlock}>
-          <Hero onCrafterClick={() => setIsCrafterModalOpen(true)} />
+          <Hero onCrafterClick={() => openCrafterModal()} />
         </div>
 
         {/* 2. Dois caminhos */}
@@ -239,7 +239,7 @@ const HomePage = () => {
                 </ul>
                 <button
                   className={styles.caminhoBtn}
-                  onClick={() => setIsCrafterModalOpen(true)}
+                  onClick={() => openCrafterModal()}
                 >
                   Criar conta grátis <ArrowRight size={16} />
                 </button>
@@ -533,9 +533,7 @@ const HomePage = () => {
           viewport={{ once: true, amount: 0.1 }}
           variants={sectionReveal}
         >
-          <h2 className={styles.sectionTitle}>O que dizem sobre nós</h2>
-          <p className={styles.sectionSubtitle}>Feedbacks reais de quem já usou nossos serviços</p>
-          <FeedbackShowcase autoIntervalMs={5000} showControls={true} />
+          <FeedbackShowcase />
         </motion.div>
 
         {/* 14. CTA Final Duplo */}
@@ -552,7 +550,7 @@ const HomePage = () => {
             <div className={styles.ctaFinalBtns}>
               <button
                 className={styles.ctaFinalBtnCrafter}
-                onClick={() => setIsCrafterModalOpen(true)}
+                onClick={() => openCrafterModal()}
               >
                 <Rocket size={18} /> Quero ser Crafter
               </button>
@@ -563,10 +561,6 @@ const HomePage = () => {
           </div>
         </motion.div>
 
-        <CrafterModal
-          isOpen={isCrafterModalOpen}
-          onClose={() => setIsCrafterModalOpen(false)}
-        />
         <PartnerModal
           isOpen={isPartnerModalOpen}
           onClose={() => setIsPartnerModalOpen(false)}
