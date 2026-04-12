@@ -402,6 +402,16 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
+.rankCardLink {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
 /* Staggered Animation */
 .rankCard:nth-child(1) { animation-delay: 0.05s; }
 .rankCard:nth-child(2) { animation-delay: 0.1s; }

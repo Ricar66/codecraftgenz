@@ -31,6 +31,7 @@ const MyAccountPage = lazy(() => import('./pages/MyAccountPage.jsx'));
 const ForCompaniesPage = lazy(() => import('./pages/ForCompaniesPage.jsx'));
 const SobrePage = lazy(() => import('./pages/SobrePage.jsx'));
 const HubDownloadPage = lazy(() => import('./pages/HubDownloadPage.jsx'));
+const CrafterProfilePage = lazy(() => import('./pages/CrafterProfilePage.jsx'));
 
 // Legal pages
 const HelpPage = lazy(() => import('./pages/HelpPage.jsx'));
@@ -197,6 +198,7 @@ function App() {
                     </ProtectedRoute>
                   } />
                 </Route>
+                <Route path="/crafter/:id" element={<CrafterProfilePage />} />
                 {/* Fallback: qualquer rota desconhecida mostra 404 */}
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
