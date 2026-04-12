@@ -154,9 +154,68 @@ O frontend e uma PWA com Service Worker:
 | Imagens | Stale While Revalidate (7 dias) |
 | Assets JS/CSS | Cache First (hash no nome) |
 
+## Discord Bot
+
+O Discord Bot é uma aplicação Node.js separada que integra a comunidade Discord com a plataforma.
+
+### Arquitetura do Bot
+
+```
+Discord Server (Guild)
+    |
+    +-- Events (guildMemberAdd, interactionCreate, ready)
+    |       |
+    |       +-- Boas-vindas automáticas (#apresentações)
+    |       +-- Comandos slash (/rank, /desafios)
+    |
+    +-- Cron Jobs (node-cron)
+    |       |
+    |       +-- News Job (9h, 18h) → RSS feeds
+    |       +-- Vagas Job (10h) → Propostas B2B
+    |       +-- Ranking Job (seg 12h) → Top crafters
+    |
+    +-- Webhook Server (localhost:3001)
+            |
+            +-- POST /hook/crafter-role (atribuir cargo)
+            +-- POST /hook/new-challenge (postar desafio)
+            +-- POST /hook/new-app (postar app)
+            +-- POST /hook/trigger/* (jobs manuais)
+            +-- GET /health (status do bot)
+```
+
+### Fluxo de Integração
+
+1. **Backend** → Cria novo desafio
+2. **Backend** → Chama webhook: `POST http://localhost:3001/hook/new-challenge`
+3. **Bot** → Recebe payload com dados do desafio
+4. **Bot** → Monta embed com título, dificuldade, deadline
+5. **Bot** → Posta em `#desafios-codecraft`
+6. **Bot** → Registra em `bot_logs` com `messageId`
+
+### Banco de Dados do Bot
+
+Usa as mesmas tabelas Prisma do backend:
+
+- **discord_links** - Vinculação usuário ↔ Discord
+- **bot_config** - Configurações (toggles, canais)
+- **bot_logs** - Histórico de ações
+- **job_states** - Estado dos cron jobs
+
+### Deploy do Bot
+
+O bot roda em produção via PM2 no mesmo VPS da API:
+
+```bash
+pm2 start ecosystem.config.js
+pm2 restart codecraftgenz-bot
+pm2 logs codecraftgenz-bot
+```
+
+---
+
 ## Ambientes
 
-| Ambiente | Frontend | Backend |
-|----------|----------|---------|
-| Desenvolvimento | localhost:5173 | localhost:8080 |
-| Producao | codecraftgenz.com.br | codecraftgenz-monorepo.onrender.com |
+| Ambiente | Frontend | Backend | Discord Bot |
+|----------|----------|---------|------------|
+| Desenvolvimento | localhost:5173 | localhost:8080 | localhost:3001 (webhook) |
+| Producao | codecraftgenz.com.br | codecraftgenz-monorepo.onrender.com | VPS (PM2) |

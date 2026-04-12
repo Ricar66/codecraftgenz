@@ -170,6 +170,7 @@ npx playwright test e2e/navigation.spec.js
 - Login com Google OAuth
 - Recuperacao de senha
 - JWT armazenado em localStorage (`cc_session`)
+- Vinculacao com conta Discord (OAuth)
 
 ### Marketplace de Apps
 - Listagem e busca de apps
@@ -182,6 +183,7 @@ npx playwright test e2e/navigation.spec.js
 - Desafios de programacao com niveis de dificuldade
 - Submissao e avaliacao de solucoes
 - Pontuacao e progresso
+- Notificacoes no Discord via bot
 
 ### Projetos
 - Vitrine de projetos da comunidade
@@ -196,6 +198,7 @@ npx playwright test e2e/navigation.spec.js
 ### Ranking
 - Ranking geral de usuarios por pontos
 - Gamificacao e niveis
+- Exibicao em Discord via comando `/rank`
 
 ### Propostas B2B
 - Pagina "Para Empresas"
@@ -206,6 +209,14 @@ npx playwright test e2e/navigation.spec.js
 - Gerenciamento de apps, usuarios, desafios, projetos, mentorias
 - Tabelas com paginacao e filtros
 - Dashboard com metricas
+- Gerenciamento do Discord Bot (`/admin/discord`)
+
+### Comunidade Discord
+- Integracao com servidor privado
+- Bot com comandos slash (`/rank`, `/desafios`)
+- Notificacoes automaticas de apps e desafios
+- Boas-vindas automaticas para novos membros
+- Cargo "Crafter" automaticamente atribuido
 
 ---
 

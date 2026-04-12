@@ -7,6 +7,161 @@ Todas as respostas seguem o formato `{ success, data, status }` ou `{ success, e
 
 ---
 
+## Discord
+
+| Metodo | Rota | Auth | Descricao |
+|--------|------|------|-----------|
+| GET | `/api/discord/auth/url` | Sim | Gerar URL de autorização OAuth |
+| GET | `/api/discord/callback` | Não | Callback do OAuth (redirect automático) |
+| GET | `/api/discord/status` | Sim | Status da vinculação do usuário |
+| DELETE | `/api/discord/unlink` | Sim | Desvincular conta Discord |
+| GET | `/api/discord/bot-status` | Sim | Status do Discord Bot |
+| GET | `/api/discord/logs` | Sim | Logs das ações do bot (com paginação) |
+| GET | `/api/discord/config` | Sim | Configurações do bot |
+| PUT | `/api/discord/config` | Sim | Salvar configurações do bot |
+| POST | `/api/discord/trigger/:action` | Sim | Trigger manual (news, vagas, ranking) |
+
+### GET /api/discord/auth/url
+
+**Request:** (header com JWT)
+
+**Response 200:**
+```json
+{
+  "url": "https://discord.com/api/oauth2/authorize?client_id=...&response_type=code&scope=..."
+}
+```
+
+### GET /api/discord/callback
+
+**Query params:**
+- `code` - Código de autorização do Discord
+- `state` - State token para segurança
+
+**Response:** Redirect para `/perfil?discord=linked` ou erro
+
+### GET /api/discord/status
+
+**Response 200:**
+```json
+{
+  "linked": true,
+  "id": 1,
+  "discordId": "123456789",
+  "discordUsername": "username#1234",
+  "discordAvatar": "https://...",
+  "crafterRoleAssigned": true,
+  "linkedAt": "2026-04-05T10:00:00Z"
+}
+```
+
+### DELETE /api/discord/unlink
+
+**Response 200:**
+```json
+{
+  "success": true
+}
+```
+
+### GET /api/discord/bot-status
+
+**Response 200 (Online):**
+```json
+{
+  "online": true,
+  "uptime": 86400,
+  "ping": 45
+}
+```
+
+**Response 200 (Offline):**
+```json
+{
+  "online": false,
+  "reason": "timeout"
+}
+```
+
+### GET /api/discord/logs?page=1
+
+**Query params:**
+- `page` - Número da página (padrão: 1)
+- `limit` - Itens por página (padrão: 20)
+
+**Response 200:**
+```json
+{
+  "logs": [
+    {
+      "id": 1,
+      "action": "news_posted",
+      "status": "ok",
+      "details": "{\"title\":\"...\",\"link\":\"...\"}",
+      "channelId": "123456789",
+      "messageId": "987654321",
+      "createdAt": "2026-04-05T10:00:00Z"
+    }
+  ],
+  "total": 150,
+  "page": 1,
+  "pages": 8
+}
+```
+
+### GET /api/discord/config
+
+**Response 200:**
+```json
+{
+  "news_enabled": "true",
+  "welcome_enabled": "true",
+  "vagas_enabled": "true"
+}
+```
+
+### PUT /api/discord/config
+
+**Request:**
+```json
+{
+  "news_enabled": "false",
+  "welcome_enabled": "true"
+}
+```
+
+**Response 200:**
+```json
+{
+  "success": true
+}
+```
+
+### POST /api/discord/trigger/:action
+
+**Actions:**
+- `news` - Executa job de notícias
+- `vagas` - Executa job de vagas
+- `ranking` - Executa job de ranking
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Job de notícias iniciado"
+}
+```
+
+**Response 500 (Bot Offline):**
+```json
+{
+  "error": "Connection timeout",
+  "online": false
+}
+```
+
+---
+
 ## Autenticacao
 
 | Metodo | Rota | Auth | Descricao |

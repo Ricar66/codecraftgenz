@@ -11,9 +11,12 @@
 | [BACKEND.md](BACKEND.md) | Estrutura do backend, controllers, services e repositories |
 | [API.md](API.md) | Referencia completa de todos os endpoints da API |
 | [DATABASE.md](DATABASE.md) | Schema do banco de dados, modelos e relacionamentos |
+| [MER.md](MER.md) | Modelo Entidade Relacionamento (34 modelos por dominio) |
+| [DER.md](DER.md) | Diagrama Entidade Relacionamento em Mermaid |
 | [AUTH.md](AUTH.md) | Sistema de autenticacao, autorizacao e RBAC |
 | [PAYMENTS.md](PAYMENTS.md) | Integracao Mercado Pago, fluxo de compra e licencas |
 | [NFSE.md](NFSE.md) | Sistema de emissao de Nota Fiscal de Servico Eletronica |
+| [DISCORD.md](DISCORD.md) | Discord Bot - comandos, jobs, webhooks e configuracao |
 | [ADMIN.md](ADMIN.md) | Painel administrativo, dashboard e gestao |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Deploy, ambiente, CI/CD e configuracao |
 

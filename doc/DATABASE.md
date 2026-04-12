@@ -521,6 +521,101 @@ Comentarios em ideias.
 
 ---
 
+## Discord Bot - Schema
+
+### DiscordLink (discord_links)
+
+Vinculacao entre usuario da plataforma e conta Discord.
+
+| Campo | Tipo | Descricao |
+|-------|------|-----------|
+| id | Int (PK, auto) | ID unico |
+| userId | Int (FK -> User, unique) | Usuario da plataforma |
+| discordId | String (unique) | ID do membro Discord |
+| discordUsername | String | Nome de usuario Discord |
+| discordAvatar | String? (Text) | URL do avatar Discord |
+| accessToken | String? (Text) | OAuth access token (criptografado AES-256) |
+| refreshToken | String? (Text) | OAuth refresh token |
+| tokenExpiresAt | DateTime? | Expiracao do token OAuth |
+| crafterRoleAssigned | Boolean (default: false) | Se cargo "Crafter" foi atribuido |
+| linkedAt | DateTime | Data de vinculacao |
+| updatedAt | DateTime | Ultima atualizacao |
+
+**Indices:** `@@index([discordId])`
+
+**Relacoes:** `user` (1:1 com User)
+
+---
+
+### BotConfig (bot_config)
+
+Configuracoes do Discord Bot (toggles, canais, features).
+
+| Campo | Tipo | Descricao |
+|-------|------|-----------|
+| id | Int (PK, auto) | ID unico |
+| key | String (unique) | Chave de configuracao |
+| value | String | Valor da configuracao |
+| updatedAt | DateTime | Ultima atualizacao |
+
+**Uso:**
+- `news_enabled` → "true" / "false"
+- `welcome_enabled` → "true" / "false"
+- `vagas_enabled` → "true" / "false"
+
+---
+
+### BotLog (bot_logs)
+
+Historico de acoes do Discord Bot para auditoria e debugging.
+
+| Campo | Tipo | Descricao |
+|-------|------|-----------|
+| id | Int (PK, auto) | ID unico |
+| action | String | Tipo de acao executada |
+| status | String (default: "ok") | "ok" ou "error" |
+| details | String? (Text) | Dados JSON (ex: titulo da noticia, link) |
+| guildId | String? | ID do servidor Discord |
+| channelId | String? | ID do canal Discord |
+| messageId | String? | ID da mensagem postada |
+| userId | Int? | ID do usuario da plataforma (se aplicavel) |
+| discordId | String? | ID Discord do membro (se aplicavel) |
+| createdAt | DateTime | Data/hora do evento |
+
+**Indices:** `@@index([action])`, `@@index([createdAt])`
+
+**Acoes registradas:**
+- `welcome_sent` - Mensagem de boas-vindas postada
+- `news_posted` - Noticia de tech postada
+- `vagas_posted` - Vaga/oportunidade postada
+- `challenge_posted` - Novo desafio postado
+- `app_posted` - Novo app postado
+- `crafter_role_assigned` - Cargo Crafter atribuido
+- `ranking_posted` - Ranking semanal postado
+
+---
+
+### JobState (job_states)
+
+Rastreamento do estado de execucao dos cron jobs do bot.
+
+| Campo | Tipo | Descricao |
+|-------|------|-----------|
+| id | Int (PK, auto) | ID unico |
+| jobName | String (unique) | Nome do job (news, vagas, ranking) |
+| lastRunAt | DateTime? | Ultima execucao (sucesso ou erro) |
+| lastSuccess | DateTime? | Ultima execucao bem-sucedida |
+| lastError | String? (Text) | Mensagem do ultimo erro |
+| runCount | Int (default: 0) | Total de vezes executado |
+| updatedAt | DateTime | Ultima atualizacao do registro |
+
+**Jobs monitorados:**
+- `news` - Job de noticiario (RSS feed, 9h e 18h)
+- `vagas` - Job de vagas (10h diario)
+- `ranking` - Job de ranking semanal (segunda 12h)
+
+---
+
 ## Comandos Uteis
 
 ```bash
