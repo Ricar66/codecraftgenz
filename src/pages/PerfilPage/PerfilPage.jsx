@@ -12,6 +12,7 @@ import { Link, Navigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import { useAuth } from '../../context/useAuth';
 import { apiRequest } from '../../lib/apiConfig.js';
+import { getDiscordStatus, getDiscordAuthUrl, unlinkDiscord } from '../../services/discordAPI.js';
 import { useToast } from '../../components/UI/Toast';
 import { sanitizeImageUrl } from '../../utils/urlSanitize.js';
 import styles from './PerfilPage.module.css';
@@ -309,6 +310,61 @@ function TabConta({ user }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Discord link state
+  const [discord, setDiscord] = useState(null);
+  const [discordLoading, setDiscordLoading] = useState(true);
+  const [unlinking, setUnlinking] = useState(false);
+
+  useEffect(() => {
+    getDiscordStatus()
+      .then(data => setDiscord(data))
+      .catch(() => setDiscord(null))
+      .finally(() => setDiscordLoading(false));
+  }, []);
+
+  // Detectar query params de retorno do OAuth
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const discordParam = params.get('discord');
+    if (discordParam === 'linked') {
+      toast.success('Discord vinculado com sucesso!');
+      // Recarregar status
+      getDiscordStatus().then(data => setDiscord(data)).catch(() => {});
+      // Limpar query params
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (discordParam === 'error') {
+      const reason = params.get('reason') || 'Erro desconhecido';
+      toast.error(`Falha ao vincular Discord: ${reason}`);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleConnectDiscord = async () => {
+    try {
+      const data = await getDiscordAuthUrl();
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error('Falha ao gerar URL de autorização.');
+      }
+    } catch (err) {
+      toast.error(err?.message || 'Erro ao conectar Discord.');
+    }
+  };
+
+  const handleUnlinkDiscord = async () => {
+    setUnlinking(true);
+    try {
+      await unlinkDiscord();
+      setDiscord(null);
+      toast.success('Discord desvinculado.');
+    } catch (err) {
+      toast.error(err?.message || 'Erro ao desvincular.');
+    } finally {
+      setUnlinking(false);
+    }
+  };
+
   const saveName = async () => {
     if (!editName.trim()) { toast.error('Nome não pode ficar vazio.'); return; }
     setSaving(true);
@@ -324,8 +380,46 @@ function TabConta({ user }) {
     }
   };
 
+  const discordAvatarUrl = discord?.linked && discord.discordId && discord.discordAvatar
+    ? `https://cdn.discordapp.com/avatars/${discord.discordId}/${discord.discordAvatar}.png?size=64`
+    : null;
+
   return (
     <div className={styles.tabContent}>
+      {/* Discord Connect */}
+      <div className={styles.discordConnect}>
+        <div className={styles.discordConnectAvatar}>
+          {discordAvatarUrl
+            ? <img src={discordAvatarUrl} alt="Discord" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+            : <DiscordIcon size={18} />
+          }
+        </div>
+        <div className={styles.discordConnectInfo}>
+          <p className={styles.discordConnectTitle}>
+            {discord?.linked ? discord.discordUsername : 'Discord'}
+          </p>
+          <p className={styles.discordConnectDesc}>
+            {discordLoading
+              ? 'Verificando...'
+              : discord?.linked
+                ? 'Conta vinculada'
+                : 'Vincule sua conta Discord para acessar cargos e beneficios na comunidade.'
+            }
+          </p>
+        </div>
+        {!discordLoading && (
+          discord?.linked ? (
+            <button className={styles.btnDiscordUnlink} onClick={handleUnlinkDiscord} disabled={unlinking}>
+              {unlinking ? 'Removendo...' : 'Desconectar'}
+            </button>
+          ) : (
+            <button className={styles.btnDiscord} onClick={handleConnectDiscord}>
+              <DiscordIcon size={14} /> Conectar
+            </button>
+          )
+        )}
+      </div>
+
       <div className={styles.card}>
         <div className={styles.cardHeader}>
           <h3 className={styles.cardTitle}>Dados da conta</h3>
