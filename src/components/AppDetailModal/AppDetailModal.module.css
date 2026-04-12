@@ -250,3 +250,10 @@
     height: 120px;
   }
 }
+
+.licenseType {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 2px;
+}

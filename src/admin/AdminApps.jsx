@@ -36,7 +36,7 @@ export default function AdminApps() {
   const [form, setForm] = useState({
     id: null, name: '', mainFeature: '', description: '',
     status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0',
-    platforms: ['windows']
+    platforms: ['windows'], licenseType: 'vitalicia'
   });
   const [priceMask, setPriceMask] = useState('R$ 0,00');
   const [exeFile, setExeFile] = useState(null);
@@ -105,12 +105,13 @@ export default function AdminApps() {
         price: Number(form.price || 0),
         thumb_url: form.thumbnail,
         executable_url: form.exec_url,
-        platforms: form.platforms
+        platforms: form.platforms,
+        license_type: form.licenseType
       };
       if (isInvalidUrl(form.thumbnail)) { setError('Thumbnail URL inválida. Use http(s).'); return; }
       if (isInvalidUrl(form.exec_url)) { setError('Exec URL inválida. Use http(s).'); return; }
       await updateApp(form.id, payload);
-      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'] });
+      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'], licenseType: 'vitalicia' });
       showToast('App atualizado!');
       refresh();
     } catch (e) {
@@ -128,13 +129,14 @@ export default function AdminApps() {
         price: Number(form.price || 0),
         thumb_url: form.thumbnail,
         executable_url: form.exec_url,
-        platforms: form.platforms
+        platforms: form.platforms,
+        license_type: form.licenseType
       };
       if (!payload.name) { setError('Nome é obrigatório'); return; }
       if (isInvalidUrl(form.thumbnail)) { setError('Thumbnail URL inválida. Use http(s).'); return; }
       if (isInvalidUrl(form.exec_url)) { setError('Exec URL inválida. Use http(s).'); return; }
       await createApp(payload);
-      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'] });
+      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'], licenseType: 'vitalicia' });
       showToast('App criado!');
       refresh();
     } catch (e) {
@@ -159,7 +161,8 @@ export default function AdminApps() {
       thumbnail: a.thumb_url || a.thumbnail || '',
       exec_url: a.executable_url || a.executableUrl || '',
       version: a.version || '1.0.0',
-      platforms: plats
+      platforms: plats,
+      licenseType: a.license_type || a.licenseType || 'vitalicia'
     });
     document.getElementById('app-form')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -387,6 +390,14 @@ export default function AdminApps() {
             <div className={styles.formGroup}>
               <label>Preço (R$)</label>
               <input type="text" value={priceMask} onChange={handlePriceMaskChange} className={styles.input} />
+            </div>
+            <div className={styles.formGroup}>
+              <label>Tipo de Licença</label>
+              <select value={form.licenseType} onChange={e => setForm({ ...form, licenseType: e.target.value })} className={styles.input}>
+                <option value="vitalicia">Licença vitalícia</option>
+                <option value="assinatura">Assinatura</option>
+                <option value="gratuito">Gratuito</option>
+              </select>
             </div>
           </div>
 
