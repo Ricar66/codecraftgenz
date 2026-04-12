@@ -231,6 +231,62 @@ Pagina de configuracoes do sistema com 4 secoes:
 - Adicionar/visualizar comentarios
 - API real: `/api/ideias`
 
+### AdminDiscord
+
+Pagina dedicada de gerenciamento do Discord Bot com 4 secoes:
+
+#### Status do Bot
+
+- Card mostrando se bot está online/offline
+- Uptime em horas
+- Ping de latência
+- Último status check
+
+#### Toggles de Features
+
+- `news_enabled` - Habilitar/desabilitar job de notícias
+- `welcome_enabled` - Habilitar/desabilitar mensagens de boas-vindas
+- `vagas_enabled` - Habilitar/desabilitar job de vagas
+
+#### Triggers Manuais
+
+Botões para executar jobs manualmente (útil para testes):
+- **Executar News Job** → POST `/api/discord/trigger/news`
+- **Executar Vagas Job** → POST `/api/discord/trigger/vagas`
+- **Executar Ranking Job** → POST `/api/discord/trigger/ranking`
+
+Cada trigger mostra resultado de sucesso/erro.
+
+#### Histórico de Ações
+
+Tabela com logs do bot (bot_logs):
+
+| Coluna | Descrição |
+|--------|-----------|
+| Ação | Tipo: welcome_sent, news_posted, challenge_posted, etc |
+| Status | ok ou error |
+| Canal | ID do canal Discord |
+| Data | Data/hora do evento |
+| Detalhes | Dados JSON (click para expandir) |
+
+- Paginação: 20 ações por página
+- Filtro por ação
+- Busca por data/canal
+
+#### Estatísticas
+
+- Total de discord_links (usuários vinculados)
+- Total de cargo "Crafter" atribuído
+- Últimas 5 ações do bot
+- Data do último job bem-sucedido (por tipo)
+
+**API usada:**
+- `GET /api/discord/bot-status` - Status do bot
+- `GET /api/discord/config` - Configurações
+- `PUT /api/discord/config` - Salvar configurações
+- `POST /api/discord/trigger/:action` - Executar jobs
+- `GET /api/discord/logs` - Histórico paginado
+
 ## Tema Visual
 
 O admin usa tema dark glassmorphism com as cores do design system:
