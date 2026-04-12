@@ -1,0 +1,525 @@
+/* src/pages/SobrePage.module.css */
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* ===== HERO ===== */
+.hero {
+  padding: 120px 24px 80px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(700px 500px at 50% 20%, rgba(99, 102, 241, 0.09), transparent 60%),
+    radial-gradient(400px 300px at 80% 80%, rgba(0, 228, 242, 0.04), transparent 60%);
+  pointer-events: none;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 2;
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.heroBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #818cf8;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 20px;
+  padding: 6px 16px;
+  margin-bottom: 28px;
+}
+
+.heroTitle {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-size: clamp(2.2rem, 5.5vw, 3.8rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: #f1f5f9;
+  margin: 0 0 24px;
+}
+
+.accent {
+  color: #818cf8;
+}
+
+.accentCyan {
+  color: #00E4F2;
+}
+
+.heroSubtitle {
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  line-height: 1.75;
+  color: #94a3b8;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+/* ===== MISSÃO ===== */
+.missaoSection {
+  padding: 20px 24px 60px;
+}
+
+.missaoInner {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.missaoCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 20px;
+  padding: 40px 48px;
+}
+
+.missaoIcon {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #818cf8;
+}
+
+.missaoTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #818cf8;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.missaoDesc {
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* ===== NÚMEROS ===== */
+.numerosSection {
+  padding: 40px 24px 60px;
+}
+
+.numerosGrid {
+  max-width: 860px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.numeroCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 32px 20px;
+  text-align: center;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.numeroCard:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.numeroValor {
+  display: block;
+  font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  color: #818cf8;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.numeroLabel {
+  display: block;
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* ===== SHARED SECTION HEADER ===== */
+.sectionHeader {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.sectionBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #00E4F2;
+  background: rgba(0, 228, 242, 0.08);
+  border: 1px solid rgba(0, 228, 242, 0.2);
+  border-radius: 20px;
+  padding: 5px 14px;
+  margin-bottom: 20px;
+}
+
+.sectionTitle {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-size: clamp(1.7rem, 3.5vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #f1f5f9;
+  margin: 0 0 16px;
+}
+
+.sectionLead {
+  font-size: 1.05rem;
+  color: #64748b;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ===== HISTÓRIA ===== */
+.historiaSection {
+  padding: 60px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.historiaInner {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.historiaGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.historiaBlock {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 32px 28px;
+  transition: border-color 0.25s ease;
+}
+
+.historiaBlock:hover {
+  border-color: rgba(0, 228, 242, 0.2);
+}
+
+.historiaAno {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #00E4F2;
+  background: rgba(0, 228, 242, 0.08);
+  border: 1px solid rgba(0, 228, 242, 0.15);
+  border-radius: 8px;
+  padding: 4px 12px;
+  margin-bottom: 16px;
+}
+
+.historiaItemTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0 0 12px;
+}
+
+.historiaItemDesc {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ===== VALORES ===== */
+.valoresSection {
+  padding: 80px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.valoresInner {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.valoresGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.valorCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 36px 32px;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.valorCard:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(129, 140, 248, 0.3);
+}
+
+.valorIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #818cf8;
+  margin-bottom: 20px;
+}
+
+.valorTitulo {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0 0 10px;
+}
+
+.valorDesc {
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ===== CTA SECTION ===== */
+.ctaSection {
+  padding: 80px 24px 100px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ctaInner {
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.ctaCard {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(99, 102, 241, 0.06));
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 20px;
+  padding: 48px 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.ctaIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #818cf8;
+  margin-bottom: 24px;
+}
+
+.ctaTitle {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 800;
+  color: #f1f5f9;
+  margin: 0 0 14px;
+}
+
+.ctaDesc {
+  font-size: 0.98rem;
+  line-height: 1.7;
+  color: #94a3b8;
+  margin: 0 0 32px;
+}
+
+.ctaButtons {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.ctaBtnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 14px 28px;
+  border-radius: 12px;
+  background: #4f46e5;
+  color: #fff;
+  text-decoration: none;
+  transition: background 0.2s ease, box-shadow 0.25s ease;
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.25);
+}
+
+.ctaBtnPrimary:hover {
+  background: #4338ca;
+  box-shadow: 0 6px 24px rgba(79, 70, 229, 0.35);
+}
+
+.ctaBtnSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 14px 24px;
+  border-radius: 12px;
+  background: transparent;
+  color: #00E4F2;
+  border: 2px solid rgba(0, 228, 242, 0.35);
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.ctaBtnSecondary:hover {
+  background: rgba(0, 228, 242, 0.08);
+  border-color: #00E4F2;
+}
+
+.contactCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 20px;
+  padding: 36px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.contactIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(0, 228, 242, 0.08);
+  border: 1px solid rgba(0, 228, 242, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00E4F2;
+  margin-bottom: 20px;
+}
+
+.contactTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0 0 10px;
+}
+
+.contactDesc {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #64748b;
+  margin: 0 0 20px;
+  flex: 1;
+}
+
+.contactLink {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #00E4F2;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0, 228, 242, 0.3);
+  padding-bottom: 2px;
+  transition: border-color 0.2s ease;
+}
+
+.contactLink:hover {
+  border-color: #00E4F2;
+}
+
+/* ===== RESPONSIVIDADE ===== */
+@media (max-width: 900px) {
+  .numerosGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .historiaGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .valoresGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .ctaInner {
+    grid-template-columns: 1fr;
+  }
+
+  .missaoCard {
+    flex-direction: column;
+    padding: 32px 28px;
+  }
+
+  .missaoIcon {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero {
+    padding: 90px 20px 60px;
+  }
+
+  .numerosGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .ctaCard {
+    padding: 32px 24px;
+  }
+
+  .ctaButtons {
+    flex-direction: column;
+  }
+
+  .ctaBtnPrimary,
+  .ctaBtnSecondary {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,341 @@
+/* OnboardingPage.module.css */
+
+/* ── Layout ── */
+.page {
+  min-height: 100vh;
+  background: #0a0a0f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.inner {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+/* ── Step dots ── */
+.steps {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 40px;
+  align-items: center;
+}
+
+.stepDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.stepDotActive {
+  width: 24px;
+  background: #818cf8;
+}
+
+.stepDotDone {
+  background: #10b981;
+}
+
+/* ── Welcome step ── */
+.welcomeAvatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #818cf8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 auto 24px;
+  box-shadow: 0 0 32px rgba(129, 140, 248, 0.4);
+  font-family: Montserrat, sans-serif;
+}
+
+.welcomeTitle {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #f5f5f7;
+  text-align: center;
+  margin: 0 0 12px;
+  font-family: Montserrat, sans-serif;
+}
+
+.welcomeSubtitle {
+  font-size: 1rem;
+  color: #a0a0b0;
+  text-align: center;
+  line-height: 1.6;
+  margin: 0 0 36px;
+  max-width: 420px;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 36px;
+}
+
+@media (max-width: 560px) {
+  .featureGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.featureCard {
+  background: rgba(26, 26, 46, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 20px 16px;
+  text-align: center;
+}
+
+.featureIcon {
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.featureCardTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f5f5f7;
+  margin: 0 0 6px;
+  font-family: Montserrat, sans-serif;
+}
+
+.featureCardDesc {
+  font-size: 0.8rem;
+  color: #a0a0b0;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Profile step ── */
+.sectionTitle {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #f5f5f7;
+  margin: 0 0 4px;
+  text-align: center;
+  font-family: Montserrat, sans-serif;
+}
+
+.sectionLabel {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #f5f5f7;
+  margin: 28px 0 4px;
+  font-family: Montserrat, sans-serif;
+  align-self: flex-start;
+}
+
+.sectionHint {
+  font-size: 0.85rem;
+  color: #a0a0b0;
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.chipsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.chip {
+  background: rgba(26, 26, 46, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 0.875rem;
+  color: #c0c0d0;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+  font-family: inherit;
+}
+
+.chip:hover {
+  border-color: rgba(129, 140, 248, 0.5);
+  color: #e0e0f0;
+}
+
+.chipActive {
+  border-color: #818cf8;
+  background: rgba(129, 140, 248, 0.15);
+  color: #a5b4fc;
+}
+
+/* ── Complete step ── */
+@keyframes popIn {
+  0% { transform: scale(0.4); opacity: 0; }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.checkCircle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  box-shadow: 0 0 32px rgba(16, 185, 129, 0.4);
+}
+
+.doneTitle {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #f5f5f7;
+  text-align: center;
+  margin: 0 0 12px;
+  font-family: Montserrat, sans-serif;
+}
+
+.doneSubtitle {
+  font-size: 1rem;
+  color: #a0a0b0;
+  text-align: center;
+  line-height: 1.6;
+  margin: 0 0 32px;
+  max-width: 420px;
+}
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 560px) {
+  .actionGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.actionCard {
+  background: rgba(26, 26, 46, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 20px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s, background 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  font-family: inherit;
+}
+
+.actionCard:hover:not(:disabled) {
+  border-color: rgba(129, 140, 248, 0.4);
+  background: rgba(129, 140, 248, 0.06);
+  transform: translateY(-2px);
+}
+
+.actionCard:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.actionIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.actionCardTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f5f5f7;
+  margin: 0;
+  font-family: Montserrat, sans-serif;
+}
+
+.actionCardDesc {
+  font-size: 0.78rem;
+  color: #a0a0b0;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.actionArrow {
+  color: #818cf8;
+  margin-top: 6px;
+  display: flex;
+}
+
+/* ── Navigation row ── */
+.navRow {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+  width: 100%;
+}
+
+/* ── Buttons ── */
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #00E4F2, #D12BF2);
+  border: none;
+  border-radius: 12px;
+  padding: 14px 32px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+  font-family: Montserrat, sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.btnPrimary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  color: #c0c0d0;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  font-family: inherit;
+}
+
+.btnSecondary:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #e0e0f0;
+}
