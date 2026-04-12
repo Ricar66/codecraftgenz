@@ -1,250 +1,201 @@
-/* src/pages/FeedbacksPage.module.css — Redesign Profissional */
+/* src/pages/FeedbacksPage.module.css */
 
 .page {
   min-height: 100vh;
   width: 100%;
   position: relative;
-  overflow-x: hidden;
 }
 
-/* ===== HERO SECTION ===== */
-.hero {
-  position: relative;
-  min-height: 100vh;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 100px 24px 60px;
-  z-index: 1;
+/* ── Form Section ── */
+.formSection {
+  padding: 40px 24px 80px;
 }
 
-.heroContainer {
-  position: relative;
-  max-width: 1000px;
-  width: 100%;
+.formInner {
+  max-width: 680px;
+  margin: 0 auto;
+  background: rgba(26, 26, 46, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 40px;
+  backdrop-filter: blur(12px);
+}
+
+.formHeader {
+  margin-bottom: 32px;
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 48px;
-  align-items: center;
 }
 
-/* ===== TEXT AREA ===== */
-.textArea {
+.formTitle {
+  font-family: Montserrat, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #f5f5f7;
+  margin: 0 0 10px;
+}
+
+.formSubtitle {
+  font-size: 0.95rem;
+  color: #a0a0b0;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ── Form ── */
+.form {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.heroTitle {
-  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
-  font-size: clamp(2.5rem, 7vw, 4rem);
-  font-weight: 800;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
-  margin: 0;
-  color: #f1f5f9;
-}
-
-@keyframes sloganFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-}
-
-@keyframes gradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 100% 50%;
-  }
-}
-
-.heroDescription {
-  font-size: clamp(1rem, 2.5vw, 1.375rem);
-  font-weight: 400;
-  line-height: 1.7;
-  color: rgba(255, 255, 255, 0.7);
-  max-width: 700px;
-  margin: 0 auto;
-}
-
-/* ===== FORM CONTAINER ===== */
-.formContainer {
-  width: 100%;
-  max-width: 600px;
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  padding: 40px;
-  box-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 0 80px rgba(99, 102, 241, 0.1);
-  transition: all 0.4s ease;
-}
-
-.formContainer:hover {
-  border-color: rgba(99, 102, 241, 0.3);
-  box-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 0 100px rgba(99, 102, 241, 0.15);
-}
-
-/* Neon border effect */
-.formContainer::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: 26px;
-  padding: 2px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(99, 102, 241, 0.4), rgba(99, 102, 241, 0.4));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  pointer-events: none;
-}
-
-.formContainer:hover::before {
-  opacity: 1;
-}
-
-/* ===== FEATURES SECTION ===== */
-.featuresSection {
-  position: relative;
-  z-index: 1;
-  padding: 0 24px 80px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.featuresGrid {
+.formRow {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
-.featureCard {
-  position: relative;
-  padding: 32px 24px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  text-align: center;
-  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12),
-              inset 0 1px 0 rgba(255, 255, 255, 0.04);
+@media (max-width: 560px) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+  .formInner {
+    padding: 24px 20px;
+  }
 }
 
-.featureCard:hover {
-  transform: translateY(-8px) scale(1.01);
-  border-color: rgba(99, 102, 241, 0.4);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
-              0 0 40px rgba(99, 102, 241, 0.12),
-              inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-.featureIcon {
-  width: 64px;
-  height: 64px;
+.fieldGroup {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 16px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%);
-  border-radius: 16px;
-  font-size: 28px;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.featureTitle {
-  font-size: 1.1rem;
+.label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #c0c0d0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.optional {
+  font-weight: 400;
+  text-transform: none;
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.input,
+.textarea {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  color: #f0f0f5;
+  font-family: inherit;
+  transition: border-color 0.2s, background 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: rgba(129, 140, 248, 0.5);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: #555570;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 110px;
+  line-height: 1.6;
+}
+
+.charCount {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: right;
+  margin-top: 2px;
+}
+
+.errorMsg {
+  font-size: 0.875rem;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.submitBtn {
+  background: linear-gradient(135deg, #D12BF2, #818cf8);
+  border: none;
+  border-radius: 12px;
+  padding: 14px 32px;
+  font-size: 1rem;
   font-weight: 700;
   color: #fff;
-  margin: 0 0 8px;
+  cursor: pointer;
+  font-family: Montserrat, sans-serif;
+  transition: opacity 0.2s, transform 0.2s;
+  align-self: flex-start;
 }
 
-.featureDesc {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
+.submitBtn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Success ── */
+.successBox {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.successIcon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.successTitle {
+  font-family: Montserrat, sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #f5f5f7;
+  margin: 0 0 10px;
+}
+
+.successDesc {
+  font-size: 0.95rem;
+  color: #a0a0b0;
   line-height: 1.6;
-  margin: 0;
+  margin: 0 0 24px;
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 900px) {
-  .featuresGrid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .featureCard {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    text-align: left;
-    padding: 20px;
-  }
-
-  .featureIcon {
-    margin: 0;
-    flex-shrink: 0;
-  }
+.resetBtn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 10px 24px;
+  font-size: 0.9rem;
+  color: #c0c0d0;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.2s;
 }
 
-@media (max-width: 768px) {
-  .hero {
-    min-height: auto;
-    padding: 100px 20px 60px;
-  }
-
-  .heroContainer {
-    gap: 36px;
-  }
-
-  .heroTitle {
-    font-size: clamp(2rem, 6vw, 3rem);
-  }
-
-  .heroDescription {
-    font-size: clamp(0.875rem, 2vw, 1.125rem);
-  }
-
-  .formContainer {
-    padding: 28px;
-    border-radius: 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .hero {
-    padding: 80px 16px 40px;
-  }
-
-  .formContainer {
-    padding: 24px;
-    border-radius: 16px;
-  }
-}
-
-/* ===== REDUCED MOTION ===== */
-@media (prefers-reduced-motion: reduce) {
-  .heroTitle {
-    animation: none;
-  }
-
-  .formContainer:hover {
-    transform: none;
-  }
-
-  .featureCard:hover {
-    transform: none;
-  }
+.resetBtn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
 }

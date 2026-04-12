@@ -1,1 +1,0 @@
-import{m as a}from"./index-DiWnRqhL.js";async function p(p,e,n="apps"){const o=new FormData;return o.append("file",p),o.append("category",n),e&&o.append("old_url",e),a("/api/uploads/image",o,{method:"POST"})}export{p as u};
