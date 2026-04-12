@@ -115,7 +115,7 @@ const FeedbackShowcase = ({ autoIntervalMs = 5000, showControls = true }) => {
         {feedbacks.length === 0 ? (
           <div className={styles.emptyState}>
             <p>Em breve, depoimentos de nossos clientes aparecerão aqui.</p>
-            <p><Link to="/feedbacks">Já usou nossos serviços? Deixe seu feedback!</Link></p>
+            <p><Link to="/desafios/feedbacks">Já usou nossos serviços? Deixe seu feedback!</Link></p>
           </div>
         ) : (
           <div className={styles.carouselWrapper}>

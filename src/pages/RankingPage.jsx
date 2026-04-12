@@ -2,6 +2,7 @@
 // Leaderboard Estilo Game - Cyberpunk/Glassmorphism Design
 import React, { useEffect, useState, useMemo } from 'react';
 
+import ChallengesSubNav from '../components/ChallengesSubNav/ChallengesSubNav.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { realtime } from '../lib/realtime';
 import { getRanking } from '../services/rankingAPI.js';
@@ -224,6 +225,7 @@ export default function RankingPage() {
   return (
     <div className={`${styles.page} starfield-bg`}>
       <Navbar />
+      <ChallengesSubNav />
 
       {/* Hero Section */}
       <section className={styles.hero}>

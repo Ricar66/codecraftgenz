@@ -22,7 +22,6 @@ import PartnerModal from '../../components/PartnerModal/PartnerModal';
 import FeaturesSection from '../../components/FeaturesSection/FeaturesSection';
 import FeedbackShowcase from '../../components/Feedbacks/FeedbackShowcase';
 import Hero from '../../components/Hero/Hero';
-import MetricsSection from '../../components/MetricsSection/MetricsSection';
 import Navbar from '../../components/Navbar/Navbar';
 import NewsSection from '../../components/NewsSection/NewsSection';
 import ShowcaseBlock from '../../components/ShowcaseBlock/ShowcaseBlock.jsx';
@@ -360,14 +359,7 @@ const HomePage = () => {
           </div>
         </motion.div>
 
-        {/* 5. MetricsSection */}
-        <div className={styles.sectionBlock}>
-          <div className={styles.sectionCard}>
-            <MetricsSection />
-          </div>
-        </div>
-
-        {/* 6. ShowcaseBlocks */}
+        {/* 5. ShowcaseBlocks */}
         {showcaseData.map((item, i) => (
           <div key={i} className={styles.sectionBlock}>
             <ShowcaseBlock {...item} />

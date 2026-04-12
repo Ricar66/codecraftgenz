@@ -122,9 +122,11 @@ function App() {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/projetos" element={<ProjectsPage />} />
-                <Route path="/feedbacks" element={<FeedbacksPage />} />
+                <Route path="/desafios/ranking" element={<RankingPage />} />
+                <Route path="/desafios/feedbacks" element={<FeedbacksPage />} />
+                <Route path="/ranking" element={<Navigate to="/desafios/ranking" replace />} />
+                <Route path="/feedbacks" element={<Navigate to="/desafios/feedbacks" replace />} />
                 <Route path="/mentoria" element={<MentoriaPage />} />
-                <Route path="/ranking" element={<RankingPage />} />
                 <Route path="/desafios" element={<DesafiosPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />

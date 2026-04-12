@@ -2,6 +2,7 @@
 // Feedback Page - Cyberpunk/Glassmorphism Design
 import React, { useEffect } from 'react';
 
+import ChallengesSubNav from '../components/ChallengesSubNav/ChallengesSubNav.jsx';
 import FeedbackForm from '../components/Feedbacks/FeedbackForm';
 import Navbar from '../components/Navbar/Navbar';
 import { trackPageView, trackFunnelStep } from '../services/analyticsAPI.js';
@@ -35,6 +36,7 @@ export default function FeedbacksPage() {
   return (
     <div className={`${styles.page} starfield-bg`}>
       <Navbar />
+      <ChallengesSubNav />
 
       {/* Hero Section */}
       <section className={styles.hero}>

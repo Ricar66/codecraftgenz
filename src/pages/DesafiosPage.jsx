@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import ChallengeCard from '../components/Challenges/ChallengeCard.jsx';
+import ChallengesSubNav from '../components/ChallengesSubNav/ChallengesSubNav.jsx';
 import Navbar from '../components/Navbar/Navbar';
 import { useToast } from '../components/UI/Toast';
 import { useAuth } from '../context/useAuth';
@@ -89,6 +90,7 @@ export default function DesafiosPage() {
   return (
     <div className={`${styles.page} starfield-bg`}>
       <Navbar />
+      <ChallengesSubNav />
 
       {/* Hero Section */}
       <header className={styles.hero}>
