@@ -1,6 +1,6 @@
 // src/pages/RegisterPage.jsx
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { User, Mail, Lock } from 'lucide-react';
 
 import logoImg from '../assets/logo-principal.png';
@@ -16,8 +16,10 @@ const helperStyle = { color: '#6B7280', fontSize: '0.8rem', marginTop: '4px' };
 
 export default function RegisterPage() {
   const { login, loginWithGoogle } = useAuth();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const location = useLocation();
+  const prefill = location.state || {};
+  const [name, setName] = useState(prefill.nome || '');
+  const [email, setEmail] = useState(prefill.email || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');

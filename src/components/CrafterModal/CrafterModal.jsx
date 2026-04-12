@@ -1,5 +1,6 @@
 // src/components/CrafterModal/CrafterModal.jsx
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { apiRequest } from '../../lib/apiConfig.js';
 import { trackFunnelStep } from '../../services/analyticsAPI.js';
@@ -17,6 +18,7 @@ const REDES_SOCIAIS = [
 ];
 
 const CrafterModal = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -170,13 +172,20 @@ const CrafterModal = ({ isOpen, onClose }) => {
         area_interesse: formData.area_interesse, cidade: formData.cidade,
       });
 
+      const savedNome = formData.nome;
+      const savedEmail = formData.email;
+
       setSuccess(true);
       setFormData({
         nome: '', email: '', telefone: '', rede_social_tipo: '', rede_social_user: '',
         cep: '', cidade: '', estado: '', area_interesse: '', mensagem: '',
       });
 
-      setTimeout(() => { setSuccess(false); onClose(); }, 4000);
+      setTimeout(() => {
+        setSuccess(false);
+        onClose();
+        navigate('/register', { state: { nome: savedNome, email: savedEmail } });
+      }, 2500);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -208,7 +217,7 @@ const CrafterModal = ({ isOpen, onClose }) => {
           <div className={styles.successContent} role="status" aria-live="polite">
             <div className={styles.successIcon} aria-hidden="true">🎉</div>
             <h3>Inscrição recebida com sucesso!</h3>
-            <p>Enviamos um e-mail de confirmação para você. Nossa seleção acontece <strong>mensalmente</strong> — fique atento ao seu e-mail!</p>
+            <p>Enviamos um e-mail de confirmação para você. Nossa seleção acontece <strong>mensalmente</strong>. Agora vamos criar sua conta na plataforma...</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className={styles.crafterForm}>
