@@ -109,7 +109,7 @@ const Navbar = memo(() => {
               className={`${styles.navLink} ${isActiveLink('/aplicativos') ? styles.navLinkActive : ''}`}
               onClick={closeMobileMenu}
             >
-              Aplicativos
+              Loja
             </Link>
           </li>
           <li className={styles.navItem}>
