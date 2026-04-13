@@ -48,7 +48,7 @@ Todas as respostas seguem o formato `{ success, data, status }` ou `{ success, e
   "linked": true,
   "id": 1,
   "discordId": "123456789",
-  "discordUsername": "username#1234",
+  "discordUsername": "username",
   "discordAvatar": "https://...",
   "crafterRoleAssigned": true,
   "linkedAt": "2026-04-05T10:00:00Z"
