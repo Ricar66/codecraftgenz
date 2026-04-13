@@ -6,11 +6,11 @@ Documentação completa do Discord Bot integrado à plataforma CodeCraft Gen-Z.
 
 ## Visão Geral
 
-O **CodeCraftBot** (`#7770`) é um bot Discord com automação completa que integra a comunidade do Discord com a plataforma CodeCraft Gen-Z. Funciona de forma autônoma com jobs automáticos, comandos slash interativos e webhooks de comunicação bidirecional.
+O **CodeCraftBot** é um bot Discord com automação completa que integra a comunidade do Discord com a plataforma CodeCraft Gen-Z. Funciona de forma autônoma com jobs automáticos, comandos slash interativos e webhooks de comunicação bidirecional.
 
-- **Nome do Bot:** CodeCraftBot#7770
-- **ID da Aplicação:** 1492974984002277557
-- **Guild (Servidor):** CodeCraftGenZ (ID: 1492897467434274916)
+- **Nome do Bot:** CodeCraftBot
+- **ID da Aplicação:** <DISCORD_CLIENT_ID>
+- **Guild (Servidor):** CodeCraftGenZ (ID: <DISCORD_GUILD_ID>)
 - **Stack:** discord.js v14 + node-cron + rss-parser
 - **Deploy:** VPS Ubuntu (PM2) - mesmo servidor da API backend
 - **Repositório:** `codecraftgenz-monorepo/discord-bot/`
@@ -213,15 +213,15 @@ Arquivo `.env` no diretório `discord-bot/`:
 
 | Variável | Descrição | Exemplo |
 |----------|-----------|---------|
-| `DISCORD_TOKEN` | Token do bot (Discord Developer Portal) | `MTk4NjIyNDgzNTg...` |
-| `DISCORD_CLIENT_ID` | ID da aplicação do bot | `1492974984002277557` |
-| `DISCORD_GUILD_ID` | ID do servidor | `1492897467434274916` |
-| `DISCORD_CHANNEL_NEWS` | ID do canal #notícias | `1492898123456789` |
-| `DISCORD_CHANNEL_VAGAS` | ID do canal #vagas-e-freelas | `1492898234567890` |
-| `DISCORD_CHANNEL_DESAFIOS` | ID do canal #desafios-codecraft | `1492898345678901` |
-| `DISCORD_CHANNEL_ANUNCIOS` | ID do canal #anúncios | `1492898456789012` |
-| `DISCORD_CHANNEL_APRESENTACOES` | ID do canal #apresentações | `1492898567890123` |
-| `DISCORD_ROLE_CRAFTER` | ID do cargo "Crafter" | `1492898678901234` |
+| `DISCORD_TOKEN` | Token do bot (Discord Developer Portal) | `<YOUR_SECRET_HERE>` |
+| `DISCORD_CLIENT_ID` | ID da aplicação do bot | `<DISCORD_CLIENT_ID>` |
+| `DISCORD_GUILD_ID` | ID do servidor | `<DISCORD_GUILD_ID>` |
+| `DISCORD_CHANNEL_NEWS` | ID do canal #notícias | `<DISCORD_CHANNEL_ID>` |
+| `DISCORD_CHANNEL_VAGAS` | ID do canal #vagas-e-freelas | `<DISCORD_CHANNEL_ID>` |
+| `DISCORD_CHANNEL_DESAFIOS` | ID do canal #desafios-codecraft | `<DISCORD_CHANNEL_ID>` |
+| `DISCORD_CHANNEL_ANUNCIOS` | ID do canal #anúncios | `<DISCORD_CHANNEL_ID>` |
+| `DISCORD_CHANNEL_APRESENTACOES` | ID do canal #apresentações | `<DISCORD_CHANNEL_ID>` |
+| `DISCORD_ROLE_CRAFTER` | ID do cargo "Crafter" | `<DISCORD_ROLE_ID>` |
 | `INTERNAL_WEBHOOK_SECRET` | Secret para webhooks internos | (string segura de 32+ chars) |
 | `DATABASE_URL` | URL de conexão MySQL | `mysql://user:pass@host/db` |
 | `NODE_ENV` | Ambiente | `production` |
@@ -439,7 +439,7 @@ Gera pasta `dist/` com código compilado.
 
 1. **SSH no servidor:**
    ```bash
-   ssh root@187.77.229.205
+   ssh root@<VPS_IP>
    ```
 
 2. **Atualizar código:**

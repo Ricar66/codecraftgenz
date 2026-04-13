@@ -38,7 +38,7 @@ python deploy.py --skip-build --skip-git  # Apenas upload SFTP
 O script:
 1. Executa `npm run build` (Vite)
 2. Commit + push no Git
-3. Conecta via SFTP ao servidor Hostinger (147.93.37.67:65002)
+3. Conecta via SFTP ao servidor Hostinger (<HOSTINGER_IP>:<PORT>)
 4. Limpa assets antigos no servidor
 5. Faz upload de `dist/` para `nodejs/`
 6. Atualiza symlink `public_html/nodejs -> ../nodejs`
@@ -120,13 +120,13 @@ MP_WEBHOOK_SECRET=xxxxxxxxxxxx
 MP_WEBHOOK_URL=https://codecraftgenz-monorepo.onrender.com/api/payments/webhook
 
 # === Email (Gmail ou Hostinger) ===
-EMAIL_USER=email@codecraftgenz.com.br
-EMAIL_PASS=senha-do-email
+EMAIL_USER=email@seudominio.com.br
+EMAIL_PASS=<YOUR_SECRET_HERE>
 
 # === FTP (Hostinger) ===
-FTP_HOST=ftp.codecraftgenz.com.br
-FTP_USER=ftp_user
-FTP_PASSWORD=ftp_pass
+FTP_HOST=ftp.seudominio.com.br
+FTP_USER=<FTP_USER>
+FTP_PASSWORD=<YOUR_SECRET_HERE>
 FTP_PORT=21
 
 # === Downloads ===
@@ -141,6 +141,24 @@ NFSE_CERT_PATH=/path/to/cert.pfx
 NFSE_CERT_PASSWORD=senha
 NFSE_WSDL_URL=https://nfse.prefeitura.gov.br/...
 NFSE_AMBIENTE=1
+```
+
+### Variaveis de Ambiente (Discord Bot)
+
+```env
+DISCORD_TOKEN=<YOUR_SECRET_HERE>
+DISCORD_CLIENT_ID=<DISCORD_CLIENT_ID>
+DISCORD_GUILD_ID=<DISCORD_GUILD_ID>
+DISCORD_CHANNEL_NEWS=<DISCORD_CHANNEL_ID>
+DISCORD_CHANNEL_VAGAS=<DISCORD_CHANNEL_ID>
+DISCORD_CHANNEL_DESAFIOS=<DISCORD_CHANNEL_ID>
+DISCORD_CHANNEL_ANUNCIOS=<DISCORD_CHANNEL_ID>
+DISCORD_CHANNEL_APRESENTACOES=<DISCORD_CHANNEL_ID>
+DISCORD_ROLE_CRAFTER=<DISCORD_ROLE_ID>
+INTERNAL_WEBHOOK_SECRET=<YOUR_SECRET_HERE>
+DATABASE_URL=mysql://user:pass@host:3306/database
+NODE_ENV=production
+INTERNAL_PORT=3001
 ```
 
 ---
