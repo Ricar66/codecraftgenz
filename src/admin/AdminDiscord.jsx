@@ -346,14 +346,14 @@ export default function AdminDiscord() {
                           borderRadius: 12,
                           fontSize: '0.78rem',
                           fontWeight: 600,
-                          background: log.status === 'success' || log.success
+                          background: log.status === 'ok' || log.status === 'success' || log.success
                             ? 'rgba(34,197,94,0.15)'
                             : 'rgba(239,68,68,0.15)',
-                          color: log.status === 'success' || log.success
+                          color: log.status === 'ok' || log.status === 'success' || log.success
                             ? '#22c55e'
                             : '#ef4444',
                         }}>
-                          {log.status === 'success' || log.success ? 'Sucesso' : 'Erro'}
+                          {log.status === 'ok' || log.status === 'success' || log.success ? 'Sucesso' : 'Erro'}
                         </span>
                       </td>
                       <td style={{ ...tdStyle, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
