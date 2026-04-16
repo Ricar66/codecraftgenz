@@ -32,3 +32,9 @@ export async function getBotLogs(page = 1) {
 export async function triggerBotAction(action) {
   return apiRequest(`/api/discord/trigger/${action}`, { method: 'POST' });
 }
+
+export async function getMemberRanking({ page = 1, limit = 50, role = '' } = {}) {
+  const params = new URLSearchParams({ page, limit });
+  if (role) params.set('role', role);
+  return apiRequest(`/api/discord/ranking?${params}`);
+}

@@ -1,9 +1,9 @@
 // src/admin/AdminDiscord.jsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Bot, RefreshCw, Save, X } from 'lucide-react';
+import { Bot, RefreshCw, Save, Trophy, Crown, Zap, MessageSquare, Mic, Star } from 'lucide-react';
 
 import { useToast } from '../components/UI/Toast';
-import { getBotStatus, getBotConfig, updateBotConfig, getBotLogs, triggerBotAction } from '../services/discordAPI.js';
+import { getBotStatus, getBotConfig, updateBotConfig, getBotLogs, triggerBotAction, getMemberRanking } from '../services/discordAPI.js';
 
 const glassStyle = {
   background: 'rgba(26, 26, 46, 0.6)',
@@ -121,6 +121,28 @@ export default function AdminDiscord() {
       setTriggerLoading(prev => ({ ...prev, [action]: false }));
     }
   };
+
+  // --- Ranking ---
+  const [rankingMembers, setRankingMembers] = useState([]);
+  const [rankingPage, setRankingPage] = useState(1);
+  const [rankingTotal, setRankingTotal] = useState(0);
+  const [rankingRole, setRankingRole] = useState('');
+  const [rankingLoading, setRankingLoading] = useState(true);
+
+  const fetchRanking = useCallback(async (page, role) => {
+    setRankingLoading(true);
+    try {
+      const data = await getMemberRanking({ page, limit: 20, role });
+      setRankingMembers(data.members || []);
+      setRankingTotal(data.total || 0);
+    } catch {
+      setRankingMembers([]);
+    } finally {
+      setRankingLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchRanking(rankingPage, rankingRole); }, [rankingPage, rankingRole, fetchRanking]);
 
   // --- Logs ---
   const [logs, setLogs] = useState([]);
@@ -285,9 +307,10 @@ export default function AdminDiscord() {
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
           {[
-            { action: 'news', label: 'Postar Noticias Agora', icon: '\ud83d\udcf0' },
-            { action: 'vagas', label: 'Postar Vagas Agora', icon: '\ud83d\udcbc' },
-            { action: 'ranking', label: 'Postar Ranking Agora', icon: '\ud83c\udfc6' },
+            { action: 'news',      label: 'Postar Noticias Agora',    icon: '\ud83d\udcf0' },
+            { action: 'vagas',     label: 'Postar Vagas Agora',       icon: '\ud83d\udcbc' },
+            { action: 'ranking',   label: 'Postar Ranking Agora',     icon: '\ud83c\udfc6' },
+            { action: 'promotion', label: 'Rodar Promocao Agora',     icon: '\ud83d\ude80' },
           ].map(({ action, label, icon }) => (
             <button
               key={action}
@@ -305,6 +328,138 @@ export default function AdminDiscord() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Card: Ranking de Engajamento */}
+      <div style={glassStyle}>
+        <div style={cardHeader}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Trophy size={20} style={{ color: '#D12BF2' }} />
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#F5F5F7', margin: 0 }}>Ranking de Engajamento</h2>
+            <span style={{ color: '#a0a0b0', fontSize: '0.82rem' }}>({rankingTotal} membros)</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {/* Filtro por cargo */}
+            <select
+              value={rankingRole}
+              onChange={e => { setRankingRole(e.target.value); setRankingPage(1); }}
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 8,
+                color: '#F5F5F7',
+                padding: '5px 10px',
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+              }}
+            >
+              <option value="">Todos os cargos</option>
+              <option value="novato">Novato</option>
+              <option value="crafter">Crafter</option>
+              <option value="crafter_elite">Crafter Elite</option>
+            </select>
+            <button
+              onClick={() => fetchRanking(rankingPage, rankingRole)}
+              disabled={rankingLoading}
+              style={btnStyle}
+            >
+              <RefreshCw size={13} style={{ animation: rankingLoading ? 'spin 1s linear infinite' : 'none' }} />
+            </button>
+          </div>
+        </div>
+
+        {rankingLoading ? (
+          <p style={{ color: '#a0a0b0' }}>Carregando ranking...</p>
+        ) : rankingMembers.length === 0 ? (
+          <p style={{ color: '#a0a0b0', textAlign: 'center', padding: '24px 0' }}>
+            Nenhum membro registrado ainda. Os dados aparecem conforme os membros interagem no Discord.
+          </p>
+        ) : (
+          <>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                    <th style={{ ...thStyle, width: 36 }}>#</th>
+                    <th style={thStyle}>Membro</th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Cargo</th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>
+                      <Star size={12} style={{ verticalAlign: 'middle', marginRight: 3 }} />Pts
+                    </th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>
+                      <MessageSquare size={12} style={{ verticalAlign: 'middle', marginRight: 3 }} />Msgs
+                    </th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>
+                      <Zap size={12} style={{ verticalAlign: 'middle', marginRight: 3 }} />Reacoes
+                    </th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>
+                      <Mic size={12} style={{ verticalAlign: 'middle', marginRight: 3 }} />Voz
+                    </th>
+                    <th style={thStyle}>Ultima vez</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rankingMembers.map((m, i) => {
+                    const rank = (rankingPage - 1) * 20 + i + 1;
+                    const roleInfo = ROLE_DISPLAY[m.currentRole] || { label: m.currentRole, color: '#a0a0b0' };
+                    const voiceHours = Math.floor((m.voiceMinutes || 0) / 60);
+                    return (
+                      <tr key={m.discordId} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td style={{ ...tdStyle, color: rank <= 3 ? RANK_COLORS[rank - 1] : '#a0a0b0', fontWeight: rank <= 3 ? 700 : 400 }}>
+                          {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}
+                        </td>
+                        <td style={tdStyle}>
+                          <div style={{ fontWeight: 500 }}>{m.displayName || m.username}</div>
+                          <div style={{ color: '#a0a0b0', fontSize: '0.75rem' }}>@{m.username}</div>
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: 'center' }}>
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '2px 10px',
+                            borderRadius: 12,
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            background: roleInfo.bg,
+                            color: roleInfo.color,
+                          }}>
+                            {roleInfo.label}
+                          </span>
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700, color: '#D12BF2' }}>{m.score}</td>
+                        <td style={{ ...tdStyle, textAlign: 'center', color: '#a0a0b0' }}>{m.messagesTotal}</td>
+                        <td style={{ ...tdStyle, textAlign: 'center', color: '#a0a0b0' }}>{m.reactionsReceived}</td>
+                        <td style={{ ...tdStyle, textAlign: 'center', color: '#a0a0b0' }}>{voiceHours}h</td>
+                        <td style={{ ...tdStyle, color: '#a0a0b0', fontSize: '0.8rem' }}>
+                          {m.lastSeen ? new Date(m.lastSeen).toLocaleDateString('pt-BR') : '-'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {/* Paginacao */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16 }}>
+              <button
+                onClick={() => setRankingPage(p => Math.max(1, p - 1))}
+                disabled={rankingPage <= 1}
+                style={{ ...btnSmallStyle, opacity: rankingPage <= 1 ? 0.4 : 1 }}
+              >
+                Anterior
+              </button>
+              <span style={{ color: '#a0a0b0', fontSize: '0.85rem', alignSelf: 'center' }}>
+                Pagina {rankingPage} de {Math.max(1, Math.ceil(rankingTotal / 20))}
+              </span>
+              <button
+                onClick={() => setRankingPage(p => p + 1)}
+                disabled={rankingMembers.length < 20}
+                style={{ ...btnSmallStyle, opacity: rankingMembers.length < 20 ? 0.4 : 1 }}
+              >
+                Proximo
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Card: Logs de Acoes */}
@@ -433,3 +588,11 @@ const tdStyle = {
   padding: '8px 10px',
   color: '#F5F5F7',
 };
+
+const ROLE_DISPLAY = {
+  novato:        { label: 'Novato',        color: '#a0a0b0', bg: 'rgba(160,160,176,0.12)' },
+  crafter:       { label: 'Crafter',       color: '#00E4F2', bg: 'rgba(0,228,242,0.12)'   },
+  crafter_elite: { label: 'Crafter Elite', color: '#D12BF2', bg: 'rgba(209,43,242,0.15)'  },
+};
+
+const RANK_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32'];
