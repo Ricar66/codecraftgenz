@@ -196,7 +196,7 @@ function TabInteresses({ user, onSaved }) {
           </div>
 
           <a
-            href="https://discord.gg/uK6Ufuy9gc"
+            href="https://discord.gg/47FUudrU"
             target="_blank"
             rel="noopener noreferrer"
             className={styles.discordCard}
