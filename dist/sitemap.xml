@@ -3,7 +3,7 @@
   <!-- Pagina Principal -->
   <url>
     <loc>https://codecraftgenz.com.br/</loc>
-    <lastmod>2026-03-19</lastmod>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -11,7 +11,7 @@
   <!-- Projetos -->
   <url>
     <loc>https://codecraftgenz.com.br/projetos</loc>
-    <lastmod>2026-03-19</lastmod>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -19,7 +19,7 @@
   <!-- Aplicativos / Loja -->
   <url>
     <loc>https://codecraftgenz.com.br/aplicativos</loc>
-    <lastmod>2026-03-19</lastmod>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -27,40 +27,72 @@
   <!-- Mentoria -->
   <url>
     <loc>https://codecraftgenz.com.br/mentoria</loc>
-    <lastmod>2026-03-19</lastmod>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
-  <!-- Ranking -->
+  <!-- Para Empresas -->
   <url>
-    <loc>https://codecraftgenz.com.br/ranking</loc>
-    <lastmod>2026-03-19</lastmod>
-    <changefreq>daily</changefreq>
+    <loc>https://codecraftgenz.com.br/para-empresas</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Sobre -->
+  <url>
+    <loc>https://codecraftgenz.com.br/sobre</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <!-- Desafios -->
   <url>
     <loc>https://codecraftgenz.com.br/desafios</loc>
-    <lastmod>2026-03-19</lastmod>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
-  <!-- Feedbacks -->
+  <!-- Ranking (URL final, sem redirect) -->
   <url>
-    <loc>https://codecraftgenz.com.br/feedbacks</loc>
-    <lastmod>2026-03-19</lastmod>
+    <loc>https://codecraftgenz.com.br/desafios/ranking</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Feedbacks (URL final, sem redirect) -->
+  <url>
+    <loc>https://codecraftgenz.com.br/desafios/feedbacks</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
 
-  <!-- Para Empresas -->
+  <!-- Ajuda -->
   <url>
-    <loc>https://codecraftgenz.com.br/para-empresas</loc>
-    <lastmod>2026-03-19</lastmod>
+    <loc>https://codecraftgenz.com.br/ajuda</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Politica de Privacidade -->
+  <url>
+    <loc>https://codecraftgenz.com.br/politica-privacidade</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+  <!-- Termos de Uso -->
+  <url>
+    <loc>https://codecraftgenz.com.br/termos-uso</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
   </url>
 </urlset>
