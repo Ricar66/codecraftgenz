@@ -1,6 +1,6 @@
 // src/admin/AdminDiscord.jsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Bot, RefreshCw, Save, Trophy, Crown, Zap, MessageSquare, Mic, Star } from 'lucide-react';
+import { Bot, RefreshCw, Save, Trophy, Crown, Zap, MessageSquare, Mic, Star, Flame } from 'lucide-react';
 
 import { useToast } from '../components/UI/Toast';
 import { getBotStatus, getBotConfig, updateBotConfig, getBotLogs, triggerBotAction, getMemberRanking } from '../services/discordAPI.js';
@@ -29,6 +29,13 @@ const ACTION_LABELS = {
   role_assigned: 'Cargo atribuido',
   challenge_posted: 'Desafio postado',
   app_posted: 'App postado',
+  onboarding_dm_sent: 'DM de onboarding enviada',
+  promotion_announced: 'Anuncio de promocao',
+  member_promoted: 'Membro promovido',
+  desafio_semanal_posted: 'Desafio da semana postado',
+  enquete_posted: 'Enquete postada',
+  snapshot_saved: 'Snapshot semanal salvo',
+  streak_bonus: 'Bonus de streak',
 };
 
 export default function AdminDiscord() {
@@ -64,7 +71,21 @@ export default function AdminDiscord() {
   const fetchConfig = useCallback(async () => {
     try {
       const data = await getBotConfig();
-      setConfig(data);
+      // Normalizar: backend guarda strings ('true' / 'false'). Converter chaves booleanas para boolean real.
+      const BOOLEAN_KEYS = [
+        'news_enabled', 'vagas_enabled', 'welcome_enabled', 'ranking_enabled',
+        'dm_onboarding_enabled', 'promo_announcement_enabled', 'auto_thread_enabled',
+        'streak_enabled', 'desafio_semanal_enabled', 'enquete_enabled',
+      ];
+      const normalized = { ...data };
+      BOOLEAN_KEYS.forEach(k => {
+        if (k in normalized) {
+          normalized[k] = normalized[k] === true || normalized[k] === 'true';
+        } else {
+          normalized[k] = true; // default: todas habilitadas
+        }
+      });
+      setConfig(normalized);
     } catch {
       setConfig(null);
     } finally {
@@ -218,10 +239,16 @@ export default function AdminDiscord() {
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {[
-                { key: 'news_enabled', label: 'Noticias Tech' },
-                { key: 'vagas_enabled', label: 'Vagas Dev' },
-                { key: 'welcome_enabled', label: 'Boas-vindas' },
-                { key: 'ranking_enabled', label: 'Ranking Semanal' },
+                { key: 'news_enabled',                label: 'Noticias Tech' },
+                { key: 'vagas_enabled',               label: 'Vagas Dev' },
+                { key: 'welcome_enabled',             label: 'Boas-vindas' },
+                { key: 'ranking_enabled',             label: 'Ranking Semanal' },
+                { key: 'dm_onboarding_enabled',       label: 'DM de onboarding para novos membros' },
+                { key: 'promo_announcement_enabled',  label: 'Anuncio publico de promocao de cargo' },
+                { key: 'auto_thread_enabled',         label: 'Thread automatica em #tire-suas-duvidas' },
+                { key: 'streak_enabled',              label: 'Streak de atividade (bonus a cada 7 dias)' },
+                { key: 'desafio_semanal_enabled',     label: 'Desafio da Semana (segunda as 9h)' },
+                { key: 'enquete_enabled',             label: 'Enquete Semanal (quarta as 14h)' },
               ].map(({ key, label }) => (
                 <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <button
@@ -307,10 +334,13 @@ export default function AdminDiscord() {
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
           {[
-            { action: 'news',      label: 'Postar Noticias Agora',    icon: '\ud83d\udcf0' },
-            { action: 'vagas',     label: 'Postar Vagas Agora',       icon: '\ud83d\udcbc' },
-            { action: 'ranking',   label: 'Postar Ranking Agora',     icon: '\ud83c\udfc6' },
-            { action: 'promotion', label: 'Rodar Promocao Agora',     icon: '\ud83d\ude80' },
+            { action: 'news',             label: 'Postar Noticias Agora',       icon: '\ud83d\udcf0' },
+            { action: 'vagas',            label: 'Postar Vagas Agora',          icon: '\ud83d\udcbc' },
+            { action: 'ranking',          label: 'Postar Ranking Agora',        icon: '\ud83c\udfc6' },
+            { action: 'promotion',        label: 'Rodar Promocao Agora',        icon: '\ud83d\ude80' },
+            { action: 'desafio-semanal',  label: 'Postar Desafio da Semana',    icon: '\ud83c\udfaf' },
+            { action: 'enquete',          label: 'Postar Enquete Agora',        icon: '\ud83d\udcca' },
+            { action: 'snapshot',         label: 'Salvar Snapshot Semanal',     icon: '\ud83d\udcbe' },
           ].map(({ action, label, icon }) => (
             <button
               key={action}
@@ -393,6 +423,9 @@ export default function AdminDiscord() {
                       <Zap size={12} style={{ verticalAlign: 'middle', marginRight: 3 }} />Reacoes
                     </th>
                     <th style={{ ...thStyle, textAlign: 'center' }}>
+                      <Flame size={12} style={{ verticalAlign: 'middle', marginRight: 3 }} />Streak
+                    </th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>
                       <Mic size={12} style={{ verticalAlign: 'middle', marginRight: 3 }} />Voz
                     </th>
                     <th style={thStyle}>Ultima vez</th>
@@ -428,6 +461,9 @@ export default function AdminDiscord() {
                         <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700, color: '#D12BF2' }}>{m.score}</td>
                         <td style={{ ...tdStyle, textAlign: 'center', color: '#a0a0b0' }}>{m.messagesTotal}</td>
                         <td style={{ ...tdStyle, textAlign: 'center', color: '#a0a0b0' }}>{m.reactionsReceived}</td>
+                        <td style={{ ...tdStyle, textAlign: 'center', color: (m.streakDays ?? 0) >= 7 ? '#F59E0B' : '#a0a0b0', fontWeight: (m.streakDays ?? 0) >= 7 ? 700 : 400 }}>
+                          {(m.streakDays ?? 0) > 0 ? `${m.streakDays}d` : '-'}
+                        </td>
                         <td style={{ ...tdStyle, textAlign: 'center', color: '#a0a0b0' }}>{voiceHours}h</td>
                         <td style={{ ...tdStyle, color: '#a0a0b0', fontSize: '0.8rem' }}>
                           {m.lastSeen ? new Date(m.lastSeen).toLocaleDateString('pt-BR') : '-'}
