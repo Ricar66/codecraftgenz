@@ -1,11 +1,27 @@
 # CLAUDE.md - Contexto para Claude Code
 
+## Agentes Especializados
+
+Este projeto tem agentes especializados em `.claude/agents/`. Use-os para trabalho profundo:
+
+- **`codecraft-fullstack`** — Engenheiro sênior do projeto. Use para qualquer tarefa técnica: novas features, bugs, endpoints, páginas, jobs do bot, migrações de banco. Conhece toda a arquitetura.
+- **`codecraft-product`** — PM e estrategista. Use para decisões de produto, novas features a priorizar, copies do site, estratégia de crescimento, engajamento da comunidade.
+
+**Como usar:** `/agents:codecraft-fullstack` ou `/agents:codecraft-product`
+
+---
+
 ## Visao Geral
 
 Este repositorio e o frontend SPA (Single Page Application) da plataforma CodeCraft Gen-Z. E uma aplicacao React que serve como marketplace de apps, plataforma de desafios de programacao, mentorias, ranking e propostas B2B para desenvolvedores.
 
 **URL de producao:** https://codecraftgenz.com.br
 **URL da API:** https://api.codecraftgenz.com.br
+
+**Repositórios relacionados (monorepo):**
+- Backend: `c:\Users\ricardo.moretti\Documents\codecraftgenz-monorepo\backend`
+- Discord Bot: `c:\Users\ricardo.moretti\Documents\codecraftgenz-monorepo\discord-bot`
+- VPS: `root@187.77.229.205` | PM2: `codecraft-backend`, `codecraft-bot`
 
 ---
 
