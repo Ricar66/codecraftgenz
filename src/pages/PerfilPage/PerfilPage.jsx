@@ -5,7 +5,7 @@ import {
   User, Mail, Shield, Star, Github, Linkedin,
   Edit3, Check, X, ChevronRight, ShoppingBag,
   Download, Calendar, CheckCircle, AlertCircle, Package, Lock,
-  Gift, Copy, Users,
+  Gift, Copy, Users, Bell,
 } from 'lucide-react';
 import { DiscordIcon } from '../../components/UI/BrandIcons/index.jsx';
 import { Link, Navigate } from 'react-router-dom';
@@ -13,6 +13,7 @@ import { Link, Navigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import { useAuth } from '../../context/useAuth';
 import { apiRequest } from '../../lib/apiConfig.js';
+import { usePushNotifications } from '../../hooks/usePushNotifications.js';
 import { getDiscordStatus, getDiscordAuthUrl, unlinkDiscord } from '../../services/discordAPI.js';
 import { getMyReferralCode, getReferralStats } from '../../services/referralAPI.js';
 import { useToast } from '../../components/UI/Toast';
@@ -595,6 +596,99 @@ function TabConta({ user }) {
   );
 }
 
+/* ─────────────────── Aba: Notificações ─────────────────── */
+function TabNotificacoes() {
+  const toast = useToast();
+  const { isSupported, isSubscribed, permission, loading, requestPermission, unsubscribe } = usePushNotifications();
+
+  const handleToggle = async () => {
+    if (isSubscribed) {
+      await unsubscribe();
+      toast.success('Notificações push desativadas.');
+    } else {
+      if (permission === 'denied') {
+        toast.error('Permissão negada pelo navegador. Ative nas configurações do site.');
+        return;
+      }
+      const ok = await requestPermission();
+      if (ok) {
+        toast.success('Notificações push ativadas!');
+      } else if (permission === 'denied') {
+        toast.error('Permissão negada. Ative nas configurações do navegador.');
+      } else {
+        toast.error('Não foi possível ativar as notificações.');
+      }
+    }
+  };
+
+  return (
+    <div className={styles.tabContent}>
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h3 className={styles.cardTitle}><Bell size={16} /> Notificações</h3>
+        </div>
+
+        {!isSupported ? (
+          <p className={styles.emptyHint}>
+            Seu navegador não suporta notificações push. Tente no Chrome ou Firefox.
+          </p>
+        ) : (
+          <>
+            <p className={styles.emptyHint} style={{ marginBottom: 20 }}>
+              Receba avisos sobre novos desafios, atualizações de apps e novidades da plataforma diretamente no seu dispositivo.
+            </p>
+
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '16px 20px',
+              background: isSubscribed ? 'rgba(0,228,242,0.06)' : 'rgba(255,255,255,0.03)',
+              border: `1px solid ${isSubscribed ? 'rgba(0,228,242,0.25)' : 'rgba(255,255,255,0.08)'}`,
+              borderRadius: 12,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <Bell size={18} style={{ color: isSubscribed ? '#00E4F2' : '#64748b' }} />
+                <div>
+                  <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: '#f5f5f7' }}>
+                    Notificações push
+                  </p>
+                  <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#a0a0b0' }}>
+                    {isSubscribed
+                      ? 'Ativadas neste dispositivo'
+                      : permission === 'denied'
+                        ? 'Bloqueadas pelo navegador'
+                        : 'Desativadas'
+                    }
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className={isSubscribed ? styles.btnCancel : styles.btnSave}
+                onClick={handleToggle}
+                disabled={loading || permission === 'denied'}
+                style={{ minWidth: 110 }}
+              >
+                {loading
+                  ? 'Aguarde...'
+                  : isSubscribed
+                    ? <><X size={14} /> Desativar</>
+                    : <><Bell size={14} /> Ativar</>
+                }
+              </button>
+            </div>
+
+            {permission === 'denied' && (
+              <p className={styles.emptyHint} style={{ marginTop: 12, color: '#f87171' }}>
+                As notificações estão bloqueadas. Para ativar, vá em Configurações do navegador e permita notificações para este site.
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─────────────────── Page ─────────────────── */
 export default function PerfilPage() {
   const { user, loading } = useAuth();
@@ -623,6 +717,7 @@ export default function PerfilPage() {
     { id: 'perfil', label: 'Perfil', icon: User },
     { id: 'compras', label: 'Compras', icon: ShoppingBag },
     { id: 'conta', label: 'Conta', icon: Shield },
+    { id: 'notificacoes', label: 'Notificações', icon: Bell },
   ];
 
   return (
@@ -658,6 +753,7 @@ export default function PerfilPage() {
         {tab === 'perfil' && <TabInteresses user={enrichedUser} onSaved={setLocalUserInterests} />}
         {tab === 'compras' && <TabCompras user={user} />}
         {tab === 'conta' && <TabConta user={user} />}
+        {tab === 'notificacoes' && <TabNotificacoes />}
 
       </div>
     </div>

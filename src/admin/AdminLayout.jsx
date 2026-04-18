@@ -92,6 +92,10 @@ export default function AdminLayout() {
             <span className={styles.menuIcon}>🎯</span>
             <span className={styles.menuText}>Desafios</span>
           </NavLink>
+          <NavLink to="/admin/submissoes" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>🏅</span>
+            <span className={styles.menuText}>Submissões</span>
+          </NavLink>
           <NavLink to="/admin/inscricoes" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
             <span className={styles.menuIcon}>📝</span>
             <span className={styles.menuText}>Inscrições</span>
