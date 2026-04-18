@@ -38,3 +38,15 @@ export async function getMemberRanking({ page = 1, limit = 50, role = '' } = {})
   if (role) params.set('role', role);
   return apiRequest(`/api/discord/ranking?${params}`);
 }
+
+// Público — sem autenticação. Usado na página /ranking.
+export async function getPublicMemberRanking({ page = 1, limit = 20, role = '' } = {}) {
+  const params = new URLSearchParams({ page, limit });
+  if (role) params.set('role', role);
+  return apiRequest(`/api/discord/ranking/public?${params}`);
+}
+
+// Funil Discord → Site (admin)
+export async function getDiscordFunnel() {
+  return apiRequest('/api/discord/funnel');
+}
