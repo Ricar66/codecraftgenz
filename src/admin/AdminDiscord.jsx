@@ -1,9 +1,9 @@
 // src/admin/AdminDiscord.jsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Bot, RefreshCw, Save, Trophy, Crown, Zap, MessageSquare, Mic, Star, Flame } from 'lucide-react';
+import { Bot, RefreshCw, Save, Trophy, Crown, Zap, MessageSquare, Mic, Star, Flame, Users, Link2, ShoppingCart, TrendingUp } from 'lucide-react';
 
 import { useToast } from '../components/UI/Toast';
-import { getBotStatus, getBotConfig, updateBotConfig, getBotLogs, triggerBotAction, getMemberRanking } from '../services/discordAPI.js';
+import { getBotStatus, getBotConfig, updateBotConfig, getBotLogs, triggerBotAction, getMemberRanking, getDiscordFunnel } from '../services/discordAPI.js';
 
 const glassStyle = {
   background: 'rgba(26, 26, 46, 0.6)',
@@ -62,6 +62,24 @@ export default function AdminDiscord() {
     statusInterval.current = setInterval(fetchStatus, 30000);
     return () => clearInterval(statusInterval.current);
   }, [fetchStatus]);
+
+  // --- Funil Discord → Site ---
+  const [funnel, setFunnel] = useState(null);
+  const [funnelLoading, setFunnelLoading] = useState(true);
+
+  const fetchFunnel = useCallback(async () => {
+    setFunnelLoading(true);
+    try {
+      const data = await getDiscordFunnel();
+      setFunnel(data);
+    } catch {
+      setFunnel(null);
+    } finally {
+      setFunnelLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchFunnel(); }, [fetchFunnel]);
 
   // --- Config ---
   const [config, setConfig] = useState(null);
@@ -224,6 +242,67 @@ export default function AdminDiscord() {
           <div style={{ display: 'flex', gap: 24, marginTop: 12, color: '#a0a0b0', fontSize: '0.9rem' }}>
             {status.uptime && <span>Uptime: {status.uptime}</span>}
             {status.ping != null && <span>Ping: {status.ping}ms</span>}
+          </div>
+        )}
+      </div>
+
+      {/* Card: Funil Discord → Site */}
+      <div style={glassStyle}>
+        <div style={cardHeader}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <TrendingUp size={20} style={{ color: '#00E4F2' }} />
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#F5F5F7', margin: 0 }}>Funil Discord → Site</h2>
+          </div>
+          <button
+            onClick={fetchFunnel}
+            disabled={funnelLoading}
+            style={btnStyle}
+          >
+            <RefreshCw size={13} style={{ animation: funnelLoading ? 'spin 1s linear infinite' : 'none' }} />
+            Atualizar
+          </button>
+        </div>
+        {funnelLoading ? (
+          <p style={{ color: '#a0a0b0' }}>Carregando métricas...</p>
+        ) : !funnel ? (
+          <p style={{ color: '#ef4444' }}>Erro ao carregar funil</p>
+        ) : (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: 14,
+          }}>
+            <FunnelStat
+              icon={<Users size={18} style={{ color: '#a78bfa' }} />}
+              label="Membros Discord"
+              value={funnel.totalDiscordMembers ?? 0}
+              accent="#a78bfa"
+            />
+            <FunnelStat
+              icon={<Link2 size={18} style={{ color: '#00E4F2' }} />}
+              label="Contas vinculadas"
+              value={funnel.linkedAccounts ?? 0}
+              hint={funnel.totalDiscordMembers
+                ? `${((funnel.linkedAccounts / funnel.totalDiscordMembers) * 100).toFixed(1)}% do total`
+                : null}
+              accent="#00E4F2"
+            />
+            <FunnelStat
+              icon={<ShoppingCart size={18} style={{ color: '#22c55e' }} />}
+              label="Compraram após vincular"
+              value={funnel.purchasedAfterLink ?? 0}
+              hint={funnel.linkedAccounts
+                ? `${((funnel.purchasedAfterLink / funnel.linkedAccounts) * 100).toFixed(1)}% dos vinculados`
+                : null}
+              accent="#22c55e"
+            />
+            <FunnelStat
+              icon={<TrendingUp size={18} style={{ color: '#D12BF2' }} />}
+              label="Taxa de conversão"
+              value={`${funnel.conversionRate ?? 0}%`}
+              hint="Discord → conta vinculada"
+              accent="#D12BF2"
+            />
           </div>
         )}
       </div>
@@ -632,3 +711,39 @@ const ROLE_DISPLAY = {
 };
 
 const RANK_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32'];
+
+// Card de métrica do funil
+function FunnelStat({ icon, label, value, hint, accent }) {
+  return (
+    <div style={{
+      padding: '16px 18px',
+      background: 'rgba(255,255,255,0.04)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 14,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8,
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      <span style={{
+        position: 'absolute',
+        top: 0, left: 0, height: 2, width: '100%',
+        background: accent || '#a0a0b0',
+        opacity: 0.6,
+      }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {icon}
+        <span style={{ fontSize: '0.78rem', color: '#a0a0b0', textTransform: 'uppercase', letterSpacing: '0.4px', fontWeight: 600 }}>
+          {label}
+        </span>
+      </div>
+      <span style={{ fontSize: '1.7rem', fontWeight: 800, color: '#F5F5F7', lineHeight: 1 }}>
+        {value}
+      </span>
+      {hint && (
+        <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{hint}</span>
+      )}
+    </div>
+  );
+}

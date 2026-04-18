@@ -24,6 +24,7 @@ const ProjectsPage = lazy(() => import('./pages/ProjectsPage.jsx'));
 const FeedbacksPage = lazy(() => import('./pages/FeedbacksPage.jsx'));
 const MentoriaPage = lazy(() => import('./pages/MentoriaPage.jsx'));
 const RankingPage = lazy(() => import('./pages/RankingPage.jsx'));
+const CommunityRankingPage = lazy(() => import('./pages/RankingPage/index.jsx'));
 const DesafiosPage = lazy(() => import('./pages/DesafiosPage.jsx'));
 const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
@@ -136,7 +137,7 @@ function App() {
                 <Route path="/projetos" element={<ProjectsPage />} />
                 <Route path="/desafios/ranking" element={<RankingPage />} />
                 <Route path="/desafios/feedbacks" element={<FeedbacksPage />} />
-                <Route path="/ranking" element={<Navigate to="/desafios/ranking" replace />} />
+                <Route path="/ranking" element={<CommunityRankingPage />} />
                 <Route path="/feedbacks" element={<Navigate to="/desafios/feedbacks" replace />} />
                 <Route path="/mentoria" element={<MentoriaPage />} />
                 <Route path="/desafios" element={<DesafiosPage />} />

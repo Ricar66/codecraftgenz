@@ -1,0 +1,584 @@
+/* src/pages/RankingPage/RankingPage.module.css
+ * Leaderboard público da comunidade Discord CodeCraft Gen-Z. */
+
+.page {
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ===== HERO ===== */
+.hero {
+  position: relative;
+  padding: 120px 24px 32px;
+  text-align: center;
+  z-index: 1;
+}
+
+.heroBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  margin-bottom: 20px;
+  background: rgba(209, 43, 242, 0.08);
+  border: 1px solid rgba(209, 43, 242, 0.25);
+  border-radius: 999px;
+  color: #D12BF2;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.heroTitle {
+  font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
+  font-size: clamp(2.2rem, 6vw, 3.8rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+  color: #F5F5F7;
+}
+
+.heroTitle span {
+  background: linear-gradient(135deg, #D12BF2 0%, #00E4F2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.heroSubtitle {
+  font-size: clamp(0.95rem, 2vw, 1.1rem);
+  line-height: 1.7;
+  color: #a0a0b0;
+  max-width: 640px;
+  margin: 0 auto 20px;
+}
+
+.heroPoints {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.pointBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.pointBadge strong {
+  color: #00E4F2;
+  font-weight: 700;
+}
+
+/* ===== TOOLBAR ===== */
+.toolbar {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.roleFilter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pill:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(0, 228, 242, 0.3);
+  color: #F5F5F7;
+}
+
+.pillActive {
+  background: linear-gradient(135deg, rgba(209, 43, 242, 0.15) 0%, rgba(0, 228, 242, 0.15) 100%);
+  border-color: rgba(0, 228, 242, 0.5);
+  color: #F5F5F7;
+}
+
+.shareBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #D12BF2 0%, #9C1AE1 100%);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 18px rgba(209, 43, 242, 0.3);
+}
+
+.shareBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(209, 43, 242, 0.45);
+  filter: brightness(1.08);
+}
+
+.shareBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ===== PODIUM (top 3) ===== */
+.podium {
+  max-width: 1100px;
+  margin: 0 auto 28px;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  gap: 16px;
+  align-items: end;
+}
+
+.podiumCard {
+  position: relative;
+  padding: 22px 18px 20px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  text-align: center;
+  overflow: hidden;
+}
+
+.podiumCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(209, 43, 242, 0.35), rgba(0, 228, 242, 0.35));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.podium1 {
+  transform: translateY(-18px);
+}
+
+.podiumMedal {
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.podiumAvatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0a0a0f;
+  margin: 0 auto 12px;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+.podiumName {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #F5F5F7;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.podiumUser {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin: 0 0 10px;
+}
+
+.podiumScore {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(0, 228, 242, 0.12);
+  border: 1px solid rgba(0, 228, 242, 0.3);
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #00E4F2;
+}
+
+/* ===== LIST ===== */
+.listWrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+.listHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* ===== ROW ===== */
+.row {
+  display: grid;
+  grid-template-columns: 60px 48px 1fr auto auto 180px;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  transition: all 0.25s ease;
+}
+
+.row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(0, 228, 242, 0.25);
+  transform: translateX(4px);
+}
+
+.rowHighlight {
+  background: linear-gradient(135deg, rgba(209, 43, 242, 0.12) 0%, rgba(0, 228, 242, 0.08) 100%);
+  border-color: rgba(209, 43, 242, 0.45);
+  box-shadow: 0 0 0 1px rgba(209, 43, 242, 0.25), 0 8px 28px rgba(209, 43, 242, 0.15);
+}
+
+.position {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.positionMedal {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0a0a0f;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+}
+
+.identity {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.displayName {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #F5F5F7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.username {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badgeRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.roleBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.roleNovato {
+  background: rgba(148, 163, 184, 0.14);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.roleCrafter {
+  background: rgba(0, 228, 242, 0.12);
+  color: #00E4F2;
+  border: 1px solid rgba(0, 228, 242, 0.4);
+}
+
+.roleElite {
+  background: rgba(255, 215, 0, 0.12);
+  color: #FFD700;
+  border: 1px solid rgba(255, 215, 0, 0.4);
+}
+
+.points {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255, 215, 0, 0.08);
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #FFD700;
+  white-space: nowrap;
+}
+
+.streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(249, 115, 22, 0.1);
+  color: #fb923c;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.streakDim {
+  background: rgba(148, 163, 184, 0.08);
+  color: #64748b;
+}
+
+/* Progress bar (para próximo cargo) */
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.progressLabel {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  display: flex;
+  justify-content: space-between;
+  font-weight: 500;
+}
+
+.progressTrack {
+  position: relative;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressBar {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #D12BF2 0%, #00E4F2 100%);
+  border-radius: 999px;
+  transform-origin: left;
+}
+
+.progressDone {
+  font-size: 0.72rem;
+  color: #22c55e;
+  font-weight: 700;
+  text-align: right;
+}
+
+/* ===== PAGINATION ===== */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.pageBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: rgba(0, 228, 242, 0.1);
+  border-color: rgba(0, 228, 242, 0.4);
+  color: #00E4F2;
+}
+
+.pageBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.pageInfo {
+  color: #94a3b8;
+  font-size: 0.88rem;
+  padding: 0 8px;
+  font-weight: 500;
+}
+
+/* ===== STATES ===== */
+.loading, .errorBox, .empty {
+  max-width: 640px;
+  margin: 48px auto;
+  padding: 40px 24px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+}
+
+.spinner {
+  width: 42px;
+  height: 42px;
+  border: 3px solid rgba(0, 228, 242, 0.15);
+  border-top-color: #00E4F2;
+  border-radius: 50%;
+  margin: 0 auto 14px;
+  animation: ccSpin 0.9s linear infinite;
+}
+
+@keyframes ccSpin { to { transform: rotate(360deg); } }
+
+.errorTitle, .emptyTitle {
+  font-size: 1.15rem;
+  color: #F5F5F7;
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+
+.errorText, .emptyText {
+  color: #94a3b8;
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+}
+
+.retryBtn {
+  padding: 10px 20px;
+  background: rgba(0, 228, 242, 0.1);
+  border: 1px solid rgba(0, 228, 242, 0.4);
+  border-radius: 10px;
+  color: #00E4F2;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.retryBtn:hover {
+  background: rgba(0, 228, 242, 0.2);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .podium {
+    grid-template-columns: 1fr;
+  }
+  .podium1 { transform: none; order: -1; }
+
+  .row {
+    grid-template-columns: 44px 40px 1fr auto;
+    grid-template-areas:
+      'pos avatar identity points'
+      'progress progress progress progress';
+    row-gap: 10px;
+  }
+  .position { grid-area: pos; text-align: left; font-size: 0.95rem; }
+  .avatar { grid-area: avatar; width: 40px; height: 40px; }
+  .identity { grid-area: identity; }
+  .points { grid-area: points; }
+  .streak { display: none; }
+  .progress { grid-area: progress; }
+  .listHeader { display: none; }
+}
+
+@media (max-width: 560px) {
+  .hero { padding: 96px 16px 24px; }
+  .toolbar { padding: 0 16px 16px; gap: 10px; }
+  .listWrapper, .podium { padding-left: 16px; padding-right: 16px; }
+  .shareBtn { width: 100%; justify-content: center; }
+  .row { padding: 12px 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row:hover { transform: none; }
+  .spinner { animation: none; }
+}
