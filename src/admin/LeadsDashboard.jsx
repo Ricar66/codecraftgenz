@@ -166,8 +166,12 @@ const LeadsDashboard = () => {
   const [crafterFunnel, setCrafterFunnel] = useState([]);
   const [feedbackFunnel, setFeedbackFunnel] = useState([]);
   const [recentEvents, setRecentEvents] = useState([]);
+  const [eventsTotal, setEventsTotal] = useState(0);
+  const [eventsPage, setEventsPage] = useState(1);
   const [analyticsSummary, setAnalyticsSummary] = useState(null);
   const [eventFilter, setEventFilter] = useState('');
+
+  const EVENTS_LIMIT = 25;
 
   // Carregar dados do dashboard
   const fetchData = useCallback(async () => {
@@ -196,11 +200,10 @@ const LeadsDashboard = () => {
   const fetchFunnelData = useCallback(async () => {
     setFunnelLoading(true);
     try {
-      const [purchase, crafter, feedback, events, summary] = await Promise.all([
+      const [purchase, crafter, feedback, summary] = await Promise.all([
         getFunnelData('purchase_funnel', periodo).catch(() => ({ data: [] })),
         getFunnelData('crafter_funnel', periodo).catch(() => ({ data: [] })),
         getFunnelData('feedback_funnel', periodo).catch(() => ({ data: [] })),
-        getAnalyticsEvents({ limit: 50, period: periodo, category: eventFilter || undefined }).catch(() => ({ data: [] })),
         getAnalyticsSummary(periodo).catch(() => null),
       ]);
 
@@ -215,15 +218,32 @@ const LeadsDashboard = () => {
       setPurchaseFunnel(mapSteps(purchase, FUNNELS.purchase_funnel));
       setCrafterFunnel(mapSteps(crafter, FUNNELS.crafter_funnel));
       setFeedbackFunnel(mapSteps(feedback, FUNNELS.feedback_funnel));
-      setRecentEvents(events?.data || []);
       setAnalyticsSummary(summary);
     } catch { /* silently fail */ }
     setFunnelLoading(false);
-  }, [periodo, eventFilter]);
+  }, [periodo]);
+
+  // Carregar eventos paginados separadamente
+  const fetchEvents = useCallback(async () => {
+    try {
+      const resp = await getAnalyticsEvents({
+        limit: EVENTS_LIMIT,
+        offset: (eventsPage - 1) * EVENTS_LIMIT,
+        period: periodo,
+        category: eventFilter || undefined,
+      }).catch(() => ({ data: [], total: 0 }));
+      setRecentEvents(resp?.data || []);
+      setEventsTotal(resp?.total ?? resp?.meta?.total ?? 0);
+    } catch { /* silently fail */ }
+  }, [eventsPage, eventFilter, periodo]);
 
   useEffect(() => {
     if (activeTab === 'conversao') fetchFunnelData();
   }, [activeTab, fetchFunnelData]);
+
+  useEffect(() => {
+    if (activeTab === 'conversao') fetchEvents();
+  }, [activeTab, fetchEvents]);
 
   // Debounce para busca
   const [searchDebounce, setSearchDebounce] = useState('');
@@ -753,14 +773,14 @@ const LeadsDashboard = () => {
                 <AdminCard variant="elevated" className={styles.tableCard}>
                   <AdminCard.Header
                     title="Eventos Recentes"
-                    subtitle={`${recentEvents.length} eventos`}
+                    subtitle={eventsTotal > 0 ? `${eventsTotal} eventos no total` : 'Sem eventos'}
                     noBorder
                   />
                   <AdminCard.Body noPadding>
                     <div className={styles.filterBar} style={{ padding: '0 16px' }}>
                       <select
                         value={eventFilter}
-                        onChange={(e) => setEventFilter(e.target.value)}
+                        onChange={(e) => { setEventFilter(e.target.value); setEventsPage(1); }}
                         className={styles.filterSelect}
                       >
                         <option value="">Todos os funis</option>
@@ -770,8 +790,8 @@ const LeadsDashboard = () => {
                         <option value="navigation">Navegação</option>
                         <option value="interaction">Interação</option>
                       </select>
-                      <button onClick={fetchFunnelData} className={styles.refreshBtn} disabled={funnelLoading}>
-                        <RefreshCw className={funnelLoading ? styles.spinning : ''} size={16} /> Atualizar
+                      <button onClick={fetchEvents} className={styles.refreshBtn}>
+                        <RefreshCw size={16} /> Atualizar
                       </button>
                     </div>
                     <div className={styles.tableWrap}>
@@ -823,6 +843,28 @@ const LeadsDashboard = () => {
                         </tbody>
                       </table>
                     </div>
+                    {/* Paginação de eventos */}
+                    {eventsTotal > EVENTS_LIMIT && (
+                      <div className={styles.pagination}>
+                        <button
+                          className={styles.pageBtn}
+                          disabled={eventsPage <= 1}
+                          onClick={() => setEventsPage(p => Math.max(1, p - 1))}
+                        >
+                          Anterior
+                        </button>
+                        <span className={styles.pageInfo}>
+                          {eventsPage} / {Math.ceil(eventsTotal / EVENTS_LIMIT)}
+                        </span>
+                        <button
+                          className={styles.pageBtn}
+                          disabled={eventsPage >= Math.ceil(eventsTotal / EVENTS_LIMIT)}
+                          onClick={() => setEventsPage(p => p + 1)}
+                        >
+                          Próximo
+                        </button>
+                      </div>
+                    )}
                   </AdminCard.Body>
                 </AdminCard>
               </section>
