@@ -5,6 +5,7 @@ import {
   User, Mail, Shield, Star, Github, Linkedin,
   Edit3, Check, X, ChevronRight, ShoppingBag,
   Download, Calendar, CheckCircle, AlertCircle, Package, Lock,
+  Gift, Copy, Users,
 } from 'lucide-react';
 import { DiscordIcon } from '../../components/UI/BrandIcons/index.jsx';
 import { Link, Navigate } from 'react-router-dom';
@@ -13,6 +14,7 @@ import Navbar from '../../components/Navbar/Navbar';
 import { useAuth } from '../../context/useAuth';
 import { apiRequest } from '../../lib/apiConfig.js';
 import { getDiscordStatus, getDiscordAuthUrl, unlinkDiscord } from '../../services/discordAPI.js';
+import { getMyReferralCode, getReferralStats } from '../../services/referralAPI.js';
 import { useToast } from '../../components/UI/Toast';
 import { sanitizeImageUrl } from '../../utils/urlSanitize.js';
 import styles from './PerfilPage.module.css';
@@ -37,6 +39,127 @@ function formatDate(d) {
 function formatPrice(v) {
   if (!v || Number(v) === 0) return 'Gratuito';
   return `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+}
+
+/* ─────────────────── Secao: Indique um amigo ─────────────────── */
+function ReferralSection() {
+  const toast = useToast();
+  const [code, setCode] = useState(null);
+  const [stats, setStats] = useState({ totalReferrals: 0, pointsEarned: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([getMyReferralCode(), getReferralStats()])
+      .then(([codeRes, statsRes]) => {
+        if (cancelled) return;
+        if (codeRes?.success) setCode(codeRes.data?.code || null);
+        if (statsRes?.success) {
+          setStats({
+            totalReferrals: statsRes.data?.totalReferrals || 0,
+            pointsEarned: statsRes.data?.pointsEarned || 0,
+          });
+        }
+      })
+      .catch(() => { /* silencia — secao opcional */ })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const shareLink = code ? `https://codecraftgenz.com.br/register?ref=${code}` : '';
+
+  const handleCopy = async () => {
+    if (!shareLink) return;
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      toast.success('Link copiado! Compartilhe com seus amigos.');
+    } catch {
+      toast.error('Nao foi possivel copiar. Copie manualmente.');
+    }
+  };
+
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardHeader}>
+        <h3 className={styles.cardTitle}><Gift size={16} /> Indique um amigo</h3>
+      </div>
+
+      {loading ? (
+        <div className={styles.loadingWrap}><div className={styles.spinner} /></div>
+      ) : (
+        <>
+          <p className={styles.emptyHint} style={{ marginBottom: 16 }}>
+            Compartilhe seu codigo e ganhe <strong style={{ color: '#f59e0b' }}>50 pontos</strong> a cada amigo que se cadastrar.
+          </p>
+
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '14px 16px',
+            background: 'rgba(129,140,248,0.08)',
+            border: '1px solid rgba(129,140,248,0.25)',
+            borderRadius: 10,
+            marginBottom: 16,
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: '0.72rem', color: '#a0a0b0', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                Seu codigo
+              </p>
+              <p style={{
+                margin: '4px 0 0',
+                fontSize: '1.25rem',
+                fontWeight: 800,
+                color: '#f5f5f7',
+                fontFamily: 'monospace',
+                letterSpacing: '0.08em',
+              }}>
+                {code || '—'}
+              </p>
+            </div>
+            <button
+              type="button"
+              className={styles.editBtn}
+              onClick={handleCopy}
+              disabled={!code}
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              <Copy size={14} /> Copiar link
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: 12 }}>
+            <div style={{
+              flex: 1,
+              padding: '14px 16px',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 10,
+              textAlign: 'center',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: '#00E4F2', marginBottom: 4 }}>
+                <Users size={14} />
+                <span style={{ fontSize: '1.5rem', fontWeight: 800 }}>{stats.totalReferrals}</span>
+              </div>
+              <span style={{ fontSize: '0.78rem', color: '#a0a0b0' }}>Indicacoes</span>
+            </div>
+            <div style={{
+              flex: 1,
+              padding: '14px 16px',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 10,
+              textAlign: 'center',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: '#f59e0b', marginBottom: 4 }}>
+                <Star size={14} />
+                <span style={{ fontSize: '1.5rem', fontWeight: 800 }}>{stats.pointsEarned}</span>
+              </div>
+              <span style={{ fontSize: '0.78rem', color: '#a0a0b0' }}>Pontos ganhos</span>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 /* ─────────────────── Aba: Interesses ─────────────────── */
@@ -210,6 +333,9 @@ function TabInteresses({ user, onSaved }) {
           </a>
         </>
       )}
+
+      {/* Indique um amigo — sempre visível */}
+      <ReferralSection />
     </div>
   );
 }

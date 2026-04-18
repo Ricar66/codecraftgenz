@@ -27,6 +27,14 @@ export default function RegisterPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
 
+  // Captura ?ref=CODIGO da URL para indicacoes
+  const [referralCode, setReferralCode] = useState('');
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const ref = params.get('ref');
+    if (ref) setReferralCode(ref.trim().toUpperCase());
+  }, [location.search]);
+
   const validateField = (field, value) => {
     switch (field) {
       case 'name':
@@ -121,9 +129,11 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
+      const payload = { name, email, password };
+      if (referralCode) payload.referralCode = referralCode;
       const response = await apiRequest('/api/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify(payload),
       });
 
       // Auth é gerenciada via HTTPOnly cookie definido pelo backend
@@ -147,6 +157,27 @@ export default function RegisterPage() {
             <h1 className={styles.title}>Criar Conta</h1>
             <p className={styles.subtitle}>Cadastre-se para acessar a plataforma</p>
           </header>
+
+          {referralCode && (
+            <div
+              role="status"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '10px 14px',
+                background: 'rgba(245,158,11,0.1)',
+                border: '1px solid rgba(245,158,11,0.3)',
+                borderRadius: 10,
+                color: '#f59e0b',
+                fontSize: '0.85rem',
+                margin: '0 0 16px',
+              }}
+            >
+              <span role="img" aria-label="presente">🎁</span>
+              <span>
+                Voce foi indicado(a) com o codigo <strong style={{ fontFamily: 'monospace' }}>{referralCode}</strong>. Seu amigo ganha 50 pontos!
+              </span>
+            </div>
+          )}
 
           <form className={styles.form} onSubmit={onSubmit} aria-label="Formulário de cadastro">
             <div className={styles.fieldGroup}>
