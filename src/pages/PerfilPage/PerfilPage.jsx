@@ -51,9 +51,11 @@ function ReferralSection() {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getMyReferralCode(), getReferralStats()])
-      .then(([codeRes, statsRes]) => {
+    Promise.allSettled([getMyReferralCode(), getReferralStats()])
+      .then(([codeResult, statsResult]) => {
         if (cancelled) return;
+        const codeRes = codeResult.status === 'fulfilled' ? codeResult.value : null;
+        const statsRes = statsResult.status === 'fulfilled' ? statsResult.value : null;
         if (codeRes?.success) setCode(codeRes.data?.code || null);
         if (statsRes?.success) {
           setStats({
@@ -62,7 +64,6 @@ function ReferralSection() {
           });
         }
       })
-      .catch(() => { /* silencia — secao opcional */ })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
@@ -692,7 +693,11 @@ function TabNotificacoes() {
 /* ─────────────────── Page ─────────────────── */
 export default function PerfilPage() {
   const { user, loading } = useAuth();
-  const [tab, setTab] = useState('perfil');
+  const [tab, setTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    return ['perfil', 'compras', 'conta', 'notificacoes'].includes(tabParam) ? tabParam : 'perfil';
+  });
   // Track local interests to survive without page reload
   const [localUserInterests, setLocalUserInterests] = useState(null);
 
