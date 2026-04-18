@@ -1,6 +1,7 @@
 // Importar polyfills primeiro para compatibilidade entre navegadores
 import './polyfills.js'
 
+import * as Sentry from '@sentry/react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { HelmetProvider } from 'react-helmet-async'
@@ -10,13 +11,25 @@ import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import './index.css'
 
+Sentry.init({
+  dsn: import.meta.env.VITE_SENTRY_DSN || '',
+  environment: import.meta.env.MODE,
+  enabled: import.meta.env.PROD && !!import.meta.env.VITE_SENTRY_DSN,
+  tracesSampleRate: 0.1,
+  integrations: [
+    Sentry.browserTracingIntegration(),
+  ],
+})
+
 // Render app primeiro - prioridade máxima para LCP
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <HelmetProvider>
         <AuthProvider>
-          <App />
+          <Sentry.ErrorBoundary fallback={<p>Algo deu errado.</p>}>
+            <App />
+          </Sentry.ErrorBoundary>
         </AuthProvider>
       </HelmetProvider>
     </BrowserRouter>
