@@ -26,6 +26,8 @@ export default defineConfig({
         enabled: false // Desabilita PWA em desenvolvimento
       },
       workbox: {
+        // Importa handlers de push notifications customizados
+        importScripts: ['sw-push.js'],
         // Não pré-cachear arquivos grandes - removido PNG para evitar erro 422
         globPatterns: ['**/*.{js,css,html,svg,woff,woff2}'],
         // Ignora favicons e ícones no precache (evita erro 422)

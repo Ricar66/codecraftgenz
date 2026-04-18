@@ -58,6 +58,7 @@ const AdminRanking = lazy(() => import('./admin/AdminRanking.jsx'));
 const AdminProjetos = lazy(() => import('./admin/AdminProjetos.jsx'));
 const AdminApps = lazy(() => import('./admin/AdminApps.jsx'));
 const AdminDesafios = lazy(() => import('./admin/AdminDesafios.jsx'));
+const AdminSubmissions = lazy(() => import('./admin/AdminSubmissions.jsx'));
 const AdminProposals = lazy(() => import('./admin/AdminProposals.jsx'));
 const AdminParcerias = lazy(() => import('./admin/AdminParcerias.jsx'));
 const AdminInscricoes = lazy(() => import('./admin/AdminInscricoes'));
@@ -174,6 +175,7 @@ function App() {
                   <Route path="projetos" element={<AdminProjetos />} />
                   <Route path="apps" element={<AdminApps />} />
                   <Route path="desafios" element={<AdminDesafios />} />
+                  <Route path="submissoes" element={<AdminSubmissions />} />
                   <Route path="inscricoes" element={<AdminInscricoes />} />
                   <Route path="ideias" element={<AdminIdeias />} />
                   <Route path="propostas" element={<AdminProposals />} />
