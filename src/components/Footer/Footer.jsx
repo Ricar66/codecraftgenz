@@ -91,7 +91,7 @@ const Footer = memo(({ showLinks = true }) => {
               <WhatsAppIcon aria-hidden="true" />
             </a>
             <a
-              href="https://discord.gg/47FUudrU"
+              href="https://discord.gg/jKcuM5u6Qa"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Discord"

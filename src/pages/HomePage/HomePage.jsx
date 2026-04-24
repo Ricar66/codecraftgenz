@@ -552,7 +552,7 @@ const HomePage = () => {
               <p className={styles.discordDesc}>Devs que constroem, aprendem e evoluem juntos. Tire dúvidas, mostre seus projetos e conecte-se com outros Crafters.</p>
             </div>
             <a
-              href="https://discord.gg/47FUudrU"
+              href="https://discord.gg/jKcuM5u6Qa"
               target="_blank"
               rel="noopener noreferrer"
               className={styles.discordBtn}
