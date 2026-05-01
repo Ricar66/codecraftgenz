@@ -471,83 +471,156 @@ export default function AdminMetas() {
         )}
       </div>
 
-      {/* Quick-view panel — portal no body para escapar de .admin-content * { max-width: 100% } */}
+      {/* Quick-view — portal com inline styles, sem dependência de CSS module */}
       {quickView.open && quickView.meta && createPortal((() => {
         const m = quickView.meta;
         const typeOpt = TYPE_OPTIONS.find(t => t.value === m.type);
         const statusOpt = STATUS_OPTIONS.find(s => s.value === m.status);
         const fmt = (iso) => iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : null;
+        const sc = STATUS_COLORS[m.status] ?? '#a0a0b0';
         return (
-          <div className={styles.quickViewBackdrop} onClick={e => e.target === e.currentTarget && setQuickView({ open: false, meta: null })}>
-            <div className={styles.quickViewPanel} role="complementary" aria-label="Detalhes do evento" style={{ width: '960px', maxWidth: 'calc(100vw - 48px)' }}>
+          <div
+            onClick={e => e.target === e.currentTarget && setQuickView({ open: false, meta: null })}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 99999,
+              background: 'rgba(0,0,0,0.65)',
+              backdropFilter: 'blur(4px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '24px',
+            }}
+          >
+            <div
+              role="dialog"
+              style={{
+                width: '75vw', maxWidth: '1000px', minWidth: '320px',
+                maxHeight: '85vh',
+                background: '#1a1a2e',
+                border: '1px solid rgba(255,255,255,0.18)',
+                borderRadius: '20px',
+                boxShadow: '0 24px 80px rgba(0,0,0,0.85)',
+                display: 'flex', flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
               {/* Header */}
-              <div className={styles.quickViewHeader}>
-                <div className={styles.quickViewTitle}>
-                  <span className={styles.typeDot} style={{ background: typeOpt?.color ?? '#D12BF2' }} />
-                  <span>{m.title}</span>
-                  <span className={styles.quickViewType}>{typeOpt?.label ?? m.type}</span>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '20px 28px 16px',
+                borderBottom: '1px solid rgba(255,255,255,0.09)',
+                gap: '16px', flexShrink: 0,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                  <span style={{ width: 12, height: 12, borderRadius: '50%', background: typeOpt?.color ?? '#D12BF2', flexShrink: 0 }} />
+                  <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#F5F5F7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {m.title}
+                  </span>
+                  <span style={{
+                    fontSize: '0.75rem', fontWeight: 600, color: '#c0c0d8',
+                    background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: '20px', padding: '3px 12px', flexShrink: 0, textTransform: 'uppercase',
+                  }}>
+                    {typeOpt?.label ?? m.type}
+                  </span>
                 </div>
-                <div className={styles.quickViewActions}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
                   {isAdmin && (
-                    <button className="btn btn-outline" style={{ fontSize: '0.8rem', padding: '5px 14px' }}
-                      onClick={() => { setQuickView({ open: false, meta: null }); openEdit(m); }}>
+                    <button
+                      onClick={() => { setQuickView({ open: false, meta: null }); openEdit(m); }}
+                      style={{
+                        background: 'transparent', border: '1px solid rgba(255,255,255,0.2)',
+                        color: '#F5F5F7', borderRadius: '8px', padding: '6px 16px',
+                        fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600,
+                      }}
+                    >
                       Editar
                     </button>
                   )}
-                  <button className={styles.modalClose} onClick={() => setQuickView({ open: false, meta: null })} aria-label="Fechar">×</button>
+                  <button
+                    onClick={() => setQuickView({ open: false, meta: null })}
+                    style={{
+                      background: 'transparent', border: 'none', color: '#a0a0b0',
+                      fontSize: '1.5rem', cursor: 'pointer', padding: '0 4px', lineHeight: 1,
+                    }}
+                  >×</button>
                 </div>
               </div>
 
               {/* Body */}
-              <div className={styles.quickViewBody}>
-                {/* Status + dates */}
-                <div className={styles.quickViewMeta}>
-                  <span className={styles.quickViewStatus}
-                    style={{ background: STATUS_COLORS[m.status] + '22', color: STATUS_COLORS[m.status], border: `1px solid ${STATUS_COLORS[m.status]}44` }}>
+              <div style={{ padding: '20px 28px 24px', display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto', flex: 1 }}>
+                {/* Status + data */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <span style={{
+                    fontSize: '0.85rem', fontWeight: 700, borderRadius: '20px', padding: '5px 16px',
+                    background: sc + '22', color: sc, border: `1px solid ${sc}44`,
+                  }}>
                     {statusOpt?.label ?? m.status}
                   </span>
-                  <span className={styles.quickViewDate}>
+                  <span style={{ fontSize: '0.95rem', color: '#c0c0d8' }}>
                     {fmt(m.startDate)}{m.endDate && m.endDate !== m.startDate ? ` → ${fmt(m.endDate)}` : ''}
                   </span>
                 </div>
 
-                {/* Description */}
+                {/* Descrição */}
                 {m.description && (
-                  <p className={styles.quickViewDesc}>{m.description}</p>
+                  <p style={{ fontSize: '0.97rem', color: '#d0d0e8', lineHeight: 1.75, margin: 0, whiteSpace: 'pre-wrap', maxHeight: '180px', overflowY: 'auto' }}>
+                    {m.description}
+                  </p>
                 )}
 
                 {/* Call link */}
                 {m.callLink && (
-                  <a href={m.callLink} target="_blank" rel="noopener noreferrer" className={styles.quickViewCallLink}>
+                  <a href={m.callLink} target="_blank" rel="noopener noreferrer" style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    fontSize: '0.92rem', fontWeight: 600, color: '#00E4F2',
+                    textDecoration: 'none', padding: '10px 20px',
+                    border: '1px solid rgba(0,228,242,0.35)', borderRadius: '10px',
+                    background: 'rgba(0,228,242,0.06)', width: 'fit-content',
+                  }}>
                     📹 Entrar na call
                   </a>
                 )}
 
-                {/* Assignees */}
+                {/* Responsáveis */}
                 {(m.assignees ?? []).length > 0 && (
-                  <div className={styles.quickViewAssignees}>
-                    <span className={styles.quickViewLabel}>Responsáveis:</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#70708a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Responsáveis:
+                    </span>
                     {m.assignees.map(a => (
-                      <span key={a.userId ?? a.user?.id} className={styles.assigneeChip}>
-                        <span className={styles.assigneeAvatar}>{(a.user?.name ?? '?')[0].toUpperCase()}</span>
+                      <span key={a.userId ?? a.user?.id} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                        background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '20px', padding: '4px 12px', fontSize: '0.85rem', color: '#e0e0f0',
+                      }}>
+                        <span style={{
+                          width: 22, height: 22, borderRadius: '50%', background: '#6366f1',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '0.7rem', fontWeight: 700, color: '#fff', flexShrink: 0,
+                        }}>
+                          {(a.user?.name ?? '?')[0].toUpperCase()}
+                        </span>
                         {a.user?.name ?? '—'}
                       </span>
                     ))}
                   </div>
                 )}
 
-                {/* Observations count */}
+                {/* Observações */}
                 {(m.observations ?? []).length > 0 && (
-                  <p className={styles.quickViewObsCount}>
+                  <p style={{ fontSize: '0.9rem', color: '#a0a0b0', margin: 0 }}>
                     💬 {m.observations.length} observaç{m.observations.length === 1 ? 'ão' : 'ões'}
-                    {isAdmin && <> — <button className={styles.linkBtn} onClick={() => { setQuickView({ open: false, meta: null }); openEdit(m); }}>ver tudo</button></>}
+                    {isAdmin && (
+                      <> — <button
+                        onClick={() => { setQuickView({ open: false, meta: null }); openEdit(m); }}
+                        style={{ background: 'none', border: 'none', color: '#00E4F2', cursor: 'pointer', fontSize: '0.9rem', padding: 0 }}
+                      >ver tudo</button></>
+                    )}
                   </p>
                 )}
 
-                {/* Botão concluir rápido */}
+                {/* Concluir */}
                 {isAdmin && m.status !== 'done' && (
                   <button
-                    className={styles.quickViewDoneBtn}
                     onClick={async () => {
                       try {
                         await updateMeta(m.id, { status: 'done' });
@@ -557,6 +630,13 @@ export default function AdminMetas() {
                       } catch {
                         toast.error('Erro ao atualizar status.');
                       }
+                    }}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '7px',
+                      padding: '10px 20px', borderRadius: '10px',
+                      border: '1px solid rgba(34,197,94,0.4)', background: 'rgba(34,197,94,0.1)',
+                      color: '#22c55e', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
+                      alignSelf: 'flex-start', marginTop: '4px',
                     }}
                   >
                     ✓ Marcar como concluída
