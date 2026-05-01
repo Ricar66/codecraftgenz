@@ -2,6 +2,7 @@
 // Team Goals Calendar — powered by FullCalendar + Google Calendar integration
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -470,8 +471,8 @@ export default function AdminMetas() {
         )}
       </div>
 
-      {/* Quick-view panel — slide up from bottom on event click */}
-      {quickView.open && quickView.meta && (() => {
+      {/* Quick-view panel — portal no body para escapar de .admin-content * { max-width: 100% } */}
+      {quickView.open && quickView.meta && createPortal((() => {
         const m = quickView.meta;
         const typeOpt = TYPE_OPTIONS.find(t => t.value === m.type);
         const statusOpt = STATUS_OPTIONS.find(s => s.value === m.status);
@@ -565,7 +566,7 @@ export default function AdminMetas() {
             </div>
           </div>
         );
-      })()}
+      })(), document.body)}
 
       {/* Modal */}
       {modal.open && (
