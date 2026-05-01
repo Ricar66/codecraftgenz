@@ -542,6 +542,25 @@ export default function AdminMetas() {
                     {isAdmin && <> — <button className={styles.linkBtn} onClick={() => { setQuickView({ open: false, meta: null }); openEdit(m); }}>ver tudo</button></>}
                   </p>
                 )}
+
+                {/* Botão concluir rápido */}
+                {isAdmin && m.status !== 'done' && (
+                  <button
+                    className={styles.quickViewDoneBtn}
+                    onClick={async () => {
+                      try {
+                        await updateMeta(m.id, { status: 'done' });
+                        setMetas(prev => prev.map(x => x.id === m.id ? { ...x, status: 'done' } : x));
+                        setQuickView({ open: false, meta: null });
+                        toast.success('Meta marcada como concluída!');
+                      } catch {
+                        toast.error('Erro ao atualizar status.');
+                      }
+                    }}
+                  >
+                    ✓ Marcar como concluída
+                  </button>
+                )}
               </div>
             </div>
           </div>
