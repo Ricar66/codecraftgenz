@@ -478,7 +478,7 @@ export default function AdminMetas() {
         const fmt = (iso) => iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : null;
         return (
           <div className={styles.quickViewBackdrop} onClick={e => e.target === e.currentTarget && setQuickView({ open: false, meta: null })}>
-            <div className={styles.quickViewPanel} role="complementary" aria-label="Detalhes do evento">
+            <div className={styles.quickViewPanel} role="complementary" aria-label="Detalhes do evento" style={{ width: '960px', maxWidth: 'calc(100vw - 48px)' }}>
               {/* Header */}
               <div className={styles.quickViewHeader}>
                 <div className={styles.quickViewTitle}>
