@@ -509,25 +509,28 @@
 
 .quickViewBackdrop {
   position: fixed;
-  inset: 0;
+  top: 80px;          /* abaixo do header */
+  bottom: 0;
+  left: 260px;        /* após a sidebar expandida */
+  right: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding: 0 16px;
+  padding: 0 24px;
 }
 
 .quickViewPanel {
   width: 100%;
-  max-width: 720px;
-  background: #1a1a2e;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  max-width: 680px;
+  background: #16162a;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-bottom: none;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -12px 60px rgba(0, 0, 0, 0.6);
-  animation: qvSlideUp 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-  max-height: 42vh;
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -8px 48px rgba(0, 0, 0, 0.7);
+  animation: qvSlideUp 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  max-height: 50vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -554,8 +557,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 14px 24px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
   gap: 12px;
   flex-shrink: 0;
 }
@@ -564,7 +567,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 0.97rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: #F5F5F7;
   flex: 1;
@@ -578,16 +581,16 @@
 }
 
 .quickViewType {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  color: #a0a0b0;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.08);
+  color: #c0c0d8;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
   border-radius: 20px;
-  padding: 2px 10px;
+  padding: 3px 12px;
   flex-shrink: 0;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
 .quickViewActions {
@@ -598,10 +601,10 @@
 }
 
 .quickViewBody {
-  padding: 14px 20px 18px;
+  padding: 16px 24px 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   overflow-y: auto;
   flex: 1;
 }
@@ -614,28 +617,28 @@
 }
 
 .quickViewStatus {
-  font-size: 0.73rem;
+  font-size: 0.75rem;
   font-weight: 700;
   border-radius: 20px;
-  padding: 3px 12px;
+  padding: 4px 14px;
   letter-spacing: 0.02em;
 }
 
 .quickViewDate {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.8rem;
-  color: #a0a0b0;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #c0c0d8;
 }
 
 .quickViewDesc {
-  font-size: 0.84rem;
-  color: #b0b0c4;
-  line-height: 1.65;
+  font-size: 0.87rem;
+  color: #c8c8e0;
+  line-height: 1.7;
   margin: 0;
   white-space: pre-wrap;
-  max-height: 90px;
+  max-height: 100px;
   overflow-y: auto;
   padding-right: 4px;
 }
