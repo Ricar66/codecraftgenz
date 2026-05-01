@@ -525,7 +525,7 @@
 
 .quickViewPanel {
   width: 100%;
-  max-width: 700px;
+  max-width: 880px;
   background: #1a1a2e;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 20px;
@@ -533,7 +533,7 @@
     0 24px 80px rgba(0, 0, 0, 0.8),
     0 0 0 1px rgba(255, 255, 255, 0.05);
   animation: qvFadeIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-  max-height: 80vh;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -554,17 +554,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 24px 12px;
+  padding: 22px 32px 18px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.09);
-  gap: 12px;
+  gap: 16px;
   flex-shrink: 0;
 }
 
 .quickViewTitle {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 1.05rem;
+  gap: 12px;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #F5F5F7;
   flex: 1;
@@ -578,13 +578,13 @@
 }
 
 .quickViewType {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: #c0c0d8;
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 20px;
-  padding: 3px 12px;
+  padding: 4px 14px;
   flex-shrink: 0;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -593,15 +593,15 @@
 .quickViewActions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
 .quickViewBody {
-  padding: 16px 24px 20px;
+  padding: 22px 32px 28px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   overflow-y: auto;
   flex: 1;
 }
@@ -609,15 +609,15 @@
 .quickViewMeta {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .quickViewStatus {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 700;
   border-radius: 20px;
-  padding: 4px 14px;
+  padding: 5px 16px;
   letter-spacing: 0.02em;
 }
 
@@ -625,30 +625,30 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: #c0c0d8;
 }
 
 .quickViewDesc {
-  font-size: 0.87rem;
-  color: #c8c8e0;
-  line-height: 1.7;
+  font-size: 0.97rem;
+  color: #d0d0e8;
+  line-height: 1.75;
   margin: 0;
   white-space: pre-wrap;
-  max-height: 100px;
+  max-height: 160px;
   overflow-y: auto;
-  padding-right: 4px;
+  padding-right: 6px;
 }
 
 .quickViewCallLink {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.83rem;
+  gap: 8px;
+  font-size: 0.92rem;
   font-weight: 600;
   color: #00E4F2;
   text-decoration: none;
-  padding: 7px 16px;
+  padding: 10px 20px;
   border: 1px solid rgba(0, 228, 242, 0.35);
   border-radius: 10px;
   width: fit-content;
@@ -665,16 +665,16 @@
 }
 
 .quickViewLabel {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: #70708a;
+  color: #80809a;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   flex-shrink: 0;
 }
 
 .quickViewObsCount {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: #a0a0b0;
   margin: 0;
 }
