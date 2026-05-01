@@ -81,6 +81,9 @@ export default function AdminMetas() {
   const [calendarConnected, setCalendarConnected] = useState(false);
   const [calendarLoading, setCalendarLoading] = useState(false);
 
+  // Quick-view panel (bottom slide-up)
+  const [quickView, setQuickView] = useState({ open: false, meta: null });
+
   // Modal state
   const [modal, setModal] = useState({ open: false, meta: null, creating: false });
   const [form, setForm] = useState(EMPTY_FORM);
@@ -346,11 +349,13 @@ export default function AdminMetas() {
     }
   }
 
+  const [confirmDisconnectCal, setConfirmDisconnectCal] = useState(false);
+
   async function handleDisconnectCalendar() {
-    if (!window.confirm('Desconectar o Google Calendar da equipe?')) return;
     try {
       await disconnectCalendar();
       setCalendarConnected(false);
+      setConfirmDisconnectCal(false);
       toast.success('Google Calendar desconectado');
     } catch {
       toast.error('Falha ao desconectar');
@@ -380,15 +385,25 @@ export default function AdminMetas() {
         </div>
         <div className={styles.headerActions}>
           {isAdmin && (
-            <button
-              className={`btn ${calendarConnected ? 'btn-outline' : 'btn-primary'} ${styles.calendarBtn}`}
-              onClick={calendarConnected ? handleDisconnectCalendar : handleConnectCalendar}
-              disabled={calendarLoading}
-              title={calendarConnected ? 'Google Calendar conectado — clique para desconectar' : 'Conectar Google Calendar'}
-            >
-              <span className={`${styles.calendarDot} ${calendarConnected ? styles.dotConnected : styles.dotDisconnected}`} />
-              {calendarConnected ? 'Google Calendar' : 'Conectar Calendar'}
-            </button>
+            confirmDisconnectCal ? (
+              <div className={styles.confirmDelete}>
+                <span>Desconectar Google Calendar?</span>
+                <button className="btn btn-danger" onClick={handleDisconnectCalendar} disabled={calendarLoading}>
+                  {calendarLoading ? '...' : 'Confirmar'}
+                </button>
+                <button className="btn btn-outline" onClick={() => setConfirmDisconnectCal(false)}>Cancelar</button>
+              </div>
+            ) : (
+              <button
+                className={`btn ${calendarConnected ? 'btn-outline' : 'btn-primary'} ${styles.calendarBtn}`}
+                onClick={calendarConnected ? () => setConfirmDisconnectCal(true) : handleConnectCalendar}
+                disabled={calendarLoading}
+                title={calendarConnected ? 'Google Calendar conectado — clique para desconectar' : 'Conectar Google Calendar'}
+              >
+                <span className={`${styles.calendarDot} ${calendarConnected ? styles.dotConnected : styles.dotDisconnected}`} />
+                {calendarConnected ? 'Google Calendar' : 'Conectar Calendar'}
+              </button>
+            )
           )}
           <button className="btn btn-primary" onClick={() => openCreate('')}>
             + Nova Meta
@@ -446,7 +461,7 @@ export default function AdminMetas() {
             select={info => openCreate(info.startStr.slice(0, 10))}
             eventClick={info => {
               if (info.event.extendedProps.isHoliday) return;
-              openEdit(info.event.extendedProps.meta);
+              setQuickView({ open: true, meta: info.event.extendedProps.meta });
             }}
             eventDrop={isAdmin ? handleEventDrop : undefined}
             eventResize={isAdmin ? handleEventResize : undefined}
@@ -454,6 +469,84 @@ export default function AdminMetas() {
           />
         )}
       </div>
+
+      {/* Quick-view panel — slide up from bottom on event click */}
+      {quickView.open && quickView.meta && (() => {
+        const m = quickView.meta;
+        const typeOpt = TYPE_OPTIONS.find(t => t.value === m.type);
+        const statusOpt = STATUS_OPTIONS.find(s => s.value === m.status);
+        const fmt = (iso) => iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : null;
+        return (
+          <div className={styles.quickViewBackdrop} onClick={e => e.target === e.currentTarget && setQuickView({ open: false, meta: null })}>
+            <div className={styles.quickViewPanel} role="complementary" aria-label="Detalhes do evento">
+              {/* Header */}
+              <div className={styles.quickViewHeader}>
+                <div className={styles.quickViewTitle}>
+                  <span className={styles.typeDot} style={{ background: typeOpt?.color ?? '#D12BF2' }} />
+                  <span>{m.title}</span>
+                  <span className={styles.quickViewType}>{typeOpt?.label ?? m.type}</span>
+                </div>
+                <div className={styles.quickViewActions}>
+                  {isAdmin && (
+                    <button className="btn btn-outline" style={{ fontSize: '0.8rem', padding: '5px 14px' }}
+                      onClick={() => { setQuickView({ open: false, meta: null }); openEdit(m); }}>
+                      Editar
+                    </button>
+                  )}
+                  <button className={styles.modalClose} onClick={() => setQuickView({ open: false, meta: null })} aria-label="Fechar">×</button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className={styles.quickViewBody}>
+                {/* Status + dates */}
+                <div className={styles.quickViewMeta}>
+                  <span className={styles.quickViewStatus}
+                    style={{ background: STATUS_COLORS[m.status] + '22', color: STATUS_COLORS[m.status], border: `1px solid ${STATUS_COLORS[m.status]}44` }}>
+                    {statusOpt?.label ?? m.status}
+                  </span>
+                  <span className={styles.quickViewDate}>
+                    {fmt(m.startDate)}{m.endDate && m.endDate !== m.startDate ? ` → ${fmt(m.endDate)}` : ''}
+                  </span>
+                </div>
+
+                {/* Description */}
+                {m.description && (
+                  <p className={styles.quickViewDesc}>{m.description}</p>
+                )}
+
+                {/* Call link */}
+                {m.callLink && (
+                  <a href={m.callLink} target="_blank" rel="noopener noreferrer" className={styles.quickViewCallLink}>
+                    📹 Entrar na call
+                  </a>
+                )}
+
+                {/* Assignees */}
+                {(m.assignees ?? []).length > 0 && (
+                  <div className={styles.quickViewAssignees}>
+                    <span className={styles.quickViewLabel}>Responsáveis:</span>
+                    {m.assignees.map(a => (
+                      <span key={a.userId ?? a.user?.id} className={styles.assigneeChip}>
+                        <span className={styles.assigneeAvatar}>{(a.user?.name ?? '?')[0].toUpperCase()}</span>
+                        {a.user?.name ?? '—'}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Observations count */}
+                {(m.observations ?? []).length > 0 && (
+                  <p className={styles.quickViewObsCount}>
+                    💬 {m.observations.length} observaç{m.observations.length === 1 ? 'ão' : 'ões'}
+                    {isAdmin && <> — <button className={styles.linkBtn} onClick={() => { setQuickView({ open: false, meta: null }); openEdit(m); }}>ver tudo</button></>}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Modal */}
       {modal.open && (
