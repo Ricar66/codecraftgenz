@@ -77,6 +77,7 @@ export default function AdminMetas() {
   const [teamMembers, setTeamMembers] = useState([]);
   const [holidays, setHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [calendarConnected, setCalendarConnected] = useState(false);
   const [calendarLoading, setCalendarLoading] = useState(false);
 
@@ -86,6 +87,7 @@ export default function AdminMetas() {
   const [formErrors, setFormErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   // Observation input
   const [obsInput, setObsInput] = useState('');
@@ -94,12 +96,18 @@ export default function AdminMetas() {
   // ── Data loading ────────────────────────────────────────
 
   const loadAll = useCallback(async () => {
+    setLoadError(null);
     try {
       const [metasData, membersData] = await Promise.all([getMetas(), getTeamMembers()]);
       setMetas(metasData);
       setTeamMembers(membersData);
-    } catch {
-      toast.error('Falha ao carregar metas');
+    } catch (err) {
+      const is401 = err?.status === 401 || String(err?.message).includes('401');
+      const msg = is401
+        ? 'Sessão expirada — faça login novamente'
+        : 'Falha ao carregar metas. Tente recarregar a página.';
+      setLoadError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -190,6 +198,7 @@ export default function AdminMetas() {
   function closeModal() {
     setModal({ open: false, meta: null, creating: false });
     setObsInput('');
+    setConfirmDeleteOpen(false);
   }
 
   // ── Form validation ──────────────────────────────────────
@@ -238,17 +247,49 @@ export default function AdminMetas() {
   }
 
   async function handleDelete() {
-    if (!window.confirm(`Remover a meta "${modal.meta?.title}"?`)) return;
     setDeleting(true);
     try {
       await deleteMeta(modal.meta.id);
       toast.success('Meta removida');
+      setConfirmDeleteOpen(false);
       await loadAll();
       closeModal();
     } catch (err) {
       toast.error(err?.message ?? 'Falha ao remover meta');
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function handleEventDrop(info) {
+    const meta = info.event.extendedProps.meta;
+    if (!meta) return;
+    try {
+      const newStart = info.event.start.toISOString();
+      const newEnd = info.event.end ? info.event.end.toISOString() : undefined;
+      await updateMeta(meta.id, { startDate: newStart, endDate: newEnd });
+      setMetas(prev => prev.map(m => m.id === meta.id
+        ? { ...m, startDate: newStart, endDate: newEnd ?? m.endDate }
+        : m,
+      ));
+      toast.success('Meta reagendada');
+    } catch (err) {
+      info.revert();
+      toast.error(err?.message ?? 'Falha ao reagendar meta');
+    }
+  }
+
+  async function handleEventResize(info) {
+    const meta = info.event.extendedProps.meta;
+    if (!meta) return;
+    try {
+      const newEnd = info.event.end.toISOString();
+      await updateMeta(meta.id, { endDate: newEnd });
+      setMetas(prev => prev.map(m => m.id === meta.id ? { ...m, endDate: newEnd } : m));
+      toast.success('Duração atualizada');
+    } catch (err) {
+      info.revert();
+      toast.error(err?.message ?? 'Falha ao atualizar duração');
     }
   }
 
@@ -373,6 +414,11 @@ export default function AdminMetas() {
       <div className={styles.calendarWrapper}>
         {loading ? (
           <div className={styles.loadingBox}>Carregando metas...</div>
+        ) : loadError ? (
+          <div className={styles.loadingBox}>
+            <p style={{ color: '#f87171', marginBottom: '12px' }}>{loadError}</p>
+            <button className="btn btn-outline" onClick={loadAll}>Tentar novamente</button>
+          </div>
         ) : (
           <FullCalendar
             ref={calendarRef}
@@ -392,7 +438,7 @@ export default function AdminMetas() {
               list: 'Lista',
             }}
             events={calendarEvents}
-            editable={false}
+            editable={isAdmin}
             selectable
             selectMirror
             dayMaxEvents={3}
@@ -402,6 +448,8 @@ export default function AdminMetas() {
               if (info.event.extendedProps.isHoliday) return;
               openEdit(info.event.extendedProps.meta);
             }}
+            eventDrop={isAdmin ? handleEventDrop : undefined}
+            eventResize={isAdmin ? handleEventResize : undefined}
             eventContent={renderEventContent}
           />
         )}
@@ -603,13 +651,32 @@ export default function AdminMetas() {
             {/* Footer */}
             <div className={styles.modalFooter}>
               {!modal.creating && isAdmin && (
-                <button
-                  className="btn btn-danger"
-                  onClick={handleDelete}
-                  disabled={deleting}
-                >
-                  {deleting ? 'Removendo...' : 'Remover meta'}
-                </button>
+                confirmDeleteOpen ? (
+                  <div className={styles.confirmDelete}>
+                    <span>Remover esta meta?</span>
+                    <button
+                      className="btn btn-danger"
+                      onClick={handleDelete}
+                      disabled={deleting}
+                    >
+                      {deleting ? 'Removendo...' : 'Confirmar'}
+                    </button>
+                    <button
+                      className="btn btn-outline"
+                      onClick={() => setConfirmDeleteOpen(false)}
+                      disabled={deleting}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => setConfirmDeleteOpen(true)}
+                  >
+                    Remover meta
+                  </button>
+                )
               )}
               <div className={styles.footerRight}>
                 <button className="btn btn-outline" onClick={closeModal}>Cancelar</button>
