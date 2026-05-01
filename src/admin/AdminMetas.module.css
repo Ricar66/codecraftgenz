@@ -511,47 +511,61 @@
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: transparent;
+  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  pointer-events: none;
+  padding: 0 16px;
 }
 
 .quickViewPanel {
-  pointer-events: all;
   width: 100%;
-  max-width: 800px;
-  background: #14142a;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  max-width: 720px;
+  background: #1a1a2e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-bottom: none;
-  border-radius: 16px 16px 0 0;
-  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
-  animation: slideUp 0.22s cubic-bezier(0.22, 1, 0.36, 1);
-  max-height: 55vh;
-  overflow-y: auto;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -12px 60px rgba(0, 0, 0, 0.6);
+  animation: qvSlideUp 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  max-height: 42vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-@keyframes slideUp {
-  from { transform: translateY(100%); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
+@keyframes qvSlideUp {
+  from { transform: translateY(110%); }
+  to   { transform: translateY(0); }
+}
+
+/* drag handle */
+.quickViewPanel::before {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 4px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+  margin: 12px auto 0;
+  flex-shrink: 0;
 }
 
 .quickViewHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px 12px;
+  padding: 12px 20px 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .quickViewTitle {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 0.97rem;
+  font-weight: 700;
   color: #F5F5F7;
   flex: 1;
   min-width: 0;
@@ -564,13 +578,16 @@
 }
 
 .quickViewType {
-  font-size: 0.72rem;
-  font-weight: 500;
+  font-size: 0.7rem;
+  font-weight: 600;
   color: #a0a0b0;
   background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
   border-radius: 20px;
   padding: 2px 10px;
   flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .quickViewActions {
@@ -581,68 +598,83 @@
 }
 
 .quickViewBody {
-  padding: 16px 20px 20px;
+  padding: 14px 20px 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .quickViewMeta {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .quickViewStatus {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.73rem;
+  font-weight: 700;
   border-radius: 20px;
   padding: 3px 12px;
+  letter-spacing: 0.02em;
 }
 
 .quickViewDate {
-  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
   color: #a0a0b0;
 }
 
 .quickViewDesc {
-  font-size: 0.88rem;
-  color: #c0c0d0;
-  line-height: 1.6;
+  font-size: 0.84rem;
+  color: #b0b0c4;
+  line-height: 1.65;
   margin: 0;
   white-space: pre-wrap;
+  max-height: 90px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .quickViewCallLink {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.85rem;
+  font-size: 0.83rem;
+  font-weight: 600;
   color: #00E4F2;
   text-decoration: none;
-  padding: 6px 14px;
-  border: 1px solid rgba(0, 228, 242, 0.3);
-  border-radius: 8px;
+  padding: 7px 16px;
+  border: 1px solid rgba(0, 228, 242, 0.35);
+  border-radius: 10px;
   width: fit-content;
-  transition: background 0.15s;
+  background: rgba(0, 228, 242, 0.06);
+  transition: background 0.15s, border-color 0.15s;
 }
-.quickViewCallLink:hover { background: rgba(0,228,242,0.08); }
+.quickViewCallLink:hover { background: rgba(0,228,242,0.13); border-color: rgba(0,228,242,0.6); }
 
-.quickViewAssignees {
+.quickViewRow {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .quickViewLabel {
-  font-size: 0.78rem;
-  color: #a0a0b0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #70708a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
 }
 
 .quickViewObsCount {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: #a0a0b0;
   margin: 0;
 }
