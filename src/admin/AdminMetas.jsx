@@ -492,8 +492,8 @@ export default function AdminMetas() {
             <div
               role="dialog"
               style={{
-                width: '75vw', maxWidth: '1000px', minWidth: '320px',
-                maxHeight: '85vh',
+                width: '90vw', maxWidth: '1100px', minWidth: '360px',
+                maxHeight: '90vh',
                 background: '#1a1a2e',
                 border: '1px solid rgba(255,255,255,0.18)',
                 borderRadius: '20px',
@@ -511,7 +511,7 @@ export default function AdminMetas() {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                   <span style={{ width: 12, height: 12, borderRadius: '50%', background: typeOpt?.color ?? '#D12BF2', flexShrink: 0 }} />
-                  <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#F5F5F7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: '1.4rem', fontWeight: 700, color: '#F5F5F7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {m.title}
                   </span>
                   <span style={{
@@ -555,14 +555,14 @@ export default function AdminMetas() {
                   }}>
                     {statusOpt?.label ?? m.status}
                   </span>
-                  <span style={{ fontSize: '0.95rem', color: '#c0c0d8' }}>
+                  <span style={{ fontSize: '1.05rem', color: '#c0c0d8' }}>
                     {fmt(m.startDate)}{m.endDate && m.endDate !== m.startDate ? ` → ${fmt(m.endDate)}` : ''}
                   </span>
                 </div>
 
                 {/* Descrição */}
                 {m.description && (
-                  <p style={{ fontSize: '0.97rem', color: '#d0d0e8', lineHeight: 1.75, margin: 0, whiteSpace: 'pre-wrap', maxHeight: '180px', overflowY: 'auto' }}>
+                  <p style={{ fontSize: '1.05rem', color: '#d0d0e8', lineHeight: 1.8, margin: 0, whiteSpace: 'pre-wrap' }}>
                     {m.description}
                   </p>
                 )}
