@@ -439,6 +439,10 @@ export default function AdminApps() {
                       accept=".exe"
                       onChange={e => {
                         const file = e.target.files?.[0] || null;
+                        if (file && file.size > 500 * 1024 * 1024) {
+                          setUploadError('Arquivo muito grande. Máximo: 500 MB.');
+                          return;
+                        }
                         setExeFile(file);
                         setUploadError('');
                         if (file) {

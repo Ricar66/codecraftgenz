@@ -20,6 +20,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState(0);
 
   const validateField = (field, value) => {
     switch (field) {
@@ -81,11 +83,29 @@ export default function LoginPage() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    const remaining = Math.ceil((lockedUntil - Date.now()) / 1000);
+    if (remaining > 0) {
+      setError(`Muitas tentativas. Aguarde ${remaining}s para tentar novamente.`);
+      return;
+    }
     setError('');
     setLoading(true);
     const res = await login(email, password);
     setLoading(false);
-    if (!res.ok) setError(res.error);
+    if (!res.ok) {
+      const next = loginAttempts + 1;
+      setLoginAttempts(next);
+      if (next >= 5) {
+        setLockedUntil(Date.now() + 60_000);
+        setLoginAttempts(0);
+        setError('Conta bloqueada temporariamente por 60s após muitas tentativas.');
+      } else {
+        setError(res.error);
+      }
+    } else {
+      setLoginAttempts(0);
+      setLockedUntil(0);
+    }
   };
 
   return (

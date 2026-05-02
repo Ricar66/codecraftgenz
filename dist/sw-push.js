@@ -15,5 +15,12 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  event.waitUntil(clients.openWindow(event.notification.data.url));
+  const target = event.notification.data?.url || '/';
+  try {
+    const parsed = new URL(target, self.location.origin);
+    const allowed = parsed.origin === self.location.origin || parsed.hostname.endsWith('codecraftgenz.com.br');
+    event.waitUntil(clients.openWindow(allowed ? target : '/'));
+  } catch {
+    event.waitUntil(clients.openWindow('/'));
+  }
 });

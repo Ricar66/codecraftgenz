@@ -343,7 +343,17 @@ export default function AdminMetas() {
     setCalendarLoading(true);
     try {
       const url = await getCalendarConnectUrl();
-      if (url) window.location.href = url;
+      if (url) {
+        try {
+          const parsed = new URL(url);
+          if (!parsed.hostname.endsWith('accounts.google.com') && !parsed.hostname.endsWith('google.com')) throw new Error('domínio inválido');
+        } catch {
+          toast.error('URL de conexão inválida.');
+          setCalendarLoading(false);
+          return;
+        }
+        window.location.href = url;
+      }
     } catch {
       toast.error('Falha ao obter link de conexão');
       setCalendarLoading(false);

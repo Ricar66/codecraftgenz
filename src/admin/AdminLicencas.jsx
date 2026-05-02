@@ -10,7 +10,10 @@ import AdminCard from './components/AdminCard';
 import StatusBadge from './components/StatusBadge';
 import styles from './AdminLicencas.module.css';
 
-const ADMIN_TOKEN = 'codecraftgenz';
+// SECURITY: token lido de variável de ambiente — nunca hardcoded no fonte.
+// TODO backend: migrar /health/admin/* para autenticação via cookie + role=admin,
+// eliminar x-admin-token completamente.
+const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || '';
 
 async function fetchLicenses({ app_id, email, page = 1, limit = 15 } = {}) {
   const qp = new URLSearchParams();
@@ -20,14 +23,14 @@ async function fetchLicenses({ app_id, email, page = 1, limit = 15 } = {}) {
   qp.set('limit', String(limit));
   return apiRequest(`/health/admin/licenses?${qp.toString()}`, {
     method: 'GET',
-    headers: { 'x-admin-token': ADMIN_TOKEN },
+    headers: ADMIN_TOKEN ? { 'x-admin-token': ADMIN_TOKEN } : {},
   });
 }
 
 async function provisionLicense({ app_id, email, name }) {
   return apiRequest('/health/admin/provision-license', {
     method: 'POST',
-    headers: { 'x-admin-token': ADMIN_TOKEN },
+    headers: ADMIN_TOKEN ? { 'x-admin-token': ADMIN_TOKEN } : {},
     body: JSON.stringify({ app_id, email, name }),
   });
 }
@@ -35,7 +38,7 @@ async function provisionLicense({ app_id, email, name }) {
 async function removeLicense(licenseId) {
   return apiRequest(`/health/admin/licenses/${licenseId}`, {
     method: 'DELETE',
-    headers: { 'x-admin-token': ADMIN_TOKEN },
+    headers: ADMIN_TOKEN ? { 'x-admin-token': ADMIN_TOKEN } : {},
   });
 }
 

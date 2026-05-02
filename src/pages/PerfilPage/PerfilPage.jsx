@@ -471,6 +471,13 @@ function TabConta({ user }) {
     try {
       const data = await getDiscordAuthUrl();
       if (data?.url) {
+        try {
+          const parsed = new URL(data.url);
+          if (!parsed.hostname.endsWith('discord.com')) throw new Error('domínio inválido');
+        } catch {
+          toast.error('URL de autorização inválida.');
+          return;
+        }
         window.location.href = data.url;
       } else {
         toast.error('Falha ao gerar URL de autorização.');
