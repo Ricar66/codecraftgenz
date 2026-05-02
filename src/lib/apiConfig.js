@@ -21,10 +21,9 @@ const getApiBaseUrl = () => {
 export const API_BASE_URL = getApiBaseUrl();
 
 // Autenticação via HTTPOnly cookie — token gerenciado pelo browser automaticamente.
-// X-Requested-With força CORS preflight em requests cross-origin, mitigando CSRF básico.
-// Proteção CSRF completa requer Double Submit Cookie (XSRF-TOKEN) no backend.
+// CSRF: proteção completa requer Double Submit Cookie (XSRF-TOKEN) implementado no backend.
 export function getAuthHeader() {
-  return { 'X-Requested-With': 'XMLHttpRequest' };
+  return {};
 }
 
 export function shouldFallbackPublic(err, overrideEnabled) {
