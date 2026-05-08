@@ -1,6 +1,6 @@
 // src/pages/TermsOfUsePage.jsx
 // Termos de Uso do Site e Serviços
-import { FileText, ArrowLeft, CheckCircle, UserCheck, ShoppingBag, Key, Ban, Copyright, Gavel, Mail } from 'lucide-react';
+import { FileText, ArrowLeft, CheckCircle, UserCheck, ShoppingBag, Key, Ban, Copyright, Gavel, Mail, Scale } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import Navbar from '../components/Navbar/Navbar';
@@ -26,7 +26,7 @@ function TermsOfUsePage() {
             Leia atentamente os termos e condições de uso dos nossos serviços.
           </p>
           <p className={styles.lastUpdate}>
-            Última atualização: Janeiro de 2025
+            Última atualização: Maio de 2026
           </p>
         </div>
       </section>
@@ -46,6 +46,7 @@ function TermsOfUsePage() {
             <li><a href="#propriedade">Propriedade Intelectual</a></li>
             <li><a href="#responsabilidade">Limitação de Responsabilidade</a></li>
             <li><a href="#rescisao">Rescisão</a></li>
+            <li><a href="#arrependimento">Direito de Arrependimento (CDC Art. 49)</a></li>
             <li><a href="#disposicoes">Disposições Gerais</a></li>
           </ol>
         </div>
@@ -272,6 +273,23 @@ function TermsOfUsePage() {
           </p>
         </div>
 
+        {/* Right of Withdrawal */}
+        <div id="arrependimento" className={styles.card}>
+          <h2 className={styles.sectionTitle}>
+            <Scale />
+            11. Direito de Arrependimento
+          </h2>
+          <p className={styles.text}>
+            Conforme o art. 49 do Código de Defesa do Consumidor (CDC), você tem o direito de desistir de qualquer compra realizada fora do estabelecimento comercial ou por meios eletrônicos no prazo de <strong>7 (sete) dias corridos</strong> a partir da data da contratação ou recebimento do produto, com direito a reembolso integral.
+          </p>
+          <p className={styles.text}>
+            Para exercer o direito de arrependimento, envie um email para <a href="mailto:suporte@codecraftgenz.com.br?subject=Arrependimento - CodeCraft">suporte@codecraftgenz.com.br</a> com o assunto "Arrependimento" dentro do prazo de 7 dias.
+          </p>
+          <p className={styles.text}>
+            O reembolso será processado em até 10 dias úteis após a confirmação da solicitação.
+          </p>
+        </div>
+
         {/* General Provisions */}
         <div id="disposicoes" className={styles.card}>
           <h2 className={styles.sectionTitle}>
@@ -279,10 +297,16 @@ function TermsOfUsePage() {
             10. Disposições Gerais
           </h2>
           <p className={styles.text}>
+            <strong>Informações da Empresa</strong>
+          </p>
+          <p className={styles.text}>
+            CodeCraft GenZ — Ribeirão Preto, SP. CNPJ em processo de regularização. Fundada em outubro de 2025.
+          </p>
+          <p className={styles.text}>
             <strong>10.1. Lei Aplicável</strong>
           </p>
           <p className={styles.text}>
-            Estes termos são regidos pelas leis da República Federativa do Brasil. Qualquer disputa será submetida ao foro da comarca de São Paulo/SP, com exclusão de qualquer outro.
+            Estes termos são regidos pelas leis da República Federativa do Brasil. Qualquer disputa será submetida ao foro da comarca de Ribeirão Preto/SP, com exclusão de qualquer outro.
           </p>
           <p className={styles.text}>
             <strong>10.2. Acordo Integral</strong>

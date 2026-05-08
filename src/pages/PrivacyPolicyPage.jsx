@@ -26,7 +26,7 @@ function PrivacyPolicyPage() {
             Saiba como coletamos, usamos e protegemos seus dados pessoais.
           </p>
           <p className={styles.lastUpdate}>
-            Última atualização: Janeiro de 2025
+            Última atualização: Maio de 2026
           </p>
         </div>
       </section>
@@ -59,6 +59,10 @@ function PrivacyPolicyPage() {
           </p>
           <p className={styles.text}>
             Ao utilizar nossos serviços, site e aplicativos, você concorda com as práticas descritas nesta política. Recomendamos a leitura atenta deste documento.
+          </p>
+          <p className={styles.text}>
+            <strong>Controlador dos dados:</strong> CodeCraft GenZ — Ribeirão Preto, SP. CNPJ em processo de regularização.
+            Email: suporte@codecraftgenz.com.br. Fundada em outubro de 2025.
           </p>
         </div>
 
@@ -151,7 +155,7 @@ function PrivacyPolicyPage() {
             <li>Backups regulares e redundância de dados</li>
           </ul>
           <p className={styles.text}>
-            <strong>Período de retenção:</strong> Mantemos seus dados pelo tempo necessário para cumprir as finalidades descritas, ou conforme exigido por lei. Dados de conta são mantidos enquanto você for nosso cliente. Após solicitação de exclusão, seus dados serão removidos em até 30 dias, exceto quando houver obrigação legal de retenção.
+            <strong>Período de retenção:</strong> Mantemos seus dados pelo tempo necessário para cumprir as finalidades descritas, ou conforme exigido por lei. Dados de conta são mantidos enquanto você for nosso cliente. Após solicitação de exclusão, seus dados serão removidos em até 30 dias, exceto quando houver obrigação legal de retenção. Dados fiscais e de pagamento são mantidos por 5 anos conforme legislação tributária brasileira.
           </p>
         </div>
 
@@ -208,8 +212,10 @@ function PrivacyPolicyPage() {
             Para questões relacionadas à privacidade e proteção de dados, ou para exercer seus direitos como titular, entre em contato:
           </p>
           <ul className={styles.list}>
+            <li><strong>Encarregado (DPO):</strong> Ricardo Coradini de Marco Moretti</li>
             <li><strong>Email:</strong> suporte@codecraftgenz.com.br</li>
             <li><strong>Assunto:</strong> "Solicitação LGPD - [seu nome]"</li>
+            <li><strong>WhatsApp:</strong> (35) 99935-8856</li>
           </ul>
           <p className={styles.text}>
             Responderemos sua solicitação em até 15 dias úteis, conforme previsto em lei.

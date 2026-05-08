@@ -47,6 +47,9 @@ const Footer = memo(({ showLinks = true }) => {
             <a href="mailto:suporte@codecraftgenz.com.br" aria-label="Email de suporte">
               <Mail aria-hidden="true" /> suporte@codecraftgenz.com.br
             </a>
+            <a href="https://wa.me/5535999358856" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+              WhatsApp — (35) 99935-8856
+            </a>
           </nav>
         </div>
 
@@ -56,10 +59,20 @@ const Footer = memo(({ showLinks = true }) => {
           <nav className={styles.links}>
             <Link to="/politica-privacidade">Política de Privacidade</Link>
             <Link to="/termos-uso">Termos de Uso</Link>
+            <Link to="/cancelamento">Política de Cancelamento</Link>
           </nav>
         </div>
 
-        {/* Coluna 5: Redes Sociais */}
+        {/* Coluna 5: Nossos Produtos */}
+        <div className={styles.column}>
+          <h4 className={styles.columnTitle}>Nossos Produtos</h4>
+          <nav className={styles.links}>
+            <a href="https://qr.craftcardgenz.com" target="_blank" rel="noopener noreferrer">QRCraft</a>
+            <a href="https://craftcardgenz.com" target="_blank" rel="noopener noreferrer">CraftCard</a>
+          </nav>
+        </div>
+
+        {/* Coluna 6: Redes Sociais */}
         <div className={styles.column}>
           <h4 className={styles.columnTitle}>Conecte-se</h4>
           <div className={styles.social} aria-label="Redes sociais">
@@ -106,7 +119,7 @@ const Footer = memo(({ showLinks = true }) => {
       {/* Copyright */}
       <div className={styles.copyright}>
         <div className={styles.copyrightInner}>
-          &copy; {currentYear} CodeCraft Gen-Z. Todos os direitos reservados.
+          &copy; {currentYear} CodeCraft GenZ. CNPJ em processo de regularização. Ribeirão Preto, SP. Todos os direitos reservados.
         </div>
       </div>
     </footer>
