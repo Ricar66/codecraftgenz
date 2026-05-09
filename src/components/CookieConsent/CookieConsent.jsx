@@ -12,7 +12,8 @@ const CookieConsent = () => {
 
   useEffect(() => {
     const consent = localStorage.getItem(CONSENT_KEY);
-    if (consent !== 'accepted') {
+    // Considera consent dado quando há valor armazenado (accepted ou essential-only)
+    if (!consent) {
       const timer = setTimeout(() => setVisible(true), 1000);
       return () => clearTimeout(timer);
     }
@@ -20,6 +21,11 @@ const CookieConsent = () => {
 
   const handleAccept = () => {
     localStorage.setItem(CONSENT_KEY, 'accepted');
+    setVisible(false);
+  };
+
+  const handleReject = () => {
+    localStorage.setItem(CONSENT_KEY, 'essential-only');
     setVisible(false);
   };
 
@@ -46,6 +52,9 @@ const CookieConsent = () => {
         <div className={styles.actions}>
           <button className={styles.acceptBtn} onClick={handleAccept}>
             Aceitar
+          </button>
+          <button className={styles.rejectBtn} onClick={handleReject}>
+            Apenas Essenciais
           </button>
           <Link to="/politica-privacidade" className={styles.moreBtn}>
             Saiba mais

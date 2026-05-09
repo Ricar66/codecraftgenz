@@ -95,6 +95,18 @@ function PrivacyPolicyPage() {
             <li>Números de cartão de crédito (processados apenas pelo Mercado Pago)</li>
             <li>Senhas em texto plano (armazenamos apenas hash criptografado)</li>
           </ul>
+
+          <p className={styles.text}><strong>Dados recebidos de provedores externos (OAuth):</strong></p>
+          <p className={styles.text}>
+            Quando você opta por se autenticar ou integrar sua conta usando provedores externos, recebemos do provedor — mediante sua autorização explícita — os seguintes dados:
+          </p>
+          <ul className={styles.list}>
+            <li><strong>Login com Google (Google OAuth):</strong> nome, endereço de e-mail, foto de perfil (avatar) e identificador único da conta Google.</li>
+            <li><strong>Vinculação com Discord (Discord OAuth):</strong> ID do usuário Discord, username, avatar, e tokens de acesso (accessToken e refreshToken) usados exclusivamente para sincronizar cargos e atividades dentro do nosso servidor Discord.</li>
+          </ul>
+          <p className={styles.text}>
+            Esses dados são compartilhados pelos provedores apenas após sua autorização explícita na tela de consentimento OAuth. Os tokens do Discord são armazenados de forma protegida e usados somente para operações automatizadas no servidor da comunidade (ex.: atribuir cargos com base em pontuação). Você pode revogar essa autorização a qualquer momento desvinculando a conta no painel do usuário ou nas configurações do provedor (myaccount.google.com / discord.com/account).
+          </p>
         </div>
 
         {/* Data Usage */}

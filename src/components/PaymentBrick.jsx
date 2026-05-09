@@ -200,7 +200,8 @@ const PaymentBrick = ({
               setReady(true);
             },
             onSubmit: async ({ selectedPaymentMethod, formData }) => {
-              if (dev) console.log('[PaymentBrick] onSubmit:', { selectedPaymentMethod, formData });
+              // Não logar formData — contém token de cartão, email e CPF
+              if (dev) console.log('[PaymentBrick] onSubmit method:', selectedPaymentMethod);
 
               try {
                 setError('');
@@ -245,10 +246,12 @@ const PaymentBrick = ({
                   } : {}),
                 };
 
-                if (dev) console.log('[PaymentBrick] Enviando pagamento:', payload);
+                // Não logar payload — contém token de cartão, email e CPF
+                if (dev) console.log('[PaymentBrick] Enviando pagamento...');
 
                 const resp = await createDirectPayment(appId, payload);
-                if (dev) console.log('[PaymentBrick] Resposta do pagamento:', resp);
+                // Loga apenas dados não sensíveis da resposta
+                if (dev) console.log('[PaymentBrick] Resposta:', { status: resp?.status || resp?.data?.status, payment_id: resp?.payment_id || resp?.data?.payment_id });
 
                 const nextStatus = resp?.status || resp?.data?.status || 'pending';
                 const paymentMethodId = formData?.payment_method_id || selectedPaymentMethod || '';

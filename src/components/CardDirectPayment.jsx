@@ -71,7 +71,7 @@ const CardDirectPayment = ({ appId, amount, quantity = 1, description = 'Compra 
   const onSubmit = async (formData) => {
     try {
       const dev = import.meta.env.MODE !== 'production';
-      if (dev) { try { console.log('MP CardPayment formData', formData); } catch { /* noop */ } }
+      // Não logar formData — contém token de cartão e identification.number (CPF)
       setError('');
       const txAmount = Number(amount || 0);
       if (!Number.isFinite(txAmount) || txAmount <= 0) throw new Error('Valor de pagamento inválido.');
@@ -125,12 +125,12 @@ const CardDirectPayment = ({ appId, amount, quantity = 1, description = 'Compra 
         },
         metadata: {
           cardholder_name: holderNameRaw || undefined,
-          cardholder_identification_type: (type ? String(type) : undefined),
-          cardholder_identification_number: (number ? String(number) : undefined),
+          // CPF/CNPJ NÃO duplicado aqui — já enviado em payer.identification
           license_quantity: quantity,
         }
       };
-      if (dev) { try { console.log('Direct payment payload', payload); } catch { /* noop */ } }
+      // Não logar payload — contém token de cartão, email e CPF
+      void dev;
       const extra = deviceId ? { deviceId } : (typeof window !== 'undefined' && (window.MP_DEVICE_SESSION_ID || window.__MP_DEVICE_ID)) ? { deviceId: (window.MP_DEVICE_SESSION_ID || window.__MP_DEVICE_ID) } : undefined;
       const resp = await createDirectPayment(appId, payload, extra);
       const nextStatus = resp?.status || resp?.data?.status || 'pending';
@@ -169,7 +169,12 @@ const CardDirectPayment = ({ appId, amount, quantity = 1, description = 'Compra 
       }
     } catch (error) {
       const dev = import.meta.env.MODE !== 'production';
-      if (dev) { try { console.error('Direct payment error', error); } catch { /* noop */ } }
+      if (dev) {
+        try {
+          // Loga apenas status e mensagem genérica — sem payload nem PII
+          console.error('Direct payment error', { status: error?.status, message: error?.message });
+        } catch { /* noop */ }
+      }
       const status = error?.status;
       const details = error?.details || {};
       if (status === 503 && (details?.error === 'NO_ACCESS_TOKEN')) setError('Configuração do Mercado Pago ausente. Contate o suporte.');

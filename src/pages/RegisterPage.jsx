@@ -22,6 +22,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState(prefill.email || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -126,6 +127,10 @@ export default function RegisterPage() {
     if (!/[A-Z]/.test(password)) { setError('A senha deve conter pelo menos uma letra maiúscula.'); return; }
     if (!/[0-9]/.test(password)) { setError('A senha deve conter pelo menos um número.'); return; }
     if (password !== confirmPassword) { setError('As senhas não conferem.'); return; }
+    if (!acceptTerms) {
+      setError('Você precisa aceitar os Termos de Uso e a Política de Privacidade para continuar.');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -273,9 +278,45 @@ export default function RegisterPage() {
               {fieldErrors.confirmPassword && <span id="register-confirm-password-error" style={errorStyle}>{fieldErrors.confirmPassword}</span>}
             </div>
 
-            {error && <div className={styles.error} role="alert">{error}</div>}
+            <div className={styles.fieldGroup}>
+              <label
+                htmlFor="register-accept-terms"
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 8,
+                  fontSize: '0.85rem',
+                  color: '#a0a0b0',
+                  cursor: 'pointer',
+                  lineHeight: 1.4,
+                }}
+              >
+                <input
+                  id="register-accept-terms"
+                  name="acceptTerms"
+                  type="checkbox"
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                  required
+                  style={{ marginTop: 3, accentColor: '#00E4F2', cursor: 'pointer' }}
+                  aria-describedby={!acceptTerms && error ? 'register-terms-error' : undefined}
+                />
+                <span>
+                  Li e aceito os{' '}
+                  <Link to="/termos-uso" target="_blank" rel="noopener" style={{ color: '#00E4F2' }}>
+                    Termos de Uso
+                  </Link>{' '}
+                  e a{' '}
+                  <Link to="/politica-privacidade" target="_blank" rel="noopener" style={{ color: '#00E4F2' }}>
+                    Política de Privacidade
+                  </Link>.
+                </span>
+              </label>
+            </div>
 
-            <button className={styles.submitBtn} type="submit" disabled={loading}>
+            {error && <div className={styles.error} role="alert" id="register-terms-error">{error}</div>}
+
+            <button className={styles.submitBtn} type="submit" disabled={loading || !acceptTerms}>
               {loading ? 'Criando conta...' : 'Criar Conta'}
             </button>
 
