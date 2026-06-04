@@ -108,3 +108,7 @@ codecraft-deploy.zip
 
 # AI agent (não faz parte do frontend)
 ai-agent/
+
+# OMC plugin runtime state
+.omc/
+**/.omc/
