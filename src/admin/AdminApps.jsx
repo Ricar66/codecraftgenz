@@ -35,10 +35,11 @@ export default function AdminApps() {
   const [error, setError] = useState('');
   const [form, setForm] = useState({
     id: null, name: '', mainFeature: '', description: '',
-    status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0',
+    status: 'draft', price: 0, originalPrice: '', thumbnail: '', exec_url: '', version: '1.0.0',
     platforms: ['windows'], licenseType: 'vitalicia'
   });
   const [priceMask, setPriceMask] = useState('R$ 0,00');
+  const [originalPriceMask, setOriginalPriceMask] = useState('');
   const [exeFile, setExeFile] = useState(null);
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadError, setUploadError] = useState('');
@@ -50,6 +51,13 @@ export default function AdminApps() {
   const appsPerPage = 6;
 
   useEffect(() => { setPriceMask(formatBRL(form.price || 0)); }, [form.price]);
+  useEffect(() => {
+    setOriginalPriceMask(
+      form.originalPrice === '' || form.originalPrice == null
+        ? ''
+        : formatBRL(Number(form.originalPrice) || 0)
+    );
+  }, [form.originalPrice]);
 
   const handlePriceMaskChange = (e) => {
     const raw = String(e.target.value || '').replace(/[^0-9]/g, '');
@@ -57,6 +65,18 @@ export default function AdminApps() {
     const val = cents / 100;
     setForm(s => ({ ...s, price: val }));
   };
+
+  const handleOriginalPriceMaskChange = (e) => {
+    const raw = String(e.target.value || '').replace(/[^0-9]/g, '');
+    if (!raw) {
+      setForm(s => ({ ...s, originalPrice: '' }));
+      return;
+    }
+    const cents = Number(raw);
+    setForm(s => ({ ...s, originalPrice: cents / 100 }));
+  };
+
+  const clearOriginalPrice = () => setForm(s => ({ ...s, originalPrice: '' }));
 
   const showToast = (msg) => {
     setToast(msg);
@@ -103,6 +123,10 @@ export default function AdminApps() {
         description: form.description,
         status: form.status,
         price: Number(form.price || 0),
+        original_price:
+          form.originalPrice === '' || form.originalPrice == null
+            ? null
+            : Number(form.originalPrice),
         thumb_url: form.thumbnail,
         executable_url: form.exec_url,
         platforms: form.platforms,
@@ -111,7 +135,7 @@ export default function AdminApps() {
       if (isInvalidUrl(form.thumbnail)) { setError('Thumbnail URL inválida. Use http(s).'); return; }
       if (isInvalidUrl(form.exec_url)) { setError('Exec URL inválida. Use http(s).'); return; }
       await updateApp(form.id, payload);
-      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'], licenseType: 'vitalicia' });
+      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, originalPrice: '', thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'], licenseType: 'vitalicia' });
       showToast('App atualizado!');
       refresh();
     } catch (e) {
@@ -127,6 +151,10 @@ export default function AdminApps() {
         description: form.description,
         status: form.status,
         price: Number(form.price || 0),
+        original_price:
+          form.originalPrice === '' || form.originalPrice == null
+            ? null
+            : Number(form.originalPrice),
         thumb_url: form.thumbnail,
         executable_url: form.exec_url,
         platforms: form.platforms,
@@ -136,7 +164,7 @@ export default function AdminApps() {
       if (isInvalidUrl(form.thumbnail)) { setError('Thumbnail URL inválida. Use http(s).'); return; }
       if (isInvalidUrl(form.exec_url)) { setError('Exec URL inválida. Use http(s).'); return; }
       await createApp(payload);
-      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'], licenseType: 'vitalicia' });
+      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, originalPrice: '', thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'], licenseType: 'vitalicia' });
       showToast('App criado!');
       refresh();
     } catch (e) {
@@ -158,6 +186,10 @@ export default function AdminApps() {
       description: a.description || '',
       status: a.status || 'draft',
       price: a.price || 0,
+      originalPrice:
+        a.original_price == null || a.original_price === ''
+          ? ''
+          : Number(a.original_price),
       thumbnail: a.thumb_url || a.thumbnail || '',
       exec_url: a.executable_url || a.executableUrl || '',
       version: a.version || '1.0.0',
@@ -304,7 +336,32 @@ export default function AdminApps() {
                     <p className={styles.feature}>{String(a.mainFeature || '').slice(0, 80)}</p>
 
                     <div className={styles.cardMeta}>
-                      <span className={styles.price}>{formatBRL(getAppPrice(a))}</span>
+                      {(() => {
+                        const p = getAppPrice(a);
+                        const orig = Number(a?.original_price ?? a?.originalPrice ?? 0);
+                        if (p > 0 && orig > p) {
+                          const pct = Math.round(((orig - p) / orig) * 100);
+                          return (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                              <span style={{ color: '#a0a0b0', textDecoration: 'line-through', fontSize: '0.85rem' }}>
+                                {formatBRL(orig)}
+                              </span>
+                              <span className={styles.price}>{formatBRL(p)}</span>
+                              <span style={{
+                                padding: '1px 7px',
+                                borderRadius: 999,
+                                background: 'linear-gradient(135deg, #d12bf2 0%, #6366f1 100%)',
+                                color: '#fff',
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                              }}>
+                                −{pct}%
+                              </span>
+                            </span>
+                          );
+                        }
+                        return <span className={styles.price}>{formatBRL(p)}</span>;
+                      })()}
                       <StatusBadge variant={(a.status === 'published' || a.status === 'available') ? 'success' : 'warning'}>
                         {a.status === 'published' || a.status === 'available' ? 'Publicado' : 'Rascunho'}
                       </StatusBadge>
@@ -390,6 +447,48 @@ export default function AdminApps() {
             <div className={styles.formGroup}>
               <label>Preço (R$)</label>
               <input type="text" value={priceMask} onChange={handlePriceMaskChange} className={styles.input} />
+            </div>
+            <div className={styles.formGroup}>
+              <label>Preço "de" (opcional)</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  placeholder="Sem desconto"
+                  value={originalPriceMask}
+                  onChange={handleOriginalPriceMaskChange}
+                  className={styles.input}
+                  style={{ paddingRight: originalPriceMask ? 36 : undefined }}
+                />
+                {originalPriceMask && (
+                  <button
+                    type="button"
+                    onClick={clearOriginalPrice}
+                    title="Limpar"
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      right: 8,
+                      transform: 'translateY(-50%)',
+                      width: 24,
+                      height: 24,
+                      display: 'grid',
+                      placeItems: 'center',
+                      border: 'none',
+                      background: 'rgba(255,255,255,0.06)',
+                      color: '#a0a0b0',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      lineHeight: 1,
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+              <small style={{ color: '#a0a0b0', fontSize: 11, marginTop: 2 }}>
+                Exibido riscado na página de compra
+              </small>
             </div>
             <div className={styles.formGroup}>
               <label>Tipo de Licença</label>

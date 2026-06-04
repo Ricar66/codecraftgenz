@@ -9,7 +9,7 @@ import { API_BASE_URL } from '../lib/apiConfig.js';
 import styles from './HubDownloadPage.module.css';
 
 const HUB_APP_ID = 13;
-const FALLBACK_URL = 'https://api.codecraftgenz.com.br/api/downloads/CodeCraftHub_Setup.exe';
+const FALLBACK_URL = 'https://codecraftgenz.com.br/downloads/CodeCraftHub_1.0.3_x64-setup.exe';
 
 const resolveUrl = (url) => {
   if (!url) return FALLBACK_URL;
@@ -45,7 +45,8 @@ const HubDownloadPage = () => {
   const [version, setVersion] = useState('1.0.0');
 
   useEffect(() => {
-    getAppById(HUB_APP_ID).catch(() => null).then(app => {
+    getAppById(HUB_APP_ID).catch(() => null).then(resp => {
+      const app = resp?.data ?? resp;
       if (app?.executableUrl) setDownloadUrl(resolveUrl(app.executableUrl));
       if (app?.version) setVersion(app.version);
     });

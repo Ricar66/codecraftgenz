@@ -34,6 +34,9 @@ const AppCard = ({ app, onDownload, onAbout, mode = 'owned', featured = false })
   const finalized = !!app.status && statusLower !== 'draft' && statusLower !== 'disabled';
   const safePrice = getAppPrice(app);
   const displayPrice = safePrice > 0 ? `R$ ${safePrice.toLocaleString('pt-BR')}` : 'Gratuito';
+  const originalPrice = Number(app?.original_price ?? app?.originalPrice ?? 0);
+  const hasDiscount = safePrice > 0 && originalPrice > safePrice;
+  const discountPct = hasDiscount ? Math.round(((originalPrice - safePrice) / originalPrice) * 100) : 0;
   const badge = getBadge(app);
 
   const cardClass = [styles.card, featured ? styles.cardFeatured : ''].filter(Boolean).join(' ');
@@ -62,7 +65,27 @@ const AppCard = ({ app, onDownload, onAbout, mode = 'owned', featured = false })
         <p className={`${styles.feature} ${styles.clamp2}`} title={mainFeature}>{mainFeature}</p>
 
         <div className={styles.pricingRow} aria-label="Preço">
+          {hasDiscount && (
+            <span style={{ color: '#a0a0b0', fontSize: '0.85rem', textDecoration: 'line-through', marginRight: 6 }}>
+              R$ {originalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </span>
+          )}
           <span className={`${styles.price} ${safePrice === 0 ? styles.priceFree : ''}`}>{displayPrice}</span>
+          {hasDiscount && (
+            <span style={{
+              display: 'inline-block',
+              padding: '1px 8px',
+              borderRadius: 999,
+              background: 'linear-gradient(135deg, #d12bf2 0%, #6366f1 100%)',
+              color: '#fff',
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              letterSpacing: '0.03em',
+              marginLeft: 6,
+            }}>
+              −{discountPct}%
+            </span>
+          )}
           {safePrice > 0 && (
             <span className={styles.licenseType}>{app.license_type === 'assinatura' ? 'Assinatura' : 'Licença vitalícia'}</span>
           )}

@@ -465,6 +465,34 @@ const AppPurchasePage = () => {
               )}
             </div>
 
+            {(() => {
+              const unitPrice = getAppPrice(app || {});
+              const original = Number(app?.original_price ?? app?.originalPrice ?? 0);
+              if (unitPrice > 0 && original > unitPrice) {
+                const totalOriginal = original * licenseQuantity;
+                const pct = Math.round(((original - unitPrice) / original) * 100);
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
+                    <span style={{ color: '#a0a0b0', fontSize: '0.95rem', textDecoration: 'line-through' }}>
+                      De R$ {totalOriginal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '2px 10px',
+                      borderRadius: 999,
+                      background: 'linear-gradient(135deg, #d12bf2 0%, #6366f1 100%)',
+                      color: '#fff',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.04em',
+                    }}>
+                      −{pct}% OFF
+                    </span>
+                  </div>
+                );
+              }
+              return null;
+            })()}
             <p className={styles.price}>
               {(() => {
                 const unitPrice = getAppPrice(app || {});
