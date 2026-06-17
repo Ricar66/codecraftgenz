@@ -136,8 +136,7 @@ export default defineConfig({
           vendor: ['react', 'react-dom'],
           // Router - carrega junto com o app
           router: ['react-router-dom'],
-          // MercadoPago - chunk separado, só carrega quando necessário
-          mercadopago: ['@mercadopago/sdk-react']
+          // Pagamento migrado pro Asaas (checkout hospedado) — sem SDK no frontend.
         }
       }
     },

@@ -74,12 +74,17 @@ export async function uploadAppExecutable(appId, file) {
   return apiRequestMultipart(endpoint, fd, { method: 'POST' });
 }
 
-// Mercado Livre/Mercado Pago – criar preferência de pagamento
-export async function createPaymentPreference(appId, options = {}) {
-  // Backend integra com Mercado Pago usando credenciais seguras (server-side)
-  // options pode incluir: payment_methods, statement_descriptor, expires, expiration_date_from, expiration_date_to, payer
+// Asaas – criar checkout hospedado (compra avulsa de licença)
+// Retorna: { payment_id, preference_id, status, init_point, sandbox_init_point, total_amount, unit_price, quantity }
+// Ação do frontend: redirecionar para init_point (checkout hospedado Asaas)
+export async function createPurchase(appId, options = {}) {
   const body = Object.keys(options || {}).length ? JSON.stringify(options) : undefined;
   return apiRequest(`/api/apps/${appId}/purchase`, { method: 'POST', ...(body ? { body } : {}) });
+}
+
+// Mantido por compatibilidade com código legado — alias de createPurchase
+export async function createPaymentPreference(appId, options = {}) {
+  return createPurchase(appId, options);
 }
 
 // Mercado Pago – criar pagamento direto (cartão/pix/boleto)

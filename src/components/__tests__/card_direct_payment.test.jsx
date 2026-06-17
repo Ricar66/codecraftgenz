@@ -1,173 +1,19 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import React from 'react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+// MIGRAÇÃO ASAAS 2026-06-17:
+// CardDirectPayment.jsx foi removido — o fluxo de cartão agora usa checkout hospedado Asaas
+// (redirect via init_point). Estes testes validavam o MP CardPayment Brick que não existe mais.
+// Novos testes de fluxo de cartão devem verificar que handleCardCheckout chama createPurchase
+// e faz window.location.href = init_point — adicionar em purchase_flow.test.jsx quando o
+// componente AppPurchasePage for adaptado para testes com react-router v7.
+//
+// TODO: reescrever estes testes cobrindo:
+//   1. handleCardCheckout → chama createPurchase com payment_method_id:'credit_card'
+//   2. handleCardCheckout → redireciona para init_point
+//   3. handlePixPayment   → chama createDirectPayment com payment_method_id:'pix'
+//   4. handlePixPayment   → exibe PixQrPanel quando qr_code_base64 presente
+//   5. handlePixPayment   → polling detecta approved e navega para /sucesso
 
-vi.mock('../../context/useAuth.js', () => ({
-  useAuth: () => ({ user: { email: 'tester@example.com' } })
-}));
+import { describe, it } from 'vitest';
 
-vi.mock('../../services/appsAPI.js', async () => {
-  return {
-    createDirectPayment: vi.fn(async () => ({ status: 'approved' }))
-  };
+describe('CardDirectPayment (REMOVIDO – migrado para Asaas checkout hospedado)', () => {
+  it.skip('placeholder – ver TODO no cabeçalho deste arquivo', () => {});
 });
-
-import { createDirectPayment } from '../../services/appsAPI.js';
-import CardDirectPayment from '../CardDirectPayment.jsx';
-
-vi.mock('@mercadopago/sdk-react', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    CardPayment: vi.fn(({ onSubmit }) => (
-      <div>
-        <span>Mocked CardPayment</span>
-        <button
-          data-testid="mp-submit"
-          onClick={() => onSubmit(globalThis.__cardDataProvider ? globalThis.__cardDataProvider() : {
-            token: 'tok_test',
-            payment_method_id: 'visa',
-            issuer_id: '123',
-            installments: 1,
-            payer: {
-              email: 'test@test.com',
-              identification: { type: 'CPF', number: '12345678909' }
-            }
-          })}
-        >Pagar</button>
-      </div>
-    )),
-    initMercadoPago: vi.fn(),
-  };
-});
-
-describe('CardDirectPayment – validações e sucesso', () => {
-  let cardDataProvider;
-
-  beforeEach(() => {
-    import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY = 'pk_test_123';
-    cardDataProvider = () => ({
-      token: 'tok_test',
-      payment_method_id: 'visa',
-      issuer_id: '123',
-      installments: 1,
-      payer: { email: 'test@test.com', identification: { type: 'CPF', number: '12345678909' } }
-    });
-    globalThis.__cardDataProvider = () => cardDataProvider();
-    vi.spyOn(console, 'debug').mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-    try { createDirectPayment.mockReset(); } catch { void 0; }
-    vi.clearAllMocks();
-  });
-
-  it('exibe erro quando payment_method_id está ausente', async () => {
-    cardDataProvider = () => ({ token: 'tok_test' });
-    globalThis.__cardDataProvider = () => cardDataProvider();
-    render(<CardDirectPayment appId={7} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
-    screen.getByTestId('mp-submit').click();
-    const alertEl = await screen.findByRole('alert');
-    expect(alertEl.textContent).toMatch(/payment_method_id é obrigatório/i);
-  });
-
-  it('exibe erro quando token do cartão não é gerado', async () => {
-    createDirectPayment.mockRejectedValueOnce({ status: 400, details: { message: 'Token do cartão não foi gerado' } });
-    cardDataProvider = () => ({ payment_method_id: 'visa' });
-    globalThis.__cardDataProvider = () => cardDataProvider();
-    render(<CardDirectPayment appId={7} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
-    screen.getByTestId('mp-submit').click();
-    const alertEl = await screen.findByRole('alert');
-    expect(alertEl.textContent).toMatch(/Token do cartão não foi gerado/i);
-  });
-
-  it('chama onPaymentSuccess com approved em fluxo de sucesso', async () => {
-    const onPaymentSuccess = vi.fn();
-    cardDataProvider = () => ({ token: 'tok_test', payment_method_id: 'visa' });
-    globalThis.__cardDataProvider = () => cardDataProvider();
-    render(<CardDirectPayment appId={9} amount={199.9} onPaymentSuccess={onPaymentSuccess} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
-    screen.getByTestId('mp-submit').click();
-    await waitFor(() => {
-      expect(onPaymentSuccess).toHaveBeenCalled();
-    });
-    expect(createDirectPayment).toHaveBeenCalled();
-  });
-  
-  it('mostra erro quando falta access token (503 NO_ACCESS_TOKEN)', async () => {
-    createDirectPayment.mockRejectedValueOnce({ status: 503, details: { error: 'NO_ACCESS_TOKEN' } });
-    cardDataProvider = () => ({ token: 'tok_test', payment_method_id: 'visa' });
-    globalThis.__cardDataProvider = () => cardDataProvider();
-    render(<CardDirectPayment appId={11} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
-    screen.getByTestId('mp-submit').click();
-    const alertEl = await screen.findByRole('alert');
-    expect(alertEl.textContent).toMatch(/Configuração do Mercado Pago ausente/i);
-  });
-
-  it('mostra erro de rede (502 NETWORK_ERROR)', async () => {
-    createDirectPayment.mockRejectedValueOnce({ status: 502, details: { error: 'NETWORK_ERROR' } });
-    cardDataProvider = () => ({ token: 'tok_test', payment_method_id: 'visa' });
-    globalThis.__cardDataProvider = () => cardDataProvider();
-    render(<CardDirectPayment appId={12} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
-    screen.getByTestId('mp-submit').click();
-    const alertEl = await screen.findByRole('alert');
-    expect(alertEl.textContent).toMatch(/Falha de rede/i);
-  });
-
-  it('mostra mensagem quando MP retorna mp_status e message', async () => {
-    createDirectPayment.mockRejectedValueOnce({ status: 502, details: { mp_status: 'bad_request', message: 'Dados inválidos' } });
-    cardDataProvider = () => ({ token: 'tok_test', payment_method_id: 'visa' });
-    globalThis.__cardDataProvider = () => cardDataProvider();
-    render(<CardDirectPayment appId={13} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
-    screen.getByTestId('mp-submit').click();
-    const alertEl = await screen.findByRole('alert');
-    expect(alertEl.textContent).toMatch(/Pagamento não foi criado/i);
-    expect(alertEl.textContent).toMatch(/Dados inválidos/i);
-  });
-
-  it('mostra ajuste binário quando cause 2056', async () => {
-    createDirectPayment.mockRejectedValueOnce({ status: 400, details: { cause: [{ code: '2056' }] } });
-    cardDataProvider = () => ({ token: 'tok_test', payment_method_id: 'visa' });
-    globalThis.__cardDataProvider = () => cardDataProvider();
-    render(<CardDirectPayment appId={14} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
-    screen.getByTestId('mp-submit').click();
-    const alertEl = await screen.findByRole('alert');
-    expect(alertEl.textContent).toMatch(/modo binário/i);
-  });
-
-  it('mostra mensagem genérica 400 com detalhes', async () => {
-    createDirectPayment.mockRejectedValueOnce({ status: 400, details: { message: 'Campos obrigatórios ausentes' } });
-    cardDataProvider = () => ({ token: 'tok_test', payment_method_id: 'visa' });
-    globalThis.__cardDataProvider = () => cardDataProvider();
-    render(<CardDirectPayment appId={15} amount={100} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
-    screen.getByTestId('mp-submit').click();
-    const alertEl = await screen.findByRole('alert');
-    expect(alertEl.textContent).toMatch(/Campos obrigatórios ausentes/i);
-  });
-});
-
-describe('CardDirectPayment – buyerInfo no payload', () => {
-  let cardDataProvider;
-  beforeEach(() => {
-    import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY = 'pk_test_123';
-    cardDataProvider = () => ({ token: 'tok_test', payment_method_id: 'visa' });
-    globalThis.__cardDataProvider = () => cardDataProvider();
-  });
-
-  it('inclui phone e address quando buyer é informado', async () => {
-    const buyer = { phone: '11999999999', zip: '01001000', streetName: 'Praça da Sé', docNumber: '12345678909' };
-    render(<CardDirectPayment appId={21} amount={100} buyer={buyer} cardholderName="João Silva" identificationType="CPF" identificationNumber="12345678909" />);
-    screen.getByTestId('mp-submit').click();
-    const call = createDirectPayment.mock.calls.at(-1);
-    expect(call[0]).toBe(21);
-    expect(call[1]).toEqual(expect.objectContaining({
-      additional_info: expect.objectContaining({
-        payer: expect.objectContaining({
-          phone: expect.objectContaining({ number: expect.any(String) }),
-          address: expect.objectContaining({ zip_code: expect.any(String), street_name: expect.any(String) })
-        })
-      })
-    }));
-  });
-});
-// Mock de SDK já definido acima

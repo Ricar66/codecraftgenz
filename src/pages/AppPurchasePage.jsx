@@ -1,17 +1,18 @@
 // src/pages/AppPurchasePage.jsx
+// Migrado de Mercado Pago → Asaas (checkout hospedado) em 2026-06-17
+// Cartão: redirect para init_point (checkout hospedado Asaas)
+// PIX:    QR inline (qr_code_base64 + qr_code copia-e-cola)
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { trackFunnelStep } from '../services/analyticsAPI.js';
 
 import { WindowsIcon, AppleIcon, LinuxIcon } from '../components/UI/BrandIcons/index.jsx';
 
-import CardDirectPayment from '../components/CardDirectPayment.jsx';
-import PaymentBrick from '../components/PaymentBrick.jsx';
 import LoginIncentiveBanner from '../components/LoginIncentiveBanner';
 import Navbar from '../components/Navbar/Navbar';
 import { useToast } from '../components/UI/Toast';
 import { useAuth } from '../context/useAuth.js';
-import { getAppById, getPurchaseStatus, registerDownload, submitFeedback, createPaymentPreference, downloadByEmail, activateDeviceLicense } from '../services/appsAPI.js';
+import { getAppById, getPurchaseStatus, registerDownload, submitFeedback, createPurchase, createDirectPayment, downloadByEmail, activateDeviceLicense } from '../services/appsAPI.js';
 import { captureAppPurchaseLead } from '../services/leadsAPI.js';
 import { getAppPrice } from '../utils/appModel.js';
 import { API_BASE_URL } from '../lib/apiConfig.js';
@@ -28,38 +29,6 @@ const resolveDownloadUrl = (url) => {
   if (cleanUrl.startsWith('/downloads/')) return `${API_BASE_URL}/api${cleanUrl}`;
   return `${API_BASE_URL}${cleanUrl}`;
 };
-
-// Mapeia códigos de status_detail do Mercado Pago para mensagens amigáveis
-function mapStatusDetail(detail) {
-  const d = String(detail || '').toLowerCase();
-  const dict = {
-    // Preenchimento incorreto
-    'cc_rejected_bad_filled_card_number': 'Número do cartão inválido. Verifique os dígitos.',
-    'cc_rejected_bad_filled_date': 'Data de validade inválida. Corrija mês/ano.',
-    'cc_rejected_bad_filled_other': 'Dados do cartão incompletos ou inválidos.',
-    'cc_rejected_bad_filled_security_code': 'Código de segurança (CVV) inválido.',
-
-    // Limite / saldo
-    'cc_rejected_insufficient_amount': 'Saldo/limite insuficiente no cartão.',
-
-    // Autorização obrigatória
-    'cc_rejected_call_for_authorize': 'Banco exige autorização prévia. Ligue para autorizar a compra.',
-
-    // Antifraude
-    'cc_rejected_high_risk': 'Transação considerada de alto risco. Tente outro cartão/método.',
-
-    // Método/token
-    'invalid_payment_method': 'Método de pagamento inválido para este cartão.',
-    'invalid_token': 'Token do cartão inválido. Reenvie os dados.',
-
-    // Duplicidade
-    'cc_rejected_duplicated_payment': 'Pagamento duplicado. Aguarde a confirmação do primeiro.',
-
-    // Outros comuns
-    'payment_attempt_failed': 'Tentativa de pagamento falhou. Tente novamente.',
-  };
-  return dict[d] || (detail ? `Motivo: ${detail}` : 'Pagamento negado. Verifique os dados e tente novamente.');
-}
 
 // --- Input masks (pure JS, no dependencies) ---
 function maskCPF(value) {
@@ -79,24 +48,26 @@ function maskPhone(value) {
     .replace(/(\d{5})(\d{1,4})$/, '$1-$2');
 }
 
+function maskCep(value) {
+  return value
+    .replace(/\D/g, '')
+    .slice(0, 8)
+    .replace(/(\d{5})(\d{1,3})$/, '$1-$2');
+}
+
 function isValidCPF(cpf) {
   const digits = cpf.replace(/\D/g, '');
   if (digits.length !== 11) return false;
   if (/^(\d)\1+$/.test(digits)) return false;
-
-  // Validação dos dígitos verificadores (módulo 11)
   const calcDigit = (slice, factor) => {
     const sum = slice.split('').reduce((acc, d, i) => acc + Number(d) * (factor - i), 0);
     const rem = sum % 11;
     return rem < 2 ? 0 : 11 - rem;
   };
-
   const d1 = calcDigit(digits.slice(0, 9), 10);
   if (d1 !== Number(digits[9])) return false;
-
   const d2 = calcDigit(digits.slice(0, 10), 11);
   if (d2 !== Number(digits[10])) return false;
-
   return true;
 }
 
@@ -113,8 +84,150 @@ const PLATFORM_INFO = {
   linux: { icon: LinuxIcon, label: 'Linux' },
 };
 
+// ---- Componente PIX inline ----
+function PixQrPanel({ qrCodeBase64, qrCode, onCancel, toast }) {
+  const [polling, setPolling] = useState(true);
+
+  return (
+    <div style={{
+      marginTop: 24,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      maxWidth: 480,
+      margin: '24px auto 0',
+      padding: '32px 24px',
+      backgroundColor: 'rgba(26, 26, 46, 0.6)',
+      border: '1px solid rgba(0, 228, 242, 0.15)',
+      borderRadius: 16,
+    }}>
+      <h3 style={{ fontSize: '1.2rem', marginBottom: 4, color: '#fff', fontWeight: 600 }}>
+        Pague com PIX
+      </h3>
+      <p style={{ color: '#00e4f2', marginBottom: 20, fontSize: '0.9rem' }}>
+        Escaneie o QR Code ou copie o codigo abaixo
+      </p>
+
+      {qrCodeBase64 && (
+        <div style={{
+          padding: 16,
+          backgroundColor: '#fff',
+          borderRadius: 12,
+          marginBottom: 24,
+          display: 'inline-block',
+        }}>
+          <img
+            src={`data:image/png;base64,${qrCodeBase64}`}
+            alt="QR Code PIX"
+            style={{ width: 220, height: 220, display: 'block' }}
+          />
+        </div>
+      )}
+
+      {qrCode && (
+        <div style={{ width: '100%', marginBottom: 20 }}>
+          <p style={{ fontSize: '0.8rem', color: '#999', marginBottom: 8, textAlign: 'center' }}>
+            Codigo PIX (Copia e Cola)
+          </p>
+          <div style={{
+            display: 'flex',
+            alignItems: 'stretch',
+            gap: 0,
+            borderRadius: 8,
+            overflow: 'hidden',
+            border: '1px solid rgba(0, 228, 242, 0.2)',
+          }}>
+            <input
+              readOnly
+              value={qrCode}
+              style={{
+                flex: 1,
+                padding: '12px 14px',
+                fontSize: '0.75rem',
+                fontFamily: 'monospace',
+                backgroundColor: '#0d0d1a',
+                color: '#ccc',
+                border: 'none',
+                outline: 'none',
+                minWidth: 0,
+              }}
+              onClick={(e) => {
+                e.target.select();
+                navigator.clipboard?.writeText(qrCode);
+              }}
+            />
+            <button
+              onClick={() => {
+                navigator.clipboard?.writeText(qrCode);
+                toast.success('Codigo PIX copiado!');
+              }}
+              style={{
+                padding: '12px 20px',
+                backgroundColor: '#00e4f2',
+                color: '#000',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '0.85rem',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Copiar
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{
+        width: '100%',
+        padding: '14px 16px',
+        backgroundColor: 'rgba(0, 228, 242, 0.06)',
+        border: '1px solid rgba(0, 228, 242, 0.15)',
+        borderRadius: 10,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        marginBottom: 8,
+      }}>
+        {polling && (
+          <div style={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            backgroundColor: '#00e4f2',
+            animation: 'pixPulse 1.5s ease-in-out infinite',
+            flexShrink: 0,
+          }} />
+        )}
+        <p style={{ fontSize: '0.85rem', color: '#00e4f2', margin: 0 }}>
+          Aguardando pagamento... Verificando automaticamente.
+        </p>
+      </div>
+      <style>{`@keyframes pixPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.85); } }`}</style>
+      <p style={{ fontSize: '0.78rem', color: '#555', marginTop: 4, marginBottom: 16, textAlign: 'center' }}>
+        Assim que o pagamento for confirmado, voce sera redirecionado automaticamente.
+      </p>
+
+      <button
+        onClick={() => { setPolling(false); onCancel(); }}
+        style={{
+          padding: '10px 24px',
+          backgroundColor: 'transparent',
+          color: 'rgba(0, 228, 242, 0.7)',
+          border: '1px solid rgba(0, 228, 242, 0.25)',
+          borderRadius: 8,
+          cursor: 'pointer',
+          fontSize: '0.85rem',
+        }}
+      >
+        Escolher outro metodo
+      </button>
+    </div>
+  );
+}
+
 const AppPurchasePage = () => {
-  // Fluxo simplificado: apenas Cartão (Brick)
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -125,42 +238,37 @@ const AppPurchasePage = () => {
   const [statusDetail, setStatusDetail] = useState('');
   const downloadUrl = '';
   const [progress] = useState(0);
-  const [downloadStatus] = useState('idle'); // idle | downloading | done | error
+  const [downloadStatus] = useState('idle');
   const [downloadError] = useState('');
   const [feedback, setFeedback] = useState({ rating: 5, comment: '' });
-  // Checkout em duas etapas: 1 = dados do comprador, 2 = cartão
+  // Checkout em duas etapas: 1 = dados do comprador, 2 = método
   const [step, setStep] = useState(1);
   const { user } = useAuth();
   const toast = useToast();
-  const [payerInfo, setPayerInfo] = useState({ name: String(user?.name || ''), email: String(user?.email || ''), identification: '' });
+  const [payerInfo, setPayerInfo] = useState({ name: String(user?.name || ''), email: String(user?.email || ''), identification: '', phone: '', zip: '', streetName: '', city: '', state: '' });
   const [cpfError, setCpfError] = useState('');
-  const [deviceId, setDeviceId] = useState('');
-  const [deviceIdReady, setDeviceIdReady] = useState(false);
-  // Controla visibilidade do formulário de cartão via flag de ambiente
-  const initialShowCard = (
-    import.meta.env.VITE_ENABLE_CARD_PAYMENT_UI === 'true' ||
-    (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('showCard') === '1')
-  );
-  const [showCardForm, setShowCardForm] = useState(initialShowCard);
-  // Controla qual método de pagamento está ativo: 'card' | 'payment' | 'wallet'
+  const [cepLoading, setCepLoading] = useState(false);
+  // Método de pagamento: 'card' | 'pix'
   const [paymentMethod, setPaymentMethod] = useState('card');
-  // Quantidade de licenças (1-10)
   const [licenseQuantity, setLicenseQuantity] = useState(1);
+  // Estado do pagamento em andamento
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  // PIX inline
+  const [pixData, setPixData] = useState(null); // { qrCode, qrCodeBase64, paymentId }
 
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [emailConfirmError, setEmailConfirmError] = useState('');
   const [confirmingDownload, setConfirmingDownload] = useState(false);
-  // Ref para prevenir múltiplos cliques (mutex)
-  const downloadLockRef = React.useRef(false);
+  const downloadLockRef = useRef(false);
   const paymentCompletedRef = useRef(false);
 
-  // Track checkout started on mount
+  // Track checkout started
   useEffect(() => {
     trackFunnelStep('purchase_funnel', 'checkout_started', { app_id: id });
   }, [id]);
 
-  // Track checkout abandoned on page unload
+  // Track checkout abandoned
   useEffect(() => {
     const handleUnload = () => {
       if (step > 0 && !paymentCompletedRef.current) {
@@ -197,52 +305,7 @@ const AppPurchasePage = () => {
     return () => { mounted = false; };
   }, [id]);
 
-  useEffect(() => {
-    let stopped = false;
-    const pk = (
-      import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY ||
-      import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_PROD ||
-      import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_SANDBOX ||
-      ''
-    );
-    const tryGenerateId = () => {
-      if (stopped) return false;
-      if (deviceId) {
-        setDeviceIdReady(true);
-        return true;
-      }
-      if (typeof window === 'undefined') return false;
-      const mpCtor = window.MercadoPago;
-      if (!mpCtor || !pk) return false;
-      try {
-        const mp = new mpCtor(pk);
-        const id = typeof mp.getDeviceId === 'function' ? mp.getDeviceId() : (window.MP_DEVICE_SESSION_ID || '');
-        if (id) {
-          const val = String(id);
-          setDeviceId(val);
-          setDeviceIdReady(true);
-          try { window.__MP_DEVICE_ID = val; } catch (e) { void e }
-          return true;
-        }
-      } catch (e) { void e }
-      return false;
-    };
-    const okNow = tryGenerateId();
-    if (okNow) return () => { stopped = true; };
-    const start = Date.now();
-    const interval = setInterval(() => {
-      const ok = tryGenerateId();
-      if (ok) { clearInterval(interval); stopped = true; }
-      else if (Date.now() - start > 10000) {
-        clearInterval(interval);
-        stopped = true;
-        // Mesmo sem device ID, permitimos continuar (fallback)
-        setDeviceIdReady(true);
-      }
-    }, 500);
-    return () => { stopped = true; try { clearInterval(interval); } catch (e) { void e } };
-  }, [deviceId]);
-
+  // Detecta retorno de checkout hospedado (query params na URL)
   useEffect(() => {
     const prefId = searchParams.get('preference_id');
     const paymentId = searchParams.get('payment_id');
@@ -254,8 +317,9 @@ const AppPurchasePage = () => {
           const resolvedStatus = s?.status || statusParam || '';
           setStatus(resolvedStatus);
           setStatusDetail(s?.status_detail || '');
-          if (resolvedStatus === 'approved') {
-            navigate(`/apps/${id}/sucesso?payment_id=${paymentId || s?.payment_id || ''}&status=approved`);
+          // 'pending' após retorno do checkout hospedado é tratado como sucesso (webhook confirma depois)
+          if (resolvedStatus === 'approved' || resolvedStatus === 'pending') {
+            navigate(`/apps/${id}/sucesso?payment_id=${paymentId || s?.payment_id || ''}&status=${resolvedStatus}`);
             return;
           }
         } catch (e) {
@@ -265,29 +329,135 @@ const AppPurchasePage = () => {
     }
   }, [id, searchParams, navigate]);
 
-  // Fluxo Wallet (Checkout Pro) - usuário faz login diretamente no Mercado Pago
-  const startWalletCheckout = async () => {
+  // Polling de status PIX
+  useEffect(() => {
+    if (!pixData?.paymentId || !id) return;
+    const interval = setInterval(async () => {
+      try {
+        const result = await getPurchaseStatus(id, { payment_id: pixData.paymentId });
+        const s = result?.data?.status || result?.status;
+        if (s === 'approved') {
+          clearInterval(interval);
+          setPixData(null);
+          paymentCompletedRef.current = true;
+          trackFunnelStep('purchase_funnel', 'payment_completed', { app_id: id, payment_id: pixData.paymentId, method: 'pix' });
+          navigate(`/apps/${id}/sucesso?payment_id=${pixData.paymentId}&status=approved`);
+        }
+      } catch (e) {
+        console.warn('[PIX] Erro ao verificar status:', e);
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [pixData?.paymentId, id, navigate]);
+
+  // Lookup ViaCEP
+  const handleCepBlur = async () => {
+    const cep = String(payerInfo.zip || '').replace(/\D/g, '');
+    if (cep.length !== 8) return;
+    setCepLoading(true);
     try {
-      // Email e nome são opcionais - o usuário pode fazer login direto no MP
-      const email = String(payerInfo.email || user?.email || '').trim() || undefined;
-      const name = String(payerInfo.name || user?.name || '').trim() || undefined;
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await res.json();
+      if (data && !data.erro) {
+        setPayerInfo(s => ({
+          ...s,
+          streetName: data.logradouro || s.streetName,
+          city: data.localidade || s.city,
+          state: data.uf || s.state,
+        }));
+      }
+    } catch {
+      // falha silenciosa — campo permanece como estava
+    } finally {
+      setCepLoading(false);
+    }
+  };
 
-      // Cria preferência (email opcional para Wallet)
-      const options = {};
-      if (email) options.email = email;
-      if (name) options.name = name;
-
-      const pref = await createPaymentPreference(id, options);
-      const init = pref?.init_point || pref?.data?.init_point || pref?.sandbox_init_point || pref?.data?.sandbox_init_point || '';
-      if (init) {
-        window.open(init, '_blank', 'noopener');
+  // Fluxo Cartão → checkout hospedado Asaas
+  const handleCardCheckout = async () => {
+    if (paymentLoading) return;
+    setPaymentLoading(true);
+    try {
+      const email = String(payerInfo.email || '').trim();
+      const name = String(payerInfo.name || '').trim();
+      const cpf = String(payerInfo.identification || '').trim();
+      const resp = await createPurchase(id, {
+        email,
+        name,
+        identification: cpf,
+        phone: payerInfo.phone || undefined,
+        zip: payerInfo.zip || undefined,
+        streetName: payerInfo.streetName || undefined,
+        quantity: licenseQuantity,
+        payment_method_id: 'credit_card',
+      });
+      const initPoint =
+        resp?.init_point ||
+        resp?.data?.init_point ||
+        resp?.sandbox_init_point ||
+        resp?.data?.sandbox_init_point ||
+        '';
+      if (initPoint) {
+        trackFunnelStep('purchase_funnel', 'checkout_redirect', { app_id: id, method: 'card' });
+        window.location.href = initPoint;
       } else {
-        console.error('Resposta sem init_point:', pref);
-        toast.error('Não foi possível iniciar o checkout (Wallet). Verifique os logs ou tente o pagamento direto.');
+        toast.error('Não foi possível iniciar o checkout de cartão. Tente novamente.');
+        console.error('[Cartão] Resposta sem init_point:', resp);
       }
     } catch (e) {
-      console.error('Erro ao criar preferência:', e);
-      toast.error(e.message || 'Erro ao iniciar checkout (Wallet)');
+      toast.error(e?.message || 'Erro ao iniciar checkout de cartão.');
+      console.error('[Cartão] Erro:', e);
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
+  // Fluxo PIX → pagamento direto, exibe QR inline
+  const handlePixPayment = async () => {
+    if (paymentLoading) return;
+    setPaymentLoading(true);
+    try {
+      const email = String(payerInfo.email || '').trim();
+      const name = String(payerInfo.name || '').trim();
+      const cpf = String(payerInfo.identification || '').trim();
+      const resp = await createDirectPayment(id, {
+        payment_method_id: 'pix',
+        quantity: licenseQuantity,
+        payer: {
+          email,
+          name,
+          identification: { type: 'CPF', number: cpf },
+          phone: payerInfo.phone || undefined,
+          address: (payerInfo.zip || payerInfo.streetName) ? {
+            zip_code: payerInfo.zip || '',
+            street_name: payerInfo.streetName || '',
+            city: payerInfo.city || '',
+            state: payerInfo.state || '',
+          } : undefined,
+        },
+      });
+
+      const qrCodeBase64 = resp?.qr_code_base64 || resp?.data?.qr_code_base64 || '';
+      const qrCode = resp?.qr_code || resp?.data?.qr_code || '';
+      const paymentId = resp?.payment_id || resp?.data?.payment_id || '';
+      const respStatus = resp?.status || resp?.data?.status || 'pending';
+
+      if (qrCode || qrCodeBase64) {
+        trackFunnelStep('purchase_funnel', 'pix_qr_shown', { app_id: id, payment_id: paymentId });
+        setPixData({ qrCode, qrCodeBase64, paymentId });
+      } else if (respStatus === 'pending' || respStatus === 'approved') {
+        // Backend retornou pending mas sem QR — redireciona para sucesso
+        paymentCompletedRef.current = true;
+        navigate(`/apps/${id}/sucesso?payment_id=${paymentId}&status=${respStatus}`);
+      } else {
+        toast.error('Não foi possível gerar o QR Code PIX. Tente novamente.');
+        console.error('[PIX] Resposta sem qr_code:', resp);
+      }
+    } catch (e) {
+      toast.error(e?.message || 'Erro ao gerar pagamento PIX.');
+      console.error('[PIX] Erro:', e);
+    } finally {
+      setPaymentLoading(false);
     }
   };
 
@@ -330,10 +500,8 @@ const AppPurchasePage = () => {
   };
 
   const confirmEmailAndDownload = async () => {
-    // Previne múltiplos cliques usando lock
     if (downloadLockRef.current) return;
     downloadLockRef.current = true;
-
     const em = String(emailInput || '').trim();
     const rx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!em || !rx.test(em)) {
@@ -493,6 +661,7 @@ const AppPurchasePage = () => {
               }
               return null;
             })()}
+
             <p className={styles.price}>
               {(() => {
                 const unitPrice = getAppPrice(app || {});
@@ -519,36 +688,8 @@ const AppPurchasePage = () => {
             <LoginIncentiveBanner />
 
             <p className={styles.muted} style={{ marginTop: 8 }}>
-              Metodos disponiveis: Cartao de credito/debito, PIX, Boleto e Conta Mercado Pago.
+              Metodos disponiveis: Cartao de credito/debito e PIX.
             </p>
-
-            {/* Seletor de método de pagamento */}
-            <div className={styles.paymentMethodSelector} style={{ marginTop: 16, marginBottom: 16 }}>
-              <p style={{ marginBottom: 8, fontSize: '0.9rem', color: '#aaa' }}>Escolha como deseja pagar:</p>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <button
-                  className={`${styles.btn} ${paymentMethod === 'payment' ? styles.btnPrimary : styles.btnOutline}`}
-                  onClick={() => { setPaymentMethod('payment'); setStep(1); trackFunnelStep('purchase_funnel', 'payment_method_selected', { app_id: id, method: 'payment' }); }}
-                  style={{ flex: '1 1 auto', minWidth: 140 }}
-                >
-                  Todos os Métodos
-                </button>
-                <button
-                  className={`${styles.btn} ${paymentMethod === 'card' ? styles.btnPrimary : styles.btnOutline}`}
-                  onClick={() => { setPaymentMethod('card'); setStep(1); trackFunnelStep('purchase_funnel', 'payment_method_selected', { app_id: id, method: 'card' }); }}
-                  style={{ flex: '1 1 auto', minWidth: 140 }}
-                >
-                  Cartão de Crédito
-                </button>
-                <button
-                  className={`${styles.btn} ${paymentMethod === 'wallet' ? styles.btnPrimary : styles.btnOutline}`}
-                  onClick={() => { setPaymentMethod('wallet'); setStep(1); trackFunnelStep('purchase_funnel', 'payment_method_selected', { app_id: id, method: 'wallet' }); }}
-                  style={{ flex: '1 1 auto', minWidth: 140 }}
-                >
-                  Conta Mercado Pago
-                </button>
-              </div>
-            </div>
 
             <div className={styles.btnGroup}>
               <button
@@ -560,7 +701,7 @@ const AppPurchasePage = () => {
               </button>
             </div>
 
-            {/* Mini security notice — visível sem precisar rolar */}
+            {/* Mini security notice */}
             <div style={{
               display: 'flex',
               alignItems: 'flex-start',
@@ -580,6 +721,7 @@ const AppPurchasePage = () => {
               </p>
             </div>
 
+            {/* ETAPA 1: Dados do comprador */}
             {step === 1 && (
               <div id="buyer-info-section" className={styles.buyerSection}>
                 <h3 className={styles.subtitle}>Dados do comprador</h3>
@@ -661,9 +803,16 @@ const AppPurchasePage = () => {
                       className={styles.input}
                       aria-label="CEP"
                       placeholder="00000-000"
-                      value={payerInfo.zip || ''}
-                      onChange={e => setPayerInfo(s => ({ ...s, zip: String(e.target.value || '').replace(/[^0-9]/g, '').slice(0, 8) }))}
+                      value={maskCep(payerInfo.zip || '')}
+                      onChange={e => {
+                        const raw = String(e.target.value || '').replace(/\D/g, '').slice(0, 8);
+                        setPayerInfo(s => ({ ...s, zip: raw }));
+                      }}
+                      onBlur={handleCepBlur}
                     />
+                    {cepLoading && (
+                      <p style={{ fontSize: '0.75rem', color: '#00e4f2', marginTop: 2 }}>Buscando endereço...</p>
+                    )}
                   </div>
                   <div className={styles.inputWrap}>
                     <label>Endereço (rua) (opcional)</label>
@@ -673,6 +822,27 @@ const AppPurchasePage = () => {
                       placeholder="Rua Exemplo, 123"
                       value={payerInfo.streetName || ''}
                       onChange={e => setPayerInfo(s => ({ ...s, streetName: String(e.target.value || '').replace(/<[^>]*>/g, '').trim() }))}
+                    />
+                  </div>
+                  <div className={styles.inputWrap}>
+                    <label>Cidade (opcional)</label>
+                    <input
+                      className={styles.input}
+                      aria-label="Cidade"
+                      placeholder="São Paulo"
+                      value={payerInfo.city || ''}
+                      onChange={e => setPayerInfo(s => ({ ...s, city: e.target.value }))}
+                    />
+                  </div>
+                  <div className={styles.inputWrap}>
+                    <label>Estado (opcional)</label>
+                    <input
+                      className={styles.input}
+                      aria-label="Estado"
+                      placeholder="SP"
+                      maxLength={2}
+                      value={payerInfo.state || ''}
+                      onChange={e => setPayerInfo(s => ({ ...s, state: e.target.value.toUpperCase().slice(0, 2) }))}
                     />
                   </div>
                 </div>
@@ -698,7 +868,6 @@ const AppPurchasePage = () => {
                         toast.warning('CPF inválido. Verifique os dígitos informados.');
                         return;
                       }
-                      // Captura lead quando usuário avança para pagamento
                       captureAppPurchaseLead(
                         { name: n, email: em, phone: payerInfo.phone, identification: cpf, zip: payerInfo.zip, streetName: payerInfo.streetName },
                         id,
@@ -706,9 +875,8 @@ const AppPurchasePage = () => {
                       ).catch(() => {});
                       trackFunnelStep('purchase_funnel', 'checkout_info_completed', { app_id: id, payment_method: paymentMethod });
                       setStep(2);
-                      setShowCardForm(true);
                       setTimeout(() => {
-                        const el = document.getElementById('card-payment-section');
+                        const el = document.getElementById('payment-method-section');
                         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                       }, 100);
                     }}
@@ -725,88 +893,86 @@ const AppPurchasePage = () => {
               </p>
             )}
 
-            {/* Payment Brick - Todos os métodos (PIX, Boleto, Cartão, MP) */}
-            {step === 2 && paymentMethod === 'payment' && (
-              <div id="card-payment-section" className={styles.cardPaymentSection}>
-                <PaymentBrick
-                  appId={id}
-                  amount={getAppPrice(app || {}) * licenseQuantity}
-                  quantity={licenseQuantity}
-                  description={(app?.name || app?.titulo) ? `Compra de ${app?.name || app?.titulo}${licenseQuantity > 1 ? ` (${licenseQuantity} licenças)` : ''}` : 'Compra de aplicativo'}
-                  buyer={{
-                    name: payerInfo.name,
-                    email: payerInfo.email,
-                    docType: 'CPF',
-                    docNumber: payerInfo.identification,
-                  }}
-                  onPaymentSuccess={async (resp) => {
-                    setStatus('approved');
-                    paymentCompletedRef.current = true;
-                    const payId = resp?.payment_id || resp?.mp_payment_id || resp?.data?.payment_id || resp?.id || resp?.data?.id || '';
-                    trackFunnelStep('purchase_funnel', 'payment_completed', { app_id: id, payment_id: payId });
-                    navigate(`/apps/${id}/sucesso?payment_id=${payId}&status=approved&quantity=${licenseQuantity}`);
-                  }}
-                  onStatus={(resp) => {
-                    const s = resp?.status || resp?.data?.status;
-                    if (s) setStatus(s);
-                  }}
-                  onError={(err) => { trackFunnelStep('purchase_funnel', 'payment_failed', { app_id: id, error: String(err?.message || err || '') }); console.error('Payment error:', err); }}
-                />
-              </div>
-            )}
+            {/* ETAPA 2: Escolha do método de pagamento */}
+            {step === 2 && !pixData && (
+              <div id="payment-method-section" className={styles.cardPaymentSection}>
+                <h3 className={styles.subtitle}>Escolha como deseja pagar</h3>
 
-            {/* Card Payment Brick - Apenas cartão de crédito/débito */}
-            {showCardForm && step === 2 && paymentMethod === 'card' && (
-              <div id="card-payment-section" className={styles.cardPaymentSection}>
-                <CardDirectPayment
-                  appId={id}
-                  amount={getAppPrice(app || {}) * licenseQuantity}
-                  quantity={licenseQuantity}
-                  description={(app?.name || app?.titulo) ? `Compra de ${app?.name || app?.titulo}${licenseQuantity > 1 ? ` (${licenseQuantity} licenças)` : ''}` : 'Compra de aplicativo'}
-                  buyer={{
-                    name: payerInfo.name,
-                    email: payerInfo.email,
-                    docType: 'CPF',
-                    docNumber: payerInfo.identification,
-                    phone: payerInfo.phone,
-                    zip: payerInfo.zip,
-                    streetName: payerInfo.streetName
-                  }}
-                  cardholderEmail={payerInfo.email}
-                  identificationType="CPF"
-                  identificationNumber={payerInfo.identification}
-                  deviceId={deviceId}
-                  maxInstallments={4}
-                  onPaymentSuccess={async (resp) => {
-                    setStatus('approved');
-                    paymentCompletedRef.current = true;
-                    const payId = resp?.payment_id || resp?.mp_payment_id || resp?.data?.payment_id || resp?.id || resp?.data?.id || '';
-                    trackFunnelStep('purchase_funnel', 'payment_completed', { app_id: id, payment_id: payId });
-                    navigate(`/apps/${id}/sucesso?payment_id=${payId}&status=approved&quantity=${licenseQuantity}`);
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Wallet - Pagamento com conta Mercado Pago */}
-            {step === 2 && paymentMethod === 'wallet' && (
-              <div id="card-payment-section" className={styles.cardPaymentSection}>
-                <div style={{ marginBottom: 20 }}>
-                  <h3 className={styles.subtitle}>Pagar com sua conta Mercado Pago</h3>
-                  <p className={styles.muted}>
-                    Clique no botão abaixo para ser redirecionado ao Mercado Pago e pagar com sua conta, créditos ou saldo disponível.
-                  </p>
-                </div>
-                <div style={{ textAlign: 'center' }}>
+                {/* Seletor de método */}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
                   <button
-                    className={`${styles.btn} ${styles.btnPrimary}`}
-                    onClick={startWalletCheckout}
-                    style={{ fontSize: '1rem', padding: '14px 32px', minWidth: 280 }}
+                    className={`${styles.btn} ${paymentMethod === 'card' ? styles.btnPrimary : styles.btnOutline}`}
+                    onClick={() => setPaymentMethod('card')}
+                    style={{ flex: '1 1 auto', minWidth: 140 }}
                   >
-                    Continuar com Mercado Pago
+                    Cartao de Credito/Debito
+                  </button>
+                  <button
+                    className={`${styles.btn} ${paymentMethod === 'pix' ? styles.btnPrimary : styles.btnOutline}`}
+                    onClick={() => setPaymentMethod('pix')}
+                    style={{ flex: '1 1 auto', minWidth: 140 }}
+                  >
+                    PIX
+                  </button>
+                </div>
+
+                {/* Cartão: redirect para checkout hospedado */}
+                {paymentMethod === 'card' && (
+                  <div style={{ textAlign: 'center' }}>
+                    <p className={styles.muted} style={{ marginBottom: 16 }}>
+                      Voce sera redirecionado para a pagina segura de pagamento para inserir os dados do cartao.
+                    </p>
+                    <button
+                      className={`${styles.btn} ${styles.btnPrimary}`}
+                      onClick={handleCardCheckout}
+                      disabled={paymentLoading}
+                      style={{ fontSize: '1rem', padding: '14px 32px', minWidth: 280 }}
+                    >
+                      {paymentLoading ? 'Aguarde...' : 'Pagar com Cartao'}
+                    </button>
+                    <p style={{ marginTop: 10, fontSize: '0.78rem', color: '#666' }}>
+                      Ambiente seguro — seus dados de cartao nao passam pelo nosso servidor.
+                    </p>
+                  </div>
+                )}
+
+                {/* PIX: gera QR inline */}
+                {paymentMethod === 'pix' && (
+                  <div style={{ textAlign: 'center' }}>
+                    <p className={styles.muted} style={{ marginBottom: 16 }}>
+                      Gere o QR Code PIX e pague pelo aplicativo do seu banco.
+                    </p>
+                    <button
+                      className={`${styles.btn} ${styles.btnPrimary}`}
+                      onClick={handlePixPayment}
+                      disabled={paymentLoading}
+                      style={{ fontSize: '1rem', padding: '14px 32px', minWidth: 280 }}
+                    >
+                      {paymentLoading ? 'Gerando QR Code...' : 'Gerar QR Code PIX'}
+                    </button>
+                  </div>
+                )}
+
+                <div style={{ marginTop: 16 }}>
+                  <button
+                    className={`${styles.btn} ${styles.btnOutline}`}
+                    onClick={() => setStep(1)}
+                    style={{ fontSize: '0.85rem' }}
+                  >
+                    Voltar e editar dados
                   </button>
                 </div>
               </div>
+            )}
+
+            {/* PIX QR inline */}
+            {step === 2 && pixData && (
+              <PixQrPanel
+                qrCodeBase64={pixData.qrCodeBase64}
+                qrCode={pixData.qrCode}
+                onCancel={() => setPixData(null)}
+                toast={toast}
+              />
             )}
 
             {status === 'approved' && (
@@ -834,26 +1000,14 @@ const AppPurchasePage = () => {
                 <p>❌ Pagamento negado.</p>
                 {statusDetail && (
                   <>
-                    <p>{mapStatusDetail(statusDetail)}</p>
                     <p className={styles.muted} style={{ fontSize: '0.85em' }}>
-                      Código: {statusDetail}
+                      Detalhe: {statusDetail}
                     </p>
                   </>
                 )}
                 <ul>
-                  <li>Verifique os dados do cartão e tente novamente.</li>
+                  <li>Verifique os dados e tente novamente.</li>
                   <li>Se persistir, contate seu banco ou use outro método.</li>
-                </ul>
-              </div>
-            )}
-
-            {status === 'rejected' && String(statusDetail || '').toLowerCase() === 'cc_rejected_high_risk' && (
-              <div className={`${styles.statusBox} ${styles.statusPending}`}>
-                <p style={{ color: '#FFC107' }}>⚠ Transação sinalizada como alto risco</p>
-                <ul>
-                  <li>Tente outro cartão ou método de pagamento.</li>
-                  <li>Confirme telefone e endereço corretamente preenchidos.</li>
-                  <li>Se necessário, solicite liberação ao seu banco.</li>
                 </ul>
               </div>
             )}
@@ -861,8 +1015,8 @@ const AppPurchasePage = () => {
             <details className={styles.helpDetails}>
               <summary>Ajuda</summary>
               <ul>
-                <li>Se o checkout não abrir, desative bloqueadores de pop-up e tente novamente.</li>
-                <li>PIX e boleto podem levar alguns minutos para confirmação.</li>
+                <li>Para cartão, você será redirecionado para uma página segura de pagamento.</li>
+                <li>PIX pode levar alguns minutos para confirmação.</li>
                 <li>Após aprovação, o botão de download fica ativo nesta página.</li>
               </ul>
             </details>

@@ -389,8 +389,8 @@ export default function AdminPagamentos() {
     <div className="admin-content">
       <header style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 16 }}>
         <div>
-          <h1 className="title">💳 Pagamentos – Mercado Pago</h1>
-          <p className="muted">Liste e filtre pagamentos via proxy seguro (admin)</p>
+          <h1 className="title">💳 Pagamentos</h1>
+          <p className="muted">Liste e filtre pagamentos via proxy seguro (admin) — gateway: Asaas</p>
         </div>
         <div className="btn-group">
           <button className="btn btn-outline" onClick={exportCsv}>📤 Exportar CSV</button>
