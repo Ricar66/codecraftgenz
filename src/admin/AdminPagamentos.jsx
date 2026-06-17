@@ -10,7 +10,7 @@ export default function AdminPagamentos() {
   const [filters, setFilters] = React.useState(() => {
     const now = new Date();
     const begin = new Date(now.getTime() - 30*24*60*60*1000);
-    const toIso = (d) => d.toISOString().slice(0,19)+".000-00:00"; // Mercado Pago ISO with offset spec
+    const toIso = (d) => d.toISOString().slice(0,19)+".000-00:00"; // ISO com offset spec
     return {
       sort: 'date_created',
       criteria: 'desc',
@@ -181,7 +181,7 @@ export default function AdminPagamentos() {
       console.error('[Pagamentos] Erro:', e);
       const msg = String(e?.message || '').toLowerCase();
       if (e?.status === 503 || msg.includes('no_access_token') || msg.includes('sem access token')) {
-        setError('Credenciais do Mercado Pago ausentes. Configure MERCADO_PAGO_ACCESS_TOKEN ou OAuth e tente novamente.');
+        setError('Credenciais do gateway de pagamento ausentes. Configure a ASAAS_API_KEY no servidor e tente novamente.');
       } else if (e?.status === 401) {
         setError('Não autenticado. Faça login para acessar pagamentos.');
       } else if (e?.status === 403) {

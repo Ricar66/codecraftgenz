@@ -78,7 +78,7 @@ function PrivacyPolicyPage() {
           <p className={styles.text}><strong>Dados fornecidos por você:</strong></p>
           <ul className={styles.list}>
             <li>Nome completo e email (no cadastro da conta)</li>
-            <li>Informações de pagamento (processadas pelo Mercado Pago)</li>
+            <li>Informações de pagamento (processadas pela Asaas)</li>
             <li>Mensagens enviadas ao suporte</li>
             <li>Feedbacks e avaliações de produtos</li>
           </ul>
@@ -92,7 +92,7 @@ function PrivacyPolicyPage() {
           <p className={styles.text}><strong>Dados que NÃO coletamos:</strong></p>
           <ul className={styles.list}>
             <li>Dados sensíveis (origem racial, convicções religiosas, dados de saúde)</li>
-            <li>Números de cartão de crédito (processados apenas pelo Mercado Pago)</li>
+            <li>Números de cartão de crédito (processados apenas pela Asaas)</li>
             <li>Senhas em texto plano (armazenamos apenas hash criptografado)</li>
           </ul>
 
@@ -140,7 +140,7 @@ function PrivacyPolicyPage() {
             Seus dados pessoais podem ser compartilhados apenas nas seguintes situações:
           </p>
           <ul className={styles.list}>
-            <li><strong>Mercado Pago:</strong> Para processamento de pagamentos (seguem sua própria política de privacidade)</li>
+            <li><strong>Asaas:</strong> Para processamento de pagamentos (seguem sua própria política de privacidade)</li>
             <li><strong>Provedores de serviço:</strong> Hospedagem, email e análise de dados, sob contratos de confidencialidade</li>
             <li><strong>Exigência legal:</strong> Quando requerido por lei, ordem judicial ou autoridade competente</li>
             <li><strong>Proteção de direitos:</strong> Para proteger nossos direitos, propriedade ou segurança</li>

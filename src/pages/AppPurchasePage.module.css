@@ -583,7 +583,7 @@
   }
 }
 
-/* ===== ESTILOS DO MERCADO PAGO BRICK ===== */
+/* ===== estilos legados de checkout (não usados) ===== */
 /* Corrigir overflow do componente de cartão */
 :global(.mp-checkout-bricks-container),
 :global([data-component-name="CardPayment"]),
@@ -600,7 +600,7 @@
   box-sizing: border-box !important;
 }
 
-/* Container pai do Mercado Pago */
+/* Container pai do checkout */
 .cardPaymentSection > div {
   max-width: 100%;
   overflow: hidden;

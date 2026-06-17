@@ -123,7 +123,7 @@ function TermsOfUsePage() {
           </p>
           <ul className={styles.list}>
             <li>Todos os preços são em Reais (BRL) e incluem impostos aplicáveis</li>
-            <li>Pagamentos são processados pelo Mercado Pago, sujeitos aos seus termos</li>
+            <li>Pagamentos são processados pela Asaas, sujeitos aos seus termos</li>
             <li>A compra é confirmada após aprovação do pagamento</li>
             <li>Reservamos o direito de alterar preços a qualquer momento</li>
           </ul>

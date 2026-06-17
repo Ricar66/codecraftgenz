@@ -15,19 +15,19 @@ const faqCategories = [
     questions: [
       {
         question: 'Quais formas de pagamento são aceitas?',
-        answer: 'Aceitamos pagamentos via Mercado Pago, que inclui cartão de crédito, débito, boleto bancário e Pix. Todas as transações são processadas de forma segura.'
+        answer: 'Aceitamos cartão de crédito/débito e Pix. Todas as transações são processadas com segurança pela Asaas.'
       },
       {
         question: 'Como funciona o processo de compra?',
-        answer: 'Ao clicar em "Comprar" em qualquer aplicativo, você será redirecionado para o Mercado Pago para concluir o pagamento. Após a aprovação, você receberá um email com o link para download e instruções de ativação.'
+        answer: 'Ao comprar: no cartão você é levado a uma página de pagamento segura; no Pix, o QR Code aparece na própria tela. Após a aprovação, você recebe um email com o link para download e instruções de ativação.'
       },
       {
         question: 'Posso parcelar minhas compras?',
-        answer: 'Sim! Através do Mercado Pago você pode parcelar suas compras em até 12x no cartão de crédito, sujeito a juros da operadora.'
+        answer: 'Sim! No cartão de crédito você pode parcelar em até 4x sem juros.'
       },
       {
         question: 'O pagamento é seguro?',
-        answer: 'Absolutamente! Utilizamos o Mercado Pago como gateway de pagamento, que é uma das plataformas mais seguras do Brasil. Seus dados financeiros nunca são armazenados em nossos servidores.'
+        answer: 'Absolutamente! Utilizamos a Asaas como gateway de pagamento, uma das plataformas mais seguras do Brasil. Seus dados financeiros nunca são armazenados em nossos servidores.'
       }
     ]
   },
@@ -130,7 +130,7 @@ const faqCategories = [
       },
       {
         question: 'Quais dados são coletados?',
-        answer: 'Coletamos apenas dados necessários para fornecer nossos serviços: email, nome e informações de pagamento (processadas pelo Mercado Pago). Veja nossa Política de Privacidade para mais detalhes.'
+        answer: 'Coletamos apenas dados necessários para fornecer nossos serviços: email, nome e informações de pagamento (processadas pela Asaas). Veja nossa Política de Privacidade para mais detalhes.'
       },
       {
         question: 'Os aplicativos coletam dados?',

@@ -87,7 +87,7 @@ export async function createPaymentPreference(appId, options = {}) {
   return createPurchase(appId, options);
 }
 
-// Mercado Pago – criar pagamento direto (cartão/pix/boleto)
+// Asaas – criar pagamento direto (cartão/pix/boleto)
 export async function createDirectPayment(appId, payload = {}, extra = {}) {
   // payload pode incluir: token (cartão), payment_method_id, installments, payer, additional_info
   const headers = {};
@@ -96,13 +96,13 @@ export async function createDirectPayment(appId, payload = {}, extra = {}) {
   return apiRequest(`/api/apps/${appId}/payment/direct`, { method: 'POST', body: JSON.stringify(payload), headers });
 }
 
-// Mercado Pago – buscar pagamentos (últimos 12 meses)
+// Asaas – buscar pagamentos (últimos 12 meses)
 export async function searchPayments(params = {}) {
   const qp = new URLSearchParams(params).toString();
   return apiRequest(`/api/payments/search?${qp}`, { method: 'GET' });
 }
 
-// Mercado Pago – obter pagamento por ID
+// Asaas – obter pagamento por ID
 export async function getPaymentById(id) {
   if (id === undefined || id === null || String(id).length === 0) {
     throw new Error('id é obrigatório');
@@ -110,7 +110,7 @@ export async function getPaymentById(id) {
   return apiRequest(`/api/payments/${encodeURIComponent(String(id))}`, { method: 'GET' });
 }
 
-// Mercado Pago – atualizar pagamento por ID (PUT)
+// Asaas – atualizar pagamento por ID (PUT)
 export async function updatePaymentById(id, payload = {}) {
   if (id === undefined || id === null || String(id).length === 0) {
     throw new Error('id é obrigatório');
