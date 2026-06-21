@@ -4,6 +4,7 @@ import { NavLink, Outlet, Link } from 'react-router-dom';
 
 import { useAuth } from '../context/useAuth';
 import { getMetas } from '../services/metasAPI';
+import { listReviews } from '../services/reviewAPI';
 
 import SuperDashboard from './SuperDashboard.jsx';
 import styles from './AdminLayout.module.css';
@@ -19,6 +20,7 @@ export default function AdminLayout() {
   const { user, logout, hasRole } = useAuth();
   const [globalErr, setGlobalErr] = React.useState(null);
   const [newMetasBadge, setNewMetasBadge] = React.useState(0);
+  const [reviewsBadge, setReviewsBadge] = React.useState(0);
   const [sidebarOpen, setSidebarOpen] = React.useState(() => {
     if (typeof window === 'undefined') return true;
     const saved = window.localStorage.getItem('admin_sidebar_open');
@@ -48,6 +50,13 @@ export default function AdminLayout() {
       const recent = metas.filter(m => new Date(m.createdAt).getTime() > cutoff);
       setNewMetasBadge(recent.length);
     }).catch(() => { /* silent */ });
+  }, []);
+
+  // Badge: avaliações de site não lidas
+  React.useEffect(() => {
+    listReviews({ limit: 1 })
+      .then(data => setReviewsBadge(data?.naoLidas || 0))
+      .catch(() => { /* silent */ });
   }, []);
   return (
     <div className={`${styles.adminContainer} ${sidebarOpen ? '' : styles.collapsed} page-with-background`}>
@@ -153,6 +162,24 @@ export default function AdminLayout() {
                   fontWeight: 700,
                   verticalAlign: 'middle',
                 }}>{newMetasBadge}</span>
+              )}
+            </span>
+          </NavLink>
+          <NavLink to="/admin/avaliacoes" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
+            <span className={styles.menuIcon}>💬</span>
+            <span className={styles.menuText}>
+              Avaliações
+              {reviewsBadge > 0 && (
+                <span style={{
+                  marginLeft: 6,
+                  background: '#ef4444',
+                  color: '#fff',
+                  borderRadius: 10,
+                  padding: '1px 7px',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  verticalAlign: 'middle',
+                }}>{reviewsBadge}</span>
               )}
             </span>
           </NavLink>

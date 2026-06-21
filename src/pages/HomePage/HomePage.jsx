@@ -7,7 +7,7 @@ import {
   Zap, Palette, Rocket, Target, BarChart3, MessageSquare,
   Smartphone, RefreshCw, Shield, Handshake, Settings, Phone,
   UserPlus, Code2, LayoutDashboard, Building2,
-  Trophy, ArrowRight, Star, CheckCircle
+  Trophy, ArrowRight, Star, CheckCircle, MessageSquareHeart
 } from 'lucide-react';
 
 import { apiRequest } from '../../lib/apiConfig.js';
@@ -26,6 +26,7 @@ import Hero from '../../components/Hero/Hero';
 import Navbar from '../../components/Navbar/Navbar';
 import NewsSection from '../../components/NewsSection/NewsSection';
 import ShowcaseBlock from '../../components/ShowcaseBlock/ShowcaseBlock.jsx';
+import LojaShowcase from '../../components/LojaShowcase/LojaShowcase.jsx';
 
 import styles from './HomePage.module.css';
 
@@ -206,6 +207,17 @@ const HomePage = () => {
         <div className={styles.sectionBlock}>
           <Hero onCrafterClick={() => openCrafterModal()} />
         </div>
+
+        {/* 1.5 Loja em destaque (NOVO — logo após o Hero pra capturar a atenção) */}
+        <motion.div
+          className={styles.sectionBlock}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={sectionReveal}
+        >
+          <LojaShowcase />
+        </motion.div>
 
         {/* CRAFTERS: seção "Dois caminhos" (Sou Crafter vs Sou Empresa) ocultada — será movida para subdomínio dedicado da comunidade. */}
         {false && (
@@ -571,6 +583,28 @@ const HomePage = () => {
           </div>
         </motion.div>
         */}
+
+        {/* 14.5 Banner Avaliação (NOVO — link curto para feedback do site) */}
+        <motion.div
+          className={styles.avaliacaoSection}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={sectionReveal}
+        >
+          <div className={styles.avaliacaoInner}>
+            <div className={styles.avaliacaoIcon}>
+              <MessageSquareHeart size={36} />
+            </div>
+            <div className={styles.avaliacaoText}>
+              <h2 className={styles.avaliacaoTitle}>O que você achou do nosso site?</h2>
+              <p className={styles.avaliacaoDesc}>Sua opinião nos ajuda a melhorar — elogio, sugestão ou crítica, leva 1 minuto.</p>
+            </div>
+            <Link to="/avaliacao" className={styles.avaliacaoBtn}>
+              Deixar avaliação <ArrowRight size={16} />
+            </Link>
+          </div>
+        </motion.div>
 
         {/* 15. CTA Final — versão B2B (a versão original "duplo Crafter/Empresa" está comentada abaixo) */}
         {/*

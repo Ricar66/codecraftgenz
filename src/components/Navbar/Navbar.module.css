@@ -21,8 +21,8 @@
   margin: 0 auto;
   padding: 0 24px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 24px;
   height: 72px;
 }
 
@@ -65,7 +65,7 @@
   filter: brightness(1.25) contrast(1.1) drop-shadow(0 0 12px rgba(0, 228, 242, 0.4));
 }
 
-/* Menu Desktop */
+/* Menu Desktop — centralizado horizontalmente entre logo e ações */
 .navMenu {
   display: flex;
   align-items: center;
@@ -73,6 +73,8 @@
   margin: 0;
   padding: 0;
   gap: 8px;
+  flex: 1;
+  justify-content: center;
 }
 
 .navItem {

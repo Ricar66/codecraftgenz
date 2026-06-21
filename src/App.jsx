@@ -47,6 +47,7 @@ const PerfilPage = lazy(() => import('./pages/PerfilPage/PerfilPage.jsx'));
 const HelpPage = lazy(() => import('./pages/HelpPage.jsx'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage.jsx'));
 const TermsOfUsePage = lazy(() => import('./pages/TermsOfUsePage.jsx'));
+const AvaliacaoPage = lazy(() => import('./pages/AvaliacaoPage.jsx'));
 
 // Admin pages - lazy loaded
 const AdminLayout = lazy(() => import('./admin/AdminLayout.jsx'));
@@ -74,6 +75,7 @@ const AdminUsuarios = lazy(() => import('./admin/AdminUsuarios.jsx'));
 const AdminConfig = lazy(() => import('./admin/AdminConfig.jsx'));
 const AdminMetas = lazy(() => import('./admin/AdminMetas.jsx'));
 const AdminDiscord = lazy(() => import('./admin/AdminDiscord.jsx'));
+const AdminAvaliacoes = lazy(() => import('./admin/AdminAvaliacoes.jsx'));
 
 /**
  * Componente de fallback leve para carregamento de paginas
@@ -172,6 +174,7 @@ function App() {
                 <Route path="/ajuda" element={<HelpPage />} />
                 <Route path="/politica-privacidade" element={<PrivacyPolicyPage />} />
                 <Route path="/termos-uso" element={<TermsOfUsePage />} />
+                <Route path="/avaliacao" element={<AvaliacaoPage />} />
                 <Route path="/cache/clear" element={<CacheMaintenancePage />} />
                 <Route path="/apps/:id/compra" element={<AppPurchasePage />} />
                 <Route path="/apps/:id/sucesso" element={<OrderSuccessPage />} />
@@ -228,6 +231,11 @@ function App() {
                   <Route path="discord" element={
                     <ProtectedRoute allowed={["admin"]}>
                       <AdminDiscord />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="avaliacoes" element={
+                    <ProtectedRoute allowed={["admin","editor","team"]}>
+                      <AdminAvaliacoes />
                     </ProtectedRoute>
                   } />
                   <Route path="config" element={

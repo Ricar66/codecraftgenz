@@ -59,12 +59,12 @@ const Navbar = memo(() => {
     <nav className={styles.navbar} aria-label="Navegacao principal">
       <div className={styles.navbarContainer}>
 
-        {/* 1. Logo */}
+        {/* 1. Logo (esquerda) */}
         <Link to="/" className={styles.logoWrapper} onClick={closeMobileMenu}>
           <img src={logo} alt="CodeCraft Gen-Z Logo" className={styles.logo} />
         </Link>
 
-        {/* 2. Links de Navegacao (Desktop) */}
+        {/* 2. Links de Navegacao (centro no desktop, drawer no mobile) */}
         <ul id="nav-menu" className={isMobileMenuOpen ? `${styles.navMenu} ${styles.active}` : styles.navMenu}>
 
           <li className={styles.navItem}>
@@ -73,7 +73,7 @@ const Navbar = memo(() => {
               className={`${styles.navLink} ${isActiveLink('/') ? styles.navLinkActive : ''}`}
               onClick={closeMobileMenu}
             >
-              Inicio
+              Início
             </Link>
           </li>
           {/* CRAFTERS: itens "Desafios" e "Mentorias" ocultados temporariamente. */}
