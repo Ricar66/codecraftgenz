@@ -1,5 +1,5 @@
 // src/admin/AdminAvaliacoes.jsx
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Star, Mail, User, Calendar, Tag, Eye, EyeOff, Trash2, RefreshCw, ExternalLink } from 'lucide-react';
 
 import { useToast } from '../components/UI/Toast';
@@ -29,6 +29,11 @@ function Stars({ n }) {
 
 export default function AdminAvaliacoes() {
   const toast = useToast();
+  // Guarda toast em ref para não recriar `load` toda vez que o provider re-renderizar
+  // (era a causa do loop infinito de fetch quando o ToastProvider re-renderizava).
+  const toastRef = useRef(toast);
+  toastRef.current = toast;
+
   const [items, setItems] = useState([]);
   const [naoLidas, setNaoLidas] = useState(0);
   const [total, setTotal] = useState(0);
@@ -48,11 +53,11 @@ export default function AdminAvaliacoes() {
       setNaoLidas(data?.naoLidas || 0);
       setTotal(data?.total || 0);
     } catch (err) {
-      toast.error(err?.message || 'Erro ao carregar avaliações');
+      toastRef.current?.error(err?.message || 'Erro ao carregar avaliações');
     } finally {
       setLoading(false);
     }
-  }, [filterTipo, filterLida, toast]);
+  }, [filterTipo, filterLida]);
 
   useEffect(() => { load(); }, [load]);
 
