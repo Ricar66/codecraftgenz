@@ -351,8 +351,8 @@ const AppPurchasePage = () => {
   }, [pixData?.paymentId, id, navigate]);
 
   // Lookup ViaCEP
-  const handleCepBlur = async () => {
-    const cep = String(payerInfo.zip || '').replace(/\D/g, '');
+  const handleCepBlur = async (cepArg) => {
+    const cep = String(typeof cepArg === 'string' ? cepArg : (payerInfo.zip || '')).replace(/\D/g, '');
     if (cep.length !== 8) return;
     setCepLoading(true);
     try {
@@ -805,7 +805,7 @@ const AppPurchasePage = () => {
                     />
                   </div>
                   <div className={styles.inputWrap}>
-                    <label>CEP (opcional)</label>
+                    <label>CEP *</label>
                     <input
                       className={styles.input}
                       aria-label="CEP"
@@ -814,15 +814,17 @@ const AppPurchasePage = () => {
                       onChange={e => {
                         const raw = String(e.target.value || '').replace(/\D/g, '').slice(0, 8);
                         setPayerInfo(s => ({ ...s, zip: raw }));
+                        // Busca automática assim que completar os 8 dígitos (não só ao sair do campo).
+                        if (raw.length === 8) handleCepBlur(raw);
                       }}
-                      onBlur={handleCepBlur}
+                      onBlur={() => handleCepBlur()}
                     />
                     {cepLoading && (
                       <p style={{ fontSize: '0.75rem', color: '#00e4f2', marginTop: 2 }}>Buscando endereço...</p>
                     )}
                   </div>
                   <div className={styles.inputWrap}>
-                    <label>Endereço (rua) (opcional)</label>
+                    <label>Endereço (rua) *</label>
                     <input
                       className={styles.input}
                       aria-label="Endereço"
@@ -832,7 +834,7 @@ const AppPurchasePage = () => {
                     />
                   </div>
                   <div className={styles.inputWrap}>
-                    <label>Número</label>
+                    <label>Número *</label>
                     <input
                       className={styles.input}
                       aria-label="Número"
@@ -842,7 +844,7 @@ const AppPurchasePage = () => {
                     />
                   </div>
                   <div className={styles.inputWrap}>
-                    <label>Bairro</label>
+                    <label>Bairro *</label>
                     <input
                       className={styles.input}
                       aria-label="Bairro"
@@ -875,7 +877,7 @@ const AppPurchasePage = () => {
                 </div>
 
                 <p className={styles.muted} style={{ marginTop: 8 }}>
-                  Preencha nome, e-mail e CPF para continuar. O endereço completo (CEP, número e bairro) é necessário para a emissão da nota fiscal — digite o CEP que preenchemos o resto.
+                  Todos os campos com <strong>*</strong> são obrigatórios — exigidos pela prefeitura para emitir a nota fiscal. Digite o CEP que preenchemos rua, bairro, cidade e UF; você só completa o número.
                 </p>
 
                 <div style={{ marginTop: 12 }}>
@@ -893,6 +895,17 @@ const AppPurchasePage = () => {
                       if (!isValidCPF(cpf)) {
                         setCpfError('CPF inválido. Verifique os dígitos informados.');
                         toast.warning('CPF inválido. Verifique os dígitos informados.');
+                        return;
+                      }
+                      // Endereço completo é OBRIGATÓRIO — a prefeitura exige p/ emitir a nota fiscal.
+                      const cepDigits = String(payerInfo.zip || '').replace(/\D/g, '');
+                      if (
+                        cepDigits.length !== 8 ||
+                        !String(payerInfo.streetName || '').trim() ||
+                        !String(payerInfo.addressNumber || '').trim() ||
+                        !String(payerInfo.neighborhood || '').trim()
+                      ) {
+                        toast.warning('Preencha o endereço completo (CEP, rua, número e bairro). É obrigatório para a emissão da nota fiscal.');
                         return;
                       }
                       captureAppPurchaseLead(
