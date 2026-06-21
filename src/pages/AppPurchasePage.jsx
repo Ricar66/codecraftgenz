@@ -245,7 +245,7 @@ const AppPurchasePage = () => {
   const [step, setStep] = useState(1);
   const { user } = useAuth();
   const toast = useToast();
-  const [payerInfo, setPayerInfo] = useState({ name: String(user?.name || ''), email: String(user?.email || ''), identification: '', phone: '', zip: '', streetName: '', city: '', state: '' });
+  const [payerInfo, setPayerInfo] = useState({ name: String(user?.name || ''), email: String(user?.email || ''), identification: '', phone: '', zip: '', streetName: '', addressNumber: '', neighborhood: '', city: '', state: '' });
   const [cpfError, setCpfError] = useState('');
   const [cepLoading, setCepLoading] = useState(false);
   // Método de pagamento: 'card' | 'pix'
@@ -362,6 +362,7 @@ const AppPurchasePage = () => {
         setPayerInfo(s => ({
           ...s,
           streetName: data.logradouro || s.streetName,
+          neighborhood: data.bairro || s.neighborhood,
           city: data.localidade || s.city,
           state: data.uf || s.state,
         }));
@@ -388,6 +389,10 @@ const AppPurchasePage = () => {
         phone: payerInfo.phone || undefined,
         zip: payerInfo.zip || undefined,
         streetName: payerInfo.streetName || undefined,
+        addressNumber: payerInfo.addressNumber || undefined,
+        neighborhood: payerInfo.neighborhood || undefined,
+        city: payerInfo.city || undefined,
+        state: payerInfo.state || undefined,
         quantity: licenseQuantity,
         payment_method_id: 'credit_card',
       });
@@ -431,6 +436,8 @@ const AppPurchasePage = () => {
           address: (payerInfo.zip || payerInfo.streetName) ? {
             zip_code: payerInfo.zip || '',
             street_name: payerInfo.streetName || '',
+            number: payerInfo.addressNumber || '',
+            neighborhood: payerInfo.neighborhood || '',
             city: payerInfo.city || '',
             state: payerInfo.state || '',
           } : undefined,
@@ -825,6 +832,26 @@ const AppPurchasePage = () => {
                     />
                   </div>
                   <div className={styles.inputWrap}>
+                    <label>Número</label>
+                    <input
+                      className={styles.input}
+                      aria-label="Número"
+                      placeholder="123"
+                      value={payerInfo.addressNumber || ''}
+                      onChange={e => setPayerInfo(s => ({ ...s, addressNumber: String(e.target.value || '').replace(/[^0-9A-Za-z/\- ]/g, '').slice(0, 20) }))}
+                    />
+                  </div>
+                  <div className={styles.inputWrap}>
+                    <label>Bairro</label>
+                    <input
+                      className={styles.input}
+                      aria-label="Bairro"
+                      placeholder="Centro"
+                      value={payerInfo.neighborhood || ''}
+                      onChange={e => setPayerInfo(s => ({ ...s, neighborhood: String(e.target.value || '').replace(/<[^>]*>/g, '').trim() }))}
+                    />
+                  </div>
+                  <div className={styles.inputWrap}>
                     <label>Cidade (opcional)</label>
                     <input
                       className={styles.input}
@@ -848,7 +875,7 @@ const AppPurchasePage = () => {
                 </div>
 
                 <p className={styles.muted} style={{ marginTop: 8 }}>
-                  Preencha nome, e-mail e CPF para continuar. Telefone e endereço ajudam a aprovação do pagamento.
+                  Preencha nome, e-mail e CPF para continuar. O endereço completo (CEP, número e bairro) é necessário para a emissão da nota fiscal — digite o CEP que preenchemos o resto.
                 </p>
 
                 <div style={{ marginTop: 12 }}>
