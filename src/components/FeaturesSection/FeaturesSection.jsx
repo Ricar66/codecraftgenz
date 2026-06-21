@@ -1,65 +1,55 @@
 // src/components/FeaturesSection/FeaturesSection.jsx
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, GitBranch, Users, BarChart3, Rocket, MessageCircle } from 'lucide-react';
+import { GitBranch, Rocket, Building2, Headphones } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import styles from './FeaturesSection.module.css';
 
+// CRAFTERS: features originais (Desafios, Mentorias, Ranking, Feedbacks) ocultadas — serão movidas para o subdomínio dedicado.
+// const featuresCrafters = [
+//   { to: '/desafios', Icon: Trophy, title: 'Desafios', text: 'Resolva problemas reais propostos por empresas e ganhe reconhecimento no mercado tech.', color: '#eab308', bg: 'rgba(234, 179, 8, 0.08)', border: 'rgba(234, 179, 8, 0.15)' },
+//   { to: '/mentoria', Icon: Users, title: 'Mentorias', text: 'Sessões 1:1 com profissionais seniores para acelerar sua carreira em tecnologia.', color: '#22d3ee', bg: 'rgba(34, 211, 238, 0.08)', border: 'rgba(34, 211, 238, 0.15)' },
+//   { to: '/ranking', Icon: BarChart3, title: 'Ranking', text: 'Gamifique seu aprendizado, conquiste badges e seja visto por recrutadores.', color: '#34d399', bg: 'rgba(52, 211, 153, 0.08)', border: 'rgba(52, 211, 153, 0.15)' },
+//   { to: '/feedback', Icon: MessageCircle, title: 'Feedbacks', text: 'Sua opinião molda o futuro da plataforma. Cada feedback conta para melhorarmos.', color: '#a78bfa', bg: 'rgba(167, 139, 250, 0.08)', border: 'rgba(167, 139, 250, 0.15)' },
+// ];
+
 const features = [
-  {
-    to: '/desafios',
-    Icon: Trophy,
-    title: 'Desafios',
-    text: 'Resolva problemas reais propostos por empresas e ganhe reconhecimento no mercado tech.',
-    color: '#eab308',
-    bg: 'rgba(234, 179, 8, 0.08)',
-    border: 'rgba(234, 179, 8, 0.15)',
-  },
-  {
-    to: '/projetos',
-    Icon: GitBranch,
-    title: 'Projetos',
-    text: 'Contribua em projetos open-source e squads para construir um portfólio profissional.',
-    color: '#818cf8',
-    bg: 'rgba(129, 140, 248, 0.08)',
-    border: 'rgba(129, 140, 248, 0.15)',
-  },
-  {
-    to: '/mentoria',
-    Icon: Users,
-    title: 'Mentorias',
-    text: 'Sessões 1:1 com profissionais seniores para acelerar sua carreira em tecnologia.',
-    color: '#22d3ee',
-    bg: 'rgba(34, 211, 238, 0.08)',
-    border: 'rgba(34, 211, 238, 0.15)',
-  },
-  {
-    to: '/ranking',
-    Icon: BarChart3,
-    title: 'Ranking',
-    text: 'Gamifique seu aprendizado, conquiste badges e seja visto por recrutadores.',
-    color: '#34d399',
-    bg: 'rgba(52, 211, 153, 0.08)',
-    border: 'rgba(52, 211, 153, 0.15)',
-  },
   {
     to: '/aplicativos',
     Icon: Rocket,
     title: 'Aplicativos',
-    text: 'Apps desktop e mobile criados com as melhores práticas de engenharia de software.',
+    text: 'Nosso catálogo de apps desktop, mobile e web — prontos para uso, com suporte e atualizações.',
     color: '#fb923c',
     bg: 'rgba(251, 146, 60, 0.08)',
     border: 'rgba(251, 146, 60, 0.15)',
   },
   {
-    to: '/feedback',
-    Icon: MessageCircle,
-    title: 'Feedbacks',
-    text: 'Sua opinião molda o futuro da plataforma. Cada feedback conta para melhorarmos.',
+    to: '/para-empresas',
+    Icon: Building2,
+    title: 'Para Empresas',
+    text: 'Software sob medida: do briefing ao deploy. Dev full-stack, design e infraestrutura.',
     color: '#a78bfa',
     bg: 'rgba(167, 139, 250, 0.08)',
     border: 'rgba(167, 139, 250, 0.15)',
+  },
+  {
+    to: '/projetos',
+    Icon: GitBranch,
+    title: 'Projetos',
+    text: 'Conheça os projetos que já entregamos: plataformas web, integrações e produtos próprios.',
+    color: '#818cf8',
+    bg: 'rgba(129, 140, 248, 0.08)',
+    border: 'rgba(129, 140, 248, 0.15)',
+  },
+  {
+    to: '/ajuda',
+    Icon: Headphones,
+    title: 'Suporte',
+    text: 'Atendimento dedicado por WhatsApp e e-mail. Resolvemos rápido para você focar no negócio.',
+    color: '#22d3ee',
+    bg: 'rgba(34, 211, 238, 0.08)',
+    border: 'rgba(34, 211, 238, 0.15)',
   },
 ];
 
@@ -89,12 +79,12 @@ const FeaturesSection = () => {
           viewport={{ once: true, amount: 0.2 }}
           variants={stagger}
         >
-          <motion.span className={styles.badge} variants={fadeUp}>Plataforma</motion.span>
+          <motion.span className={styles.badge} variants={fadeUp}>O que oferecemos</motion.span>
           <motion.h2 className={styles.title} variants={fadeUp}>
-            Tudo que você precisa em um só lugar
+            Software, suporte e parceria em um só lugar
           </motion.h2>
           <motion.p className={styles.subtitle} variants={fadeUp}>
-            Ferramentas, comunidade e oportunidades para conectar seu talento à inovação real.
+            Apps prontos para uso, desenvolvimento sob medida e atendimento dedicado para empresas que precisam de tecnologia confiável.
           </motion.p>
         </motion.header>
 

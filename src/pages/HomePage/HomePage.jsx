@@ -119,19 +119,20 @@ const showcaseData = [
       { icon: <Rocket size={18} />, text: 'Deploy contínuo e escalável' },
     ],
   },
-  {
-    badge: 'Desafios',
-    title: 'Supere seus limites',
-    description: 'Desafios reais que testam suas habilidades e aceleram seu crescimento. Problemas do mercado, prazos reais e feedback de profissionais.',
-    image: desafiosBanner,
-    imageAlt: 'Desafios de programação CodeCraft',
-    reverse: true,
-    features: [
-      { icon: <Target size={18} />, text: 'Desafios com problemas reais' },
-      { icon: <BarChart3 size={18} />, text: 'Ranking e reconhecimento' },
-      { icon: <MessageSquare size={18} />, text: 'Feedback de mentores' },
-    ],
-  },
+  // CRAFTERS: bloco "Desafios" ocultado — será movido para o subdomínio dedicado da comunidade Craft.
+  // {
+  //   badge: 'Desafios',
+  //   title: 'Supere seus limites',
+  //   description: 'Desafios reais que testam suas habilidades e aceleram seu crescimento. Problemas do mercado, prazos reais e feedback de profissionais.',
+  //   image: desafiosBanner,
+  //   imageAlt: 'Desafios de programação CodeCraft',
+  //   reverse: true,
+  //   features: [
+  //     { icon: <Target size={18} />, text: 'Desafios com problemas reais' },
+  //     { icon: <BarChart3 size={18} />, text: 'Ranking e reconhecimento' },
+  //     { icon: <MessageSquare size={18} />, text: 'Feedback de mentores' },
+  //   ],
+  // },
   {
     badge: 'Aplicativos',
     title: 'Nosso ecossistema de apps',
@@ -185,17 +186,17 @@ const HomePage = () => {
   return (
     <div className={`${styles.homePage} starfield-bg`}>
       <Helmet>
-        <title>CodeCraft Gen-Z | Plataforma para Devs que Querem Crescer</title>
-        <meta name="description" content="Mostre seus projetos, complete desafios reais e seja descoberto por empresas que contratam. Comunidade dev com apps, mentoria e ranking." />
-        <meta property="og:title" content="CodeCraft Gen-Z | Plataforma para Devs que Querem Crescer" />
-        <meta property="og:description" content="Mostre seus projetos, complete desafios reais e seja descoberto por empresas. Comunidade dev com apps, mentoria e ranking." />
+        <title>CodeCraft Gen-Z | Software sob medida para empresas</title>
+        <meta name="description" content="Desenvolvemos apps, plataformas e integrações para empresas. Apps prontos para uso e soluções sob medida — código limpo, design sólido e suporte dedicado." />
+        <meta property="og:title" content="CodeCraft Gen-Z | Software sob medida para empresas" />
+        <meta property="og:description" content="Apps prontos para empresas e soluções sob medida. Do briefing ao deploy, com suporte dedicado." />
         <meta property="og:image" content={ogImageUrl} />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={ogUrl} />
         <link rel="canonical" href={canonical} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="CodeCraft Gen-Z | Plataforma para Devs que Querem Crescer" />
-        <meta name="twitter:description" content="Mostre seus projetos, complete desafios reais e seja descoberto por empresas. Comunidade dev com apps, mentoria e ranking." />
+        <meta name="twitter:title" content="CodeCraft Gen-Z | Software sob medida para empresas" />
+        <meta name="twitter:description" content="Apps prontos para empresas e soluções sob medida. Do briefing ao deploy, com suporte dedicado." />
         <meta name="twitter:image" content={ogImageUrl} />
         {twitterHandle && <meta name="twitter:site" content={twitterHandle} />}
       </Helmet>
@@ -206,7 +207,8 @@ const HomePage = () => {
           <Hero onCrafterClick={() => openCrafterModal()} />
         </div>
 
-        {/* 2. Dois caminhos */}
+        {/* CRAFTERS: seção "Dois caminhos" (Sou Crafter vs Sou Empresa) ocultada — será movida para subdomínio dedicado da comunidade. */}
+        {false && (
         <motion.div
           className={styles.sectionBlock}
           initial="hidden"
@@ -276,8 +278,10 @@ const HomePage = () => {
             </div>
           </div>
         </motion.div>
+        )}
 
-        {/* 3. O ciclo completo */}
+        {/* CRAFTERS: seção "O ciclo completo" (Empresa define / Crafter resolve) ocultada — será movida para subdomínio dedicado. */}
+        {false && (
         <motion.div
           className={styles.sectionBlock}
           initial="hidden"
@@ -319,8 +323,10 @@ const HomePage = () => {
             <p className={styles.cicloQuote}>"A empresa define o problema. O crafter resolve. Os melhores são descobertos."</p>
           </div>
         </motion.div>
+        )}
 
-        {/* 4. Como funciona */}
+        {/* CRAFTERS: seção "Como funciona / Da prática ao trabalho" ocultada — fluxo focado em crafters, será movido para subdomínio dedicado. */}
+        {false && (
         <motion.div
           className={styles.sectionBlock}
           initial="hidden"
@@ -359,6 +365,7 @@ const HomePage = () => {
             </div>
           </div>
         </motion.div>
+        )}
 
         {/* 5. ShowcaseBlocks */}
         {showcaseData.map((item, i) => (
@@ -367,7 +374,8 @@ const HomePage = () => {
           </div>
         ))}
 
-        {/* 7. Cases reais */}
+        {/* CRAFTERS: seção "Cases reais" (Do desafio à contratação) ocultada — narrativa de comunidade dev, será movida para subdomínio dedicado. */}
+        {false && (
         <motion.div
           className={styles.sectionBlock}
           initial="hidden"
@@ -405,9 +413,10 @@ const HomePage = () => {
             </div>
           </div>
         </motion.div>
+        )}
 
-        {/* 8. Mentorias em destaque */}
-        {mentores.length > 0 && (
+        {/* CRAFTERS: seção "Mentorias em destaque" ocultada — será movida para subdomínio dedicado da comunidade Craft. */}
+        {false && mentores.length > 0 && (
           <motion.div
             className={styles.sectionBlock}
             initial="hidden"
@@ -537,7 +546,7 @@ const HomePage = () => {
           <FeedbackShowcase />
         </motion.div>
 
-        {/* 14. Discord Community */}
+        {/* CRAFTERS: seção "Discord — Junte-se à comunidade" ocultada — será movida para o subdomínio dedicado da comunidade Craft.
         <motion.div
           className={styles.discordSection}
           initial="hidden"
@@ -561,8 +570,25 @@ const HomePage = () => {
             </a>
           </div>
         </motion.div>
+        */}
 
-        {/* 15. CTA Final Duplo */}
+        {/* 15. CTA Final — versão B2B (a versão original "duplo Crafter/Empresa" está comentada abaixo) */}
+        {/*
+        <motion.div className={styles.ctaFinalSection} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={sectionReveal}>
+          <div className={styles.ctaFinalInner}>
+            <h2 className={styles.ctaFinalTitle}>Pronto para fazer parte do ciclo?</h2>
+            <p className={styles.ctaFinalDesc}>Crafters constroem portfólio. Empresas encontram talentos. O ciclo nunca para.</p>
+            <div className={styles.ctaFinalBtns}>
+              <button className={styles.ctaFinalBtnCrafter} onClick={() => openCrafterModal()}>
+                <Rocket size={18} /> Quero ser Crafter
+              </button>
+              <Link to="/para-empresas" className={styles.ctaFinalBtnEmpresa}>
+                <Building2 size={18} /> Quero contratar →
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+        */}
         <motion.div
           className={styles.ctaFinalSection}
           initial="hidden"
@@ -571,17 +597,14 @@ const HomePage = () => {
           variants={sectionReveal}
         >
           <div className={styles.ctaFinalInner}>
-            <h2 className={styles.ctaFinalTitle}>Pronto para fazer parte do ciclo?</h2>
-            <p className={styles.ctaFinalDesc}>Crafters constroem portfólio. Empresas encontram talentos. O ciclo nunca para.</p>
+            <h2 className={styles.ctaFinalTitle}>Vamos transformar sua ideia em software?</h2>
+            <p className={styles.ctaFinalDesc}>Apps prontos para uso ou desenvolvimento sob medida — escolha o caminho que faz sentido para a sua empresa.</p>
             <div className={styles.ctaFinalBtns}>
-              <button
-                className={styles.ctaFinalBtnCrafter}
-                onClick={() => openCrafterModal()}
-              >
-                <Rocket size={18} /> Quero ser Crafter
-              </button>
               <Link to="/para-empresas" className={styles.ctaFinalBtnEmpresa}>
-                <Building2 size={18} /> Quero contratar →
+                <Building2 size={18} /> Quero contratar a CodeCraft
+              </Link>
+              <Link to="/aplicativos" className={styles.ctaFinalBtnCrafter}>
+                <Rocket size={18} /> Ver nossos apps →
               </Link>
             </div>
           </div>

@@ -136,12 +136,31 @@ function App() {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/projetos" element={<ProjectsPage />} />
+                {/*
+                  CRAFTERS — rotas da comunidade Craft temporariamente desativadas.
+                  Decisão de produto (2026-06-21): visão atual deve focar em venda de
+                  software + B2B (empresas). Comunidade Craft (rankeamento, desafios,
+                  mentoria, perfil de crafter) será movida para subdomínio dedicado
+                  (ex: crafters.codecraftgenz.com.br) num esforço futuro.
+                  Quem acessar essas URLs antigas é redirecionado para a Home.
+                  Componentes e admin continuam intactos — só a entrada pública saiu.
+
+                  Para reativar: descomentar os 6 <Route> abaixo e remover os Navigate.
+                */}
+                <Route path="/desafios/ranking" element={<Navigate to="/" replace />} />
+                <Route path="/desafios/feedbacks" element={<Navigate to="/" replace />} />
+                <Route path="/ranking" element={<Navigate to="/" replace />} />
+                <Route path="/feedbacks" element={<Navigate to="/" replace />} />
+                <Route path="/mentoria" element={<Navigate to="/" replace />} />
+                <Route path="/desafios" element={<Navigate to="/" replace />} />
+                {/*
                 <Route path="/desafios/ranking" element={<RankingPage />} />
                 <Route path="/desafios/feedbacks" element={<FeedbacksPage />} />
                 <Route path="/ranking" element={<CommunityRankingPage />} />
                 <Route path="/feedbacks" element={<Navigate to="/desafios/feedbacks" replace />} />
                 <Route path="/mentoria" element={<MentoriaPage />} />
                 <Route path="/desafios" element={<DesafiosPage />} />
+                */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/reset-password" element={<PasswordResetPage />} />
@@ -217,7 +236,9 @@ function App() {
                     </ProtectedRoute>
                   } />
                 </Route>
-                <Route path="/crafter/:id" element={<CrafterProfilePage />} />
+                {/* CRAFTERS: perfil público de crafter desativado — redireciona p/ Home. Será movido para o subdomínio dedicado. */}
+                <Route path="/crafter/:id" element={<Navigate to="/" replace />} />
+                {/* <Route path="/crafter/:id" element={<CrafterProfilePage />} /> */}
                 <Route path="/onboarding" element={<OnboardingPage />} />
                 <Route path="/perfil" element={<PerfilPage />} />
                 {/* Fallback: qualquer rota desconhecida mostra 404 */}

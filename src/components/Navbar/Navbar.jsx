@@ -76,6 +76,10 @@ const Navbar = memo(() => {
               Inicio
             </Link>
           </li>
+          {/* CRAFTERS: itens "Desafios" e "Mentorias" ocultados temporariamente. */}
+          {/* Serão movidos para subdomínio dedicado da comunidade Craft (crafters.codecraftgenz.com.br). */}
+          {/* Código mantido em comentário para reativação fácil quando o subdomínio for criado. */}
+          {/*
           <li className={styles.navItem}>
             <Link
               to="/desafios"
@@ -85,6 +89,7 @@ const Navbar = memo(() => {
               Desafios
             </Link>
           </li>
+          */}
           <li className={styles.navItem}>
             <Link
               to="/projetos"
@@ -94,6 +99,7 @@ const Navbar = memo(() => {
               Projetos
             </Link>
           </li>
+          {/*
           <li className={styles.navItem}>
             <Link
               to="/mentoria"
@@ -103,6 +109,7 @@ const Navbar = memo(() => {
               Mentorias
             </Link>
           </li>
+          */}
           <li className={styles.navItem}>
             <Link
               to="/aplicativos"
@@ -205,7 +212,7 @@ const Navbar = memo(() => {
                 </div>
               </li>
             ) : (
-              /* Usuario Nao Logado - Entrar + Ser Crafter */
+              /* Usuario Nao Logado - apenas Entrar (CRAFTERS: CTA "Ser Crafter" ocultado, será movido para subdomínio dedicado) */
               <>
                 <li className={styles.navItem}>
                   <Link
@@ -216,6 +223,7 @@ const Navbar = memo(() => {
                     Entrar
                   </Link>
                 </li>
+                {/*
                 <li className={styles.navItem}>
                   <button
                     className={`${styles.navLink} ${styles.navLinkCta}`}
@@ -224,6 +232,7 @@ const Navbar = memo(() => {
                     Ser Crafter →
                   </button>
                 </li>
+                */}
               </>
             )
           )}

@@ -300,7 +300,7 @@ function TermsOfUsePage() {
             <strong>Informações da Empresa</strong>
           </p>
           <p className={styles.text}>
-            CodeCraft GenZ — Ribeirão Preto, SP. CNPJ em processo de regularização. Fundada em outubro de 2025.
+            CodeCraft GenZ — CNPJ 67.058.806/0001-01 — Ribeirão Preto, SP. Fundada em outubro de 2025.
           </p>
           <p className={styles.text}>
             <strong>10.1. Lei Aplicável</strong>

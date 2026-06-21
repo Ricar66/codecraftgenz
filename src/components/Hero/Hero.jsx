@@ -34,7 +34,9 @@ const hashtagVariant = {
   }),
 };
 
-const hashtags = ['Comunidade Dev', 'Inovação Tech', 'Oportunidades Reais'];
+// CRAFTERS: hashtags da fase "comunidade dev" — quando reativarmos o subdomínio, voltar com este array.
+// const hashtags = ['Comunidade Dev', 'Inovação Tech', 'Oportunidades Reais'];
+const hashtags = ['Software sob medida', 'Apps prontos para empresas', 'Tecnologia confiável'];
 
 const Hero = ({ onCrafterClick }) => {
   const { trackButtonClick } = useAnalytics();
@@ -63,14 +65,24 @@ const Hero = ({ onCrafterClick }) => {
     >
       <div className={`${styles.heroContent} container`}>
         <div className={styles.textArea}>
+          {/* CRAFTERS: slogan/subtitle originais (foco em comunidade dev). Reativar quando criar subdomínio dedicado.
+          <motion.h1 className={styles.slogan} initial="hidden" animate="visible" variants={fadeUp(0.1)}>
+            Programe seu futuro,{' '}
+            <span className={styles.sloganAccent}>craftando o agora.</span>
+          </motion.h1>
+          <motion.p className={styles.subtitle} initial="hidden" animate="visible" variants={fadeUp(0.25)}>
+            Complete desafios reais, entre em projetos e seja descoberto.{' '}
+            <span className={styles.subtitleAccent}>Empresas encontram talentos. Crafters encontram oportunidades.</span>
+          </motion.p>
+          */}
           <motion.h1
             className={styles.slogan}
             initial="hidden"
             animate="visible"
             variants={fadeUp(0.1)}
           >
-            Programe seu futuro,{' '}
-            <span className={styles.sloganAccent}>craftando o agora.</span>
+            Software de verdade,{' '}
+            <span className={styles.sloganAccent}>feito sob medida.</span>
           </motion.h1>
 
           <motion.p
@@ -79,8 +91,8 @@ const Hero = ({ onCrafterClick }) => {
             animate="visible"
             variants={fadeUp(0.25)}
           >
-            Complete desafios reais, entre em projetos e seja descoberto.{' '}
-            <span className={styles.subtitleAccent}>Empresas encontram talentos. Crafters encontram oportunidades.</span>
+            Desenvolvemos apps, plataformas e integrações para empresas que precisam de tecnologia confiável.{' '}
+            <span className={styles.subtitleAccent}>Do briefing ao deploy — código limpo, design sólido e suporte dedicado.</span>
           </motion.p>
 
           <div className={styles.hashtags}>
@@ -105,6 +117,7 @@ const Hero = ({ onCrafterClick }) => {
           animate="visible"
           variants={fadeUp(0.5)}
         >
+          {/* CRAFTERS: CTA "Quero ser um Crafter" ocultado — será reativado no subdomínio dedicado da comunidade.
           <motion.div
             whileHover={{ scale: 1.03, y: -2 }}
             whileTap={{ scale: 0.97 }}
@@ -119,6 +132,7 @@ const Hero = ({ onCrafterClick }) => {
               <Rocket size={18} /> Quero ser um Crafter
             </Button>
           </motion.div>
+          */}
           <motion.div
             whileHover={{ scale: 1.03, y: -2 }}
             whileTap={{ scale: 0.97 }}
@@ -126,11 +140,25 @@ const Hero = ({ onCrafterClick }) => {
           >
             <Button
               onClick={handlePartnerClick}
-              variant="outline"
-              className={styles.partnerButton}
+              variant="secondary"
+              className={styles.ctaButton}
               aria-label="Conhecer soluções para empresas"
             >
-              <Building2 size={18} /> Sou uma Empresa →
+              <Building2 size={18} /> Quero contratar a CodeCraft
+            </Button>
+          </motion.div>
+          <motion.div
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+          >
+            <Button
+              onClick={() => navigate('/aplicativos')}
+              variant="outline"
+              className={styles.partnerButton}
+              aria-label="Conhecer nossos aplicativos"
+            >
+              <Rocket size={18} /> Ver nossos apps →
             </Button>
           </motion.div>
         </motion.div>

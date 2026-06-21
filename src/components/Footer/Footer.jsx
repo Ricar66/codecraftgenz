@@ -31,7 +31,8 @@ const Footer = memo(({ showLinks = true }) => {
             <nav className={styles.links} aria-label="Links do rodapé">
               <Link to="/projetos">Projetos</Link>
               <Link to="/aplicativos">Aplicativos</Link>
-              <Link to="/mentoria">Mentoria</Link>
+              {/* CRAFTERS: link de Mentoria ocultado temporariamente — será movido para subdomínio dedicado da comunidade Craft. */}
+              {/* <Link to="/mentoria">Mentoria</Link> */}
               <Link to="/para-empresas">Para Empresas</Link>
             </nav>
           </div>
@@ -63,10 +64,12 @@ const Footer = memo(({ showLinks = true }) => {
           </nav>
         </div>
 
-        {/* Coluna 5: Nossos Produtos */}
+        {/* Coluna 5: Nossas Plataformas */}
         <div className={styles.column}>
-          <h4 className={styles.columnTitle}>Nossos Produtos</h4>
+          <h4 className={styles.columnTitle}>Nossas Plataformas</h4>
           <nav className={styles.links}>
+            <a href="https://codecraftgenz.com.br" target="_blank" rel="noopener noreferrer">CodeCraft Gen-Z</a>
+            <a href="https://nutripro.codecraftgenz.com.br" target="_blank" rel="noopener noreferrer">NutriPro</a>
             <a href="https://qr.craftcardgenz.com" target="_blank" rel="noopener noreferrer">QRCraft</a>
             <a href="https://craftcardgenz.com" target="_blank" rel="noopener noreferrer">CraftCard</a>
           </nav>
@@ -119,7 +122,7 @@ const Footer = memo(({ showLinks = true }) => {
       {/* Copyright */}
       <div className={styles.copyright}>
         <div className={styles.copyrightInner}>
-          &copy; {currentYear} CodeCraft GenZ. CNPJ em processo de regularização. Ribeirão Preto, SP. Todos os direitos reservados.
+          &copy; {currentYear} CodeCraft GenZ. CNPJ 67.058.806/0001-01. Ribeirão Preto, SP. Todos os direitos reservados.
         </div>
       </div>
     </footer>

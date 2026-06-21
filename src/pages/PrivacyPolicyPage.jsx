@@ -61,7 +61,7 @@ function PrivacyPolicyPage() {
             Ao utilizar nossos serviços, site e aplicativos, você concorda com as práticas descritas nesta política. Recomendamos a leitura atenta deste documento.
           </p>
           <p className={styles.text}>
-            <strong>Controlador dos dados:</strong> CodeCraft GenZ — Ribeirão Preto, SP. CNPJ em processo de regularização.
+            <strong>Controlador dos dados:</strong> CodeCraft GenZ — CNPJ 67.058.806/0001-01 — Ribeirão Preto, SP.
             Email: suporte@codecraftgenz.com.br. Fundada em outubro de 2025.
           </p>
         </div>
