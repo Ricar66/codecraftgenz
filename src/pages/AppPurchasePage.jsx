@@ -350,25 +350,32 @@ const AppPurchasePage = () => {
     return () => clearInterval(interval);
   }, [pixData?.paymentId, id, navigate]);
 
-  // Lookup ViaCEP
+  // Lookup ViaCEP — preenche rua/bairro/cidade/UF a partir do CEP.
+  // Erros são exibidos ao usuário (antes ficava silencioso e parecia que "não puxava").
   const handleCepBlur = async (cepArg) => {
     const cep = String(typeof cepArg === 'string' ? cepArg : (payerInfo.zip || '')).replace(/\D/g, '');
     if (cep.length !== 8) return;
     setCepLoading(true);
     try {
-      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`, {
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (data && !data.erro) {
-        setPayerInfo(s => ({
-          ...s,
-          streetName: data.logradouro || s.streetName,
-          neighborhood: data.bairro || s.neighborhood,
-          city: data.localidade || s.city,
-          state: data.uf || s.state,
-        }));
+      if (data?.erro) {
+        toast.warning('CEP não encontrado. Verifique os dígitos ou preencha o endereço manualmente.');
+        return;
       }
-    } catch {
-      // falha silenciosa — campo permanece como estava
+      setPayerInfo(s => ({
+        ...s,
+        streetName: data.logradouro || s.streetName,
+        neighborhood: data.bairro || s.neighborhood,
+        city: data.localidade || s.city,
+        state: data.uf || s.state,
+      }));
+    } catch (err) {
+      console.warn('[ViaCEP] falhou:', err);
+      toast.warning('Não foi possível buscar o endereço pelo CEP. Preencha manualmente.');
     } finally {
       setCepLoading(false);
     }
@@ -854,7 +861,7 @@ const AppPurchasePage = () => {
                     />
                   </div>
                   <div className={styles.inputWrap}>
-                    <label>Cidade (opcional)</label>
+                    <label>Cidade *</label>
                     <input
                       className={styles.input}
                       aria-label="Cidade"
@@ -864,7 +871,7 @@ const AppPurchasePage = () => {
                     />
                   </div>
                   <div className={styles.inputWrap}>
-                    <label>Estado (opcional)</label>
+                    <label>Estado *</label>
                     <input
                       className={styles.input}
                       aria-label="Estado"
@@ -899,13 +906,16 @@ const AppPurchasePage = () => {
                       }
                       // Endereço completo é OBRIGATÓRIO — a prefeitura exige p/ emitir a nota fiscal.
                       const cepDigits = String(payerInfo.zip || '').replace(/\D/g, '');
+                      const uf = String(payerInfo.state || '').trim().toUpperCase();
                       if (
                         cepDigits.length !== 8 ||
                         !String(payerInfo.streetName || '').trim() ||
                         !String(payerInfo.addressNumber || '').trim() ||
-                        !String(payerInfo.neighborhood || '').trim()
+                        !String(payerInfo.neighborhood || '').trim() ||
+                        !String(payerInfo.city || '').trim() ||
+                        uf.length !== 2
                       ) {
-                        toast.warning('Preencha o endereço completo (CEP, rua, número e bairro). É obrigatório para a emissão da nota fiscal.');
+                        toast.warning('Preencha o endereço completo (CEP, rua, número, bairro, cidade e UF). É obrigatório para a emissão da nota fiscal.');
                         return;
                       }
                       captureAppPurchaseLead(
