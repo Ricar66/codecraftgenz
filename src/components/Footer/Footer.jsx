@@ -48,9 +48,12 @@ const Footer = memo(({ showLinks = true }) => {
             <a href="mailto:suporte@codecraftgenz.com.br" aria-label="Email de suporte">
               <Mail aria-hidden="true" /> suporte@codecraftgenz.com.br
             </a>
-            <a href="https://wa.me/5535999358856" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-              WhatsApp — (35) 99935-8856
+            <a href="https://wa.me/5516997552548" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp do suporte CodeCraft">
+              WhatsApp — (16) 99755-2548
             </a>
+            <span className={styles.supportHours}>
+              Atendimento: Seg a Sex · 9h às 18h
+            </span>
           </nav>
         </div>
 
@@ -99,7 +102,7 @@ const Footer = memo(({ showLinks = true }) => {
               <GitHubIcon aria-hidden="true" />
             </a>
             <a
-              href="https://wa.me/5535999358856"
+              href="https://wa.me/5516997552548"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="WhatsApp"

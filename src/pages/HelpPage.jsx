@@ -220,7 +220,7 @@ function HelpPage() {
               suporte@codecraftgenz.com.br
             </a>
             <a
-              href="https://wa.me/5535999358856"
+              href="https://wa.me/5516997552548"
               target="_blank"
               rel="noopener noreferrer"
               className={styles.contactLink}

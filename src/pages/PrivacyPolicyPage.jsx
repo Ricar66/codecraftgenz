@@ -227,7 +227,7 @@ function PrivacyPolicyPage() {
             <li><strong>Encarregado (DPO):</strong> Ricardo Coradini de Marco Moretti</li>
             <li><strong>Email:</strong> suporte@codecraftgenz.com.br</li>
             <li><strong>Assunto:</strong> "Solicitação LGPD - [seu nome]"</li>
-            <li><strong>WhatsApp:</strong> (35) 99935-8856</li>
+            <li><strong>WhatsApp:</strong> (16) 99755-2548 (seg a sex, 9h às 18h)</li>
           </ul>
           <p className={styles.text}>
             Responderemos sua solicitação em até 15 dias úteis, conforme previsto em lei.

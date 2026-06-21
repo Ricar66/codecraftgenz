@@ -1,7 +1,7 @@
 // src/components/LojaShowcase/LojaShowcase.jsx
 import React from 'react';
 import { motion } from 'framer-motion';
-import { QrCode, IdCard, Apple, Download, ArrowRight, Sparkles, ExternalLink, Hourglass } from 'lucide-react';
+import { QrCode, IdCard, Apple, Download, ArrowRight, Sparkles, ExternalLink, Hourglass, Headphones, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import styles from './LojaShowcase.module.css';
@@ -189,6 +189,25 @@ const LojaShowcase = () => {
           );
         })}
       </motion.div>
+
+      {/* Barra de suporte — cobre todos os apps (QRCraft, CraftCard, NutriPro, Hub) */}
+      <div className={styles.supportBar}>
+        <Headphones size={18} className={styles.supportIcon} />
+        <div className={styles.supportText}>
+          <span className={styles.supportLabel}>Suporte dos apps:</span>{' '}
+          <a
+            href="https://wa.me/5516997552548"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.supportPhone}
+          >
+            WhatsApp (16) 99755-2548
+          </a>
+        </div>
+        <span className={styles.supportHours}>
+          <Clock size={14} /> Seg a Sex · 9h às 18h
+        </span>
+      </div>
 
       <div className={styles.footer}>
         <Link to="/aplicativos" className={styles.footerBtn}>

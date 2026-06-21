@@ -208,6 +208,57 @@
   gap: 10px;
 }
 
+/* Barra de Suporte (WhatsApp + horário, atende todos os apps) */
+.supportBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 22px;
+  margin: 8px 0 20px;
+  background: linear-gradient(135deg, rgba(37, 211, 102, 0.10), rgba(34, 211, 238, 0.06));
+  border: 1px solid rgba(37, 211, 102, 0.25);
+  border-radius: 14px;
+  color: var(--text-primary, #F5F5F7);
+}
+
+.supportIcon {
+  color: #25D366;
+  flex-shrink: 0;
+}
+
+.supportText {
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.supportLabel {
+  color: var(--text-secondary, #a0a0b0);
+  font-weight: 500;
+}
+
+.supportPhone {
+  color: #25D366;
+  text-decoration: none;
+  font-weight: 700;
+  transition: color 0.2s;
+}
+.supportPhone:hover { color: #1ebe57; }
+
+.supportHours {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #a0a0b0);
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-weight: 600;
+}
+
 /* Footer */
 .footer {
   text-align: center;
