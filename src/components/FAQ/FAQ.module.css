@@ -1,0 +1,210 @@
+/* src/components/FAQ/FAQ.module.css */
+
+.section {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 16px 24px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.14), rgba(251, 146, 60, 0.10));
+  border: 1px solid rgba(251, 191, 36, 0.28);
+  border-radius: 20px;
+  color: #fbbf24;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  font-weight: 800;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+  color: var(--text-primary, #F5F5F7);
+  line-height: 1.15;
+}
+
+.lead {
+  font-size: 1rem;
+  color: var(--text-secondary, #a0a0b0);
+  margin: 0 auto;
+  max-width: 640px;
+  line-height: 1.55;
+}
+
+/* Lista */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.item {
+  background: linear-gradient(180deg, rgba(26, 26, 46, 0.65) 0%, rgba(13, 13, 26, 0.65) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.itemOpen {
+  border-color: rgba(209, 43, 242, 0.4);
+  background: linear-gradient(180deg, rgba(209, 43, 242, 0.06) 0%, rgba(13, 13, 26, 0.7) 100%);
+}
+
+.question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary, #F5F5F7);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  letter-spacing: -0.005em;
+  line-height: 1.4;
+  transition: background 0.2s ease;
+}
+.question:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.qText {
+  flex: 1;
+}
+
+.qIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(209, 43, 242, 0.12);
+  color: #D12BF2;
+  border: 1px solid rgba(209, 43, 242, 0.28);
+  flex-shrink: 0;
+  transition: background 0.25s, transform 0.25s;
+}
+.itemOpen .qIcon {
+  background: rgba(209, 43, 242, 0.22);
+  transform: rotate(180deg);
+}
+
+.answer {
+  overflow: hidden;
+}
+
+.answerText {
+  padding: 0 22px 20px;
+  margin: 0;
+  color: var(--text-secondary, #c5c5d0);
+  line-height: 1.65;
+  font-size: 0.95rem;
+}
+
+/* Contact CTA */
+.contactCard {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 26px;
+  background: linear-gradient(135deg, rgba(0, 228, 242, 0.08), rgba(209, 43, 242, 0.06));
+  border: 1px solid rgba(0, 228, 242, 0.2);
+  border-radius: 18px;
+  flex-wrap: wrap;
+}
+
+.contactIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(0, 228, 242, 0.15);
+  color: #22d3ee;
+  border: 1px solid rgba(0, 228, 242, 0.3);
+  flex-shrink: 0;
+}
+
+.contactText {
+  flex: 1;
+  min-width: 220px;
+}
+
+.contactTitle {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary, #F5F5F7);
+}
+
+.contactDesc {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-secondary, #a0a0b0);
+  line-height: 1.55;
+}
+
+.contactActions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.contactBtn {
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-decoration: none;
+  transition: transform 0.2s, opacity 0.2s;
+  white-space: nowrap;
+}
+.contactBtn:hover { transform: translateY(-1px); }
+
+.contactBtnWpp {
+  background: #25D366;
+  color: #fff;
+}
+.contactBtnWpp:hover { background: #1ebe57; }
+
+.contactBtnMail {
+  background: transparent;
+  color: var(--text-primary, #F5F5F7);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+}
+.contactBtnMail:hover {
+  border-color: #22d3ee;
+  background: rgba(0, 228, 242, 0.05);
+}
+
+@media (max-width: 640px) {
+  .section { padding: 8px 16px; }
+  .header { margin-bottom: 28px; }
+  .question { padding: 16px 18px; font-size: 0.95rem; }
+  .answerText { padding: 0 18px 18px; font-size: 0.9rem; }
+  .contactCard { padding: 20px 22px; }
+  .contactActions { width: 100%; }
+  .contactBtn { flex: 1; text-align: center; }
+}

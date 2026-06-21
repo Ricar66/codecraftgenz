@@ -1,0 +1,120 @@
+/* src/components/TargetAudience/TargetAudience.module.css */
+
+.section {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px 24px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, rgba(0, 228, 242, 0.15), rgba(167, 139, 250, 0.10));
+  border: 1px solid rgba(0, 228, 242, 0.25);
+  border-radius: 20px;
+  color: #22d3ee;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 800;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+  color: var(--text-primary, #F5F5F7);
+  line-height: 1.15;
+}
+
+.lead {
+  font-size: 1.05rem;
+  color: var(--text-secondary, #a0a0b0);
+  margin: 0 auto;
+  max-width: 680px;
+  line-height: 1.55;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.card {
+  --seg-color: #D12BF2;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 24px 22px;
+  background: linear-gradient(180deg, rgba(26, 26, 46, 0.7) 0%, rgba(13, 13, 26, 0.7) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--seg-color);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: var(--seg-color);
+  box-shadow: 0 18px 36px -16px rgba(0, 0, 0, 0.45);
+}
+.card:hover::before { opacity: 0.85; }
+
+.iconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 13px;
+  color: var(--seg-color);
+  background: color-mix(in srgb, var(--seg-color) 12%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--seg-color) 28%, transparent);
+  margin-bottom: 4px;
+}
+
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary, #F5F5F7);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.cardDesc {
+  font-size: 0.92rem;
+  color: var(--text-secondary, #a0a0b0);
+  line-height: 1.55;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .section { padding: 8px 16px; }
+  .header { margin-bottom: 28px; }
+  .grid { grid-template-columns: 1fr; gap: 14px; }
+  .card { padding: 22px 20px; }
+}

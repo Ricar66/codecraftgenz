@@ -1,0 +1,219 @@
+/* src/components/ProcessSteps/ProcessSteps.module.css */
+
+.section {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px 24px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 44px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(209, 43, 242, 0.10));
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  border-radius: 20px;
+  color: #a78bfa;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 800;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+  color: var(--text-primary, #F5F5F7);
+  line-height: 1.15;
+}
+
+.lead {
+  font-size: 1.05rem;
+  color: var(--text-secondary, #a0a0b0);
+  margin: 0 auto;
+  max-width: 660px;
+  line-height: 1.55;
+}
+
+/* Grid em linha com setas no desktop, coluna no mobile */
+.grid {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: nowrap;
+}
+
+.card {
+  --step-color: #D12BF2;
+  flex: 1 1 0;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 28px 24px;
+  background: linear-gradient(180deg, rgba(26, 26, 46, 0.75) 0%, rgba(13, 13, 26, 0.75) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, var(--step-color) 0%, transparent 65%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  z-index: -1;
+  filter: blur(28px);
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  border-color: var(--step-color);
+}
+.card:hover::before { opacity: 0.10; }
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.stepNumber {
+  font-size: 2.4rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: var(--step-color);
+  opacity: 0.55;
+  line-height: 1;
+}
+
+.iconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  color: var(--step-color);
+  background: color-mix(in srgb, var(--step-color) 14%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--step-color) 32%, transparent);
+}
+
+.cardTitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 4px 0 0;
+  color: var(--text-primary, #F5F5F7);
+  letter-spacing: -0.01em;
+}
+
+.cardDesc {
+  font-size: 0.94rem;
+  color: var(--text-secondary, #a0a0b0);
+  line-height: 1.6;
+  margin: 0 0 4px;
+}
+
+.highlights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-primary, #F5F5F7);
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.highlights li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--step-color);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--step-color) 50%, transparent);
+  flex-shrink: 0;
+}
+
+/* Seta entre cards (desktop) */
+.arrow {
+  align-self: center;
+  color: rgba(255, 255, 255, 0.18);
+  flex-shrink: 0;
+}
+
+/* CTA */
+.ctaWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 36px;
+  flex-wrap: wrap;
+}
+
+.ctaBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #D12BF2 0%, #a78bfa 100%);
+  border-radius: 12px;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.ctaBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px -12px rgba(209, 43, 242, 0.55);
+}
+
+.ctaHint {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #a0a0b0);
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+  .grid { flex-wrap: wrap; }
+  .card { flex: 1 1 calc(33.333% - 12px); }
+}
+
+@media (max-width: 720px) {
+  .grid { flex-direction: column; }
+  .card { flex: 1; }
+  .arrow { transform: rotate(90deg); }
+  .stepNumber { font-size: 2rem; }
+}
+
+@media (max-width: 480px) {
+  .section { padding: 8px 16px; }
+  .card { padding: 24px 20px; }
+}

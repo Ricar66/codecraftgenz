@@ -27,6 +27,9 @@ import Navbar from '../../components/Navbar/Navbar';
 import NewsSection from '../../components/NewsSection/NewsSection';
 import ShowcaseBlock from '../../components/ShowcaseBlock/ShowcaseBlock.jsx';
 import LojaShowcase from '../../components/LojaShowcase/LojaShowcase.jsx';
+import TargetAudience from '../../components/TargetAudience/TargetAudience.jsx';
+import ProcessSteps from '../../components/ProcessSteps/ProcessSteps.jsx';
+import FAQ from '../../components/FAQ/FAQ.jsx';
 
 import styles from './HomePage.module.css';
 
@@ -220,6 +223,28 @@ const HomePage = () => {
           variants={sectionReveal}
         >
           <LojaShowcase />
+        </motion.div>
+
+        {/* 1.6 Para quem é (NOVO — segmentos atendidos) */}
+        <motion.div
+          className={styles.sectionBlock}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={sectionReveal}
+        >
+          <TargetAudience />
+        </motion.div>
+
+        {/* 1.7 Como funciona em 3 etapas (NOVO — processo claro) */}
+        <motion.div
+          className={styles.sectionBlock}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={sectionReveal}
+        >
+          <ProcessSteps />
         </motion.div>
 
         {/* CRAFTERS: seção "Dois caminhos" (Sou Crafter vs Sou Empresa) ocultada — será movida para subdomínio dedicado da comunidade. */}
@@ -586,6 +611,17 @@ const HomePage = () => {
           </div>
         </motion.div>
         */}
+
+        {/* 14.3 FAQ (NOVO — perguntas frequentes pra matar objeções) */}
+        <motion.div
+          className={styles.sectionBlock}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={sectionReveal}
+        >
+          <FAQ />
+        </motion.div>
 
         {/* 14.5 Banner Avaliação (NOVO — link curto para feedback do site) */}
         <motion.div

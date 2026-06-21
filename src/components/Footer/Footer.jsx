@@ -60,7 +60,8 @@ const Footer = memo(({ showLinks = true }) => {
           <nav className={styles.links}>
             <Link to="/politica-privacidade">Política de Privacidade</Link>
             <Link to="/termos-uso">Termos de Uso</Link>
-            <Link to="/cancelamento">Política de Cancelamento</Link>
+            {/* Política de Cancelamento removida — licenças vendidas são definitivas
+                (compra única, sem reembolso). Política descrita nos Termos de Uso. */}
           </nav>
         </div>
 

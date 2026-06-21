@@ -7,6 +7,7 @@ import { Rocket, Building2 } from 'lucide-react';
 import { useAnalytics } from '../../hooks/useAnalytics';
 import { trackFunnelStep } from '../../services/analyticsAPI.js';
 import Button from '../Button/Button';
+import HeroMockup from './HeroMockup.jsx';
 
 import styles from './Hero.module.css';
 
@@ -64,6 +65,7 @@ const Hero = ({ onCrafterClick }) => {
       aria-label="Seção principal - Banner CodeCraft"
     >
       <div className={`${styles.heroContent} container`}>
+        <div className={styles.leftCol}>
         <div className={styles.textArea}>
           {/* CRAFTERS: slogan/subtitle originais (foco em comunidade dev). Reativar quando criar subdomínio dedicado.
           <motion.h1 className={styles.slogan} initial="hidden" animate="visible" variants={fadeUp(0.1)}>
@@ -162,6 +164,12 @@ const Hero = ({ onCrafterClick }) => {
             </Button>
           </motion.div>
         </motion.div>
+        </div>
+
+        {/* Coluna direita: mockup visual do dashboard (CSS-only) */}
+        <div className={styles.rightCol}>
+          <HeroMockup />
+        </div>
       </div>
 
       <motion.div

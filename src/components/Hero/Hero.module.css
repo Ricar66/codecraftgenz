@@ -41,35 +41,51 @@
 .heroContent {
   position: relative;
   z-index: 2;
-  max-width: 860px;
+  max-width: 1240px;
   width: 100%;
   padding: 60px 24px;
   margin: 0 auto;
-  text-align: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 48px;
+}
+
+/* Coluna esquerda: texto + CTAs */
+.leftCol {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* Coluna direita: mockup */
+.rightCol {
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 28px;
+  min-width: 0;
 }
 
 .textArea {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
+  text-align: left;
   gap: 20px;
   width: 100%;
 }
 
 .slogan {
   font-family: var(--fonte-titulos, 'Montserrat', sans-serif);
-  font-size: clamp(2.5rem, 7vw, 4.5rem);
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
   font-weight: 800;
   line-height: 1.08;
   letter-spacing: -0.03em;
   margin: 0;
-  text-align: center;
+  text-align: left;
   color: #f1f5f9;
 }
 
@@ -79,12 +95,13 @@
 }
 
 .subtitle {
-  font-size: clamp(1.05rem, 2.2vw, 1.25rem);
+  font-size: clamp(1.05rem, 2.2vw, 1.2rem);
   font-weight: 400;
-  line-height: 1.7;
+  line-height: 1.65;
   color: #94a3b8;
-  max-width: 580px;
-  margin: 0 auto;
+  max-width: 540px;
+  margin: 0;
+  text-align: left;
 }
 
 /* Trecho do subtítulo em destaque */
@@ -97,7 +114,7 @@
 .hashtags {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 10px;
   margin-top: 4px;
 }
@@ -126,10 +143,11 @@
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   gap: 14px;
-  margin-top: 12px;
+  margin-top: 8px;
+  width: 100%;
 }
 
 /* CTA — cor vibrante, sem glow excessivo */
@@ -230,6 +248,22 @@
 }
 
 /* ===== RESPONSIVIDADE ===== */
+/* Tablet — mockup vai abaixo do texto */
+@media (max-width: 980px) {
+  .heroContent {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 50px 24px;
+    text-align: center;
+  }
+  .leftCol { align-items: center; text-align: center; }
+  .textArea { align-items: center; text-align: center; }
+  .slogan { text-align: center; }
+  .subtitle { text-align: center; margin: 0 auto; }
+  .hashtags { justify-content: center; }
+  .actionArea { justify-content: center; }
+}
+
 @media (max-width: 768px) {
   .heroWrapper { padding: 80px 20px 40px; }
   .heroContent { padding: 40px 16px; gap: 24px; }

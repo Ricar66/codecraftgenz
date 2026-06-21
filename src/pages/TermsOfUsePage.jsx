@@ -136,14 +136,18 @@ function TermsOfUsePage() {
             <li>Você tem acesso permanente ao download enquanto o produto existir</li>
           </ul>
           <p className={styles.text}>
-            <strong>4.3. Reembolso</strong>
+            <strong>4.3. Política de Reembolso e Cancelamento</strong>
+          </p>
+          <p className={styles.text}>
+            Conforme o <strong>art. 49 do Código de Defesa do Consumidor</strong>, você tem direito ao prazo de <strong>7 (sete) dias corridos</strong> a partir da data da compra para solicitar arrependimento e reembolso integral.
           </p>
           <ul className={styles.list}>
-            <li>Oferecemos garantia de 7 dias para reembolso integral</li>
-            <li>Solicitações devem ser feitas por email com justificativa</li>
-            <li>Reembolsos são processados em até 5 dias úteis após aprovação</li>
-            <li>Não há reembolso após 7 dias da compra, exceto em casos excepcionais</li>
+            <li>Dentro dos 7 dias: reembolso integral via mesma forma de pagamento, em até 5 dias úteis após aprovação</li>
+            <li>Solicitações devem ser feitas por e-mail (<a href="mailto:suporte@codecraftgenz.com.br">suporte@codecraftgenz.com.br</a>) com a justificativa</li>
           </ul>
+          <p className={styles.text} style={{ background: 'rgba(239, 68, 68, 0.08)', borderLeft: '3px solid #ef4444', padding: '12px 16px', borderRadius: 8, marginTop: 16 }}>
+            <strong>Importante — após o prazo de 7 dias:</strong> a licença adquirida é <strong>definitiva e intransferível</strong>. Não há reembolso, estorno, cancelamento ou troca após esse período, salvo em casos de defeito comprovado do produto que impossibilite o uso. Ao concluir a compra, você confirma estar ciente desta condição.
+          </p>
         </div>
 
         {/* Licenses */}
