@@ -1,7 +1,7 @@
 // src/components/LojaShowcase/LojaShowcase.jsx
 import React from 'react';
 import { motion } from 'framer-motion';
-import { QrCode, IdCard, Apple, Download, ArrowRight, Sparkles, ExternalLink } from 'lucide-react';
+import { QrCode, IdCard, Apple, Download, ArrowRight, Sparkles, ExternalLink, Hourglass } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import styles from './LojaShowcase.module.css';
@@ -11,23 +11,22 @@ const apps = [
     slug: 'qrcraft',
     name: 'QRCraft',
     tagline: 'Gerador de QR Code premium',
-    description: 'Gere QR Codes personalizados com logo, cores, formatos e analytics. Para campanhas, cardápios, eventos e mais.',
+    description: 'QR Codes personalizados com logo, cores e analytics. Para campanhas, cardápios, eventos e muito mais. Em fase final de polimento — aguardem.',
     Icon: QrCode,
-    badge: 'Grátis',
-    badgeColor: '#22c55e',
+    badge: 'Em breve',
+    badgeColor: '#fbbf24',
     accent: '#22d3ee',
     accentBg: 'rgba(34, 211, 238, 0.10)',
     accentBorder: 'rgba(34, 211, 238, 0.28)',
-    url: 'https://qr.craftcardgenz.com',
-    external: true,
+    comingSoon: true,
   },
   {
     slug: 'craftcard',
     name: 'CraftCard',
     tagline: 'Cartão digital profissional',
-    description: 'Apresentação não é detalhe — é posicionamento. QR Code, portfólio, agendamento e analytics em um link.',
+    description: 'Apresentação não é detalhe — é posicionamento. QR Code, portfólio, agendamento e analytics em um único link.',
     Icon: IdCard,
-    badge: 'Premium',
+    badge: 'Disponível',
     badgeColor: '#D12BF2',
     accent: '#D12BF2',
     accentBg: 'rgba(209, 43, 242, 0.10)',
@@ -39,15 +38,14 @@ const apps = [
     slug: 'nutripro',
     name: 'NutriPro',
     tagline: 'Software para nutricionistas',
-    description: 'Plataforma completa para consultórios de nutrição: anamnese, planos alimentares, evolução do paciente e mais.',
+    description: 'Plataforma completa para consultórios de nutrição: anamnese, planos alimentares, evolução do paciente e mais. Em desenvolvimento — em breve no ar.',
     Icon: Apple,
-    badge: 'Profissional',
-    badgeColor: '#34d399',
+    badge: 'Em breve',
+    badgeColor: '#fbbf24',
     accent: '#34d399',
     accentBg: 'rgba(52, 211, 153, 0.10)',
     accentBorder: 'rgba(52, 211, 153, 0.28)',
-    url: 'https://nutripro.codecraftgenz.com.br',
-    external: true,
+    comingSoon: true,
   },
   {
     slug: 'codecrafthub',
@@ -108,6 +106,13 @@ const LojaShowcase = () => {
         {apps.map((app) => {
           const cardInner = (
             <>
+              {app.comingSoon && (
+                <div className={styles.comingSoonOverlay} aria-hidden="true">
+                  <span className={styles.comingSoonLabel}>
+                    <Hourglass size={14} /> EM BREVE
+                  </span>
+                </div>
+              )}
               <div
                 className={styles.iconWrap}
                 style={{
@@ -131,19 +136,35 @@ const LojaShowcase = () => {
               <h3 className={styles.appName}>{app.name}</h3>
               <p className={styles.appTagline}>{app.tagline}</p>
               <p className={styles.appDesc}>{app.description}</p>
-              <span className={styles.cta} style={{ color: app.accent }}>
-                {app.external ? (
-                  <>Conhecer <ExternalLink size={14} /></>
-                ) : (
-                  <>Conhecer <ArrowRight size={14} /></>
-                )}
-              </span>
+              {!app.comingSoon && (
+                <span className={styles.cta} style={{ color: app.accent }}>
+                  {app.external ? (
+                    <>Conhecer <ExternalLink size={14} /></>
+                  ) : (
+                    <>Conhecer <ArrowRight size={14} /></>
+                  )}
+                </span>
+              )}
+              {app.comingSoon && (
+                <span className={`${styles.cta} ${styles.ctaDisabled}`}>
+                  Aguarde o lançamento
+                </span>
+              )}
             </>
           );
 
           return (
             <motion.div key={app.slug} variants={cardVariant}>
-              {app.external ? (
+              {app.comingSoon ? (
+                <div
+                  className={`${styles.card} ${styles.cardComingSoon}`}
+                  style={{ '--app-accent': app.accent }}
+                  aria-label={`${app.name} — em breve`}
+                  tabIndex={-1}
+                >
+                  {cardInner}
+                </div>
+              ) : app.external ? (
                 <a
                   href={app.url}
                   target="_blank"

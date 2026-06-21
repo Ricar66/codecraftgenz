@@ -94,6 +94,58 @@
   opacity: 0.18;
 }
 
+/* Card em breve — visual de suspense, sem cursor de clique */
+.cardComingSoon {
+  cursor: default;
+  opacity: 0.96;
+  background: linear-gradient(180deg, rgba(26, 26, 46, 0.7) 0%, rgba(13, 13, 26, 0.7) 100%);
+}
+.cardComingSoon:hover {
+  transform: translateY(-2px);
+  border-color: rgba(251, 191, 36, 0.45);
+  box-shadow: 0 12px 30px -16px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(251, 191, 36, 0.45);
+}
+.cardComingSoon:hover::before {
+  opacity: 0.06;
+}
+
+/* Selo "EM BREVE" no canto superior esquerdo do card */
+.comingSoonOverlay {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+}
+
+.comingSoonLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.18), rgba(251, 146, 60, 0.12));
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  color: #fbbf24;
+  border-radius: 8px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+  animation: comingSoonPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes comingSoonPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.0); }
+  50% { box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.12); }
+}
+
+.ctaDisabled {
+  color: #fbbf24 !important;
+  font-style: italic;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
 /* Icon */
 .iconWrap {
   display: inline-flex;

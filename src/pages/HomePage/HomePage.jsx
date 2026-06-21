@@ -107,17 +107,18 @@ const caseData = {
 };
 
 const showcaseData = [
+  // 1º bloco: imagem à esquerda, conteúdo à direita
   {
-    badge: 'Sobre nós',
-    title: 'Criando o futuro, linha por linha',
-    description: 'Somos uma equipe Gen-Z apaixonada por tecnologia. Desenvolvemos soluções de software modernas, escaláveis e com design que faz a diferença.',
+    badge: 'Sobre a empresa',
+    title: 'Software de verdade, feito com critério',
+    description: 'A CodeCraft Gen-Z é uma empresa brasileira de desenvolvimento de software. Construímos apps próprios e soluções sob medida para empresas que precisam de tecnologia confiável — sem complicações.',
     image: hero3dImg,
-    imageAlt: 'Equipe CodeCraft desenvolvendo soluções',
+    imageAlt: 'Equipe CodeCraft Gen-Z desenvolvendo software',
     reverse: false,
     features: [
-      { icon: <Zap size={18} />, text: 'Desenvolvimento ágil e moderno' },
-      { icon: <Palette size={18} />, text: 'Design UI/UX premium' },
-      { icon: <Rocket size={18} />, text: 'Deploy contínuo e escalável' },
+      { icon: <Zap size={18} />, text: 'Desenvolvimento ágil e profissional' },
+      { icon: <Palette size={18} />, text: 'Design e UX bem cuidados' },
+      { icon: <Rocket size={18} />, text: 'Entrega rápida e escalável' },
     ],
   },
   // CRAFTERS: bloco "Desafios" ocultado — será movido para o subdomínio dedicado da comunidade Craft.
@@ -134,30 +135,32 @@ const showcaseData = [
   //     { icon: <MessageSquare size={18} />, text: 'Feedback de mentores' },
   //   ],
   // },
+  // 2º bloco (meio): imagem à DIREITA, conteúdo à esquerda (reverse: true)
   {
     badge: 'Aplicativos',
-    title: 'Nosso ecossistema de apps',
-    description: 'Aplicativos desenvolvidos com as melhores práticas de engenharia. Soluções robustas, interfaces intuitivas e performance de alto nível.',
+    title: 'Apps prontos para uso, com suporte de verdade',
+    description: 'Nosso catálogo cresce a cada mês — produtos próprios desenvolvidos com as melhores práticas de engenharia. Plataformas web, apps desktop e mobile com atualizações contínuas e atendimento direto.',
     image: appsBanner,
-    imageAlt: 'Hub de aplicativos CodeCraft',
-    reverse: false,
-    features: [
-      { icon: <Smartphone size={18} />, text: 'Apps desktop e mobile' },
-      { icon: <RefreshCw size={18} />, text: 'Atualizações automáticas' },
-      { icon: <Shield size={18} />, text: 'Suporte técnico dedicado' },
-    ],
-  },
-  {
-    badge: 'Para Empresas',
-    title: 'Soluções sob medida',
-    description: 'Você tem uma ideia ou um problema. Nós temos o time. Do briefing ao deploy, com código limpo, design sólido e comunicação sem ruído.',
-    image: companiesBanner,
-    imageAlt: 'Soluções empresariais CodeCraft',
+    imageAlt: 'Catálogo de aplicativos CodeCraft Gen-Z',
     reverse: true,
     features: [
-      { icon: <Handshake size={18} />, text: 'Briefing em 24h' },
-      { icon: <Settings size={18} />, text: 'Dev full-stack, design e infra' },
-      { icon: <Phone size={18} />, text: 'Acompanhamento pós-entrega' },
+      { icon: <Smartphone size={18} />, text: 'Apps web, desktop e mobile' },
+      { icon: <RefreshCw size={18} />, text: 'Atualizações automáticas contínuas' },
+      { icon: <Shield size={18} />, text: 'Suporte dedicado por WhatsApp e e-mail' },
+    ],
+  },
+  // 3º bloco: imagem à esquerda, conteúdo à direita
+  {
+    badge: 'Para Empresas',
+    title: 'Desenvolvimento sob medida, sem fornecedor que some',
+    description: 'Você tem uma ideia ou um problema. A gente tem o time completo: desenvolvimento, design, infraestrutura e suporte pós-entrega. Briefing direto, prazo cumprido, código que envelhece bem.',
+    image: companiesBanner,
+    imageAlt: 'Soluções empresariais sob medida da CodeCraft Gen-Z',
+    reverse: false,
+    features: [
+      { icon: <Handshake size={18} />, text: 'Primeiro contato em até 24h' },
+      { icon: <Settings size={18} />, text: 'Time full-stack, design e infra' },
+      { icon: <Phone size={18} />, text: 'Acompanhamento ativo pós-entrega' },
     ],
   },
 ];

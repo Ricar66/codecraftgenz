@@ -27,8 +27,8 @@ const comoFuncionaSteps = [
   {
     icon: <Code2 size={28} />,
     number: '02',
-    title: 'Crafters resolvem',
-    description: 'Nossa comunidade aceita o desafio e entrega código real, revisado por mentor sênior.',
+    title: 'Nosso time resolve',
+    description: 'Nossa equipe full-stack assume o projeto e entrega código real, com revisão técnica sênior.',
   },
   {
     icon: <Trophy size={28} />,
@@ -239,8 +239,8 @@ const ForCompaniesPage = memo(() => {
               não por currículo.
             </motion.h1>
             <motion.p className={styles.heroSubtitle} variants={fadeUp}>
-              Poste um desafio real, receba entregas de crafters, escolha os melhores.
-              Sem processo seletivo longo. Sem currículo bonito que não entrega.
+              Descreva o que precisa, nossa equipe full-stack desenvolve a solução completa — do briefing ao deploy.
+              Sem fornecedor que some. Sem promessas vazias. Sem currículo bonito que não entrega.
             </motion.p>
             <motion.div className={styles.heroCtas} variants={fadeUp}>
               <button

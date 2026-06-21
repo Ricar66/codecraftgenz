@@ -27,31 +27,31 @@ const stagger = {
 const valores = [
   {
     icon: <Code2 size={26} />,
-    titulo: 'Código como linguagem',
-    descricao: 'Acreditamos que programar é uma das habilidades mais transformadoras do século. Desenvolvemos quem já programa e inspiramos quem quer começar.',
+    titulo: 'Código limpo e confiável',
+    descricao: 'Software bem feito é a base do nosso trabalho. Arquitetura sólida, testes que importam e código que envelhece bem.',
   },
   {
     icon: <Users size={26} />,
-    titulo: 'Comunidade acima de tudo',
-    descricao: 'Crescemos juntos. Nossa comunidade é o coração da plataforma — conexões reais entre devs, mentores e empresas que constroem coisas que importam.',
+    titulo: 'Parceria de verdade',
+    descricao: 'Não somos só fornecedor — somos time. Entendemos o seu negócio antes de propor a solução. Comunicação direta, sem ruído.',
   },
   {
     icon: <Trophy size={26} />,
-    titulo: 'Mérito reconhecido',
-    descricao: 'Chega de currículos que não contam a história real. Aqui, o que você constrói fala por você — desafios, projetos e entregas são o seu portfólio vivo.',
+    titulo: 'Entregas que importam',
+    descricao: 'Cada projeto é avaliado pelo impacto real no negócio do cliente. Resolver o problema certo, no prazo, com qualidade.',
   },
   {
     icon: <Heart size={26} />,
-    titulo: 'Impacto humano',
-    descricao: 'Por trás de cada pull request existe uma pessoa com sonhos e objetivos. Não construímos só software — construímos carreiras e futuros.',
+    titulo: 'Suporte que não some',
+    descricao: 'Software bom precisa de gente boa por trás. Acompanhamos cada cliente do briefing ao pós-deploy — sem largar no meio do caminho.',
   },
 ];
 
 const numeros = [
-  { valor: '500+', label: 'Crafters ativos' },
-  { valor: '30+', label: 'Empresas parceiras' },
-  { valor: '120+', label: 'Desafios publicados' },
-  { valor: '15+', label: 'Mentores especialistas' },
+  { valor: '5+', label: 'Produtos em produção' },
+  { valor: '10+', label: 'Clientes atendidos' },
+  { valor: '2025', label: 'Fundação · Ribeirão Preto/SP' },
+  { valor: '100%', label: 'Foco em qualidade' },
 ];
 
 const SobrePage = () => {
@@ -78,9 +78,9 @@ const SobrePage = () => {
             animate="visible"
             variants={fadeUp(0.1)}
           >
-            Construindo a ponte entre{' '}
-            <span className={styles.accent}>talentos</span> e{' '}
-            <span className={styles.accentCyan}>oportunidades</span>
+            Software{' '}
+            <span className={styles.accent}>bem feito</span>,{' '}
+            <span className={styles.accentCyan}>do briefing ao deploy</span>
           </motion.h1>
 
           <motion.p
@@ -89,7 +89,7 @@ const SobrePage = () => {
             animate="visible"
             variants={fadeUp(0.25)}
           >
-            A CodeCraft Gen-Z nasceu da frustração de desenvolvedores que entregavam projetos reais mas não conseguiam provar isso em uma entrevista. Criamos um lugar onde o trabalho fala por si só.
+            A CodeCraft Gen-Z é uma empresa brasileira de desenvolvimento de software. Construímos apps próprios e soluções sob medida para empresas que precisam de tecnologia confiável — código limpo, design sólido e suporte que não some depois do deploy.
           </motion.p>
         </div>
       </section>
@@ -110,7 +110,7 @@ const SobrePage = () => {
             <div className={styles.missaoText}>
               <h2 className={styles.missaoTitle}>Nossa Missão</h2>
               <p className={styles.missaoDesc}>
-                Democratizar o acesso a oportunidades na área de tecnologia, conectando desenvolvedores talentosos a empresas que valorizam competência real. Queremos que qualquer dev, independente de onde estudou ou de onde vem, possa ser descoberto pelo que é capaz de construir.
+                Desenvolver software de qualidade que resolva problemas reais de empresas brasileiras. Sem complicações, sem promessas vazias, sem fornecedor que some depois do deploy. Do briefing à entrega, com código limpo e comunicação direta.
               </p>
             </div>
           </motion.div>
@@ -157,26 +157,26 @@ const SobrePage = () => {
             variants={stagger}
           >
             <motion.div className={styles.historiaBlock} variants={fadeUp()}>
-              <div className={styles.historiaAno}>2023</div>
-              <h3 className={styles.historiaItemTitle}>O problema</h3>
+              <div className={styles.historiaAno}>2025</div>
+              <h3 className={styles.historiaItemTitle}>O início</h3>
               <p className={styles.historiaItemDesc}>
-                Desenvolvedores com habilidades reais eram preteridos por falta de "experiência formal". As empresas, por sua vez, gastavam meses em processos seletivos sem encontrar o fit certo. Percebemos que o mercado estava olhando para os lugares errados.
-              </p>
-            </motion.div>
-
-            <motion.div className={styles.historiaBlock} variants={fadeUp()}>
-              <div className={styles.historiaAno}>2024</div>
-              <h3 className={styles.historiaItemTitle}>A solução</h3>
-              <p className={styles.historiaItemDesc}>
-                Lançamos a CodeCraft Gen-Z com desafios práticos, projetos colaborativos e um sistema de ranking baseado em entregas reais. Os primeiros Crafters foram selecionados e as primeiras parcerias com empresas surgiram organicamente.
+                Fundada em outubro de 2025 em Ribeirão Preto/SP, a CodeCraft Gen-Z nasceu com foco em desenvolvimento de software profissional — apps próprios e soluções sob medida para empresas que precisam de tecnologia confiável.
               </p>
             </motion.div>
 
             <motion.div className={styles.historiaBlock} variants={fadeUp()}>
               <div className={styles.historiaAno}>Hoje</div>
-              <h3 className={styles.historiaItemTitle}>A comunidade</h3>
+              <h3 className={styles.historiaItemTitle}>A operação</h3>
               <p className={styles.historiaItemDesc}>
-                Somos uma comunidade ativa de devs que se desafiam, colaboram e crescem juntos. Empresas usam nossa plataforma para encontrar talentos verificados. E continuamos expandindo — apps, mentorias, projetos reais e muito mais.
+                Mantemos um catálogo crescente de produtos próprios (CraftCard, CodeCraft Hub e novos lançamentos a caminho) e atendemos empresas de diferentes setores com desenvolvimento sob medida, do briefing ao deploy.
+              </p>
+            </motion.div>
+
+            <motion.div className={styles.historiaBlock} variants={fadeUp()}>
+              <div className={styles.historiaAno}>Próximo</div>
+              <h3 className={styles.historiaItemTitle}>Para onde vamos</h3>
+              <p className={styles.historiaItemDesc}>
+                Lançamento de novos produtos, expansão do atendimento B2B e parcerias estratégicas. Cada cliente atendido vira referência para o próximo. Construímos software que dura.
               </p>
             </motion.div>
           </motion.div>
@@ -229,16 +229,21 @@ const SobrePage = () => {
             variants={fadeUp()}
           >
             <div className={styles.ctaIcon}><Zap size={28} /></div>
-            <h2 className={styles.ctaTitle}>Faça parte desta história</h2>
+            <h2 className={styles.ctaTitle}>Pronto para trabalhar com a gente?</h2>
             <p className={styles.ctaDesc}>
-              Seja um Crafter e mostre o que você é capaz de construir. Ou traga sua empresa e encontre os talentos que você procura.
+              Conheça nossos apps prontos para uso ou conte sua ideia — desenvolvemos a solução sob medida com você, do briefing ao deploy.
             </p>
             <div className={styles.ctaButtons}>
+              {/* CRAFTERS: CTA "Quero ser um Crafter" ocultado — será reativado no subdomínio dedicado da comunidade Craft.
               <Link to="/register" className={styles.ctaBtnPrimary}>
                 <Rocket size={17} /> Quero ser um Crafter
               </Link>
-              <Link to="/para-empresas" className={styles.ctaBtnSecondary}>
-                <Building2 size={17} /> Sou uma Empresa <ArrowRight size={15} />
+              */}
+              <Link to="/para-empresas" className={styles.ctaBtnPrimary}>
+                <Building2 size={17} /> Quero contratar a CodeCraft
+              </Link>
+              <Link to="/aplicativos" className={styles.ctaBtnSecondary}>
+                <Rocket size={17} /> Ver nossos apps <ArrowRight size={15} />
               </Link>
             </div>
           </motion.div>

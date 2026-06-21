@@ -56,7 +56,7 @@ const Metric = ({ label, target, suffix = '', inView }) => {
 const MetricsSection = () => {
   const [metrics, setMetrics] = useState([
     { label: 'Projetos entregues', target: 0 },
-    { label: 'Crafters ativos', target: 0 },
+    { label: 'Devs no time', target: 0 },
     { label: 'Apps publicados', target: 0 },
     { label: 'Mentores', target: 0 },
   ]);
@@ -86,7 +86,7 @@ const MetricsSection = () => {
 
         setMetrics([
           { label: 'Projetos entregues', target: entregues },
-          { label: 'Crafters ativos', target: Array.isArray(craftersList) ? craftersList.length : 0 },
+          { label: 'Devs no time', target: Array.isArray(craftersList) ? craftersList.length : 0 },
           { label: 'Apps publicados', target: Array.isArray(appsList) ? appsList.length : 0 },
           { label: 'Mentores', target: Array.isArray(mentoresList) ? mentoresList.length : 0 },
         ]);
