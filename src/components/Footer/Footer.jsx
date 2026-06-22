@@ -52,7 +52,7 @@ const Footer = memo(({ showLinks = true }) => {
               WhatsApp — (16) 99755-2548
             </a>
             <span className={styles.supportHours}>
-              Atendimento: Seg a Sex · 9h às 18h
+              Atendimento: Seg a Sex · 9h às 17h
             </span>
           </nav>
         </div>
