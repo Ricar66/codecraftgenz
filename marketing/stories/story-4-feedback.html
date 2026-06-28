@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Story 4 — Feedback · Software Box</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  html,body{background:#000}
+  body{display:flex;align-items:center;justify-content:center;min-height:100vh}
+
+  .story{
+    position:relative;width:1080px;height:1920px;
+    background:#E8DFC8;overflow:hidden;color:#0D1812;
+    font-family:'Archivo',sans-serif;
+  }
+
+  .grain{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.42}
+  .vig{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse 90% 110% at 50% 50%, transparent 55%, rgba(13,24,18,.18) 100%)}
+  .perf{position:absolute;left:42px;right:42px;border:1px dashed rgba(13,24,18,.22);border-radius:6px;pointer-events:none}
+  .perf.top{top:42px;height:1840px}
+  .reg{position:absolute;width:22px;height:22px;border:1.5px solid #1A3329;opacity:.4}
+  .reg.tl{top:64px;left:64px;border-right:none;border-bottom:none}
+  .reg.tr{top:64px;right:64px;border-left:none;border-bottom:none}
+  .reg.bl{bottom:64px;left:64px;border-right:none;border-top:none}
+  .reg.br{bottom:64px;right:64px;border-left:none;border-top:none}
+
+  .topbar{position:absolute;top:88px;left:96px;right:96px;
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:.18em;
+    color:#1A3329;text-transform:uppercase;font-weight:500}
+  .topbar .left{display:flex;align-items:center;gap:14px}
+  .topbar .mark{width:22px;height:22px;background:#1A3329;clip-path:polygon(50% 0,100% 38%,82% 100%,18% 100%,0 38%)}
+  .topbar .right{color:#7A6A4A}
+  .rule{position:absolute;left:96px;right:96px;height:1px;background:#1A3329;opacity:.55}
+  .rule.top{top:152px}
+  .rule.bot{bottom:280px}
+
+  .eyebrow{position:absolute;top:200px;left:96px;
+    font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;letter-spacing:.24em;
+    color:#B89653;text-transform:uppercase}
+  .eyebrow .dot{display:inline-block;width:10px;height:10px;background:#D44A2C;border-radius:50%;margin-right:14px;vertical-align:1px}
+  .issue{position:absolute;top:188px;right:96px;text-align:right;
+    font-family:'JetBrains Mono',monospace;color:#1A3329}
+  .issue .num{font-size:42px;font-weight:700;line-height:1;letter-spacing:-.01em}
+  .issue .lbl{font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:#7A6A4A;margin-top:6px}
+
+  /* HERO */
+  .hero{position:absolute;top:294px;left:96px;right:96px}
+  .hero .display{
+    font-family:'Archivo',sans-serif;font-weight:900;
+    font-size:248px;line-height:.86;letter-spacing:-.06em;
+    color:#1A3329;text-transform:uppercase;
+  }
+  .hero .display .outline{-webkit-text-stroke:3px #1A3329;color:transparent}
+  .hero .serif{
+    margin-top:28px;
+    font-family:'Fraunces',serif;font-size:38px;line-height:1.3;font-weight:500;font-style:italic;
+    color:#0D1812;max-width:880px;letter-spacing:-.005em;
+  }
+  .hero .serif em{font-style:normal;font-weight:700;color:#1A3329;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px}
+
+  /* FORMULÁRIO IMPRESSO */
+  .form{
+    position:absolute;top:1010px;left:96px;right:96px;
+    border:2px solid #1A3329;border-radius:6px;
+    background:#F0E7CF;
+    padding:32px 36px 36px;
+    box-shadow:0 10px 30px -10px rgba(0,0,0,.18);
+  }
+  /* texturinha sutil no formulário */
+  .form::before{
+    content:'';position:absolute;inset:0;border-radius:6px;pointer-events:none;
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='200' height='200' filter='url(%23n)' opacity='0.14'/></svg>");
+    mix-blend-mode:multiply;
+  }
+
+  .form-head{
+    display:flex;justify-content:space-between;align-items:baseline;
+    border-bottom:1px solid #1A3329;padding-bottom:14px;margin-bottom:24px;
+  }
+  .form-head .ttl{
+    font-family:'JetBrains Mono',monospace;font-size:14px;
+    letter-spacing:.22em;color:#1A3329;text-transform:uppercase;font-weight:700;
+  }
+  .form-head .ttl .num{color:#7A6A4A;margin-left:6px}
+  .form-head .meta{
+    font-family:'JetBrains Mono',monospace;font-size:12px;
+    letter-spacing:.18em;color:#7A6A4A;text-transform:uppercase;
+  }
+
+  .form-q{
+    font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:.18em;
+    color:#7A6A4A;text-transform:uppercase;margin-bottom:12px;font-weight:500;
+  }
+
+  /* Checkboxes tipos */
+  .types{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:30px}
+  .type{
+    border:1.5px solid #1A3329;
+    padding:14px 14px 14px 50px;border-radius:4px;
+    position:relative;
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:22px;color:#1A3329;
+    letter-spacing:-.005em;
+  }
+  .type .box{
+    position:absolute;left:12px;top:50%;transform:translateY(-50%);
+    width:24px;height:24px;border:1.5px solid #1A3329;border-radius:3px;
+    display:flex;align-items:center;justify-content:center;
+    background:#F0E7CF;
+  }
+  /* Um deles marcado com X de caneta */
+  .type.checked .box::after{
+    content:'';position:absolute;inset:-3px;
+    background:
+      linear-gradient(45deg, transparent calc(50% - 2px), #D44A2C calc(50% - 1px), #D44A2C calc(50% + 1px), transparent calc(50% + 2px)),
+      linear-gradient(-45deg, transparent calc(50% - 2px), #D44A2C calc(50% - 1px), #D44A2C calc(50% + 1px), transparent calc(50% + 2px));
+    filter:url(#ink-rough);
+  }
+  .type.checked{background:rgba(212,74,44,.06)}
+
+  /* Estrelas */
+  .stars{display:flex;gap:8px;margin-bottom:28px;align-items:center}
+  .stars .star{font-size:38px;line-height:1;color:#D44A2C;filter:url(#ink-rough)}
+  .stars .lbl{
+    margin-left:14px;font-family:'JetBrains Mono',monospace;
+    font-size:13px;letter-spacing:.2em;color:#7A6A4A;text-transform:uppercase;
+  }
+
+  /* Linhas pra escrita + handwriting */
+  .lines{display:flex;flex-direction:column;gap:18px}
+  .line{
+    height:1px;background:repeating-linear-gradient(90deg, #1A3329 0, #1A3329 8px, transparent 8px, transparent 14px);
+    position:relative;
+  }
+  .line.l1::after{
+    content:'simples, direto, lê de verdade…';
+    font-family:'Caveat',cursive;font-weight:700;
+    position:absolute;left:0;bottom:6px;color:#1A3329;
+    font-size:30px;letter-spacing:0;
+    transform:rotate(-1.2deg);
+  }
+  .line.l2::after{
+    content:'mandei pro time, vou avaliar!';
+    font-family:'Caveat',cursive;font-weight:500;
+    position:absolute;left:0;bottom:6px;color:#D44A2C;
+    font-size:26px;
+    transform:rotate(.8deg);
+  }
+
+  /* Stamp THANKS */
+  .stamp{
+    position:absolute;top:296px;right:84px;
+    transform:rotate(-9deg);z-index:5;
+    color:#D44A2C;font-family:'JetBrains Mono',monospace;text-transform:uppercase;
+    text-align:center;border:3px solid #D44A2C;padding:14px 22px 12px;border-radius:6px;
+    opacity:.88;box-shadow:inset 0 0 8px rgba(212,74,44,.18);
+    filter:url(#stamp-rough);
+  }
+  .stamp .top{font-weight:700;font-size:20px;line-height:1;letter-spacing:.14em}
+  .stamp .mid{font-weight:900;font-size:30px;line-height:1;margin-top:6px;
+    background:#D44A2C;color:#E8DFC8;padding:6px 12px;display:inline-block;border-radius:3px;letter-spacing:.06em}
+  .stamp .bot{font-size:13px;margin-top:8px;letter-spacing:.18em;font-weight:500}
+
+  /* Mini selo + SKU */
+  .mini-seal{position:absolute;bottom:330px;left:96px;width:120px;height:120px}
+  .mini-seal .ring{position:absolute;inset:0;border-radius:50%;
+    background:conic-gradient(from 215deg,#D8B975 0deg,#F2E5B5 60deg,#B89653 130deg,#8E6E2E 200deg,#D8B975 280deg,#F2E5B5 360deg);
+    box-shadow:0 0 0 1.5px #1A3329, 0 8px 24px -6px rgba(0,0,0,.2)}
+  .mini-seal .ring::before{content:'';position:absolute;inset:8px;border-radius:50%;background:#E8DFC8;box-shadow:inset 0 0 0 1.5px #1A3329}
+  .mini-seal .ring::after{content:'';position:absolute;inset:16px;border-radius:50%;border:1px dashed rgba(26,51,41,.4)}
+  .mini-seal .ct{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:2}
+  .mini-seal .ct .id{font-family:'Archivo',sans-serif;font-weight:900;font-size:24px;color:#1A3329;line-height:1}
+  .mini-seal .ct .lb{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;color:#7A6A4A;margin-top:4px;text-transform:uppercase}
+
+  .sku{position:absolute;bottom:340px;right:96px;width:280px;font-family:'JetBrains Mono',monospace;text-align:right}
+  .sku .label{font-size:13px;letter-spacing:.22em;color:#7A6A4A;text-transform:uppercase;margin-bottom:8px}
+  .sku .bars{display:flex;justify-content:flex-end;align-items:flex-end;gap:2px;height:60px}
+  .sku .bars i{display:block;background:#0D1812;width:3px}
+  .sku .bars i.t{height:60px}.sku .bars i.m{height:45px}.sku .bars i.s{height:30px}.sku .bars i.b{height:60px;width:5px}
+  .sku .code{margin-top:8px;font-size:18px;color:#0D1812;letter-spacing:.12em;font-weight:700}
+
+  .bot{position:absolute;bottom:96px;left:96px;right:96px;
+    display:flex;justify-content:space-between;align-items:flex-end;font-family:'JetBrains Mono',monospace}
+  .bot .label{font-size:14px;letter-spacing:.22em;color:#7A6A4A;text-transform:uppercase;margin-bottom:10px}
+  .bot .url{font-family:'Archivo',sans-serif;font-weight:700;font-size:30px;color:#1A3329;letter-spacing:-.01em}
+  .bot .arrow{display:inline-block;margin-left:8px;color:#D44A2C;transform:translateY(2px)}
+  .bot .right{text-align:right;font-size:13px;letter-spacing:.22em;color:#7A6A4A;text-transform:uppercase;line-height:1.7}
+  .bot .right strong{color:#1A3329}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="paper-grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="19"/>
+      <feColorMatrix values="0 0 0 0 0.05  0 0 0 0 0.05  0 0 0 0 0.04  0 0 0 1 0"/>
+    </filter>
+    <filter id="stamp-rough" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04 0.6" numOctaves="2" seed="9"/>
+      <feDisplacementMap in="SourceGraphic" scale="3"/>
+    </filter>
+    <filter id="ink-rough" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.5 0.5" numOctaves="2" seed="11"/>
+      <feDisplacementMap in="SourceGraphic" scale="1.4"/>
+    </filter>
+  </defs>
+</svg>
+
+<div class="story">
+
+  <svg class="grain" width="1080" height="1920">
+    <rect width="1080" height="1920" filter="url(#paper-grain)"/>
+  </svg>
+  <div class="vig"></div>
+
+  <div class="reg tl"></div><div class="reg tr"></div>
+  <div class="reg bl"></div><div class="reg br"></div>
+  <div class="perf top"></div>
+
+  <div class="topbar">
+    <div class="left"><div class="mark"></div><span>codecraft gen·z</span></div>
+    <div class="right">cartão de resposta · 22.06.2026</div>
+  </div>
+  <div class="rule top"></div>
+
+  <div class="eyebrow"><span class="dot"></span>CARTÃO DE RESPOSTA · FORMULÁRIO 001</div>
+  <div class="issue">
+    <div class="num">N&deg;&thinsp;04</div>
+    <div class="lbl">reader's edition</div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="display">
+      Fala<br>
+      <span class="outline">pra gente.</span>
+    </div>
+    <div class="serif">
+      Lançamos o site e os produtos. Agora a gente quer ouvir <em>você</em>.
+      Pode ser elogio, sugestão ou crítica — leva 1 minuto.
+    </div>
+  </div>
+
+  <!-- Stamp -->
+  <div class="stamp">
+    <div class="top">aberto</div>
+    <div class="mid">FEEDBACK</div>
+    <div class="bot">1 min · honesto</div>
+  </div>
+
+  <!-- FORMULÁRIO -->
+  <div class="form">
+    <div class="form-head">
+      <div class="ttl">FORM <span class="num">N&deg; 001 · FEEDBACK</span></div>
+      <div class="meta">via codecraftgenz.com.br/avaliacao</div>
+    </div>
+
+    <div class="form-q">01 · tipo de retorno (marque um)</div>
+    <div class="types">
+      <div class="type checked"><span class="box"></span>Elogio</div>
+      <div class="type"><span class="box"></span>Sugestão</div>
+      <div class="type"><span class="box"></span>Reclamação</div>
+      <div class="type"><span class="box"></span>Dúvida</div>
+    </div>
+
+    <div class="form-q">02 · nota geral</div>
+    <div class="stars">
+      <span class="star">★</span><span class="star">★</span><span class="star">★</span>
+      <span class="star">★</span><span class="star">★</span>
+      <span class="lbl">— 5 / 5</span>
+    </div>
+
+    <div class="form-q">03 · escreva pra gente</div>
+    <div class="lines">
+      <div class="line l1"></div>
+      <div class="line l2"></div>
+      <div class="line"></div>
+    </div>
+  </div>
+
+  <!-- Mini selo + SKU -->
+  <div class="mini-seal">
+    <div class="ring"></div>
+    <div class="ct">
+      <div class="id">#0004</div>
+      <div class="lb">cap. feedback</div>
+    </div>
+  </div>
+
+  <div class="sku">
+    <div class="label">/ formulário</div>
+    <div class="bars">
+      <i class="t"></i><i class="b"></i><i class="s"></i><i class="t"></i><i class="m"></i>
+      <i class="b"></i><i class="t"></i><i class="s"></i><i class="t"></i><i class="m"></i>
+      <i class="b"></i><i class="s"></i><i class="t"></i><i class="m"></i><i class="b"></i>
+      <i class="t"></i><i class="s"></i><i class="t"></i><i class="m"></i><i class="b"></i>
+      <i class="s"></i><i class="t"></i><i class="m"></i><i class="b"></i>
+    </div>
+    <div class="code">CCG·FORM·001</div>
+  </div>
+
+  <div class="rule bot"></div>
+
+  <div class="bot">
+    <div class="left">
+      <div class="label">responda em 1 min</div>
+      <div class="url">codecraftgenz.com.br/avaliacao<span class="arrow">↗</span></div>
+    </div>
+    <div class="right">
+      <strong>Toque no link</strong><br>
+      acima ↑
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
