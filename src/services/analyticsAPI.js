@@ -48,14 +48,6 @@ export const FUNNELS = {
     ],
     errorEvents: ['payment_failed', 'payment_pending', 'checkout_abandoned'],
   },
-  crafter_funnel: {
-    label: 'Funil de Crafter',
-    steps: [
-      { name: 'crafter_cta_clicked', label: 'Clicou CTA' },
-      { name: 'crafter_modal_opened', label: 'Modal Aberto' },
-      { name: 'crafter_form_submitted', label: 'Formulário Enviado' },
-    ],
-  },
   feedback_funnel: {
     label: 'Funil de Feedback',
     steps: [

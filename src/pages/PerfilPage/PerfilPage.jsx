@@ -168,7 +168,6 @@ function ReferralSection() {
 function TabInteresses({ user, onSaved }) {
   const toast = useToast();
   const interests = user.interests || {};
-  const crafter = user.crafter || null;
 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -274,67 +273,20 @@ function TabInteresses({ user, onSaved }) {
         )}
       </div>
 
-      {/* Crafter profile or CTA */}
-      {crafter ? (
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h3 className={styles.cardTitle}>Perfil Crafter</h3>
-            <span className={`${styles.statusBadge} ${crafter.active ? styles.badgeActive : styles.badgeInactive}`}>
-              {crafter.active ? 'Ativo' : 'Inativo'}
-            </span>
-          </div>
-          <div className={styles.crafterBody}>
-            <div className={styles.pointsRow}>
-              <Star size={18} className={styles.starIcon} />
-              <span className={styles.pointsValue}>{crafter.pontos}</span>
-              <span className={styles.pointsLabel}>pontos no ranking</span>
-            </div>
-            {crafter.bio && <p className={styles.bio}>{crafter.bio}</p>}
-            {crafter.skills?.length > 0 && (
-              <div className={styles.chipsRow}>
-                {crafter.skills.map(s => <span key={s} className={styles.skillTagCrafter}>{s}</span>)}
-              </div>
-            )}
-            <div className={styles.socialLinks}>
-              {crafter.github_url && (
-                <a href={crafter.github_url} target="_blank" rel="noopener noreferrer" className={styles.socialLink}>
-                  <Github size={14} /> GitHub
-                </a>
-              )}
-              {crafter.linkedin_url && (
-                <a href={crafter.linkedin_url} target="_blank" rel="noopener noreferrer" className={styles.socialLink}>
-                  <Linkedin size={14} /> LinkedIn
-                </a>
-              )}
-            </div>
-          </div>
+      {/* Discord — comunidade da empresa segue ativa */}
+      <a
+        href="https://discord.gg/jKcuM5u6Qa"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={styles.discordCard}
+      >
+        <DiscordIcon size={22} />
+        <div>
+          <p className={styles.discordCardTitle}>Entre na comunidade</p>
+          <p className={styles.discordCardDesc}>Discord da CodeCraft Gen-Z: notícias tech, vagas, tutoriais e papo direto.</p>
         </div>
-      ) : (
-        <>
-          <div className={`${styles.card} ${styles.cardCta}`}>
-            <span className={styles.ctaIcon}>🚀</span>
-            <h3 className={styles.ctaTitle}>Quer ser um Crafter?</h3>
-            <p className={styles.ctaDesc}>Crafters participam do ranking, ganham pontos e são descobertos por empresas.</p>
-            <Link to="/desafios/feedbacks" className={styles.ctaBtn}>
-              Quero ser Crafter <ChevronRight size={15} />
-            </Link>
-          </div>
-
-          <a
-            href="https://discord.gg/jKcuM5u6Qa"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.discordCard}
-          >
-            <DiscordIcon size={22} />
-            <div>
-              <p className={styles.discordCardTitle}>Entre na comunidade</p>
-              <p className={styles.discordCardDesc}>Devs, dúvidas, projetos e oportunidades no Discord da CodeCraft.</p>
-            </div>
-            <ChevronRight size={16} className={styles.discordArrow} />
-          </a>
-        </>
-      )}
+        <ChevronRight size={16} className={styles.discordArrow} />
+      </a>
 
       {/* Indique um amigo — sempre visível */}
       <ReferralSection />

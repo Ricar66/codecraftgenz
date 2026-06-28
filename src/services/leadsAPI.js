@@ -69,21 +69,6 @@ export async function captureLead(leadData) {
   }
 }
 
-export async function captureCrafterLead(data) {
-  return captureLead({
-    formId: 'crafter-signup',
-    name: data.nome,
-    email: data.email,
-    phone: data.telefone,
-    customFields: {
-      cidade: data.cidade,
-      estado: data.estado,
-      area_interesse: data.area_interesse,
-      mensagem: data.mensagem,
-    },
-  });
-}
-
 export async function captureAppPurchaseLead(data, appId, appName) {
   return captureLead({
     formId: 'app-purchase',

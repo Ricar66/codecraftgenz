@@ -30,10 +30,8 @@ const COLORS = {
 
 // Mapa de labels de origem
 const ORIGIN_LABELS = {
-  crafter_signup: 'Crafter',
   app_download: 'Download',
   app_purchase: 'Compra',
-  challenge_subscribe: 'Desafio',
   feedback: 'Feedback',
   proposal: 'Proposta B2B',
   registration: 'Registro',
@@ -89,9 +87,6 @@ const STEP_ICONS = {
   payment_initiated: CreditCard,
   payment_completed: CheckCircle,
   app_downloaded: Download,
-  crafter_cta_clicked: MousePointer,
-  crafter_modal_opened: Eye,
-  crafter_form_submitted: CheckCircle,
   feedback_page_viewed: Eye,
   feedback_form_started: MousePointer,
   feedback_form_submitted: CheckCircle,
@@ -163,7 +158,6 @@ const LeadsDashboard = () => {
   // Conversão tab states
   const [funnelLoading, setFunnelLoading] = useState(false);
   const [purchaseFunnel, setPurchaseFunnel] = useState([]);
-  const [crafterFunnel, setCrafterFunnel] = useState([]);
   const [feedbackFunnel, setFeedbackFunnel] = useState([]);
   const [recentEvents, setRecentEvents] = useState([]);
   const [eventsTotal, setEventsTotal] = useState(0);
@@ -200,9 +194,8 @@ const LeadsDashboard = () => {
   const fetchFunnelData = useCallback(async () => {
     setFunnelLoading(true);
     try {
-      const [purchase, crafter, feedback, summary] = await Promise.all([
+      const [purchase, feedback, summary] = await Promise.all([
         getFunnelData('purchase_funnel', periodo).catch(() => ({ data: [] })),
-        getFunnelData('crafter_funnel', periodo).catch(() => ({ data: [] })),
         getFunnelData('feedback_funnel', periodo).catch(() => ({ data: [] })),
         getAnalyticsSummary(periodo).catch(() => null),
       ]);
@@ -216,7 +209,6 @@ const LeadsDashboard = () => {
       };
 
       setPurchaseFunnel(mapSteps(purchase, FUNNELS.purchase_funnel));
-      setCrafterFunnel(mapSteps(crafter, FUNNELS.crafter_funnel));
       setFeedbackFunnel(mapSteps(feedback, FUNNELS.feedback_funnel));
       setAnalyticsSummary(summary);
     } catch { /* silently fail */ }
@@ -755,12 +747,6 @@ const LeadsDashboard = () => {
                   color={COLORS.secondary}
                 />
                 <FunnelChart
-                  data={crafterFunnel}
-                  title="Funil de Crafter"
-                  icon={Sparkles}
-                  color={COLORS.primary}
-                />
-                <FunnelChart
                   data={feedbackFunnel}
                   title="Funil de Feedback"
                   icon={MessageSquare}
@@ -785,7 +771,6 @@ const LeadsDashboard = () => {
                       >
                         <option value="">Todos os funis</option>
                         <option value="purchase_funnel">Compra</option>
-                        <option value="crafter_funnel">Crafter</option>
                         <option value="feedback_funnel">Feedback</option>
                         <option value="navigation">Navegação</option>
                         <option value="interaction">Interação</option>

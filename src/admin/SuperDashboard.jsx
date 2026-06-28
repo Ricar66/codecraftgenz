@@ -82,7 +82,6 @@ const SuperDashboard = () => {
       receitaPendente: data.finance?.pending || 0,
       pipelineB2B: data.proposals?.total || 0,
       novosUsuarios30d: data.users?.total || 0,
-      craftersTotal: data.users?.crafters || 0,
       projetosAtivos: data.projects?.active || 0,
       projetosTotal: data.projects?.total || 0,
       appsTotal: data.apps?.total || 0,
@@ -241,17 +240,15 @@ const SuperDashboard = () => {
           </div>
         </AdminCard>
 
-        {/* Usuários e Crafters */}
+        {/* Usuários */}
         <AdminCard variant="elevated" className={styles.kpiCard}>
           <div className={styles.kpiContent}>
             <div className={styles.kpiIcon} style={{ background: 'rgba(0, 228, 242, 0.15)' }}>
               <Users style={{ color: COLORS.secondary }} />
             </div>
             <div className={styles.kpiInfo}>
-              <span className={styles.kpiLabel}>Usuários / Crafters</span>
-              <span className={styles.kpiValue}>
-                {kpis?.novosUsuarios30d || 0} / {kpis?.craftersTotal || 0}
-              </span>
+              <span className={styles.kpiLabel}>Usuários</span>
+              <span className={styles.kpiValue}>{kpis?.novosUsuarios30d || 0}</span>
               <span className={styles.kpiMuted}>Total cadastrados</span>
             </div>
           </div>
