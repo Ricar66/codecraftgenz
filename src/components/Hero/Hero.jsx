@@ -35,21 +35,11 @@ const hashtagVariant = {
   }),
 };
 
-// CRAFTERS: hashtags da fase "comunidade dev" — quando reativarmos o subdomínio, voltar com este array.
-// const hashtags = ['Comunidade Dev', 'Inovação Tech', 'Oportunidades Reais'];
 const hashtags = ['Software sob medida', 'Apps prontos para empresas', 'Tecnologia confiável'];
 
-const Hero = ({ onCrafterClick }) => {
+const Hero = () => {
   const { trackButtonClick } = useAnalytics();
   const navigate = useNavigate();
-
-  const handleCtaClick = useCallback(() => {
-    trackButtonClick('cta_quero_ser_crafter', 'hero_section', {
-      cta_text: 'Quero ser um Crafter',
-    });
-    trackFunnelStep('crafter_funnel', 'crafter_cta_clicked', { location: 'hero_section' });
-    if (onCrafterClick) onCrafterClick();
-  }, [trackButtonClick, onCrafterClick]);
 
   const handlePartnerClick = useCallback(() => {
     trackButtonClick('cta_sou_empresa', 'hero_section', {
@@ -59,114 +49,89 @@ const Hero = ({ onCrafterClick }) => {
     navigate('/para-empresas');
   }, [trackButtonClick, navigate]);
 
+  const handleAppsClick = useCallback(() => {
+    trackButtonClick('cta_ver_apps', 'hero_section', { cta_text: 'Ver nossos apps' });
+    navigate('/aplicativos');
+  }, [trackButtonClick, navigate]);
+
   return (
-    <section
-      className={styles.heroWrapper}
-      aria-label="Seção principal - Banner CodeCraft"
-    >
+    <section className={styles.heroWrapper} aria-label="Seção principal - Banner CodeCraft">
       <div className={`${styles.heroContent} container`}>
         <div className={styles.leftCol}>
-        <div className={styles.textArea}>
-          {/* CRAFTERS: slogan/subtitle originais (foco em comunidade dev). Reativar quando criar subdomínio dedicado.
-          <motion.h1 className={styles.slogan} initial="hidden" animate="visible" variants={fadeUp(0.1)}>
-            Programe seu futuro,{' '}
-            <span className={styles.sloganAccent}>craftando o agora.</span>
-          </motion.h1>
-          <motion.p className={styles.subtitle} initial="hidden" animate="visible" variants={fadeUp(0.25)}>
-            Complete desafios reais, entre em projetos e seja descoberto.{' '}
-            <span className={styles.subtitleAccent}>Empresas encontram talentos. Crafters encontram oportunidades.</span>
-          </motion.p>
-          */}
-          <motion.h1
-            className={styles.slogan}
-            initial="hidden"
-            animate="visible"
-            variants={fadeUp(0.1)}
-          >
-            Software de verdade,{' '}
-            <span className={styles.sloganAccent}>feito sob medida.</span>
-          </motion.h1>
+          <div className={styles.textArea}>
+            <motion.h1
+              className={styles.slogan}
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp(0.1)}
+            >
+              Software de verdade,{' '}
+              <span className={styles.sloganAccent}>feito sob medida.</span>
+            </motion.h1>
 
-          <motion.p
-            className={styles.subtitle}
-            initial="hidden"
-            animate="visible"
-            variants={fadeUp(0.25)}
-          >
-            Desenvolvemos apps, plataformas e integrações para empresas que precisam de tecnologia confiável.{' '}
-            <span className={styles.subtitleAccent}>Do briefing ao deploy — código limpo, design sólido e suporte dedicado.</span>
-          </motion.p>
+            <motion.p
+              className={styles.subtitle}
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp(0.25)}
+            >
+              Desenvolvemos apps, plataformas e integrações para empresas que precisam de tecnologia confiável.{' '}
+              <span className={styles.subtitleAccent}>Do briefing ao deploy — código limpo, design sólido e suporte dedicado.</span>
+            </motion.p>
 
-          <div className={styles.hashtags}>
-            {hashtags.map((tag, i) => (
-              <motion.span
-                key={tag}
-                className={styles.hashtagItem}
-                custom={i}
-                initial="hidden"
-                animate="visible"
-                variants={hashtagVariant}
-              >
-                {tag}
-              </motion.span>
-            ))}
+            <div className={styles.hashtags}>
+              {hashtags.map((tag, i) => (
+                <motion.span
+                  key={tag}
+                  className={styles.hashtagItem}
+                  custom={i}
+                  initial="hidden"
+                  animate="visible"
+                  variants={hashtagVariant}
+                >
+                  {tag}
+                </motion.span>
+              ))}
+            </div>
           </div>
+
+          <motion.div
+            className={styles.actionArea}
+            initial="hidden"
+            animate="visible"
+            variants={fadeUp(0.5)}
+          >
+            <motion.div
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+            >
+              <Button
+                onClick={handlePartnerClick}
+                variant="secondary"
+                className={styles.ctaButton}
+                aria-label="Conhecer soluções para empresas"
+              >
+                <Building2 size={18} /> Quero contratar a CodeCraft
+              </Button>
+            </motion.div>
+            <motion.div
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+            >
+              <Button
+                onClick={handleAppsClick}
+                variant="outline"
+                className={styles.partnerButton}
+                aria-label="Conhecer nossos aplicativos"
+              >
+                <Rocket size={18} /> Ver nossos apps →
+              </Button>
+            </motion.div>
+          </motion.div>
         </div>
 
-        <motion.div
-          className={styles.actionArea}
-          initial="hidden"
-          animate="visible"
-          variants={fadeUp(0.5)}
-        >
-          {/* CRAFTERS: CTA "Quero ser um Crafter" ocultado — será reativado no subdomínio dedicado da comunidade.
-          <motion.div
-            whileHover={{ scale: 1.03, y: -2 }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-          >
-            <Button
-              onClick={handleCtaClick}
-              variant="secondary"
-              className={styles.ctaButton}
-              aria-label="Cadastrar-se na plataforma CodeCraft"
-            >
-              <Rocket size={18} /> Quero ser um Crafter
-            </Button>
-          </motion.div>
-          */}
-          <motion.div
-            whileHover={{ scale: 1.03, y: -2 }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-          >
-            <Button
-              onClick={handlePartnerClick}
-              variant="secondary"
-              className={styles.ctaButton}
-              aria-label="Conhecer soluções para empresas"
-            >
-              <Building2 size={18} /> Quero contratar a CodeCraft
-            </Button>
-          </motion.div>
-          <motion.div
-            whileHover={{ scale: 1.03, y: -2 }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-          >
-            <Button
-              onClick={() => navigate('/aplicativos')}
-              variant="outline"
-              className={styles.partnerButton}
-              aria-label="Conhecer nossos aplicativos"
-            >
-              <Rocket size={18} /> Ver nossos apps →
-            </Button>
-          </motion.div>
-        </motion.div>
-        </div>
-
-        {/* Coluna direita: mockup visual do dashboard (CSS-only) */}
         <div className={styles.rightCol}>
           <HeroMockup />
         </div>
@@ -179,11 +144,8 @@ const Hero = ({ onCrafterClick }) => {
         transition={{ delay: 1.2, duration: 0.5 }}
         onClick={() => {
           const nextSection = document.querySelector('[data-section="features"]');
-          if (nextSection) {
-            nextSection.scrollIntoView({ behavior: 'smooth' });
-          } else {
-            window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
-          }
+          if (nextSection) nextSection.scrollIntoView({ behavior: 'smooth' });
+          else window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
         }}
         role="button"
         tabIndex={0}

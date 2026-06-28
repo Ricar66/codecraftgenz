@@ -1,17 +1,16 @@
 // src/components/Navbar/Navbar.jsx
 import React, { useState, useRef, useEffect, memo, useCallback } from 'react';
-import { Menu, X, User, LogOut, ShoppingBag, ChevronDown, Building2, LayoutDashboard } from 'lucide-react';
+import { Menu, X, User, LogOut, ChevronDown, Building2, LayoutDashboard } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 import logo from '../../assets/logo-principal.png';
 import { useAuth } from '../../context/useAuth';
-import { useCrafterModal } from '../../context/CrafterModalContext.jsx';
 
 import styles from './Navbar.module.css';
 
 /**
- * Componente da Barra de Navegacao
- * Otimizado com memo e useCallback para performance mobile
+ * Barra de navegação principal (público).
+ * Otimizada com memo + useCallback p/ performance mobile.
  */
 const Navbar = memo(() => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -21,9 +20,7 @@ const Navbar = memo(() => {
   const location = useLocation();
   const { user, isAuthenticated, logout, loading, hasRole } = useAuth();
   const isStaff = hasRole(['admin', 'editor', 'team']);
-  const { open: openCrafterModal } = useCrafterModal();
 
-  // Fecha o menu do usuario ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
@@ -34,17 +31,9 @@ const Navbar = memo(() => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const toggleMobileMenu = useCallback(() => {
-    setIsMobileMenuOpen(prev => !prev);
-  }, []);
-
-  const closeMobileMenu = useCallback(() => {
-    setIsMobileMenuOpen(false);
-  }, []);
-
-  const isActiveLink = useCallback((path) => {
-    return location.pathname === path;
-  }, [location.pathname]);
+  const toggleMobileMenu = useCallback(() => setIsMobileMenuOpen(prev => !prev), []);
+  const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
+  const isActiveLink = useCallback((path) => location.pathname === path, [location.pathname]);
 
   const handleLogout = useCallback(async () => {
     setIsUserMenuOpen(false);
@@ -52,21 +41,17 @@ const Navbar = memo(() => {
     await logout();
   }, [closeMobileMenu, logout]);
 
-  // Pega o primeiro nome do usuario
-  const firstName = user?.name ? user.name.split(' ')[0] : 'Usuario';
+  const firstName = user?.name ? user.name.split(' ')[0] : 'Usuário';
 
   return (
-    <nav className={styles.navbar} aria-label="Navegacao principal">
+    <nav className={styles.navbar} aria-label="Navegação principal">
       <div className={styles.navbarContainer}>
 
-        {/* 1. Logo (esquerda) */}
         <Link to="/" className={styles.logoWrapper} onClick={closeMobileMenu}>
           <img src={logo} alt="CodeCraft Gen-Z Logo" className={styles.logo} />
         </Link>
 
-        {/* 2. Links de Navegacao (centro no desktop, drawer no mobile) */}
         <ul id="nav-menu" className={isMobileMenuOpen ? `${styles.navMenu} ${styles.active}` : styles.navMenu}>
-
           <li className={styles.navItem}>
             <Link
               to="/"
@@ -76,20 +61,6 @@ const Navbar = memo(() => {
               Início
             </Link>
           </li>
-          {/* CRAFTERS: itens "Desafios" e "Mentorias" ocultados temporariamente. */}
-          {/* Serão movidos para subdomínio dedicado da comunidade Craft (crafters.codecraftgenz.com.br). */}
-          {/* Código mantido em comentário para reativação fácil quando o subdomínio for criado. */}
-          {/*
-          <li className={styles.navItem}>
-            <Link
-              to="/desafios"
-              className={`${styles.navLink} ${isActiveLink('/desafios') ? styles.navLinkActive : ''}`}
-              onClick={closeMobileMenu}
-            >
-              Desafios
-            </Link>
-          </li>
-          */}
           <li className={styles.navItem}>
             <Link
               to="/projetos"
@@ -99,17 +70,6 @@ const Navbar = memo(() => {
               Projetos
             </Link>
           </li>
-          {/*
-          <li className={styles.navItem}>
-            <Link
-              to="/mentoria"
-              className={`${styles.navLink} ${isActiveLink('/mentoria') ? styles.navLinkActive : ''}`}
-              onClick={closeMobileMenu}
-            >
-              Mentorias
-            </Link>
-          </li>
-          */}
           <li className={styles.navItem}>
             <Link
               to="/aplicativos"
@@ -138,10 +98,8 @@ const Navbar = memo(() => {
             </Link>
           </li>
 
-          {/* Area do Usuario - Condicional */}
           {!loading && (
             isAuthenticated ? (
-              /* Usuario Logado - Menu Desktop */
               <li className={`${styles.navItem} ${styles.userMenuWrapper}`} ref={userMenuRef}>
                 <button
                   className={styles.userButton}
@@ -149,14 +107,11 @@ const Navbar = memo(() => {
                   aria-expanded={isUserMenuOpen}
                   aria-haspopup="true"
                 >
-                  <span className={styles.userAvatar}>
-                    <User />
-                  </span>
-                  <span className={styles.userName}>Ola, {firstName}</span>
+                  <span className={styles.userAvatar}><User /></span>
+                  <span className={styles.userName}>Olá, {firstName}</span>
                   <ChevronDown className={`${styles.userChevron} ${isUserMenuOpen ? styles.userChevronOpen : ''}`} />
                 </button>
 
-                {/* Dropdown Menu */}
                 {isUserMenuOpen && (
                   <div className={styles.userDropdown}>
                     <div className={styles.userDropdownHeader}>
@@ -169,8 +124,7 @@ const Navbar = memo(() => {
                       className={styles.userDropdownItem}
                       onClick={() => { setIsUserMenuOpen(false); closeMobileMenu(); }}
                     >
-                      <User />
-                      Meu Perfil
+                      <User /> Meu Perfil
                     </Link>
                     {isStaff && (
                       <Link
@@ -178,22 +132,16 @@ const Navbar = memo(() => {
                         className={styles.userDropdownItem}
                         onClick={() => { setIsUserMenuOpen(false); closeMobileMenu(); }}
                       >
-                        <LayoutDashboard />
-                        Painel Admin
+                        <LayoutDashboard /> Painel Admin
                       </Link>
                     )}
                     <div className={styles.userDropdownDivider} />
-                    <button
-                      className={styles.userDropdownItemLogout}
-                      onClick={handleLogout}
-                    >
-                      <LogOut />
-                      Sair
+                    <button className={styles.userDropdownItemLogout} onClick={handleLogout}>
+                      <LogOut /> Sair
                     </button>
                   </div>
                 )}
 
-                {/* Menu Mobile - Links diretos */}
                 <div className={styles.userMobileLinks}>
                   {isStaff && (
                     <Link to="/admin" className={styles.navLink} onClick={closeMobileMenu}>
@@ -203,42 +151,25 @@ const Navbar = memo(() => {
                   <Link to="/perfil" className={styles.navLink} onClick={closeMobileMenu}>
                     <User /> Meu Perfil
                   </Link>
-                  <button
-                    className={`${styles.navLink} ${styles.logoutMobileBtn}`}
-                    onClick={handleLogout}
-                  >
+                  <button className={`${styles.navLink} ${styles.logoutMobileBtn}`} onClick={handleLogout}>
                     <LogOut /> Sair
                   </button>
                 </div>
               </li>
             ) : (
-              /* Usuario Nao Logado - apenas Entrar (CRAFTERS: CTA "Ser Crafter" ocultado, será movido para subdomínio dedicado) */
-              <>
-                <li className={styles.navItem}>
-                  <Link
-                    to="/login"
-                    className={`${styles.navLink} ${styles.navLinkLogin}`}
-                    onClick={closeMobileMenu}
-                  >
-                    Entrar
-                  </Link>
-                </li>
-                {/*
-                <li className={styles.navItem}>
-                  <button
-                    className={`${styles.navLink} ${styles.navLinkCta}`}
-                    onClick={() => { openCrafterModal(); closeMobileMenu(); }}
-                  >
-                    Ser Crafter →
-                  </button>
-                </li>
-                */}
-              </>
+              <li className={styles.navItem}>
+                <Link
+                  to="/login"
+                  className={`${styles.navLink} ${styles.navLinkLogin}`}
+                  onClick={closeMobileMenu}
+                >
+                  Entrar
+                </Link>
+              </li>
             )
           )}
         </ul>
 
-        {/* 3. Icone do Menu Mobile (Hamburguer) */}
         <button
           className={styles.mobileIcon}
           onClick={toggleMobileMenu}

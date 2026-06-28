@@ -73,22 +73,6 @@ export default function AdminLayout() {
               <span className={styles.menuText}>Usuários</span>
             </NavLink>
           )}
-          <NavLink to="/admin/mentores" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
-            <span className={styles.menuIcon}>🧑‍🏫</span>
-            <span className={styles.menuText}>Mentores</span>
-          </NavLink>
-          <NavLink to="/admin/equipes" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
-            <span className={styles.menuIcon}>👥</span>
-            <span className={styles.menuText}>Equipes</span>
-          </NavLink>
-          <NavLink to="/admin/crafters" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
-            <span className={styles.menuIcon}>🛠️</span>
-            <span className={styles.menuText}>Crafters</span>
-          </NavLink>
-          <NavLink to="/admin/ranking" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
-            <span className={styles.menuIcon}>🏆</span>
-            <span className={styles.menuText}>Ranking</span>
-          </NavLink>
           <NavLink to="/admin/projetos" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
             <span className={styles.menuIcon}>📁</span>
             <span className={styles.menuText}>Projetos</span>
@@ -96,18 +80,6 @@ export default function AdminLayout() {
           <NavLink to="/admin/apps" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
             <span className={styles.menuIcon}>🧱</span>
             <span className={styles.menuText}>Aplicativos</span>
-          </NavLink>
-          <NavLink to="/admin/desafios" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
-            <span className={styles.menuIcon}>🎯</span>
-            <span className={styles.menuText}>Desafios</span>
-          </NavLink>
-          <NavLink to="/admin/submissoes" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
-            <span className={styles.menuIcon}>🏅</span>
-            <span className={styles.menuText}>Submissões</span>
-          </NavLink>
-          <NavLink to="/admin/inscricoes" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
-            <span className={styles.menuIcon}>📝</span>
-            <span className={styles.menuText}>Inscrições</span>
           </NavLink>
           <NavLink to="/admin/financas" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
             <span className={styles.menuIcon}>💳</span>
@@ -129,10 +101,6 @@ export default function AdminLayout() {
               <span className={styles.menuText}>Licenças</span>
             </NavLink>
           )}
-          <NavLink to="/admin/ideias" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
-            <span className={styles.menuIcon}>💡</span>
-            <span className={styles.menuText}>Ideias</span>
-          </NavLink>
           <NavLink to="/admin/propostas" className={({isActive})=>[styles.menuLink, isActive?styles.active:''].filter(Boolean).join(' ')}>
             <span className={styles.menuIcon}>💼</span>
             <span className={styles.menuText}>Propostas B2B</span>

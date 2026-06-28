@@ -1,25 +1,18 @@
 // src/pages/HomePage/HomePage.jsx
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
-  Zap, Palette, Rocket, Target, BarChart3, MessageSquare,
-  Smartphone, RefreshCw, Shield, Handshake, Settings, Phone,
-  UserPlus, Code2, LayoutDashboard, Building2,
-  Trophy, ArrowRight, Star, CheckCircle, MessageSquareHeart
+  Zap, Palette, Rocket, Smartphone, RefreshCw, Shield,
+  Handshake, Settings, Phone, Building2, ArrowRight, MessageSquareHeart,
 } from 'lucide-react';
 
-import { apiRequest } from '../../lib/apiConfig.js';
-import { DiscordIcon } from '../../components/UI/BrandIcons/index.jsx';
 import appsBanner from '../../assets/apps-banner.jpg';
 import companiesBanner from '../../assets/companies-banner.jpg';
-import desafiosBanner from '../../assets/desafios-banner.jpg';
 import hero3dImg from '../../assets/hero-3d.jpg';
 import logoCodecraft from '../../assets/logo-principal.png';
 import CompanySection from '../../components/CompanySection/CompanySection';
-import PartnerModal from '../../components/PartnerModal/PartnerModal';
-import { useCrafterModal } from '../../context/CrafterModalContext.jsx';
 import FeaturesSection from '../../components/FeaturesSection/FeaturesSection';
 import FeedbackShowcase from '../../components/Feedbacks/FeedbackShowcase';
 import Hero from '../../components/Hero/Hero';
@@ -42,79 +35,13 @@ const sectionReveal = {
   },
 };
 
-const howItWorksSteps = [
-  {
-    icon: <UserPlus size={28} />,
-    number: '01',
-    title: 'Crie sua conta',
-    description: 'Cadastro gratuito. Monte seu perfil, defina suas stacks e mostre o que você já sabe fazer.',
-  },
-  {
-    icon: <Code2 size={28} />,
-    number: '02',
-    title: 'Complete desafios reais',
-    description: 'Problemas de empresas reais com prazo, critérios e feedback de um mentor.',
-  },
-  {
-    icon: <LayoutDashboard size={28} />,
-    number: '03',
-    title: 'Construa seu portfólio',
-    description: 'Cada entrega fica no seu perfil público — um portfólio vivo, não um PDF que ninguém lê.',
-  },
-  {
-    icon: <Building2 size={28} />,
-    number: '04',
-    title: 'Seja descoberto',
-    description: 'Empresas buscam talentos diretamente pelo ranking. Quem entrega, aparece.',
-  },
-];
-
-const cicloSteps = [
-  {
-    icon: <Building2 size={26} />,
-    step: '01',
-    title: 'Empresa posta o desafio',
-    description: 'Define o problema real, a stack e o prazo. Sem burocracia.',
-    color: '#D12BF2',
-  },
-  {
-    icon: <Code2 size={26} />,
-    step: '02',
-    title: 'Crafter aceita e resolve',
-    description: 'Escolhe o desafio, escreve código de verdade e entrega com qualidade.',
-    color: '#00E4F2',
-  },
-  {
-    icon: <Trophy size={26} />,
-    step: '03',
-    title: 'Entrega avaliada',
-    description: 'Mentor revisa, empresa recebe os melhores perfis filtrados por performance.',
-    color: '#818cf8',
-  },
-  {
-    icon: <Handshake size={26} />,
-    step: '04',
-    title: 'Conexão acontece',
-    description: 'Empresa contrata, faz parceria ou convida para projeto. Crafter cresce.',
-    color: '#10b981',
-  },
-];
-
-const caseData = {
-  empresa: 'Startup FinTech',
-  desafio: 'API REST para controle financeiro com autenticação JWT e relatórios em PDF',
-  stack: ['Node.js', 'PostgreSQL', 'Docker', 'JWT'],
-  resultado: '5 crafters entregaram em 2 semanas. 2 foram convidados para o projeto.',
-  quote: 'Encontramos talentos que o LinkedIn não nos daria.',
-  autor: 'CTO da empresa',
-};
-
+// Layout zig-zag dos blocos: 1º esquerda · 2º direita · 3º esquerda
 const showcaseData = [
-  // 1º bloco: imagem à esquerda, conteúdo à direita
   {
     badge: 'Sobre a empresa',
     title: 'Software de verdade, feito com critério',
-    description: 'A CodeCraft Gen-Z é uma empresa brasileira de desenvolvimento de software. Construímos apps próprios e soluções sob medida para empresas que precisam de tecnologia confiável — sem complicações.',
+    description:
+      'A CodeCraft Gen-Z é uma empresa brasileira de desenvolvimento de software. Construímos apps próprios e soluções sob medida para empresas que precisam de tecnologia confiável — sem complicações.',
     image: hero3dImg,
     imageAlt: 'Equipe CodeCraft Gen-Z desenvolvendo software',
     reverse: false,
@@ -124,25 +51,11 @@ const showcaseData = [
       { icon: <Rocket size={18} />, text: 'Entrega rápida e escalável' },
     ],
   },
-  // CRAFTERS: bloco "Desafios" ocultado — será movido para o subdomínio dedicado da comunidade Craft.
-  // {
-  //   badge: 'Desafios',
-  //   title: 'Supere seus limites',
-  //   description: 'Desafios reais que testam suas habilidades e aceleram seu crescimento. Problemas do mercado, prazos reais e feedback de profissionais.',
-  //   image: desafiosBanner,
-  //   imageAlt: 'Desafios de programação CodeCraft',
-  //   reverse: true,
-  //   features: [
-  //     { icon: <Target size={18} />, text: 'Desafios com problemas reais' },
-  //     { icon: <BarChart3 size={18} />, text: 'Ranking e reconhecimento' },
-  //     { icon: <MessageSquare size={18} />, text: 'Feedback de mentores' },
-  //   ],
-  // },
-  // 2º bloco (meio): imagem à DIREITA, conteúdo à esquerda (reverse: true)
   {
     badge: 'Aplicativos',
     title: 'Apps prontos para uso, com suporte de verdade',
-    description: 'Nosso catálogo cresce a cada mês — produtos próprios desenvolvidos com as melhores práticas de engenharia. Plataformas web, apps desktop e mobile com atualizações contínuas e atendimento direto.',
+    description:
+      'Nosso catálogo cresce a cada mês — produtos próprios desenvolvidos com as melhores práticas de engenharia. Plataformas web, apps desktop e mobile com atualizações contínuas e atendimento direto.',
     image: appsBanner,
     imageAlt: 'Catálogo de aplicativos CodeCraft Gen-Z',
     reverse: true,
@@ -152,11 +65,11 @@ const showcaseData = [
       { icon: <Shield size={18} />, text: 'Suporte dedicado por WhatsApp e e-mail' },
     ],
   },
-  // 3º bloco: imagem à esquerda, conteúdo à direita
   {
     badge: 'Para Empresas',
     title: 'Desenvolvimento sob medida, sem fornecedor que some',
-    description: 'Você tem uma ideia ou um problema. A gente tem o time completo: desenvolvimento, design, infraestrutura e suporte pós-entrega. Briefing direto, prazo cumprido, código que envelhece bem.',
+    description:
+      'Você tem uma ideia ou um problema. A gente tem o time completo: desenvolvimento, design, infraestrutura e suporte pós-entrega. Briefing direto, prazo cumprido, código que envelhece bem.',
     image: companiesBanner,
     imageAlt: 'Soluções empresariais sob medida da CodeCraft Gen-Z',
     reverse: false,
@@ -169,24 +82,15 @@ const showcaseData = [
 ];
 
 const HomePage = () => {
-  const { open: openCrafterModal } = useCrafterModal();
-  const [isPartnerModalOpen, setIsPartnerModalOpen] = useState(false);
-  const [mentores, setMentores] = useState([]);
-
-  useEffect(() => {
-    apiRequest('/api/mentores')
-      .then(data => {
-        const list = data?.data || data || [];
-        setMentores(Array.isArray(list) ? list.slice(0, 3) : []);
-      })
-      .catch(() => {});
-  }, []);
-
   const { canonical, ogUrl, ogImageUrl, twitterHandle } = useMemo(() => {
     const BASE_URL = 'https://codecraftgenz.com.br';
     const url = typeof window !== 'undefined' ? window.location.href : BASE_URL;
-    const imageAbs = typeof window !== 'undefined' ? new URL(logoCodecraft, window.location.href).toString() : `${BASE_URL}${logoCodecraft}`;
-    const handle = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_TWITTER_HANDLE) ? String(import.meta.env.VITE_TWITTER_HANDLE) : '';
+    const imageAbs = typeof window !== 'undefined'
+      ? new URL(logoCodecraft, window.location.href).toString()
+      : `${BASE_URL}${logoCodecraft}`;
+    const handle = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_TWITTER_HANDLE)
+      ? String(import.meta.env.VITE_TWITTER_HANDLE)
+      : '';
     return { canonical: url, ogUrl: url, ogImageUrl: imageAbs, twitterHandle: handle };
   }, []);
 
@@ -207,14 +111,16 @@ const HomePage = () => {
         <meta name="twitter:image" content={ogImageUrl} />
         {twitterHandle && <meta name="twitter:site" content={twitterHandle} />}
       </Helmet>
+
       <Navbar />
+
       <main>
         {/* 1. Hero */}
         <div className={styles.sectionBlock}>
-          <Hero onCrafterClick={() => openCrafterModal()} />
+          <Hero />
         </div>
 
-        {/* 1.5 Loja em destaque (NOVO — logo após o Hero pra capturar a atenção) */}
+        {/* 2. Loja em destaque */}
         <motion.div
           className={styles.sectionBlock}
           initial="hidden"
@@ -225,7 +131,7 @@ const HomePage = () => {
           <LojaShowcase />
         </motion.div>
 
-        {/* 1.6 Para quem é (NOVO — segmentos atendidos) */}
+        {/* 3. Para quem é (segmentos atendidos) */}
         <motion.div
           className={styles.sectionBlock}
           initial="hidden"
@@ -236,7 +142,7 @@ const HomePage = () => {
           <TargetAudience />
         </motion.div>
 
-        {/* 1.7 Como funciona em 3 etapas (NOVO — processo claro) */}
+        {/* 4. Como funciona em 3 etapas */}
         <motion.div
           className={styles.sectionBlock}
           initial="hidden"
@@ -247,273 +153,14 @@ const HomePage = () => {
           <ProcessSteps />
         </motion.div>
 
-        {/* CRAFTERS: seção "Dois caminhos" (Sou Crafter vs Sou Empresa) ocultada — será movida para subdomínio dedicado da comunidade. */}
-        {false && (
-        <motion.div
-          className={styles.sectionBlock}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.1 }}
-          variants={sectionReveal}
-        >
-          <div className={styles.doisCaminhosSection}>
-            <div className={styles.doisCaminhosHeader}>
-              <h2 className={styles.doisCaminhosTitle}>Por onde você começa?</h2>
-              <p className={styles.doisCaminhosLead}>Cada lado tem sua jornada. Os dois se encontram na plataforma.</p>
-            </div>
-            <div className={styles.doisCaminhosGrid}>
-              {/* Card Crafter */}
-              <motion.div
-                className={`${styles.caminhoCard} ${styles.caminhoCardCrafter}`}
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <div className={styles.caminhoIcon}><Code2 size={32} /></div>
-                <h3 className={styles.caminhoTitle}>Sou um Crafter</h3>
-                <p className={styles.caminhoDesc}>Quero crescer como dev, construir portfólio real e ser visto por empresas</p>
-                <ul className={styles.caminhoList}>
-                  <li><CheckCircle size={15} /> Desafios reais de mercado</li>
-                  <li><CheckCircle size={15} /> Projetos em squad</li>
-                  <li><CheckCircle size={15} /> Mentorias com sêniores</li>
-                  <li><CheckCircle size={15} /> Ranking e badges</li>
-                  <li><CheckCircle size={15} /> Visibilidade para empresas</li>
-                </ul>
-                <button
-                  className={styles.caminhoBtn}
-                  onClick={() => openCrafterModal()}
-                >
-                  Criar conta grátis <ArrowRight size={16} />
-                </button>
-              </motion.div>
-
-              {/* Separador central */}
-              <div className={styles.caminhoSeparador}>
-                <span className={styles.caminhoSeparadorLabel}>ou</span>
-              </div>
-
-              {/* Card Empresa */}
-              <motion.div
-                className={`${styles.caminhoCard} ${styles.caminhoCardEmpresa}`}
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <div className={styles.caminhoIcon}><Building2 size={32} /></div>
-                <h3 className={styles.caminhoTitle}>Sou uma Empresa</h3>
-                <p className={styles.caminhoDesc}>Quero encontrar talentos validados por código real, não por currículo</p>
-                <ul className={styles.caminhoList}>
-                  <li><CheckCircle size={15} /> Perfis filtrados por performance</li>
-                  <li><CheckCircle size={15} /> Desafios sob demanda</li>
-                  <li><CheckCircle size={15} /> Squads montados para o seu projeto</li>
-                  <li><CheckCircle size={15} /> Mentores sêniores disponíveis</li>
-                  <li><CheckCircle size={15} /> Parceria ou contratação direta</li>
-                </ul>
-                <Link to="/para-empresas" className={`${styles.caminhoBtn} ${styles.caminhoBtnEmpresa}`}>
-                  Conhecer planos <ArrowRight size={16} />
-                </Link>
-              </motion.div>
-            </div>
-          </div>
-        </motion.div>
-        )}
-
-        {/* CRAFTERS: seção "O ciclo completo" (Empresa define / Crafter resolve) ocultada — será movida para subdomínio dedicado. */}
-        {false && (
-        <motion.div
-          className={styles.sectionBlock}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.1 }}
-          variants={sectionReveal}
-        >
-          <div className={styles.cicloSection}>
-            <div className={styles.cicloHeader}>
-              <span className={styles.cicloBadge}>Como funciona o ecossistema</span>
-              <h2 className={styles.cicloTitle}>Empresa define. Crafter resolve. Os dois crescem.</h2>
-              <p className={styles.cicloLead}>Um ciclo que une o mercado e o talento de forma direta.</p>
-            </div>
-            <div className={styles.cicloGrid}>
-              {cicloSteps.map((s, i) => (
-                <React.Fragment key={i}>
-                  <motion.div
-                    className={styles.cicloCard}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.3 }}
-                    transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <div className={styles.cicloIconWrap} style={{ color: s.color, borderColor: `${s.color}30`, background: `${s.color}10` }}>
-                      {s.icon}
-                    </div>
-                    <span className={styles.cicloStep}>{s.step}</span>
-                    <h3 className={styles.cicloCardTitle}>{s.title}</h3>
-                    <p className={styles.cicloCardDesc}>{s.description}</p>
-                  </motion.div>
-                  {i < cicloSteps.length - 1 && (
-                    <div className={styles.cicloArrow} aria-hidden="true">
-                      <ArrowRight size={20} />
-                    </div>
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-            <p className={styles.cicloQuote}>"A empresa define o problema. O crafter resolve. Os melhores são descobertos."</p>
-          </div>
-        </motion.div>
-        )}
-
-        {/* CRAFTERS: seção "Como funciona / Da prática ao trabalho" ocultada — fluxo focado em crafters, será movido para subdomínio dedicado. */}
-        {false && (
-        <motion.div
-          className={styles.sectionBlock}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.1 }}
-          variants={sectionReveal}
-        >
-          <div className={styles.howItWorksSection}>
-            <div className={styles.howItWorksHeader}>
-              <span className={styles.howItWorksBadge}>Como funciona</span>
-              <h2 className={styles.howItWorksTitle}>Da prática ao trabalho, em 4 etapas</h2>
-              <p className={styles.howItWorksLead}>Uma jornada clara do aprendizado à oportunidade real</p>
-            </div>
-            <div className={styles.howItWorksGrid}>
-              {howItWorksSteps.map((step, i) => (
-                <motion.div
-                  key={i}
-                  className={styles.howItWorksCard}
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                  whileHover={{ y: -6, transition: { type: 'spring', stiffness: 250, damping: 15 } }}
-                >
-                  <div className={styles.howItWorksNumber}>{step.number}</div>
-                  <div className={styles.howItWorksIconWrap}>{step.icon}</div>
-                  <h3 className={styles.howItWorksCardTitle}>{step.title}</h3>
-                  <p className={styles.howItWorksCardDesc}>{step.description}</p>
-                </motion.div>
-              ))}
-            </div>
-            <div className={styles.howItWorksCta}>
-              <Link to="/register" className={styles.howItWorksCtaBtn}>
-                Começar agora — é grátis
-              </Link>
-            </div>
-          </div>
-        </motion.div>
-        )}
-
-        {/* 5. ShowcaseBlocks */}
+        {/* 5. Showcase blocks (Sobre / Aplicativos / Para Empresas) */}
         {showcaseData.map((item, i) => (
           <div key={i} className={styles.sectionBlock}>
             <ShowcaseBlock {...item} />
           </div>
         ))}
 
-        {/* CRAFTERS: seção "Cases reais" (Do desafio à contratação) ocultada — narrativa de comunidade dev, será movida para subdomínio dedicado. */}
-        {false && (
-        <motion.div
-          className={styles.sectionBlock}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.1 }}
-          variants={sectionReveal}
-        >
-          <div className={styles.casesSection}>
-            <div className={styles.casesHeader}>
-              <span className={styles.casesBadge}>Casos reais</span>
-              <h2 className={styles.casesTitle}>Do desafio à contratação</h2>
-              <p className={styles.casesLead}>Veja como o ciclo funciona na prática</p>
-            </div>
-            <div className={styles.caseCard}>
-              <div className={styles.caseCardLeft}>
-                <div className={styles.caseLabel}>🏢 Empresa</div>
-                <div className={styles.caseEmpresa}>{caseData.empresa}</div>
-                <div className={styles.caseDesafioLabel}>Desafio postado</div>
-                <p className={styles.caseDesafio}>{caseData.desafio}</p>
-                <div className={styles.caseStack}>
-                  {caseData.stack.map(t => (
-                    <span key={t} className={styles.caseTag}>{t}</span>
-                  ))}
-                </div>
-              </div>
-              <div className={styles.caseCardDivider} />
-              <div className={styles.caseCardRight}>
-                <div className={styles.caseLabel}>👨‍💻 Resultado</div>
-                <p className={styles.caseResultado}>{caseData.resultado}</p>
-                <blockquote className={styles.caseQuote}>
-                  <p>"{caseData.quote}"</p>
-                  <cite>— {caseData.autor}</cite>
-                </blockquote>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-        )}
-
-        {/* CRAFTERS: seção "Mentorias em destaque" ocultada — será movida para subdomínio dedicado da comunidade Craft. */}
-        {false && mentores.length > 0 && (
-          <motion.div
-            className={styles.sectionBlock}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.1 }}
-            variants={sectionReveal}
-          >
-            <div className={styles.mentoriasSection}>
-              <div className={styles.mentoriasHeader}>
-                <span className={styles.mentoriasBadge}>Mentorias</span>
-                <h2 className={styles.mentoriasTitle}>Aprenda com quem já está no mercado</h2>
-                <p className={styles.mentoriasLead}>Mentores sêniores que já passaram pelo que você vai enfrentar</p>
-              </div>
-              <div className={styles.mentoriasGrid}>
-                {mentores.map((m, i) => {
-                  const name = m.nome || m.name || 'Mentor';
-                  const initials = name.trim().split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
-                  return (
-                    <motion.div
-                      key={m.id || i}
-                      className={styles.mentorCard}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, amount: 0.3 }}
-                      transition={{ duration: 0.5, delay: i * 0.1 }}
-                      whileHover={{ y: -6, transition: { type: 'spring', stiffness: 250, damping: 15 } }}
-                    >
-                      <div className={styles.mentorAvatar}>
-                        {m.avatar ? (
-                          <img src={m.avatar} alt={name} className={styles.mentorAvatarImg} />
-                        ) : (
-                          <span className={styles.mentorAvatarInitials}>{initials}</span>
-                        )}
-                      </div>
-                      <div className={styles.mentorInfo}>
-                        <h3 className={styles.mentorName}>{name}</h3>
-                        {(m.especialidade || m.stack) && (
-                          <p className={styles.mentorEspecialidade}>{m.especialidade || m.stack}</p>
-                        )}
-                        {m.bio && (
-                          <p className={styles.mentorBio}>{m.bio.length > 100 ? m.bio.slice(0, 100) + '…' : m.bio}</p>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-              <div className={styles.mentoriasCta}>
-                <Link to="/mentoria" className={styles.mentoriasCtaBtn}>
-                  Ver todos os mentores <ArrowRight size={16} />
-                </Link>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* 9. CraftCard Banner */}
+        {/* 6. CraftCard Banner (produto próprio em destaque) */}
         <motion.div
           className={styles.sectionBlock}
           initial="hidden"
@@ -554,28 +201,28 @@ const HomePage = () => {
           </a>
         </motion.div>
 
-        {/* 10. FeaturesSection */}
+        {/* 7. Features (o que oferecemos) */}
         <div className={styles.sectionBlock}>
           <div className={styles.sectionCard}>
             <FeaturesSection />
           </div>
         </div>
 
-        {/* 11. CompanySection */}
+        {/* 8. Sobre a empresa */}
         <div className={styles.sectionBlock}>
           <div className={styles.sectionCard}>
             <CompanySection />
           </div>
         </div>
 
-        {/* 12. NewsSection */}
+        {/* 9. Notícias do mercado tech */}
         <div className={styles.sectionBlock}>
           <div className={styles.sectionCard}>
             <NewsSection />
           </div>
         </div>
 
-        {/* 13. FeedbackShowcase */}
+        {/* 10. Depoimentos */}
         <motion.div
           className={styles.feedbackFullWidth}
           initial="hidden"
@@ -586,33 +233,7 @@ const HomePage = () => {
           <FeedbackShowcase />
         </motion.div>
 
-        {/* CRAFTERS: seção "Discord — Junte-se à comunidade" ocultada — será movida para o subdomínio dedicado da comunidade Craft.
-        <motion.div
-          className={styles.discordSection}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
-          variants={sectionReveal}
-        >
-          <div className={styles.discordInner}>
-            <DiscordIcon size={40} className={styles.discordIcon} />
-            <div className={styles.discordText}>
-              <h2 className={styles.discordTitle}>Junte-se à comunidade</h2>
-              <p className={styles.discordDesc}>Devs que constroem, aprendem e evoluem juntos. Tire dúvidas, mostre seus projetos e conecte-se com outros Crafters.</p>
-            </div>
-            <a
-              href="https://discord.gg/jKcuM5u6Qa"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.discordBtn}
-            >
-              <DiscordIcon size={18} /> Entrar no Discord
-            </a>
-          </div>
-        </motion.div>
-        */}
-
-        {/* 14.3 FAQ (NOVO — perguntas frequentes pra matar objeções) */}
+        {/* 11. FAQ */}
         <motion.div
           className={styles.sectionBlock}
           initial="hidden"
@@ -623,7 +244,7 @@ const HomePage = () => {
           <FAQ />
         </motion.div>
 
-        {/* 14.5 Banner Avaliação (NOVO — link curto para feedback do site) */}
+        {/* 12. Banner de avaliação */}
         <motion.div
           className={styles.avaliacaoSection}
           initial="hidden"
@@ -645,23 +266,7 @@ const HomePage = () => {
           </div>
         </motion.div>
 
-        {/* 15. CTA Final — versão B2B (a versão original "duplo Crafter/Empresa" está comentada abaixo) */}
-        {/*
-        <motion.div className={styles.ctaFinalSection} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={sectionReveal}>
-          <div className={styles.ctaFinalInner}>
-            <h2 className={styles.ctaFinalTitle}>Pronto para fazer parte do ciclo?</h2>
-            <p className={styles.ctaFinalDesc}>Crafters constroem portfólio. Empresas encontram talentos. O ciclo nunca para.</p>
-            <div className={styles.ctaFinalBtns}>
-              <button className={styles.ctaFinalBtnCrafter} onClick={() => openCrafterModal()}>
-                <Rocket size={18} /> Quero ser Crafter
-              </button>
-              <Link to="/para-empresas" className={styles.ctaFinalBtnEmpresa}>
-                <Building2 size={18} /> Quero contratar →
-              </Link>
-            </div>
-          </div>
-        </motion.div>
-        */}
+        {/* 13. CTA Final (B2B) */}
         <motion.div
           className={styles.ctaFinalSection}
           initial="hidden"
@@ -671,7 +276,9 @@ const HomePage = () => {
         >
           <div className={styles.ctaFinalInner}>
             <h2 className={styles.ctaFinalTitle}>Vamos transformar sua ideia em software?</h2>
-            <p className={styles.ctaFinalDesc}>Apps prontos para uso ou desenvolvimento sob medida — escolha o caminho que faz sentido para a sua empresa.</p>
+            <p className={styles.ctaFinalDesc}>
+              Apps prontos para uso ou desenvolvimento sob medida — escolha o caminho que faz sentido para a sua empresa.
+            </p>
             <div className={styles.ctaFinalBtns}>
               <Link to="/para-empresas" className={styles.ctaFinalBtnEmpresa}>
                 <Building2 size={18} /> Quero contratar a CodeCraft
@@ -682,11 +289,6 @@ const HomePage = () => {
             </div>
           </div>
         </motion.div>
-
-        <PartnerModal
-          isOpen={isPartnerModalOpen}
-          onClose={() => setIsPartnerModalOpen(false)}
-        />
       </main>
     </div>
   );

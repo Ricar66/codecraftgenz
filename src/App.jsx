@@ -4,43 +4,26 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import ProtectedRoute from './admin/ProtectedRoute.jsx';
 import heroBackground from './assets/hero-background.svg';
-import CrafterModal from './components/CrafterModal/CrafterModal.jsx';
 import CookieConsent from './components/CookieConsent/CookieConsent';
 import Footer from './components/Footer';
-import Onboarding from './components/Onboarding/Onboarding';
 import { ErrorBoundary } from './components/UI/ErrorBoundary';
 import { ToastProvider } from './components/UI/Toast';
-import { CrafterModalProvider, useCrafterModal } from './context/CrafterModalContext.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
-
-function GlobalCrafterModal() {
-  const { isOpen, close } = useCrafterModal();
-  return <CrafterModal isOpen={isOpen} onClose={close} />;
-}
 
 // Lazy load das paginas para melhor performance
 const HomePage = lazy(() => import('./pages/HomePage/HomePage.jsx'));
 const ProjectsPage = lazy(() => import('./pages/ProjectsPage.jsx'));
-const FeedbacksPage = lazy(() => import('./pages/FeedbacksPage.jsx'));
-const MentoriaPage = lazy(() => import('./pages/MentoriaPage.jsx'));
-const RankingPage = lazy(() => import('./pages/RankingPage.jsx'));
-const CommunityRankingPage = lazy(() => import('./pages/RankingPage/index.jsx'));
-const DesafiosPage = lazy(() => import('./pages/DesafiosPage.jsx'));
 const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
 const PasswordResetPage = lazy(() => import('./pages/PasswordResetPage.jsx'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage.jsx'));
 const AppHubPage = lazy(() => import('./pages/AppHubPage.jsx'));
-
 const AppPurchasePage = lazy(() => import('./pages/AppPurchasePage.jsx'));
 const OrderSuccessPage = lazy(() => import('./pages/OrderSuccessPage.jsx'));
 const CacheMaintenancePage = lazy(() => import('./pages/CacheMaintenancePage.jsx'));
-const MyAccountPage = lazy(() => import('./pages/MyAccountPage.jsx'));
 const ForCompaniesPage = lazy(() => import('./pages/ForCompaniesPage.jsx'));
 const SobrePage = lazy(() => import('./pages/SobrePage.jsx'));
 const HubDownloadPage = lazy(() => import('./pages/HubDownloadPage.jsx'));
-const CrafterProfilePage = lazy(() => import('./pages/CrafterProfilePage.jsx'));
-const OnboardingPage = lazy(() => import('./pages/OnboardingPage/OnboardingPage.jsx'));
 const PerfilPage = lazy(() => import('./pages/PerfilPage/PerfilPage.jsx'));
 
 // Legal pages
@@ -51,18 +34,10 @@ const AvaliacaoPage = lazy(() => import('./pages/AvaliacaoPage.jsx'));
 
 // Admin pages - lazy loaded
 const AdminLayout = lazy(() => import('./admin/AdminLayout.jsx'));
-const AdminCrafters = lazy(() => import('./admin/AdminCrafters.jsx'));
-const AdminEquipes = lazy(() => import('./admin/AdminEquipes.jsx'));
-const AdminIdeias = lazy(() => import('./admin/AdminIdeias.jsx'));
-const AdminMentores = lazy(() => import('./admin/AdminMentores.jsx'));
-const AdminRanking = lazy(() => import('./admin/AdminRanking.jsx'));
 const AdminProjetos = lazy(() => import('./admin/AdminProjetos.jsx'));
 const AdminApps = lazy(() => import('./admin/AdminApps.jsx'));
-const AdminDesafios = lazy(() => import('./admin/AdminDesafios.jsx'));
-const AdminSubmissions = lazy(() => import('./admin/AdminSubmissions.jsx'));
 const AdminProposals = lazy(() => import('./admin/AdminProposals.jsx'));
 const AdminParcerias = lazy(() => import('./admin/AdminParcerias.jsx'));
-const AdminInscricoes = lazy(() => import('./admin/AdminInscricoes'));
 const AdminPagamentos = lazy(() => import('./admin/AdminPagamentos.jsx'));
 const AdminFinancas = lazy(() => import('./admin/AdminFinancas.jsx'));
 const AdminLicencas = lazy(() => import('./admin/AdminLicencas.jsx'));
@@ -77,11 +52,6 @@ const AdminMetas = lazy(() => import('./admin/AdminMetas.jsx'));
 const AdminDiscord = lazy(() => import('./admin/AdminDiscord.jsx'));
 const AdminAvaliacoes = lazy(() => import('./admin/AdminAvaliacoes.jsx'));
 
-/**
- * Componente de fallback leve para carregamento de paginas
- * Usa CSS inline para renderizar imediatamente sem dependências externas
- * Melhora LCP ao mostrar conteúdo mais rápido que um spinner pesado
- */
 const PageLoader = () => (
   <div
     style={{
@@ -110,10 +80,6 @@ const PageLoader = () => (
   </div>
 );
 
-/**
- * Componente principal da aplicacao
- * Gerencia o roteamento entre as diferentes paginas
- */
 function App() {
   const location = useLocation();
 
@@ -121,7 +87,6 @@ function App() {
   const shouldShowHeroBackground = !pagesWithoutHeroBackground.includes(location.pathname);
 
   return (
-    <CrafterModalProvider>
     <ToastProvider position="top-right" maxToasts={5}>
       <ErrorBoundary variant="page" showDetails={process.env.NODE_ENV === 'development'}>
         <div
@@ -138,31 +103,14 @@ function App() {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/projetos" element={<ProjectsPage />} />
-                {/*
-                  CRAFTERS — rotas da comunidade Craft temporariamente desativadas.
-                  Decisão de produto (2026-06-21): visão atual deve focar em venda de
-                  software + B2B (empresas). Comunidade Craft (rankeamento, desafios,
-                  mentoria, perfil de crafter) será movida para subdomínio dedicado
-                  (ex: crafters.codecraftgenz.com.br) num esforço futuro.
-                  Quem acessar essas URLs antigas é redirecionado para a Home.
-                  Componentes e admin continuam intactos — só a entrada pública saiu.
-
-                  Para reativar: descomentar os 6 <Route> abaixo e remover os Navigate.
-                */}
-                <Route path="/desafios/ranking" element={<Navigate to="/" replace />} />
-                <Route path="/desafios/feedbacks" element={<Navigate to="/" replace />} />
+                {/* URLs legadas da Comunidade Craft (removida 2026-06-27) — redirect p/ home preserva SEO. */}
+                <Route path="/desafios" element={<Navigate to="/" replace />} />
+                <Route path="/desafios/*" element={<Navigate to="/" replace />} />
                 <Route path="/ranking" element={<Navigate to="/" replace />} />
                 <Route path="/feedbacks" element={<Navigate to="/" replace />} />
                 <Route path="/mentoria" element={<Navigate to="/" replace />} />
-                <Route path="/desafios" element={<Navigate to="/" replace />} />
-                {/*
-                <Route path="/desafios/ranking" element={<RankingPage />} />
-                <Route path="/desafios/feedbacks" element={<FeedbacksPage />} />
-                <Route path="/ranking" element={<CommunityRankingPage />} />
-                <Route path="/feedbacks" element={<Navigate to="/desafios/feedbacks" replace />} />
-                <Route path="/mentoria" element={<MentoriaPage />} />
-                <Route path="/desafios" element={<DesafiosPage />} />
-                */}
+                <Route path="/crafter/:id" element={<Navigate to="/" replace />} />
+                <Route path="/onboarding" element={<Navigate to="/" replace />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/reset-password" element={<PasswordResetPage />} />
@@ -179,6 +127,7 @@ function App() {
                 <Route path="/apps/:id/compra" element={<AppPurchasePage />} />
                 <Route path="/apps/:id/sucesso" element={<OrderSuccessPage />} />
                 <Route path="/minha-conta" element={<Navigate to="/perfil" replace />} />
+                <Route path="/perfil" element={<PerfilPage />} />
                 <Route path="/admin" element={
                   <ProtectedRoute allowed={["admin","editor","team"]}>
                     <AdminLayout />
@@ -190,16 +139,8 @@ function App() {
                       <AdminUsuarios />
                     </ProtectedRoute>
                   } />
-                  <Route path="mentores" element={<AdminMentores />} />
-                  <Route path="equipes" element={<AdminEquipes />} />
-                  <Route path="crafters" element={<AdminCrafters />} />
-                  <Route path="ranking" element={<AdminRanking />} />
                   <Route path="projetos" element={<AdminProjetos />} />
                   <Route path="apps" element={<AdminApps />} />
-                  <Route path="desafios" element={<AdminDesafios />} />
-                  <Route path="submissoes" element={<AdminSubmissions />} />
-                  <Route path="inscricoes" element={<AdminInscricoes />} />
-                  <Route path="ideias" element={<AdminIdeias />} />
                   <Route path="propostas" element={<AdminProposals />} />
                   <Route path="parcerias" element={<AdminParcerias />} />
                   <Route path="financas" element={<AdminFinancas />} />
@@ -244,24 +185,15 @@ function App() {
                     </ProtectedRoute>
                   } />
                 </Route>
-                {/* CRAFTERS: perfil público de crafter desativado — redireciona p/ Home. Será movido para o subdomínio dedicado. */}
-                <Route path="/crafter/:id" element={<Navigate to="/" replace />} />
-                {/* <Route path="/crafter/:id" element={<CrafterProfilePage />} /> */}
-                <Route path="/onboarding" element={<OnboardingPage />} />
-                <Route path="/perfil" element={<PerfilPage />} />
-                {/* Fallback: qualquer rota desconhecida mostra 404 */}
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Suspense>
           </main>
           <Footer />
-          <Onboarding />
           <CookieConsent />
-          <GlobalCrafterModal />
         </div>
       </ErrorBoundary>
     </ToastProvider>
-    </CrafterModalProvider>
   );
 }
 

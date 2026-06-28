@@ -23,8 +23,6 @@ const services = [
   { Icon: Code2, text: 'Desenvolvimento web e mobile' },
   { Icon: Cloud, text: 'Arquitetura e cloud' },
   { Icon: BrainCircuit, text: 'Data & AI' },
-  // CRAFTERS: serviço "Mentoria e capacitação" ocultado — será reativado no subdomínio dedicado da comunidade Craft.
-  // { Icon: GraduationCap, text: 'Mentoria e capacitação' },
   { Icon: GraduationCap, text: 'Suporte e manutenção contínua' },
 ];
 
@@ -93,13 +91,6 @@ const CompanySection = () => {
         viewport={{ once: true, amount: 0.3 }}
         variants={stagger}
       >
-        {/* CRAFTERS: CTA "Conheça nossa mentoria" ocultado — será reativado no subdomínio dedicado da comunidade Craft.
-        <motion.div variants={fadeUp}>
-          <Link className={styles.ctaBtn} to="/mentoria">
-            Conheça nossa mentoria
-          </Link>
-        </motion.div>
-        */}
         <motion.div variants={fadeUp}>
           <Link className={styles.ctaBtn} to="/para-empresas">
             Fale com a CodeCraft

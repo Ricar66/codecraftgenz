@@ -31,8 +31,6 @@ const Footer = memo(({ showLinks = true }) => {
             <nav className={styles.links} aria-label="Links do rodapé">
               <Link to="/projetos">Projetos</Link>
               <Link to="/aplicativos">Aplicativos</Link>
-              {/* CRAFTERS: link de Mentoria ocultado temporariamente — será movido para subdomínio dedicado da comunidade Craft. */}
-              {/* <Link to="/mentoria">Mentoria</Link> */}
               <Link to="/para-empresas">Para Empresas</Link>
             </nav>
           </div>

@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
 import { apiRequest } from '../lib/apiConfig.js';
 
-import './AdminInscricoes.css';
 import './AdminCommon.css';
 
 const statusOptions = [

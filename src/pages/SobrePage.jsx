@@ -234,11 +234,6 @@ const SobrePage = () => {
               Conheça nossos apps prontos para uso ou conte sua ideia — desenvolvemos a solução sob medida com você, do briefing ao deploy.
             </p>
             <div className={styles.ctaButtons}>
-              {/* CRAFTERS: CTA "Quero ser um Crafter" ocultado — será reativado no subdomínio dedicado da comunidade Craft.
-              <Link to="/register" className={styles.ctaBtnPrimary}>
-                <Rocket size={17} /> Quero ser um Crafter
-              </Link>
-              */}
               <Link to="/para-empresas" className={styles.ctaBtnPrimary}>
                 <Building2 size={17} /> Quero contratar a CodeCraft
               </Link>

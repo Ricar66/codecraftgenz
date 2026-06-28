@@ -7,15 +7,6 @@ import { Star, Quote, ArrowRight } from 'lucide-react';
 import { useLatestFeedbacks } from '../../hooks/useFeedbacks';
 import styles from './FeedbackShowcase.module.css';
 
-// CRAFTERS: depoimentos originais (foco em comunidade dev) — serão reativados no subdomínio dedicado.
-// const FALLBACK_CRAFTERS = [
-//   { id: 'f1', text: 'A plataforma mudou minha carreira. Fiz os desafios, construí meu portfólio e em 3 meses recebi uma proposta de emprego.', author: 'Lucas Ferreira', role: 'Dev Frontend' },
-//   { id: 'f2', text: 'Nunca pensei que conseguiria entrar em um projeto real logo no começo. A CodeCraft me deu desafios práticos e visibilidade real.', author: 'Ana Clara Souza', role: 'Full Stack Dev' },
-//   { id: 'f3', text: 'O sistema de ranking me motivou a ir além do básico. Hoje tenho um portfólio sólido e uma rede de contatos incrível.', author: 'Rafael Moura', role: 'Dev Backend' },
-//   { id: 'f5', text: 'A mentoria aqui é diferente. Não é aula gravada, é conversa real com quem está no mercado. Mudou minha abordagem.', author: 'Thiago Andrade', role: 'Dev Sênior' },
-//   { id: 'f6', text: 'Aprendi mais em 2 meses de CodeCraft do que em 1 ano de tutoriais. Os desafios te forçam a pesquisar e iterar de verdade.', author: 'Mariana Costa', role: 'Dev Mobile' },
-// ];
-
 const FALLBACK = [
   { id: 'f4', text: 'Contratamos a CodeCraft para um app sob medida e fomos surpreendidos pela qualidade do código e pelo prazo cumprido sem ruído.', author: 'Beatriz Lima', role: 'CTO · StartupBR' },
   { id: 'f7', text: 'Usamos o QRCraft no atendimento da nossa rede e foi um divisor de águas — implementação rápida e suporte sempre disponível.', author: 'Rodrigo Alves', role: 'Gerente de Operações' },
@@ -121,13 +112,6 @@ const FeedbackShowcase = () => {
         </div>
       )}
 
-      {/* CRAFTERS: link "/desafios/feedbacks" ocultado — será reativado quando criarmos o subdomínio dedicado da comunidade Craft.
-      <motion.div className={styles.cta} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.3 }}>
-        <Link to="/desafios/feedbacks" className={styles.ctaLink}>
-          Deixe seu depoimento <ArrowRight size={15} />
-        </Link>
-      </motion.div>
-      */}
       <motion.div
         className={styles.cta}
         initial={{ opacity: 0 }}

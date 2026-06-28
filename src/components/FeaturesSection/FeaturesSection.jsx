@@ -6,14 +6,6 @@ import { Link } from 'react-router-dom';
 
 import styles from './FeaturesSection.module.css';
 
-// CRAFTERS: features originais (Desafios, Mentorias, Ranking, Feedbacks) ocultadas — serão movidas para o subdomínio dedicado.
-// const featuresCrafters = [
-//   { to: '/desafios', Icon: Trophy, title: 'Desafios', text: 'Resolva problemas reais propostos por empresas e ganhe reconhecimento no mercado tech.', color: '#eab308', bg: 'rgba(234, 179, 8, 0.08)', border: 'rgba(234, 179, 8, 0.15)' },
-//   { to: '/mentoria', Icon: Users, title: 'Mentorias', text: 'Sessões 1:1 com profissionais seniores para acelerar sua carreira em tecnologia.', color: '#22d3ee', bg: 'rgba(34, 211, 238, 0.08)', border: 'rgba(34, 211, 238, 0.15)' },
-//   { to: '/ranking', Icon: BarChart3, title: 'Ranking', text: 'Gamifique seu aprendizado, conquiste badges e seja visto por recrutadores.', color: '#34d399', bg: 'rgba(52, 211, 153, 0.08)', border: 'rgba(52, 211, 153, 0.15)' },
-//   { to: '/feedback', Icon: MessageCircle, title: 'Feedbacks', text: 'Sua opinião molda o futuro da plataforma. Cada feedback conta para melhorarmos.', color: '#a78bfa', bg: 'rgba(167, 139, 250, 0.08)', border: 'rgba(167, 139, 250, 0.15)' },
-// ];
-
 const features = [
   {
     to: '/aplicativos',
