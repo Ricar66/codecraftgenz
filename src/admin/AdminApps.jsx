@@ -35,7 +35,7 @@ export default function AdminApps() {
   const [error, setError] = useState('');
   const [form, setForm] = useState({
     id: null, name: '', mainFeature: '', description: '',
-    status: 'draft', price: 0, originalPrice: '', thumbnail: '', exec_url: '', version: '1.0.0',
+    status: 'revisar', price: 0, originalPrice: '', thumbnail: '', exec_url: '', version: '1.0.0',
     platforms: ['windows'], licenseType: 'vitalicia'
   });
   const [priceMask, setPriceMask] = useState('R$ 0,00');
@@ -135,7 +135,7 @@ export default function AdminApps() {
       if (isInvalidUrl(form.thumbnail)) { setError('Thumbnail URL inválida. Use http(s).'); return; }
       if (isInvalidUrl(form.exec_url)) { setError('Exec URL inválida. Use http(s).'); return; }
       await updateApp(form.id, payload);
-      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, originalPrice: '', thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'], licenseType: 'vitalicia' });
+      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'revisar', price: 0, originalPrice: '', thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'], licenseType: 'vitalicia' });
       showToast('App atualizado!');
       refresh();
     } catch (e) {
@@ -164,7 +164,7 @@ export default function AdminApps() {
       if (isInvalidUrl(form.thumbnail)) { setError('Thumbnail URL inválida. Use http(s).'); return; }
       if (isInvalidUrl(form.exec_url)) { setError('Exec URL inválida. Use http(s).'); return; }
       await createApp(payload);
-      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, originalPrice: '', thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'], licenseType: 'vitalicia' });
+      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'revisar', price: 0, originalPrice: '', thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'], licenseType: 'vitalicia' });
       showToast('App criado!');
       refresh();
     } catch (e) {
@@ -184,7 +184,7 @@ export default function AdminApps() {
       name: a.name || '',
       mainFeature: a.short_description || a.mainFeature || '',
       description: a.description || '',
-      status: a.status || 'draft',
+      status: a.status || 'revisar',
       price: a.price || 0,
       originalPrice:
         a.original_price == null || a.original_price === ''
@@ -201,7 +201,7 @@ export default function AdminApps() {
 
   const onToggleStatus = async (a) => {
     const curr = String(a.status || '').toLowerCase();
-    const next = (curr === 'published' || curr === 'available') ? 'draft' : 'published';
+    const next = curr === 'publicar' ? 'revisar' : 'publicar';
     try {
       await updateApp(a.id, { status: next });
       showToast('Status atualizado!');
@@ -262,7 +262,7 @@ export default function AdminApps() {
   };
 
   const cancelEdit = () => {
-    setForm({ id: null, name: '', mainFeature: '', description: '', status: 'draft', price: 0, thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'] });
+    setForm({ id: null, name: '', mainFeature: '', description: '', status: 'revisar', price: 0, thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'] });
   };
 
   const togglePlatform = (plat) => {
@@ -362,8 +362,8 @@ export default function AdminApps() {
                         }
                         return <span className={styles.price}>{formatBRL(p)}</span>;
                       })()}
-                      <StatusBadge variant={(a.status === 'published' || a.status === 'available') ? 'success' : 'warning'}>
-                        {a.status === 'published' || a.status === 'available' ? 'Publicado' : 'Rascunho'}
+                      <StatusBadge variant={a.status === 'publicar' ? 'success' : 'warning'}>
+                        {a.status === 'publicar' ? 'Publicar' : 'Revisar'}
                       </StatusBadge>
                     </div>
                     {a.platforms && a.platforms.length > 0 && (
@@ -379,8 +379,8 @@ export default function AdminApps() {
                     <button onClick={() => onEdit(a)} className={styles.editBtn} title="Editar">
                       <Pencil />
                     </button>
-                    <button onClick={() => onToggleStatus(a)} className={styles.visibilityBtn} title={(a.status === 'published' || a.status === 'available') ? 'Ocultar' : 'Publicar'}>
-                      {(a.status === 'published' || a.status === 'available') ? <EyeOff /> : <Eye />}
+                    <button onClick={() => onToggleStatus(a)} className={styles.visibilityBtn} title={a.status === 'publicar' ? 'Marcar para Revisar' : 'Publicar'}>
+                      {a.status === 'publicar' ? <EyeOff /> : <Eye />}
                     </button>
                     <button onClick={() => window.open(`/apps/${a.id}/compra`, '_blank')} className={styles.buyBtn} title="Ver compra">
                       <ShoppingCart />
@@ -570,8 +570,8 @@ export default function AdminApps() {
             <div className={styles.formGroup}>
               <label>Status</label>
               <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} className={styles.select}>
-                <option value="draft">Rascunho</option>
-                <option value="published">Publicado</option>
+                <option value="revisar">Revisar</option>
+                <option value="publicar">Publicar</option>
               </select>
             </div>
             <div className={styles.formGroup}>

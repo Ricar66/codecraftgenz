@@ -108,7 +108,7 @@ const AppHubPage = () => {
       const n = Number(p);
       return Number.isFinite(n) ? n : 0;
     };
-    const isAvailable = (s) => ['available', 'ready', 'finalizado'].includes(String(s||'').toLowerCase());
+    const isAvailable = (s) => String(s || '').toLowerCase() === 'publicar';
 
     const pinned = list.filter(a => a.isFeatured).sort((a,b) => (dateVal(b.updatedAt) - dateVal(a.updatedAt)) || (priceVal(b.price) - priceVal(a.price)) || String(a.name||'').localeCompare(String(b.name||'')) );
     const avail = list.filter(a => !a.isFeatured && isAvailable(a.status)).sort((a,b) => (dateVal(b.updatedAt) - dateVal(a.updatedAt)) || (priceVal(b.price) - priceVal(a.price)) || String(a.name||'').localeCompare(String(b.name||'')) );

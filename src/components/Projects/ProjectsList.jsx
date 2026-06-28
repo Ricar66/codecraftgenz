@@ -197,9 +197,9 @@ const ProjectsList = ({ useAdminStore = false }) => {
     const getDate = (p) => p.data_inicio || p.startDate || null;
     return list.slice().sort((a, b) => {
       const sa = toStatusValue(a), sb = toStatusValue(b);
-      const aIsDraft = sa.includes('rascunho') || sa === 'draft';
-      const bIsDraft = sb.includes('rascunho') || sb === 'draft';
-      if (aIsDraft !== bIsDraft) return aIsDraft ? 1 : -1;
+      const aIsWaiting = sa === 'aguardando_start';
+      const bIsWaiting = sb === 'aguardando_start';
+      if (aIsWaiting !== bIsWaiting) return aIsWaiting ? 1 : -1;
       const da = getDate(a) ? new Date(getDate(a)).getTime() : 0;
       const db = getDate(b) ? new Date(getDate(b)).getTime() : 0;
       return db - da;

@@ -170,7 +170,7 @@ class DataCache {
  */
 export class ProjectDataValidator {
   static requiredFields = ['id', 'title', 'description', 'status'];
-  static validStatuses = ['active', 'completed', 'paused', 'cancelled', 'ongoing', 'rascunho', 'finalizado'];
+  static validStatuses = ['aguardando_start', 'em_andamento', 'finalizado'];
   
   /**
    * Valida um projeto individual
@@ -279,7 +279,7 @@ export class ProjectDataValidator {
       id: project.id,
       title: typeof project.title === 'string' ? project.title.trim() : '',
       description: typeof project.description === 'string' ? project.description.trim() : '',
-      status: this.validStatuses.includes(project.status) ? project.status : 'active',
+      status: this.validStatuses.includes(project.status) ? project.status : 'aguardando_start',
       createdAt: project.createdAt || new Date().toISOString(),
       updatedAt: project.updatedAt || new Date().toISOString(),
       tags: Array.isArray(project.tags) ? project.tags : [],

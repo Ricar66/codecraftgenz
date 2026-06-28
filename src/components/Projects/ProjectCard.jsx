@@ -64,19 +64,12 @@ const ProjectCard = ({
    */
   const getStatusBadgeClass = (status) => {
     switch (String(status || '').toLowerCase()) {
+      case 'em_andamento':
       case 'em andamento':
-      case 'ongoing':
         return styles.statusInProgress;
-      case 'concluído':
-      case 'concluido':
       case 'finalizado':
-      case 'completed':
         return styles.statusCompleted;
-      case 'pausado':
-      case 'paused':
-        return styles.statusPaused;
-      case 'arquivado':
-      case 'archived':
+      case 'aguardando_start':
         return styles.statusDefault;
       default:
         return styles.statusDefault;

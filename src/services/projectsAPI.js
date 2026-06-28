@@ -206,7 +206,7 @@ export const getProjects = async (options = {}) => {
     if (options.publicOnly) {
       mappedProjects = mappedProjects.filter(p => {
         const s = String(p.status || '').toLowerCase();
-        return s !== 'rascunho' && s !== 'draft';
+        return s !== 'aguardando_start';
       });
     }
     

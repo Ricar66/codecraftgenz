@@ -179,18 +179,6 @@ export const ProjectsRepo = {
     }
   },
 
-  async toggleVisible(project) {
-    try {
-      if (!project || !project.id) return { ok: false, error: 'Projeto inválido' };
-      const curr = String(project.status || '').toLowerCase();
-      const next = (curr === 'rascunho' || curr === 'draft') ? 'ongoing' : 'rascunho';
-      const res = await this.update(project.id, { status: next });
-      realtime.publish('projects_changed', { projects: null });
-      return res;
-    } catch (err) {
-      return { ok: false, error: err.message };
-    }
-  },
 };
 
 // Finanças

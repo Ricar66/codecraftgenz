@@ -17,7 +17,7 @@ const parsePlatforms = (p) => {
 
 const getBadge = (app) => {
   const statusLower = String(app.status || '').toLowerCase();
-  const finalized = !!app.status && statusLower !== 'draft' && statusLower !== 'disabled';
+  const finalized = statusLower === 'publicar';
   if (!finalized) return null;
   const name = String(app.name || '').toLowerCase();
   if (name === 'coincraft') return { label: 'Popular', className: styles.badgePopular };
@@ -31,7 +31,7 @@ const AppCard = ({ app, onDownload, onAbout, mode = 'owned', featured = false })
   const { id, name, mainFeature, category } = app;
   const platforms = parsePlatforms(app.platforms);
   const statusLower = String(app.status || '').toLowerCase();
-  const finalized = !!app.status && statusLower !== 'draft' && statusLower !== 'disabled';
+  const finalized = statusLower === 'publicar';
   const safePrice = getAppPrice(app);
   const displayPrice = safePrice > 0 ? `R$ ${safePrice.toLocaleString('pt-BR')}` : 'Gratuito';
   const originalPrice = Number(app?.original_price ?? app?.originalPrice ?? 0);

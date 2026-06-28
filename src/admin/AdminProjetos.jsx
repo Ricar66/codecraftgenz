@@ -26,7 +26,7 @@ export default function AdminProjetos() {
     owner: '',
     descricao: '',
     data_inicio: '',
-    status: 'rascunho',
+    status: 'aguardando_start',
     preco: 0,
     progresso: 0,
     visivel: false,
@@ -103,7 +103,7 @@ export default function AdminProjetos() {
 
       setForm({
         titulo: '', owner: '', descricao: '', data_inicio: '',
-        status: 'rascunho', preco: 0, progresso: 0, visivel: false, thumb_url: '', tags: []
+        status: 'aguardando_start', preco: 0, progresso: 0, visivel: false, thumb_url: '', tags: []
       });
       showNotice('success', form.id ? 'Projeto atualizado com sucesso.' : 'Projeto criado com sucesso.');
       refresh();
@@ -119,7 +119,7 @@ export default function AdminProjetos() {
       owner: p.owner || p.responsavel || '',
       descricao: p.description || p.descricao || '',
       data_inicio: p.startDate || p.data_inicio || '',
-      status: p.status || 'rascunho',
+      status: p.status || 'aguardando_start',
       preco: p.price ?? p.preco ?? 0,
       progresso: p.progress ?? p.progresso ?? 0,
       visivel: p.visivel ?? p.visible ?? false,
@@ -187,15 +187,24 @@ export default function AdminProjetos() {
   const cancelEdit = () => {
     setForm({
       titulo: '', owner: '', descricao: '', data_inicio: '',
-      status: 'rascunho', preco: 0, progresso: 0, visivel: false, thumb_url: '', tags: []
+      status: 'aguardando_start', preco: 0, progresso: 0, visivel: false, thumb_url: '', tags: []
     });
   };
 
   const getStatusVariant = (status) => {
     switch (status?.toLowerCase()) {
       case 'finalizado': return 'success';
-      case 'ongoing': return 'warning';
-      default: return 'neutral';
+      case 'em_andamento': return 'warning';
+      default: return 'neutral'; // aguardando_start
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'finalizado':       return 'Finalizado';
+      case 'em_andamento':     return 'Em Andamento';
+      case 'aguardando_start': return 'Aguardando Start';
+      default: return status || '—';
     }
   };
 
@@ -310,7 +319,7 @@ export default function AdminProjetos() {
                   <td data-label="Owner">{p.owner || p.responsavel || '—'}</td>
                   <td data-label="Status">
                     <StatusBadge variant={getStatusVariant(p.status)}>
-                      {p.status}
+                      {getStatusLabel(p.status)}
                     </StatusBadge>
                   </td>
                   <td data-label="Preço">
@@ -329,13 +338,6 @@ export default function AdminProjetos() {
                     <div className={styles.actionBtns}>
                       <button onClick={() => onEdit(p)} className={styles.editBtn} title="Editar">
                         <Pencil />
-                      </button>
-                      <button
-                        onClick={() => onToggleVisibility(p)}
-                        className={styles.visibilityBtn}
-                        title={p.status === 'rascunho' ? 'Publicar' : 'Ocultar'}
-                      >
-                        {p.status === 'rascunho' ? <Eye /> : <EyeOff />}
                       </button>
                       <button onClick={() => onDelete(p)} className={styles.deleteBtn} title="Deletar">
                         <Trash2 />
@@ -416,8 +418,8 @@ export default function AdminProjetos() {
                 onChange={e => setForm({ ...form, status: e.target.value })}
                 className={styles.select}
               >
-                <option value="rascunho">Rascunho</option>
-                <option value="ongoing">Em Andamento</option>
+                <option value="aguardando_start">Aguardando Start</option>
+                <option value="em_andamento">Em Andamento</option>
                 <option value="finalizado">Finalizado</option>
               </select>
             </div>
