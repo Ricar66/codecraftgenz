@@ -307,6 +307,24 @@ export default function AdminApps() {
       {/* Error */}
       {error && <div className={styles.error}><X /> {error}</div>}
 
+      {/* Aviso de fluxo: Apps nascem de Projetos finalizados */}
+      <div style={{
+        padding: '12px 16px',
+        background: 'rgba(0,228,242,0.06)',
+        border: '1px solid rgba(0,228,242,0.25)',
+        borderRadius: 10,
+        color: '#a0a0b0',
+        fontSize: '0.85rem',
+        margin: '0 0 16px',
+      }}>
+        <strong style={{ color: '#00E4F2' }}>Fluxo:</strong>{' '}
+        Apps são criados automaticamente quando um <strong>Projeto é finalizado</strong> em{' '}
+        <a href="/admin/projetos" style={{ color: '#00E4F2' }}>/admin/projetos</a>.
+        Aqui você edita o app (instalador, imagens, preço) e troca o status entre{' '}
+        <strong>Revisar</strong> ↔ <strong>Publicar</strong>.
+        Voltar um app de Publicar para Revisar <strong>devolve o Projeto para Em Andamento</strong>.
+      </div>
+
       {/* Apps Grid */}
       {(() => {
         const totalPages = Math.ceil(apps.length / appsPerPage);
@@ -428,10 +446,11 @@ export default function AdminApps() {
         );
       })()}
 
-      {/* Form */}
+      {/* Form (apenas edição — criação é via Projeto finalizado) */}
+      {form.id && (
       <AdminCard variant="elevated" className={styles.formCard} id="app-form">
         <h2 className={styles.formTitle}>
-          {form.id ? <><Pencil /> Editar App</> : <><Plus /> Criar Novo App</>}
+          <Pencil /> Editar App
         </h2>
 
         <div className={styles.formGrid}>
@@ -598,14 +617,12 @@ export default function AdminApps() {
           <button onClick={onSave} disabled={!form.id || !form.name} className={styles.saveBtn}>
             <Save /> Salvar
           </button>
-          <button onClick={onCreate} disabled={!!form.id || !form.name} className={styles.createBtn}>
-            <Plus /> Criar
-          </button>
           <button onClick={cancelEdit} className={styles.cancelBtn}>
-            <X /> Limpar
+            <X /> Cancelar edição
           </button>
         </div>
       </AdminCard>
+      )}
     </div>
   );
 }
