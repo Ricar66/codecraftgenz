@@ -543,15 +543,113 @@ function TabConta({ user }) {
         </div>
       </div>
 
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>
-          <h3 className={styles.cardTitle}><Lock size={15} /> Segurança</h3>
-        </div>
-        <p className={styles.emptyHint}>Para alterar sua senha, use a opção "Esqueci minha senha" na tela de login.</p>
-        <Link to="/forgot-password" className={`${styles.editBtn} ${styles.linkBtn}`}>
-          Redefinir senha
-        </Link>
+      <SecuritySection />
+    </div>
+  );
+}
+
+/* ─────────────────── Bloco: Senha (define ou altera) ─────────────────── */
+function SecuritySection() {
+  const toast = useToast();
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [touched, setTouched] = useState({ password: false, confirm: false });
+
+  const pwdError = (() => {
+    if (!touched.password) return '';
+    if (password.length < 8) return 'Mínimo 8 caracteres.';
+    if (!/\d/.test(password)) return 'Inclua pelo menos um número.';
+    return '';
+  })();
+  const confirmError = touched.confirm && confirm !== password ? 'As senhas não conferem.' : '';
+
+  const canSubmit = password.length >= 8 && /\d/.test(password) && confirm === password && !saving;
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setTouched({ password: true, confirm: true });
+    if (!canSubmit) return;
+    setSaving(true);
+    try {
+      await apiRequest('/api/auth/set-password', {
+        method: 'POST',
+        body: JSON.stringify({ password }),
+      });
+      toast.success('Senha definida! Agora você pode entrar com email/senha ou Google.');
+      setPassword('');
+      setConfirm('');
+      setTouched({ password: false, confirm: false });
+      setOpen(false);
+    } catch (err) {
+      toast.error(err?.message || 'Não foi possível salvar a senha. Tente novamente.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardHeader}>
+        <h3 className={styles.cardTitle}><Lock size={15} /> Senha de acesso</h3>
+        {!open && (
+          <button type="button" className={styles.editBtn} onClick={() => setOpen(true)}>
+            <Edit3 size={14} /> Definir / alterar senha
+          </button>
+        )}
       </div>
+
+      {!open ? (
+        <p className={styles.emptyHint}>
+          Defina uma senha para entrar também com email/senha — sem perder o login pelo Google.
+          A vinculação acontece automaticamente pelo seu e-mail.
+        </p>
+      ) : (
+        <form onSubmit={submit} className={styles.formSection}>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Nova senha</label>
+            <input
+              className={styles.fieldInput}
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+              placeholder="Mínimo 8 caracteres com 1 número"
+            />
+            {pwdError
+              ? <span style={{ color: '#f87171', fontSize: '0.78rem', marginTop: 4 }}>{pwdError}</span>
+              : <span className={styles.fieldHint}>Mínimo 8 caracteres, incluindo pelo menos 1 número.</span>}
+          </div>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Confirmar senha</label>
+            <input
+              className={styles.fieldInput}
+              type="password"
+              autoComplete="new-password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              onBlur={() => setTouched((t) => ({ ...t, confirm: true }))}
+              placeholder="Repita a senha"
+            />
+            {confirmError && <span style={{ color: '#f87171', fontSize: '0.78rem', marginTop: 4 }}>{confirmError}</span>}
+          </div>
+          <div className={styles.formActions}>
+            <button
+              type="button"
+              className={styles.btnCancel}
+              onClick={() => { setOpen(false); setPassword(''); setConfirm(''); setTouched({ password: false, confirm: false }); }}
+              disabled={saving}
+            >
+              <X size={14} /> Cancelar
+            </button>
+            <button type="submit" className={styles.btnSave} disabled={!canSubmit}>
+              {saving ? 'Salvando...' : <><Check size={14} /> Salvar senha</>}
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }
