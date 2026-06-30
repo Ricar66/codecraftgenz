@@ -218,6 +218,43 @@
   flex: 1;
 }
 
+.kanbanColPager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.pagerBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+.pagerBtn:hover:not(:disabled) {
+  background: rgba(0, 228, 242, 0.15);
+  color: var(--cor-terciaria, #00E4F2);
+  border-color: rgba(0, 228, 242, 0.3);
+}
+.pagerBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.pagerLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.02em;
+}
+
 .kanbanColEmpty {
   display: flex;
   flex-direction: column;

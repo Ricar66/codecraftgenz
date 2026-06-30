@@ -417,6 +417,17 @@ function StatPill({ label, value, tone = 'neutral', icon: Icon }) {
 
 function KanbanColumn({ column, getApp, onEdit, onDelete, onTransition, transitionBusy }) {
   const { id, label, icon: Icon, projects, tone } = column;
+  const PAGE = 6;
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(projects.length / PAGE));
+
+  // Clamp page back to range when projects shrink (transition out of this column)
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const slice = projects.slice((page - 1) * PAGE, page * PAGE);
+
   return (
     <section className={`${styles.kanbanCol} ${styles[`colTone_${tone}`]}`}>
       <header className={styles.kanbanColHeader}>
@@ -434,7 +445,7 @@ function KanbanColumn({ column, getApp, onEdit, onDelete, onTransition, transiti
           </div>
         ) : (
           <AnimatePresence>
-            {projects.map(p => (
+            {slice.map(p => (
               <ProjectCard
                 key={p.id}
                 project={p}
@@ -449,6 +460,30 @@ function KanbanColumn({ column, getApp, onEdit, onDelete, onTransition, transiti
           </AnimatePresence>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <footer className={styles.kanbanColPager}>
+          <button
+            className={styles.pagerBtn}
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            title="Página anterior"
+          >
+            <ArrowLeft size={12} />
+          </button>
+          <span className={styles.pagerLabel}>
+            {(page - 1) * PAGE + 1}–{Math.min(page * PAGE, projects.length)} de {projects.length}
+          </span>
+          <button
+            className={styles.pagerBtn}
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            title="Próxima página"
+          >
+            <ArrowRight size={12} />
+          </button>
+        </footer>
+      )}
     </section>
   );
 }
