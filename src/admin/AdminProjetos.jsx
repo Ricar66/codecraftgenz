@@ -44,6 +44,7 @@ export default function AdminProjetos() {
   const [modalOpen, setModalOpen] = useState(false);
   const [confirmFinalizar, setConfirmFinalizar] = useState(null); // project obj or null
   const [transitionBusy, setTransitionBusy] = useState(null);     // project.id or null
+  const [activeFilter, setActiveFilter] = useState('total');      // 'total' | 'aguardando_start' | 'em_andamento' | 'finalizado'
 
   // Fetch apps once on mount to show "app vinculado" badge on each project card.
   const loadApps = useCallback(async () => {
@@ -315,12 +316,12 @@ export default function AdminProjetos() {
         </div>
       </header>
 
-      {/* Stats inline */}
+      {/* Tabs (eram só stats — agora filtram) */}
       <div className={styles.statsRow}>
-        <StatPill label="Total"            value={stats.total}      tone="neutral" />
-        <StatPill label="Aguardando"       value={stats.aguardando} tone="info"    icon={Clock} />
-        <StatPill label="Em Andamento"     value={stats.andamento}  tone="warning" icon={Loader2} />
-        <StatPill label="Finalizados"      value={stats.finalizado} tone="success" icon={CheckCircle2} />
+        <StatPill label="Total"        value={stats.total}      tone="neutral" active={activeFilter === 'total'}            onClick={() => setActiveFilter('total')} />
+        <StatPill label="Aguardando"   value={stats.aguardando} tone="info"    active={activeFilter === 'aguardando_start'} onClick={() => setActiveFilter('aguardando_start')} icon={Clock} />
+        <StatPill label="Em Andamento" value={stats.andamento}  tone="warning" active={activeFilter === 'em_andamento'}     onClick={() => setActiveFilter('em_andamento')}     icon={Loader2} />
+        <StatPill label="Finalizados"  value={stats.finalizado} tone="success" active={activeFilter === 'finalizado'}       onClick={() => setActiveFilter('finalizado')}       icon={CheckCircle2} />
       </div>
 
       {/* Notice */}
@@ -352,19 +353,22 @@ export default function AdminProjetos() {
         </div>
       </div>
 
-      {/* Kanban */}
-      <div className={styles.kanban}>
-        {columns.map(col => (
-          <KanbanColumn
-            key={col.id}
-            column={col}
-            getApp={(p) => appByProjectId.get(Number(p.id))}
-            onEdit={openEdit}
-            onDelete={onDelete}
-            onTransition={transition}
-            transitionBusy={transitionBusy}
-          />
-        ))}
+      {/* Kanban OU coluna única (filtrada) */}
+      <div className={`${styles.kanban} ${activeFilter !== 'total' ? styles.kanbanSingle : ''}`}>
+        {columns
+          .filter(col => activeFilter === 'total' || col.id === activeFilter)
+          .map(col => (
+            <KanbanColumn
+              key={col.id}
+              column={col}
+              singleMode={activeFilter !== 'total'}
+              getApp={(p) => appByProjectId.get(Number(p.id))}
+              onEdit={openEdit}
+              onDelete={onDelete}
+              onTransition={transition}
+              transitionBusy={transitionBusy}
+            />
+          ))}
       </div>
 
       {/* Modal: create / edit */}
@@ -405,17 +409,22 @@ export default function AdminProjetos() {
 
 /* ------------------------- Sub-components ------------------------- */
 
-function StatPill({ label, value, tone = 'neutral', icon: Icon }) {
+function StatPill({ label, value, tone = 'neutral', icon: Icon, active = false, onClick }) {
+  const Tag = onClick ? 'button' : 'div';
   return (
-    <div className={`${styles.statPill} ${styles[`pillTone_${tone}`]}`}>
+    <Tag
+      type={onClick ? 'button' : undefined}
+      className={`${styles.statPill} ${styles[`pillTone_${tone}`]} ${active ? styles.pillActive : ''} ${onClick ? styles.pillClickable : ''}`}
+      onClick={onClick}
+    >
       {Icon && <Icon size={16} />}
       <span className={styles.statPillValue}>{value}</span>
       <span className={styles.statPillLabel}>{label}</span>
-    </div>
+    </Tag>
   );
 }
 
-function KanbanColumn({ column, getApp, onEdit, onDelete, onTransition, transitionBusy }) {
+function KanbanColumn({ column, singleMode = false, getApp, onEdit, onDelete, onTransition, transitionBusy }) {
   const { id, label, icon: Icon, projects, tone } = column;
   const PAGE = 6;
   const [page, setPage] = useState(1);
@@ -429,7 +438,7 @@ function KanbanColumn({ column, getApp, onEdit, onDelete, onTransition, transiti
   const slice = projects.slice((page - 1) * PAGE, page * PAGE);
 
   return (
-    <section className={`${styles.kanbanCol} ${styles[`colTone_${tone}`]}`}>
+    <section className={`${styles.kanbanCol} ${styles[`colTone_${tone}`]} ${singleMode ? styles.kanbanColSingle : ''}`}>
       <header className={styles.kanbanColHeader}>
         <span className={styles.kanbanColTitle}>
           <Icon size={15} /> {label}

@@ -105,9 +105,20 @@
   font-size: 0.82rem;
   font-weight: 500;
   color: var(--texto-gelo, #a0a0a0);
-  transition: transform 0.16s ease;
+  transition: all 0.16s ease;
+  font-family: inherit;
 }
-.statPill:hover { transform: translateY(-2px); }
+.pillClickable { cursor: pointer; }
+.pillClickable:hover { transform: translateY(-2px); }
+
+.pillActive {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35) inset;
+  transform: translateY(-1px);
+}
+.pillActive.pillTone_info    { box-shadow: 0 0 0 2px rgba(165, 180, 252, 0.6) inset; }
+.pillActive.pillTone_warning { box-shadow: 0 0 0 2px rgba(252, 211, 77, 0.6) inset; }
+.pillActive.pillTone_success { box-shadow: 0 0 0 2px rgba(110, 231, 183, 0.6) inset; }
+.pillActive.pillTone_neutral { box-shadow: 0 0 0 2px rgba(0, 228, 242, 0.55) inset; color: #fff; }
 
 .statPillValue {
   font-weight: 800;
@@ -147,6 +158,19 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
   align-items: flex-start;
+}
+
+/* Modo filtrado: uma coluna ocupa toda largura, grid 3 cards por linha */
+.kanbanSingle {
+  grid-template-columns: 1fr;
+}
+.kanbanColSingle .kanbanColBody {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 980px) {
+  .kanbanColSingle .kanbanColBody {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
 }
 
 .kanbanCol {
