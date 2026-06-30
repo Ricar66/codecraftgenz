@@ -445,10 +445,10 @@ function KanbanColumn({ column, getApp, onEdit, onDelete, onTransition, transiti
             disabled={page === 1}
             title="Página anterior"
           >
-            <ArrowLeft size={12} />
+            <ArrowLeft size={14} /> Anterior
           </button>
           <span className={styles.pagerLabel}>
-            {(page - 1) * PAGE + 1}–{Math.min(page * PAGE, projects.length)} de {projects.length}
+            Página {page} de {totalPages}
           </span>
           <button
             className={styles.pagerBtn}
@@ -456,7 +456,7 @@ function KanbanColumn({ column, getApp, onEdit, onDelete, onTransition, transiti
             disabled={page === totalPages}
             title="Próxima página"
           >
-            <ArrowRight size={12} />
+            Próxima <ArrowRight size={14} />
           </button>
         </div>
       )}
