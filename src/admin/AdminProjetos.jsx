@@ -437,6 +437,30 @@ function KanbanColumn({ column, getApp, onEdit, onDelete, onTransition, transiti
         <span className={styles.kanbanColCount}>{projects.length}</span>
       </header>
 
+      {totalPages > 1 && (
+        <div className={styles.kanbanColPager}>
+          <button
+            className={styles.pagerBtn}
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            title="Página anterior"
+          >
+            <ArrowLeft size={12} />
+          </button>
+          <span className={styles.pagerLabel}>
+            {(page - 1) * PAGE + 1}–{Math.min(page * PAGE, projects.length)} de {projects.length}
+          </span>
+          <button
+            className={styles.pagerBtn}
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            title="Próxima página"
+          >
+            <ArrowRight size={12} />
+          </button>
+        </div>
+      )}
+
       <div className={styles.kanbanColBody}>
         {projects.length === 0 ? (
           <div className={styles.kanbanColEmpty}>
@@ -460,30 +484,6 @@ function KanbanColumn({ column, getApp, onEdit, onDelete, onTransition, transiti
           </AnimatePresence>
         )}
       </div>
-
-      {totalPages > 1 && (
-        <footer className={styles.kanbanColPager}>
-          <button
-            className={styles.pagerBtn}
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
-            title="Página anterior"
-          >
-            <ArrowLeft size={12} />
-          </button>
-          <span className={styles.pagerLabel}>
-            {(page - 1) * PAGE + 1}–{Math.min(page * PAGE, projects.length)} de {projects.length}
-          </span>
-          <button
-            className={styles.pagerBtn}
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            title="Próxima página"
-          >
-            <ArrowRight size={12} />
-          </button>
-        </footer>
-      )}
     </section>
   );
 }
