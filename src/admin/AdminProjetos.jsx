@@ -44,7 +44,7 @@ export default function AdminProjetos() {
   const [modalOpen, setModalOpen] = useState(false);
   const [confirmFinalizar, setConfirmFinalizar] = useState(null); // project obj or null
   const [transitionBusy, setTransitionBusy] = useState(null);     // project.id or null
-  const [activeFilter, setActiveFilter] = useState('total');      // 'total' | 'aguardando_start' | 'em_andamento' | 'finalizado'
+  const [activeFilter, setActiveFilter] = useState('em_andamento'); // 'aguardando_start' | 'em_andamento' | 'finalizado'
 
   // Fetch apps once on mount to show "app vinculado" badge on each project card.
   const loadApps = useCallback(async () => {
@@ -316,9 +316,8 @@ export default function AdminProjetos() {
         </div>
       </header>
 
-      {/* Tabs (eram só stats — agora filtram) */}
+      {/* Tabs de status */}
       <div className={styles.statsRow}>
-        <StatPill label="Total"        value={stats.total}      tone="neutral" active={activeFilter === 'total'}            onClick={() => setActiveFilter('total')} />
         <StatPill label="Aguardando"   value={stats.aguardando} tone="info"    active={activeFilter === 'aguardando_start'} onClick={() => setActiveFilter('aguardando_start')} icon={Clock} />
         <StatPill label="Em Andamento" value={stats.andamento}  tone="warning" active={activeFilter === 'em_andamento'}     onClick={() => setActiveFilter('em_andamento')}     icon={Loader2} />
         <StatPill label="Finalizados"  value={stats.finalizado} tone="success" active={activeFilter === 'finalizado'}       onClick={() => setActiveFilter('finalizado')}       icon={CheckCircle2} />
@@ -353,15 +352,15 @@ export default function AdminProjetos() {
         </div>
       </div>
 
-      {/* Kanban OU coluna única (filtrada) */}
-      <div className={`${styles.kanban} ${activeFilter !== 'total' ? styles.kanbanSingle : ''}`}>
+      {/* Coluna única filtrada por status */}
+      <div className={`${styles.kanban} ${styles.kanbanSingle}`}>
         {columns
-          .filter(col => activeFilter === 'total' || col.id === activeFilter)
+          .filter(col => col.id === activeFilter)
           .map(col => (
             <KanbanColumn
               key={col.id}
               column={col}
-              singleMode={activeFilter !== 'total'}
+              singleMode={true}
               getApp={(p) => appByProjectId.get(Number(p.id))}
               onEdit={openEdit}
               onDelete={onDelete}
