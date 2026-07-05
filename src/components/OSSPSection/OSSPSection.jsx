@@ -13,7 +13,7 @@ const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } }
 
 const cards = [
   { Icon: Shield, title: 'Segurança', text: 'Monitoramento de CVEs, revisão de dependências e varreduras periódicas.', color: '#34d399' },
-  { Icon: FileText, title: 'Licenciamento', text: 'Uso responsável de licenças MIT, Apache 2.0 e GPL compatíveis.', color: '#818cf8' },
+  { Icon: FileText, title: 'Licenciamento', text: 'Uso responsável de licenças MIT, Apache 2.0 e GPL compatíveis.', color: '#00E4F2' },
   { Icon: Users, title: 'Contribuição', text: 'Participação ativa em projetos OSS e respeito aos guias de contribuição.', color: '#22d3ee' },
   { Icon: Search, title: 'Auditoria', text: 'Code reviews, trilhas de auditoria e governança técnica transparente.', color: '#f472b6' },
 ];

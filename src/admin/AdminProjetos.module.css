@@ -129,8 +129,8 @@
 
 .pillTone_neutral { color: #cbd5e1; }
 .pillTone_info {
-  background: rgba(99, 102, 241, 0.10);
-  border-color: rgba(99, 102, 241, 0.35);
+  background: rgba(209, 43, 242, 0.10);
+  border-color: rgba(209, 43, 242, 0.35);
   color: #a5b4fc;
 }
 .pillTone_info .statPillValue { color: #c7d2fe; }
@@ -194,7 +194,7 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
-.colTone_neutral::before  { background: linear-gradient(90deg, #6366f1, #818cf8); }
+.colTone_neutral::before  { background: linear-gradient(90deg, var(--color-primary, #D12BF2), var(--color-accent, #00E4F2)); }
 .colTone_warning::before  { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
 .colTone_success::before  { background: linear-gradient(90deg, #10b981, #34d399); }
 
@@ -416,8 +416,8 @@
   letter-spacing: 0.04em;
   padding: 2px 7px;
   border-radius: 999px;
-  background: rgba(99, 102, 241, 0.15);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: rgba(209, 43, 242, 0.15);
+  border: 1px solid rgba(209, 43, 242, 0.3);
   color: #a5b4fc;
 }
 .cardTagMore {
@@ -479,12 +479,12 @@
 }
 
 .cardTransitionPrimary {
-  background: rgba(99, 102, 241, 0.15);
-  border-color: rgba(99, 102, 241, 0.35);
+  background: rgba(209, 43, 242, 0.15);
+  border-color: rgba(209, 43, 242, 0.35);
   color: #a5b4fc;
 }
 .cardTransitionPrimary:hover:not(:disabled) {
-  background: rgba(99, 102, 241, 0.25);
+  background: rgba(209, 43, 242, 0.25);
   color: #c7d2fe;
 }
 

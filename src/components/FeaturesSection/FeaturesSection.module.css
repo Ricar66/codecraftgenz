@@ -25,9 +25,9 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #818cf8;
-  background: rgba(99, 102, 241, 0.08);
-  border: 1px solid rgba(99, 102, 241, 0.15);
+  color: var(--color-accent, #00E4F2);
+  background: rgba(209, 43, 242, 0.08);
+  border: 1px solid rgba(209, 43, 242, 0.15);
   margin-bottom: 20px;
 }
 

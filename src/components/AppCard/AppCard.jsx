@@ -76,7 +76,7 @@ const AppCard = ({ app, onDownload, onAbout, mode = 'owned', featured = false })
               display: 'inline-block',
               padding: '1px 8px',
               borderRadius: 999,
-              background: 'linear-gradient(135deg, #d12bf2 0%, #6366f1 100%)',
+              background: 'linear-gradient(135deg, #d12bf2 0%, #D12BF2 100%)',
               color: '#fff',
               fontSize: '0.7rem',
               fontWeight: 700,

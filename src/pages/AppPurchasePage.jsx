@@ -662,7 +662,7 @@ const AppPurchasePage = () => {
                       display: 'inline-block',
                       padding: '2px 10px',
                       borderRadius: 999,
-                      background: 'linear-gradient(135deg, #d12bf2 0%, #6366f1 100%)',
+                      background: 'linear-gradient(135deg, #d12bf2 0%, #D12BF2 100%)',
                       color: '#fff',
                       fontSize: '0.75rem',
                       fontWeight: 700,

@@ -33,7 +33,7 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 300px 200px at 20% 0%, rgba(99, 102, 241, 0.06), transparent),
+    radial-gradient(ellipse 300px 200px at 20% 0%, rgba(209, 43, 242, 0.06), transparent),
     radial-gradient(ellipse 200px 200px at 80% 100%, rgba(167, 139, 250, 0.03), transparent);
   pointer-events: none;
 }
@@ -122,8 +122,8 @@
 }
 
 .input:focus {
-  border-color: rgba(99, 102, 241, 0.35);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.06);
+  border-color: rgba(209, 43, 242, 0.35);
+  box-shadow: 0 0 0 3px rgba(209, 43, 242, 0.06);
 }
 
 .forgotRow {
@@ -162,7 +162,7 @@
   padding: 14px;
   border: none;
   border-radius: 12px;
-  background: #6366f1;
+  background: var(--color-primary, #D12BF2);
   color: #fff;
   font-size: 0.95rem;
   font-weight: 700;
@@ -173,7 +173,7 @@
 
 .submitBtn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 8px 24px rgba(209, 43, 242, 0.2);
 }
 
 .submitBtn:active:not(:disabled) {

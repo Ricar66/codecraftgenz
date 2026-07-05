@@ -49,7 +49,7 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
     const text = document.createTextNode('Nova versão disponível! ')
     const btn = document.createElement('button')
     btn.textContent = 'Atualizar'
-    Object.assign(btn.style, { marginLeft:'12px', background:'#6366f1', color:'#fff', border:'none', borderRadius:'8px', padding:'6px 16px', cursor:'pointer', fontWeight:'600' })
+    Object.assign(btn.style, { marginLeft:'12px', background:'#D12BF2', color:'#fff', border:'none', borderRadius:'8px', padding:'6px 16px', cursor:'pointer', fontWeight:'600' })
     btn.onclick = () => window.location.reload()
     banner.appendChild(text)
     banner.appendChild(btn)

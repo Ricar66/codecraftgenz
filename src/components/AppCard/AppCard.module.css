@@ -99,7 +99,7 @@
 }
 
 .badgeNew {
-  background: rgba(99, 102, 241, 0.9);
+  background: rgba(209, 43, 242, 0.9);
   color: #fff;
 }
 
@@ -237,20 +237,20 @@
 }
 
 .btn:focus-visible {
-  outline: 2px solid #6366f1;
+  outline: 2px solid var(--color-primary, #D12BF2);
   outline-offset: 2px;
 }
 
 /* Primary CTA — vibrant, attention-grabbing */
 .btnPrimary {
   flex: 1;
-  background: #6366f1;
+  background: var(--color-primary, #D12BF2);
   color: #fff;
-  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 2px 12px rgba(209, 43, 242, 0.25);
 }
 
 .btnPrimary:hover {
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 6px 20px rgba(209, 43, 242, 0.35);
   background: #5558e6;
 }
 

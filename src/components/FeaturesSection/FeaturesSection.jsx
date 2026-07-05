@@ -30,7 +30,7 @@ const features = [
     Icon: GitBranch,
     title: 'Projetos',
     text: 'Conheça os projetos que já entregamos: plataformas web, integrações e produtos próprios.',
-    color: '#818cf8',
+    color: '#00E4F2',
     bg: 'rgba(129, 140, 248, 0.08)',
     border: 'rgba(129, 140, 248, 0.15)',
   },

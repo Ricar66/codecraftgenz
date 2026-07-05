@@ -19,9 +19,9 @@
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #818cf8;
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: var(--color-accent, #00E4F2);
+  background: rgba(209, 43, 242, 0.1);
+  border: 1px solid rgba(209, 43, 242, 0.25);
   border-radius: 20px;
   padding: 5px 14px;
   margin-bottom: 18px;
@@ -159,7 +159,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4f46e5, #818cf8);
+  background: linear-gradient(135deg, var(--color-primary, #D12BF2), var(--color-accent, #00E4F2));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -199,16 +199,16 @@
   gap: 7px;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #818cf8;
+  color: var(--color-accent, #00E4F2);
   text-decoration: none;
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  border: 1px solid rgba(209, 43, 242, 0.3);
   border-radius: 10px;
   padding: 11px 22px;
   transition: all 0.25s ease;
 }
 
 .ctaLink:hover {
-  background: rgba(99, 102, 241, 0.08);
+  background: rgba(209, 43, 242, 0.08);
   border-color: rgba(129, 140, 248, 0.5);
   gap: 10px;
 }

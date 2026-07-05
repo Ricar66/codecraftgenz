@@ -20,7 +20,7 @@ export default function ProtectedRoute({ children, allowed = ['admin'] }) {
         width: '36px',
         height: '36px',
         border: '3px solid rgba(255,255,255,0.06)',
-        borderTopColor: '#6366f1',
+        borderTopColor: '#D12BF2',
         borderRadius: '50%',
         animation: 'spin 0.8s linear infinite',
       }} />

@@ -15,7 +15,7 @@
 .spinner {
   width: 36px; height: 36px;
   border: 3px solid rgba(129,140,248,.2);
-  border-top-color: #818cf8;
+  border-top-color: var(--color-accent, #00E4F2);
   border-radius: 50%;
   animation: spin .9s linear infinite;
 }
@@ -31,7 +31,7 @@
 }
 .avatarCircle {
   width: 64px; height: 64px; border-radius: 50%;
-  background: linear-gradient(135deg, #4f46e5, #D12BF2);
+  background: linear-gradient(135deg, var(--color-primary, #D12BF2), #D12BF2);
   display: flex; align-items: center; justify-content: center;
   font-size: 1.3rem; font-weight: 800; color: #fff; flex-shrink: 0;
 }
@@ -67,7 +67,7 @@
   background: transparent; cursor: pointer; transition: all .2s;
 }
 .tabBtn:hover { color: #f1f5f9; }
-.tabBtnActive { background: rgba(129,140,248,.15); color: #818cf8; }
+.tabBtnActive { background: rgba(129,140,248,.15); color: var(--color-accent, #00E4F2); }
 
 /* ── Tab content ── */
 .tabContent { display: flex; flex-direction: column; gap: 20px; }
@@ -115,12 +115,12 @@
   border: 1px solid rgba(255,255,255,.1); border-radius: 20px;
   font-size: 0.78rem; color: #94a3b8; cursor: pointer; transition: all .15s;
 }
-.chip:hover { background: rgba(129,140,248,.08); border-color: rgba(129,140,248,.3); color: #818cf8; }
-.chipActive { background: rgba(129,140,248,.15); border-color: rgba(129,140,248,.5); color: #818cf8; font-weight: 600; }
+.chip:hover { background: rgba(129,140,248,.08); border-color: rgba(129,140,248,.3); color: var(--color-accent, #00E4F2); }
+.chipActive { background: rgba(129,140,248,.15); border-color: rgba(129,140,248,.5); color: var(--color-accent, #00E4F2); font-weight: 600; }
 .skillTag {
   padding: 4px 12px;
   background: rgba(129,140,248,.1); border: 1px solid rgba(129,140,248,.2);
-  border-radius: 20px; font-size: 0.78rem; font-weight: 600; color: #818cf8;
+  border-radius: 20px; font-size: 0.78rem; font-weight: 600; color: var(--color-accent, #00E4F2);
 }
 .skillTagCrafter {
   padding: 4px 12px;
@@ -146,14 +146,14 @@
 .btnCancel:hover { border-color: rgba(255,255,255,.2); }
 .btnSave {
   display: flex; align-items: center; gap: 5px;
-  padding: 8px 20px; background: linear-gradient(135deg, #D12BF2, #818cf8);
+  padding: 8px 20px; background: linear-gradient(135deg, #D12BF2, var(--color-accent, #00E4F2));
   border: none; border-radius: 8px; color: #fff; font-size: 0.85rem; font-weight: 700; cursor: pointer;
 }
 .btnSave:disabled { opacity: .5; cursor: not-allowed; }
 .editBtn {
   display: flex; align-items: center; gap: 6px;
   padding: 7px 14px; background: rgba(129,140,248,.1); border: 1px solid rgba(129,140,248,.3);
-  border-radius: 8px; font-size: 0.78rem; font-weight: 600; color: #818cf8; cursor: pointer;
+  border-radius: 8px; font-size: 0.78rem; font-weight: 600; color: var(--color-accent, #00E4F2); cursor: pointer;
 }
 .editBtn:hover { background: rgba(129,140,248,.2); }
 .linkBtn { text-decoration: none; }
@@ -179,7 +179,7 @@
 .ctaDesc { font-size: 0.85rem; color: #a0a0b0; line-height: 1.6; margin: 0; }
 .ctaBtn {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 10px 22px; background: linear-gradient(135deg, #D12BF2, #818cf8);
+  padding: 10px 22px; background: linear-gradient(135deg, #D12BF2, var(--color-accent, #00E4F2));
   border-radius: 12px; color: #fff; font-size: 0.875rem; font-weight: 700; text-decoration: none;
 }
 
@@ -215,7 +215,7 @@
 .downloadBtn {
   width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px;
   background: rgba(129,140,248,.1); border: 1px solid rgba(129,140,248,.25);
-  color: #818cf8; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--color-accent, #00E4F2); cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
 .downloadBtn:disabled { opacity: .3; cursor: not-allowed; }
 

@@ -16,7 +16,7 @@
   background: rgba(26, 26, 46, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(209, 43, 242, 0.12);
   border-radius: var(--raio-xl);
   box-shadow:
     0 20px 60px rgba(0, 0, 0, 0.4),
@@ -33,7 +33,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #4f46e5, #818cf8);
+  background: linear-gradient(90deg, var(--color-primary, #D12BF2), var(--color-accent, #00E4F2));
 }
 
 /* ===== TIPOGRAFIA ===== */
@@ -64,7 +64,7 @@
   font-family: var(--fonte-titulos);
   font-size: var(--texto-3xl);
   font-weight: 800;
-  color: #818cf8;
+  color: var(--color-accent, #00E4F2);
   margin: var(--espaco-md) 0;
   text-shadow: 0 0 20px rgba(0, 228, 242, 0.3);
 }
@@ -101,7 +101,7 @@
   font-weight: 600;
   background: rgba(0, 228, 242, 0.1);
   border: 1px solid rgba(0, 228, 242, 0.25);
-  color: var(--cor-terciaria, #818cf8);
+  color: var(--cor-terciaria, var(--color-accent, #00E4F2));
 }
 
 /* ===== GRUPO DE BOTÕES ===== */
@@ -131,7 +131,7 @@
 }
 
 .btnPrimary {
-  background: linear-gradient(135deg, #818cf8, #00b8c4);
+  background: linear-gradient(135deg, var(--color-accent, #00E4F2), #00b8c4);
   color: var(--fundo-escuro);
   border-color: transparent;
   box-shadow: 0 4px 15px rgba(0, 228, 242, 0.3);
@@ -154,8 +154,8 @@
 
 .btnOutline:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
-  border-color: #818cf8;
-  color: #818cf8;
+  border-color: var(--color-accent, #00E4F2);
+  color: var(--color-accent, #00E4F2);
 }
 
 .btn:disabled {
@@ -238,7 +238,7 @@
 }
 
 .input:focus {
-  border-color: #818cf8;
+  border-color: var(--color-accent, #00E4F2);
   box-shadow: 0 0 0 3px rgba(0, 228, 242, 0.15);
   background: rgba(0, 0, 0, 0.4);
 }
@@ -264,7 +264,7 @@
 }
 
 .statusApproved p {
-  color: #818cf8;
+  color: var(--color-accent, #00E4F2);
 }
 
 .statusPending {
@@ -312,7 +312,7 @@
 
 .progress {
   height: 100%;
-  background: linear-gradient(90deg, #4f46e5, #818cf8);
+  background: linear-gradient(90deg, var(--color-primary, #D12BF2), var(--color-accent, #00E4F2));
   transition: width 0.3s ease;
 }
 
@@ -360,7 +360,7 @@
 }
 
 .feedbackInput:focus {
-  border-color: #818cf8;
+  border-color: var(--color-accent, #00E4F2);
   box-shadow: 0 0 0 3px rgba(0, 228, 242, 0.15);
   background: rgba(0, 0, 0, 0.4);
 }
@@ -378,7 +378,7 @@
 }
 
 .helpDetails summary:hover {
-  color: #818cf8;
+  color: var(--color-accent, #00E4F2);
 }
 
 .helpDetails ul {
@@ -414,7 +414,7 @@
   border-radius: var(--raio-xl);
   box-shadow:
     0 25px 80px rgba(0, 0, 0, 0.6),
-    0 0 40px rgba(99, 102, 241, 0.15),
+    0 0 40px rgba(209, 43, 242, 0.15),
     0 0 40px rgba(0, 228, 242, 0.15);
   padding: var(--espaco-xl);
   animation: slideUp 0.3s ease-out;

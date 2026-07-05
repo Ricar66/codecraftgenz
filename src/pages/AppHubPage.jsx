@@ -266,7 +266,7 @@ const AppHubPage = () => {
         <div className={styles.hubBannerContent}>
           <div className={styles.hubBannerIcon}>
             <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="2" width="60" height="60" rx="14" fill="#6366f1" />
+              <rect x="2" y="2" width="60" height="60" rx="14" fill="#D12BF2" />
               <path d="M24 20L12 32L24 44" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
               <path d="M40 20L52 32L40 44" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
               <circle cx="32" cy="32" r="3" fill="white" opacity="0.95" />

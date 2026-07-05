@@ -24,7 +24,7 @@ export default function NotFoundPage() {
           fontSize: 'clamp(4rem, 12vw, 7rem)',
           fontWeight: 800,
           fontFamily: 'Montserrat, sans-serif',
-          background: 'linear-gradient(135deg, #6366f1, #a78bfa)',
+          background: 'linear-gradient(135deg, #D12BF2, #a78bfa)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           lineHeight: 1,
@@ -47,7 +47,7 @@ export default function NotFoundPage() {
         <button
           onClick={() => navigate('/')}
           style={{
-            background: 'linear-gradient(135deg, #6366f1, #a78bfa)',
+            background: 'linear-gradient(135deg, #D12BF2, #a78bfa)',
             color: '#fff',
             border: 'none',
             borderRadius: '12px',

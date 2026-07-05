@@ -343,9 +343,9 @@
 }
 
 .form:hover {
-  border-color: rgba(99, 102, 241, 0.2);
+  border-color: rgba(209, 43, 242, 0.2);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25),
-              0 0 32px rgba(99, 102, 241, 0.06),
+              0 0 32px rgba(209, 43, 242, 0.06),
               inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
@@ -372,7 +372,7 @@
 }
 
 .label svg {
-  color: #818cf8;
+  color: var(--color-accent, #00E4F2);
   font-size: 0.85rem;
 }
 
@@ -401,7 +401,7 @@
 .select:focus,
 .textarea:focus {
   outline: none;
-  border-color: #818cf8;
+  border-color: var(--color-accent, #00E4F2);
   background: rgba(0, 228, 242, 0.05);
 }
 
@@ -444,7 +444,7 @@
   font-weight: 600;
   font-family: inherit;
   color: var(--fundo-escuro);
-  background: linear-gradient(135deg, #818cf8, #4f46e5);
+  background: linear-gradient(135deg, var(--color-accent, #00E4F2), var(--color-primary, #D12BF2));
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -463,7 +463,7 @@
 }
 
 .submitButton:focus-visible {
-  outline: 2px solid #818cf8;
+  outline: 2px solid var(--color-accent, #00E4F2);
   outline-offset: 2px;
 }
 
@@ -515,7 +515,7 @@
   font-size: 1rem;
   font-weight: 600;
   color: var(--fundo-escuro);
-  background: linear-gradient(135deg, #818cf8, #4f46e5);
+  background: linear-gradient(135deg, var(--color-accent, #00E4F2), var(--color-primary, #D12BF2));
   border-radius: 10px;
   text-decoration: none;
   min-height: 48px;

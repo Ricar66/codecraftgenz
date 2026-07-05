@@ -13,7 +13,7 @@ const fadeUp = {
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
 
 const values = [
-  { Icon: Cog, title: 'Inovação', text: 'Exploramos novas ideias e frameworks para soluções escaláveis.', color: '#818cf8' },
+  { Icon: Cog, title: 'Inovação', text: 'Exploramos novas ideias e frameworks para soluções escaláveis.', color: '#00E4F2' },
   { Icon: Award, title: 'Qualidade', text: 'Entrega com excelência, padrões e boas práticas de mercado.', color: '#34d399' },
   { Icon: MessageSquare, title: 'Comunidade', text: 'Compartilhamos conhecimento e crescemos juntos como equipe.', color: '#22d3ee' },
   { Icon: ShieldCheck, title: 'Segurança', text: 'Proteção de dados e compliance no centro de toda operação.', color: '#f472b6' },

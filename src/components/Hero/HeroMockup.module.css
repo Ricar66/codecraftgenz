@@ -18,7 +18,7 @@
   border-radius: 14px;
   box-shadow:
     0 24px 60px -20px rgba(0, 0, 0, 0.7),
-    0 0 0 1px rgba(99, 102, 241, 0.08);
+    0 0 0 1px rgba(209, 43, 242, 0.08);
   overflow: hidden;
   transform: rotateX(2deg) rotateY(-3deg);
   transform-origin: center;
@@ -92,7 +92,7 @@
   width: 26px;
   height: 26px;
   border-radius: 7px;
-  background: linear-gradient(135deg, #D12BF2 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #D12BF2 0%, var(--color-primary, #D12BF2) 100%);
 }
 
 .navItem {
@@ -241,13 +241,13 @@
 
 .bar {
   flex: 1;
-  background: linear-gradient(180deg, #a78bfa 0%, #6366f1 100%);
+  background: linear-gradient(180deg, #a78bfa 0%, var(--color-primary, #D12BF2) 100%);
   border-radius: 4px 4px 0 0;
   opacity: 0;
   transform: scaleY(0);
   transform-origin: bottom;
   animation: barGrow 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  box-shadow: 0 -2px 12px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 -2px 12px rgba(209, 43, 242, 0.25);
 }
 
 @keyframes barGrow {

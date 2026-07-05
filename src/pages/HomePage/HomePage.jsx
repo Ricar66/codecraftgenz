@@ -8,9 +8,9 @@ import {
   Handshake, Settings, Phone, Building2, ArrowRight, MessageSquareHeart,
 } from 'lucide-react';
 
-import appsBanner from '../../assets/apps-banner.jpg';
-import companiesBanner from '../../assets/companies-banner.jpg';
-import hero3dImg from '../../assets/hero-3d.jpg';
+import appsBanner from '../../assets/apps-banner.png';
+import companiesBanner from '../../assets/companies-banner.png';
+import hero3dImg from '../../assets/hero-3d.png';
 import logoCodecraft from '../../assets/logo-principal.png';
 import CompanySection from '../../components/CompanySection/CompanySection';
 import FeaturesSection from '../../components/FeaturesSection/FeaturesSection';

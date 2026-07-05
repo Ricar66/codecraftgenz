@@ -20,7 +20,7 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(700px 500px at 50% 20%, rgba(99, 102, 241, 0.09), transparent 60%),
+    radial-gradient(700px 500px at 50% 20%, rgba(209, 43, 242, 0.09), transparent 60%),
     radial-gradient(400px 300px at 80% 80%, rgba(0, 228, 242, 0.04), transparent 60%);
   pointer-events: none;
 }
@@ -40,9 +40,9 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #818cf8;
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: var(--color-accent, #00E4F2);
+  background: rgba(209, 43, 242, 0.1);
+  border: 1px solid rgba(209, 43, 242, 0.25);
   border-radius: 20px;
   padding: 6px 16px;
   margin-bottom: 28px;
@@ -59,7 +59,7 @@
 }
 
 .accent {
-  color: #818cf8;
+  color: var(--color-accent, #00E4F2);
 }
 
 .accentCyan {
@@ -99,18 +99,18 @@
   width: 64px;
   height: 64px;
   border-radius: 16px;
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: rgba(209, 43, 242, 0.12);
+  border: 1px solid rgba(209, 43, 242, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #818cf8;
+  color: var(--color-accent, #00E4F2);
 }
 
 .missaoTitle {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #818cf8;
+  color: var(--color-accent, #00E4F2);
   margin: 0 0 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -147,14 +147,14 @@
 
 .numeroCard:hover {
   background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: rgba(209, 43, 242, 0.3);
 }
 
 .numeroValor {
   display: block;
   font-size: clamp(1.8rem, 3.5vw, 2.5rem);
   font-weight: 800;
-  color: #818cf8;
+  color: var(--color-accent, #00E4F2);
   line-height: 1;
   margin-bottom: 8px;
 }
@@ -295,12 +295,12 @@
   width: 52px;
   height: 52px;
   border-radius: 14px;
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.18);
+  background: rgba(209, 43, 242, 0.1);
+  border: 1px solid rgba(209, 43, 242, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #818cf8;
+  color: var(--color-accent, #00E4F2);
   margin-bottom: 20px;
 }
 
@@ -334,8 +334,8 @@
 }
 
 .ctaCard {
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(99, 102, 241, 0.06));
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(209, 43, 242, 0.06));
+  border: 1px solid rgba(209, 43, 242, 0.25);
   border-radius: 20px;
   padding: 48px 44px;
   display: flex;
@@ -347,12 +347,12 @@
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background: rgba(99, 102, 241, 0.15);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: rgba(209, 43, 242, 0.15);
+  border: 1px solid rgba(209, 43, 242, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #818cf8;
+  color: var(--color-accent, #00E4F2);
   margin-bottom: 24px;
 }
 
@@ -385,7 +385,7 @@
   font-weight: 700;
   padding: 14px 28px;
   border-radius: 12px;
-  background: #4f46e5;
+  background: var(--color-primary, #D12BF2);
   color: #fff;
   text-decoration: none;
   transition: background 0.2s ease, box-shadow 0.25s ease;
@@ -393,7 +393,7 @@
 }
 
 .ctaBtnPrimary:hover {
-  background: #4338ca;
+  background: var(--color-primary-hover, #E055F5);
   box-shadow: 0 6px 24px rgba(79, 70, 229, 0.35);
 }
 

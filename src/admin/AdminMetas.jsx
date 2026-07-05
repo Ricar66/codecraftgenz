@@ -28,7 +28,7 @@ const TYPE_OPTIONS = [
   { value: 'goal',      label: 'Meta',      color: '#D12BF2' },
   { value: 'meeting',   label: 'Reunião',   color: '#00E4F2' },
   { value: 'deadline',  label: 'Deadline',  color: '#f59e0b' },
-  { value: 'milestone', label: 'Milestone', color: '#6366f1' },
+  { value: 'milestone', label: 'Milestone', color: '#D12BF2' },
 ];
 
 const STATUS_OPTIONS = [
@@ -431,7 +431,7 @@ export default function AdminMetas() {
           </span>
         ))}
         <span className={styles.legendItem}>
-          <span className={styles.legendDot} style={{ background: 'rgba(99,102,241,0.5)', border: '1px solid #6366f1' }} />
+          <span className={styles.legendDot} style={{ background: 'rgba(99,102,241,0.5)', border: '1px solid #D12BF2' }} />
           Feriado nacional
         </span>
       </div>
@@ -603,7 +603,7 @@ export default function AdminMetas() {
                         borderRadius: '20px', padding: '4px 12px', fontSize: '0.85rem', color: '#e0e0f0',
                       }}>
                         <span style={{
-                          width: 22, height: 22, borderRadius: '50%', background: '#6366f1',
+                          width: 22, height: 22, borderRadius: '50%', background: '#D12BF2',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: '0.7rem', fontWeight: 700, color: '#fff', flexShrink: 0,
                         }}>
