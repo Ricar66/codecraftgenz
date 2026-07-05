@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 
 import { trackFunnelStep } from '../../services/analyticsAPI.js';
 import { getAppImageUrl, getAppPrice } from '../../utils/appModel.js';
+import { getLucideIcon } from '../../utils/lucideIconMap.js';
 import { stripMarkdown } from '../../utils/textUtils.js';
 import styles from './AppCard.module.css';
 
@@ -28,7 +29,10 @@ const getBadge = (app) => {
 };
 
 const AppCard = ({ app, onDownload, onAbout, mode = 'owned', featured = false }) => {
-  const { id, name, mainFeature, category } = app;
+  const { id, name, mainFeature } = app;
+  // `app.category` agora é objeto { id, name, slug, icon } | null (nova FK).
+  const category = app.category && typeof app.category === 'object' ? app.category : null;
+  const CategoryIconComp = category?.icon ? getLucideIcon(category.icon) : null;
   const platforms = parsePlatforms(app.platforms);
   const statusLower = String(app.status || '').toLowerCase();
   const finalized = statusLower === 'publicar';
@@ -61,7 +65,12 @@ const AppCard = ({ app, onDownload, onAbout, mode = 'owned', featured = false })
 
       <div className={styles.body}>
         <h3 className={styles.title} title={name}>{name}</h3>
-        {category && <span className={styles.chip} aria-label="Categoria">{category}</span>}
+        {category && (
+          <span className={styles.chip} aria-label={`Categoria: ${category.name}`}>
+            {CategoryIconComp && <CategoryIconComp size={12} style={{ marginRight: 4, verticalAlign: '-2px' }} />}
+            {category.name}
+          </span>
+        )}
         <p className={`${styles.feature} ${styles.clamp2}`} title={mainFeature}>{mainFeature}</p>
 
         <div className={styles.pricingRow} aria-label="Preço">

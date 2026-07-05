@@ -10,6 +10,7 @@ import { WindowsIcon, AppleIcon, LinuxIcon } from '../components/UI/BrandIcons/i
 
 import { useAuth } from '../context/useAuth';
 import { getAllApps, updateApp, createApp, deleteApp, uploadAppExecutable } from '../services/appsAPI';
+import { getCategories } from '../services/categoriesAPI';
 import { uploadImage } from '../services/uploadsAPI';
 import { sanitizeImageUrl } from '../utils/urlSanitize';
 
@@ -36,8 +37,9 @@ export default function AdminApps() {
   const [form, setForm] = useState({
     id: null, name: '', mainFeature: '', description: '',
     status: 'revisar', price: 0, originalPrice: '', thumbnail: '', exec_url: '', version: '1.0.0',
-    platforms: ['windows'], licenseType: 'vitalicia'
+    platforms: ['windows'], licenseType: 'vitalicia', categoryId: ''
   });
+  const [categories, setCategories] = useState([]);
   const [priceMask, setPriceMask] = useState('R$ 0,00');
   const [originalPriceMask, setOriginalPriceMask] = useState('');
   const [exeFile, setExeFile] = useState(null);
@@ -110,6 +112,13 @@ export default function AdminApps() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
+  // Carregar categorias para o select do form (uma vez)
+  useEffect(() => {
+    getCategories()
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => setCategories([]));
+  }, []);
+
   const isInvalidUrl = (s) => {
     const v = String(s || '');
     return /^[a-zA-Z]:\\/.test(v) || v.startsWith('file:');
@@ -127,6 +136,7 @@ export default function AdminApps() {
           form.originalPrice === '' || form.originalPrice == null
             ? null
             : Number(form.originalPrice),
+        category_id: form.categoryId === '' || form.categoryId == null ? null : Number(form.categoryId),
         thumb_url: form.thumbnail,
         executable_url: form.exec_url,
         platforms: form.platforms,
@@ -135,7 +145,7 @@ export default function AdminApps() {
       if (isInvalidUrl(form.thumbnail)) { setError('Thumbnail URL inválida. Use http(s).'); return; }
       if (isInvalidUrl(form.exec_url)) { setError('Exec URL inválida. Use http(s).'); return; }
       await updateApp(form.id, payload);
-      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'revisar', price: 0, originalPrice: '', thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'], licenseType: 'vitalicia' });
+      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'revisar', price: 0, originalPrice: '', thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'], licenseType: 'vitalicia', categoryId: '' });
       showToast('App atualizado!');
       refresh();
     } catch (e) {
@@ -155,6 +165,7 @@ export default function AdminApps() {
           form.originalPrice === '' || form.originalPrice == null
             ? null
             : Number(form.originalPrice),
+        category_id: form.categoryId === '' || form.categoryId == null ? null : Number(form.categoryId),
         thumb_url: form.thumbnail,
         executable_url: form.exec_url,
         platforms: form.platforms,
@@ -164,7 +175,7 @@ export default function AdminApps() {
       if (isInvalidUrl(form.thumbnail)) { setError('Thumbnail URL inválida. Use http(s).'); return; }
       if (isInvalidUrl(form.exec_url)) { setError('Exec URL inválida. Use http(s).'); return; }
       await createApp(payload);
-      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'revisar', price: 0, originalPrice: '', thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'], licenseType: 'vitalicia' });
+      setForm({ id: null, name: '', mainFeature: '', description: '', status: 'revisar', price: 0, originalPrice: '', thumbnail: '', exec_url: '', version: '1.0.0', platforms: ['windows'], licenseType: 'vitalicia', categoryId: '' });
       showToast('App criado!');
       refresh();
     } catch (e) {
@@ -194,7 +205,8 @@ export default function AdminApps() {
       exec_url: a.executable_url || a.executableUrl || '',
       version: a.version || '1.0.0',
       platforms: plats,
-      licenseType: a.license_type || a.licenseType || 'vitalicia'
+      licenseType: a.license_type || a.licenseType || 'vitalicia',
+      categoryId: a.category_id ?? a.categoryId ?? a.category?.id ?? ''
     });
     document.getElementById('app-form')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -516,6 +528,24 @@ export default function AdminApps() {
                 <option value="assinatura">Assinatura</option>
                 <option value="gratuito">Gratuito</option>
               </select>
+            </div>
+            <div className={styles.formGroup}>
+              <label>Categoria</label>
+              <select
+                value={form.categoryId ?? ''}
+                onChange={e => setForm({ ...form, categoryId: e.target.value })}
+                className={styles.input}
+              >
+                <option value="">— Sem categoria —</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}{c.active === false ? ' (oculta)' : ''}
+                  </option>
+                ))}
+              </select>
+              <small style={{ color: '#a0a0b0', fontSize: 11, marginTop: 2 }}>
+                Gerencie em <a href="/admin/categorias" style={{ color: '#00E4F2' }}>/admin/categorias</a>
+              </small>
             </div>
           </div>
 

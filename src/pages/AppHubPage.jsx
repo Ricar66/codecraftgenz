@@ -72,7 +72,9 @@ const AppHubPage = () => {
     }
   };
 
-  const categories = ['all', ...new Set(apps.map(app => app.category).filter(Boolean))];
+  // app.category agora é objeto { id, name, slug, icon } | null (nova FK).
+  const getCategoryName = (a) => (a?.category && typeof a.category === 'object') ? a.category.name : (a?.category || '');
+  const categories = ['all', ...new Set(apps.map(getCategoryName).filter(Boolean))];
 
   const filteredApps = useMemo(() => {
     // Exclui o CodeCraft Hub da listagem de apps
@@ -82,11 +84,11 @@ const AppHubPage = () => {
       list = list.filter(a =>
         String(a.name || '').toLowerCase().includes(q) ||
         String(a.description || '').toLowerCase().includes(q) ||
-        String(a.category || '').toLowerCase().includes(q)
+        String(getCategoryName(a) || '').toLowerCase().includes(q)
       );
     }
     if (filter !== 'all') {
-      list = list.filter(a => (a.category || 'outros') === filter);
+      list = list.filter(a => (getCategoryName(a) || 'outros') === filter);
     }
     return list;
   }, [apps, searchTerm, filter]);

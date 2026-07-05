@@ -8,6 +8,7 @@ import { WindowsIcon, AppleIcon, LinuxIcon } from '../UI/BrandIcons/index.jsx';
 import Modal from '../UI/Modal/Modal.jsx';
 import { trackFunnelStep } from '../../services/analyticsAPI.js';
 import { getAppImageUrl, getAppPrice } from '../../utils/appModel.js';
+import { getLucideIcon } from '../../utils/lucideIconMap.js';
 import { sanitizeImageUrl } from '../../utils/urlSanitize.js';
 import { stripMarkdown } from '../../utils/textUtils.js';
 
@@ -62,6 +63,9 @@ export default function AppDetailModal({ app, onClose }) {
   const tags = parseTags(app.tags);
   const screenshots = parseScreenshots(app.screenshots);
   const description = stripMarkdown(app.description || app.shortDescription || app.mainFeature || '');
+  // app.category agora é objeto { id, name, slug, icon } | null (FK nova).
+  const category = app.category && typeof app.category === 'object' ? app.category : null;
+  const CategoryIconComp = category?.icon ? getLucideIcon(category.icon) : null;
 
   return (
     <Modal isOpen onClose={onClose} size="xl" title={null} showCloseButton>
@@ -81,8 +85,11 @@ export default function AppDetailModal({ app, onClose }) {
         )}
         <div className={styles.heroOverlay}>
           <h2 className={styles.heroTitle}>{app.name}</h2>
-          {app.category && (
-            <span className={styles.heroBadge}>{app.category}</span>
+          {category && (
+            <span className={styles.heroBadge}>
+              {CategoryIconComp && <CategoryIconComp size={14} style={{ marginRight: 4, verticalAlign: '-2px' }} />}
+              {category.name}
+            </span>
           )}
         </div>
       </div>
@@ -135,10 +142,13 @@ export default function AppDetailModal({ app, onClose }) {
               <span className={styles.infoValue}>v{app.version}</span>
             </div>
           )}
-          {app.category && (
+          {category && (
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>Categoria</span>
-              <span className={styles.infoValue}>{app.category}</span>
+              <span className={styles.infoValue}>
+                {CategoryIconComp && <CategoryIconComp size={14} style={{ marginRight: 4, verticalAlign: '-2px' }} />}
+                {category.name}
+              </span>
             </div>
           )}
           {app.size && (

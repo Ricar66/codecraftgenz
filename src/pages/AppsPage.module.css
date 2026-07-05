@@ -124,6 +124,54 @@
   color: #fff;
 }
 
+/* ===== CATEGORY PILLS ===== */
+.categoryPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 24px 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.categoryPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  color: #a0a0b0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  min-height: 36px;
+  line-height: 1;
+}
+
+.categoryPill:hover {
+  background: rgba(0, 228, 242, 0.08);
+  border-color: rgba(0, 228, 242, 0.35);
+  color: #00e4f2;
+}
+
+.categoryPillActive {
+  background: linear-gradient(135deg, rgba(0, 228, 242, 0.18), rgba(209, 43, 242, 0.22));
+  border-color: #d12bf2;
+  color: #fff;
+  box-shadow: 0 0 0 1px rgba(209, 43, 242, 0.35);
+}
+
+.categoryPillActive:hover {
+  background: linear-gradient(135deg, rgba(0, 228, 242, 0.24), rgba(209, 43, 242, 0.3));
+  color: #fff;
+  border-color: #d12bf2;
+}
+
 /* ===== APPS GRID ===== */
 .appsSection {
   padding: 0 24px 60px;

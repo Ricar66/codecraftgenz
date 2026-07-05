@@ -1,0 +1,111 @@
+/* IconPicker.module.css — visual dark starfield magenta/ciano */
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.searchBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  color: #a0a0b0;
+  pointer-events: none;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 10px 12px 10px 34px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #f5f5f7;
+  font-size: 0.85rem;
+  min-height: 40px;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #00e4f2;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #f5f5f7;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 64px;
+}
+
+.item:hover:not(:disabled) {
+  background: rgba(0, 228, 242, 0.08);
+  border-color: rgba(0, 228, 242, 0.35);
+  color: #00e4f2;
+}
+
+.item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.itemSelected {
+  background: rgba(209, 43, 242, 0.12);
+  border-color: #d12bf2;
+  color: #d12bf2;
+  box-shadow: 0 0 0 1px rgba(209, 43, 242, 0.35);
+}
+
+.itemSelected:hover:not(:disabled) {
+  background: rgba(209, 43, 242, 0.18);
+  border-color: #d12bf2;
+  color: #d12bf2;
+}
+
+.itemLabel {
+  font-size: 0.65rem;
+  text-align: center;
+  line-height: 1.1;
+  word-break: break-word;
+  opacity: 0.85;
+}
+
+.empty {
+  grid-column: 1 / -1;
+  padding: 24px;
+  text-align: center;
+  color: #a0a0b0;
+  font-size: 0.85rem;
+}
+
+/* Scrollbar sutil */
+.grid::-webkit-scrollbar { width: 6px; }
+.grid::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.03); border-radius: 3px; }
+.grid::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 3px; }
+.grid::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }

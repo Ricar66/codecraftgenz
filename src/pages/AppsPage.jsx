@@ -9,8 +9,10 @@ import Navbar from '../components/Navbar/Navbar';
 import SecuritySection from '../components/SecuritySection/SecuritySection.jsx';
 import { API_BASE_URL, apiRequest } from '../lib/apiConfig.js';
 import { getHistory, upsertAppFromProject, getPublicApps, getPurchaseStatus } from '../services/appsAPI.js';
+import { getPublicCategories } from '../services/categoriesAPI.js';
 import { getProjects } from '../services/projectsAPI.js';
 import { getAppPrice } from '../utils/appModel.js';
+import { getLucideIcon } from '../utils/lucideIconMap.js';
 import { appsCache } from '../utils/dataCache.js';
 import { globalPerformanceMonitor } from '../utils/performanceMonitor.js';
 import styles from './AppsPage.module.css';
@@ -36,7 +38,9 @@ const AppsPage = () => {
   const [publishing, setPublishing] = useState(false);
   const [publishMessage, setPublishMessage] = useState('');
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('todas');
+  // categoryId === null → "Todas"; senão o id numérico da categoria.
+  const [categoryId, setCategoryId] = useState(null);
+  const [categoriesList, setCategoriesList] = useState([]);
   const [sortMode, setSortMode] = useState('categoria');
   const [payModal, setPayModal] = useState({ open: false, app: null, loading: false, error: '' });
   const [expandedLicenses, setExpandedLicenses] = useState({});
@@ -63,6 +67,13 @@ const AppsPage = () => {
         const jsonHist = await getHistory({ page: 1, pageSize: 10 }).catch(() => ({ data: [] }));
         const histList = Array.isArray(jsonHist?.data) ? jsonHist.data : (Array.isArray(jsonHist) ? jsonHist : []);
         if (mounted) setHistory(histList);
+
+        // Categorias públicas para a barra de pills.
+        try {
+          const cats = await getPublicCategories();
+          if (mounted) setCategoriesList(Array.isArray(cats) ? cats : []);
+        } catch { /* silent — sem categorias fica só "Todas" */ }
+
         globalPerformanceMonitor.endMeasure(metricId, { success: true, count: list.length });
       } catch (e) {
         if (e.status === 401) {
@@ -104,28 +115,23 @@ const AppsPage = () => {
     return counts;
   }, [history]);
 
-  const categories = useMemo(() => {
-    const set = new Set(['todas']);
-    for (const a of apps) set.add(a.category || 'outros');
-    return Array.from(set);
-  }, [apps]);
-
   const filteredApps = useMemo(() => {
     let list = [...apps];
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(a => String(a.name || '').toLowerCase().includes(q) || String(a.mainFeature || '').toLowerCase().includes(q));
     }
-    if (category !== 'todas') {
-      list = list.filter(a => (a.category || 'outros') === category);
+    if (categoryId != null) {
+      list = list.filter(a => (a.category?.id ?? a.category_id ?? null) === categoryId);
     }
     if (sortMode === 'uso') {
       list.sort((a, b) => (usageByApp.get(b.id) || 0) - (usageByApp.get(a.id) || 0));
     } else {
-      list.sort((a, b) => String(a.category || 'outros').localeCompare(String(b.category || 'outros')) || String(a.name || '').localeCompare(String(b.name || '')));
+      const nameOf = (a) => String(a.category?.name || 'zzz');
+      list.sort((a, b) => nameOf(a).localeCompare(nameOf(b)) || String(a.name || '').localeCompare(String(b.name || '')));
     }
     return list;
-  }, [apps, search, category, sortMode, usageByApp]);
+  }, [apps, search, categoryId, sortMode, usageByApp]);
 
   const openPaymentModal = (app) => {
     setPayModal({ open: true, app, loading: false, error: '' });
@@ -250,16 +256,6 @@ const AppsPage = () => {
               aria-label="Buscar aplicativos"
             />
             <select
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-              className={styles.filterSelect}
-              aria-label="Filtrar por categoria"
-            >
-              {categories.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-            <select
               value={sortMode}
               onChange={e => setSortMode(e.target.value)}
               className={styles.filterSelect}
@@ -268,6 +264,36 @@ const AppsPage = () => {
               <option value="categoria">Categoria</option>
               <option value="uso">Uso frequente</option>
             </select>
+          </div>
+
+          {/* Pills de categoria (ícone lucide + nome) — ordenadas por `order`. */}
+          <div className={styles.categoryPills} role="tablist" aria-label="Filtrar por categoria">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={categoryId == null}
+              className={`${styles.categoryPill} ${categoryId == null ? styles.categoryPillActive : ''}`}
+              onClick={() => setCategoryId(null)}
+            >
+              Todas
+            </button>
+            {categoriesList.map((c) => {
+              const IconComp = getLucideIcon(c.icon);
+              const active = categoryId === c.id;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  className={`${styles.categoryPill} ${active ? styles.categoryPillActive : ''}`}
+                  onClick={() => setCategoryId(c.id)}
+                >
+                  <IconComp size={14} />
+                  <span>{c.name}</span>
+                </button>
+              );
+            })}
           </div>
         </section>
 

@@ -36,6 +36,7 @@ const AvaliacaoPage = lazy(() => import('./pages/AvaliacaoPage.jsx'));
 const AdminLayout = lazy(() => import('./admin/AdminLayout.jsx'));
 const AdminProjetos = lazy(() => import('./admin/AdminProjetos.jsx'));
 const AdminApps = lazy(() => import('./admin/AdminApps.jsx'));
+const AdminCategorias = lazy(() => import('./admin/AdminCategorias.jsx'));
 const AdminProposals = lazy(() => import('./admin/AdminProposals.jsx'));
 const AdminParcerias = lazy(() => import('./admin/AdminParcerias.jsx'));
 const AdminPagamentos = lazy(() => import('./admin/AdminPagamentos.jsx'));
@@ -141,6 +142,11 @@ function App() {
                   } />
                   <Route path="projetos" element={<AdminProjetos />} />
                   <Route path="apps" element={<AdminApps />} />
+                  <Route path="categorias" element={
+                    <ProtectedRoute allowed={["admin"]}>
+                      <AdminCategorias />
+                    </ProtectedRoute>
+                  } />
                   <Route path="propostas" element={<AdminProposals />} />
                   <Route path="parcerias" element={<AdminParcerias />} />
                   <Route path="financas" element={<AdminFinancas />} />
