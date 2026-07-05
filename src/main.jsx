@@ -63,14 +63,12 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
     document.body.appendChild(banner)
   })
 
-  // Limpa TODOS os caches ao carregar - migração de Render para VPS
+  // Registra o SW após window.load para não bloquear o carregamento inicial.
+  // NOTA: removido o antigo caches.delete() a cada load (era hack de migração
+  // Render->VPS). Ele sabotava o próprio service worker e causava tela branca
+  // com chunks antigos logo após um deploy. O workbox já cuida disso via
+  // cleanupOutdatedCaches + registerType:'autoUpdate' (skipWaiting/clientsClaim).
   window.addEventListener('load', () => {
-    caches.keys().then((names) => {
-      names.forEach((name) => {
-        caches.delete(name)
-      })
-    }).catch(() => {})
-
     // Registra SW após 1 segundo (reduzido de 3s para atualização mais rápida)
     setTimeout(() => {
       navigator.serviceWorker.register('/sw.js', { scope: '/' })

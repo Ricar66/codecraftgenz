@@ -65,9 +65,23 @@
 .urlText { font-family: 'Menlo', 'Consolas', monospace; }
 
 .browserContent {
-  display: flex;
-  min-height: 320px;
+  display: block;
+  width: 100%;
   background: #0a0a14;
+  overflow: hidden;
+  position: relative;
+}
+
+.dashboardImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wrapper:hover .dashboardImage {
+  transform: scale(1.025);
 }
 
 /* Sidebar */
