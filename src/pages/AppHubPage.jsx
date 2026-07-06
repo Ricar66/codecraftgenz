@@ -9,6 +9,8 @@ import AppDetailModal from '../components/AppDetailModal/AppDetailModal.jsx';
 import { trackPageView, trackEvent } from '../services/analyticsAPI.js';
 import Navbar from '../components/Navbar/Navbar.jsx';
 import { getPublicApps } from '../services/appsAPI.js';
+import { getPublicCategories } from '../services/categoriesAPI.js';
+import { getLucideIcon } from '../utils/lucideIconMap.js';
 import { getAppImageUrl } from '../utils/appModel.js';
 import { appsCache } from '../utils/dataCache.js';
 import { sanitizeSrcSet } from '../utils/urlSanitize.js';
@@ -33,6 +35,7 @@ const AppHubPage = () => {
   const [fromCache, setFromCache] = useState(false);
   const [showCacheBadge, setShowCacheBadge] = useState(false);
   const [detailApp, setDetailApp] = useState(null);
+  const [catList, setCatList] = useState([]);
   const APPS_PER_PAGE = 6;
   const [gridPage, setGridPage] = useState(1);
 
@@ -43,6 +46,16 @@ const AppHubPage = () => {
 
   useEffect(() => {
     trackPageView('AppHubPage');
+  }, []);
+
+  // Categorias oficiais (gerenciadas no admin) — ordenadas, com ícone lucide.
+  useEffect(() => {
+    getPublicCategories()
+      .then((res) => {
+        const data = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+        setCatList(data);
+      })
+      .catch(() => setCatList([]));
   }, []);
 
   const loadApps = async () => {
@@ -74,7 +87,6 @@ const AppHubPage = () => {
 
   // app.category agora é objeto { id, name, slug, icon } | null (nova FK).
   const getCategoryName = (a) => (a?.category && typeof a.category === 'object') ? a.category.name : (a?.category || '');
-  const categories = ['all', ...new Set(apps.map(getCategoryName).filter(Boolean))];
 
   const filteredApps = useMemo(() => {
     // Exclui o CodeCraft Hub da listagem de apps
@@ -290,17 +302,29 @@ const AppHubPage = () => {
         <div className={styles.filterContainer}>
           <h3 id="category-filter-label">Categoria</h3>
           <div className={styles.filterButtons} role="group" aria-labelledby="category-filter-label">
-            {categories.map(category => (
-              <button
-                key={category}
-                onClick={() => { setFilter(category); trackEvent('filter_used', { category, page: 'AppHubPage' }, 'interaction'); }}
-                className={`${styles.filterButton} ${filter === category ? styles.active : ''}`}
-                aria-pressed={filter === category}
-                type="button"
-              >
-                {category === 'all' ? 'Todos' : category}
-              </button>
-            ))}
+            <button
+              onClick={() => { setFilter('all'); trackEvent('filter_used', { category: 'all', page: 'AppHubPage' }, 'interaction'); }}
+              className={`${styles.filterButton} ${filter === 'all' ? styles.active : ''}`}
+              aria-pressed={filter === 'all'}
+              type="button"
+            >
+              Todos
+            </button>
+            {catList.map(cat => {
+              const Icon = getLucideIcon(cat.icon);
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => { setFilter(cat.name); trackEvent('filter_used', { category: cat.name, page: 'AppHubPage' }, 'interaction'); }}
+                  className={`${styles.filterButton} ${filter === cat.name ? styles.active : ''}`}
+                  aria-pressed={filter === cat.name}
+                  type="button"
+                >
+                  <Icon className={styles.filterIcon} size={16} aria-hidden="true" />
+                  {cat.name}
+                </button>
+              );
+            })}
           </div>
 
           <div className={styles.sortControls}>

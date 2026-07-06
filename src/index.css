@@ -16,6 +16,17 @@
   flex-direction: column;
 }
 
+/* ===== CONTROLES DE FORMULÁRIO — tema escuro (corrige dropdown branco) ===== */
+/* Faz os controles nativos (inclusive o popup do <select>) renderizarem em dark. */
+:root { color-scheme: dark; }
+select { color-scheme: dark; }
+/* As <option> herdam o branco do SO no tema escuro — força fundo escuro + texto legível. */
+select option,
+select optgroup {
+  background-color: #14142a;
+  color: #F5F5F7;
+}
+
 /* Fundo padrão da Home aplicado globalmente */
 .app-background {
   min-height: 100vh;
