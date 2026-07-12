@@ -55,8 +55,11 @@ test.describe('Homepage', () => {
   });
 
   test('hero section has a CTA button', async ({ page }) => {
-    const ctaButton = page.getByRole('button', { name: /crafter/i }).or(
-      page.locator('button').filter({ hasText: /crafter/i })
+    // CTAs reais do hero B2B: "Quero contratar a CodeCraft" (aria-label
+    // "Conhecer solucoes para empresas") e "Ver nossos apps".
+    // O antigo /crafter/ era do modelo de comunidade, removido no pivo.
+    const ctaButton = page.getByRole('button', { name: /contratar|empresa|apps/i }).or(
+      page.locator('button').filter({ hasText: /contratar|apps/i })
     );
     await expect(ctaButton.first()).toBeVisible({ timeout: 10000 });
   });
