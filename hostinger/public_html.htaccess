@@ -10,6 +10,14 @@ Options +FollowSymlinks
   RewriteEngine On
   RewriteBase /
 
+  # ── Redirects 301 de URLs legadas da Comunidade Craft ──────────────
+  # Features removidas no pivo para software house B2B (2026-06-27):
+  # desafios, ranking, mentoria, feedbacks, crafter, onboarding.
+  # 301 -> home preserva o SEO das URLs ja indexadas. Vem ANTES das regras
+  # de SPA, senao a rota cairia no index.html sem redirecionar.
+  RewriteRule ^(desafios|ranking|mentoria|feedbacks|onboarding)(/.*)?$ / [R=301,L]
+  RewriteRule ^crafter(/.*)?$ / [R=301,L]
+
   # Se o arquivo existe fisicamente em public_html, servir direto
   RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
