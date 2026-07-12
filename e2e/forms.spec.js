@@ -602,67 +602,9 @@ test.describe('Forgot Password Page (/forgot-password)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 5. FEEDBACK FORM  (/feedbacks)
+// (Secao 5 "Feedback Form" removida: /feedbacks foi descontinuada no pivo B2B
+//  e agora redireciona 301 -> home.)
 // ---------------------------------------------------------------------------
-test.describe('Feedback Form (/feedbacks)', () => {
-  test.beforeEach(async ({ page }) => {
-    await visitAndWait(page, '/feedbacks');
-  });
-
-  test('5.01 - form exists on page', async ({ page }) => {
-    const form = page.locator('form');
-    await expect(form.first()).toBeVisible({ timeout: 10000 });
-  });
-
-  test('5.02 - has name field', async ({ page }) => {
-    const name = page.locator('#nome');
-    await expect(name).toBeVisible({ timeout: 10000 });
-  });
-
-  test('5.03 - has email field', async ({ page }) => {
-    const email = page.locator('#email');
-    await expect(email).toBeVisible({ timeout: 10000 });
-  });
-
-  test('5.04 - has message field', async ({ page }) => {
-    const msg = page.locator('#mensagem');
-    await expect(msg).toBeVisible({ timeout: 10000 });
-  });
-
-  test('5.05 - submit button exists', async ({ page }) => {
-    const btn = page.getByRole('button', { name: /enviar feedback/i });
-    await expect(btn).toBeVisible({ timeout: 10000 });
-  });
-
-  test('5.06 - empty form submission shows errors', async ({ page }) => {
-    await page.getByRole('button', { name: /enviar feedback/i }).click();
-    const error = page.locator('[role="alert"]');
-    await expect(error).toBeVisible({ timeout: 5000 });
-  });
-
-  test('5.07 - name label is visible', async ({ page }) => {
-    const label = page.locator('label[for="nome"]');
-    await expect(label).toBeVisible({ timeout: 10000 });
-  });
-
-  test('5.08 - email label is visible', async ({ page }) => {
-    const label = page.locator('label[for="email"]');
-    await expect(label).toBeVisible({ timeout: 10000 });
-  });
-
-  test('5.09 - message label is visible', async ({ page }) => {
-    const label = page.locator('label[for="mensagem"]');
-    await expect(label).toBeVisible({ timeout: 10000 });
-  });
-
-  test('5.10 - invalid email shows error via real-time validation', async ({ page }) => {
-    const email = page.locator('#email');
-    await email.fill('notvalid');
-    // FeedbackForm uses useEffect for real-time validation, error shown as span.error-message
-    const error = page.getByText(/email deve ter um formato válido/i);
-    await expect(error).toBeVisible({ timeout: 5000 });
-  });
-});
 
 // ---------------------------------------------------------------------------
 // 6. FORM SECURITY TESTS
@@ -774,9 +716,10 @@ test.describe('Form Security Tests', () => {
     expect(value).toBe('test+special@example.com');
   });
 
-  test('6.10 - Feedback: XSS in message should not execute', async ({ page }) => {
-    await visitAndWait(page, '/feedbacks');
-    const msg = page.locator('#mensagem');
+  test('6.10 - B2B: XSS in description should not execute', async ({ page }) => {
+    // Form B2B (/para-empresas) tem <textarea id="description">.
+    await visitAndWait(page, '/para-empresas');
+    const msg = page.locator('#description');
     await msg.fill('<script>document.title="hacked"</script>');
     await blurByTab(page);
     await page.waitForTimeout(1000);
@@ -925,31 +868,7 @@ test.describe('Accessibility - Forgot Password Form', () => {
   });
 });
 
-test.describe('Accessibility - Feedback Form', () => {
-
-  test('7.14 - all inputs have associated labels on feedbacks', async ({ page }) => {
-    await visitAndWait(page, '/feedbacks');
-    // Check visible form inputs (exclude honeypot)
-    const inputs = page.locator('form input:not([type="hidden"]):not([type="submit"]):not([tabindex="-1"]), form textarea');
-    const count = await inputs.count();
-    for (let i = 0; i < count; i++) {
-      const input = inputs.nth(i);
-      const id = await input.getAttribute('id');
-      const ariaLabel = await input.getAttribute('aria-label');
-      const ariaLabelledBy = await input.getAttribute('aria-labelledby');
-      const hasLabel = id ? await page.locator(`label[for="${id}"]`).count() > 0 : false;
-      const isLabelled = hasLabel || !!ariaLabel || !!ariaLabelledBy;
-      expect(isLabelled).toBe(true);
-    }
-  });
-
-  test('7.15 - submit button has accessible text on feedbacks', async ({ page }) => {
-    await visitAndWait(page, '/feedbacks');
-    const btn = page.locator('button[type="submit"]');
-    const text = await btn.textContent();
-    expect(text.trim().length).toBeGreaterThan(0);
-  });
-});
+// (describe "Accessibility - Feedback Form" removido: /feedbacks descontinuada no pivo B2B.)
 
 // ---------------------------------------------------------------------------
 // 8. CROSS-FORM NAVIGATION TESTS
@@ -981,11 +900,6 @@ test.describe('Cross-Form Navigation', () => {
     await expect(form.first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('8.04 - direct navigation to /feedbacks works', async ({ page }) => {
-    await visitAndWait(page, '/feedbacks');
-    const form = page.locator('form');
-    await expect(form.first()).toBeVisible({ timeout: 10000 });
-  });
 
   test('8.05 - browser back button preserves form state', async ({ page }) => {
     await visitAndWait(page, '/login');

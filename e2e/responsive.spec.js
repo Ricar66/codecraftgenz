@@ -7,22 +7,19 @@ const TABLET = { width: 768, height: 1024 };
 const MOBILE = { width: 375, height: 812 };
 const SMALL_MOBILE = { width: 320, height: 568 };
 
-// Public pages to test responsive behavior
+// Public pages to test responsive behavior (site B2B — sem features de comunidade)
 const PUBLIC_PAGES = [
   { path: '/', name: 'Home' },
-  { path: '/desafios', name: 'Desafios' },
   { path: '/projetos', name: 'Projetos' },
-  { path: '/mentoria', name: 'Mentorias' },
-  { path: '/ranking', name: 'Ranking' },
-  { path: '/feedbacks', name: 'Feedbacks' },
   { path: '/aplicativos', name: 'Aplicativos' },
   { path: '/para-empresas', name: 'Para Empresas' },
+  { path: '/sobre', name: 'Sobre' },
   { path: '/login', name: 'Login' },
   { path: '/register', name: 'Register' },
 ];
 
-// Navigation link labels present in the navbar
-const NAV_LINKS = ['Inicio', 'Desafios', 'Projetos', 'Mentorias', 'Ranking', 'Feedbacks', 'Aplicativos', 'Para Empresas'];
+// Navigation link labels present in the navbar (site B2B) — texto exato renderizado
+const NAV_LINKS = ['Início', 'Projetos', 'Aplicativos', 'Sobre', 'Para Empresas'];
 
 // ─────────────────────────────────────────────
 // Helper: navigate and wait for SPA shell
@@ -81,7 +78,7 @@ test.describe('1 - Desktop (1280x720)', () => {
   });
 
   test('1.05 - Hero section subtitle is visible', async ({ page }) => {
-    const subtitle = page.getByText(/Conectamos talentos Gen-Z/i).first();
+    const subtitle = page.getByText(/Do briefing ao deploy|sob medida/i).first();
     await expect(subtitle).toBeVisible({ timeout: 10000 });
   });
 
@@ -105,8 +102,8 @@ test.describe('1 - Desktop (1280x720)', () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test('1.09 - CTA button "Quero ser um Crafter" is visible', async ({ page }) => {
-    const cta = page.getByRole('button', { name: /quero ser um crafter/i });
+  test('1.09 - CTA button para empresas is visible', async ({ page }) => {
+    const cta = page.getByRole('button', { name: /contratar|empresa|apps/i });
     await expect(cta).toBeVisible({ timeout: 10000 });
   });
 
@@ -153,12 +150,12 @@ test.describe('2 - Tablet (768x1024)', () => {
     const isHamburgerVisible = await hamburger.isVisible();
     if (isHamburgerVisible) {
       // If hamburger exists, nav links should be hidden
-      const desafiosLink = page.locator('nav a').filter({ hasText: /^Desafios$/ }).first();
-      await expect(desafiosLink).not.toBeVisible();
+      const projetosLink = page.locator('nav a').filter({ hasText: /^Projetos$/ }).first();
+      await expect(projetosLink).not.toBeVisible();
     } else {
       // If no hamburger, links should be directly visible (desktop layout)
-      const desafiosLink = page.locator('nav a').filter({ hasText: /^Desafios$/ }).first();
-      await expect(desafiosLink).toBeVisible({ timeout: 10000 });
+      const projetosLink = page.locator('nav a').filter({ hasText: /^Projetos$/ }).first();
+      await expect(projetosLink).toBeVisible({ timeout: 10000 });
     }
   });
 
@@ -210,16 +207,25 @@ test.describe('3 - Mobile (375x812)', () => {
   });
 
   test('3.02 - Navbar links are hidden before opening hamburger', async ({ page }) => {
-    const desafiosLink = page.locator('nav a').filter({ hasText: /^Desafios$/ }).first();
-    await expect(desafiosLink).not.toBeVisible();
+    // No mobile o menu fica fora da tela via transform: translateX(-100%) + opacity:0
+    // (nao display:none). Verificamos o comportamento real: menu deslizado para fora
+    // da viewport (x negativo) ou transparente, portanto inacessivel ao usuario.
+    const projetosLink = page.locator('nav a').filter({ hasText: /^Projetos$/ }).first();
+    const box = await projetosLink.boundingBox();
+    const opacity = await projetosLink.evaluate((el) => {
+      const menu = el.closest('ul, nav') || el;
+      return parseFloat(getComputedStyle(menu).opacity);
+    });
+    const offscreen = box === null || box.x + box.width <= 0 || box.x >= 375;
+    expect(offscreen || opacity === 0).toBe(true);
   });
 
   test('3.03 - Clicking hamburger opens the mobile menu', async ({ page }) => {
     const hamburger = page.locator('button[aria-label*="menu" i]').first();
     await hamburger.click();
     await page.waitForTimeout(500);
-    const desafiosLink = page.locator('nav a').filter({ hasText: /^Desafios$/ }).first();
-    await expect(desafiosLink).toBeVisible({ timeout: 5000 });
+    const projetosLink = page.locator('nav a').filter({ hasText: /^Projetos$/ }).first();
+    await expect(projetosLink).toBeVisible({ timeout: 5000 });
   });
 
   test('3.04 - Mobile menu shows all navigation links', async ({ page }) => {
@@ -236,13 +242,13 @@ test.describe('3 - Mobile (375x812)', () => {
     const hamburger = page.locator('button[aria-label*="menu" i]').first();
     await hamburger.click();
     await page.waitForTimeout(500);
-    const desafiosLink = page.locator('nav a').filter({ hasText: /^Desafios$/ }).first();
-    await expect(desafiosLink).toBeVisible({ timeout: 5000 });
-    await desafiosLink.click();
-    await expect(page).toHaveURL(/desafios/i);
+    const projetosLink = page.locator('nav a').filter({ hasText: /^Projetos$/ }).first();
+    await expect(projetosLink).toBeVisible({ timeout: 5000 });
+    await projetosLink.click();
+    await expect(page).toHaveURL(/projetos/i);
     // After navigating, the link should be hidden again (menu closed)
     await page.waitForTimeout(500);
-    await expect(desafiosLink).not.toBeVisible({ timeout: 5000 });
+    await expect(projetosLink).not.toBeVisible({ timeout: 5000 });
   });
 
   test('3.06 - Hero section text scales down on mobile', async ({ page }) => {
@@ -254,7 +260,7 @@ test.describe('3 - Mobile (375x812)', () => {
   });
 
   test('3.07 - CTA button has tappable size (min 44px height)', async ({ page }) => {
-    const cta = page.getByRole('button', { name: /quero ser um crafter/i });
+    const cta = page.getByRole('button', { name: /contratar|empresa|apps/i });
     if (await cta.count() > 0) {
       const box = await cta.boundingBox();
       expect(box).toBeTruthy();
@@ -439,7 +445,7 @@ test.describe('4 - Small Mobile (320x568)', () => {
   });
 
   test('4.09 - CTA button fits within small mobile width', async ({ page }) => {
-    const cta = page.getByRole('button', { name: /quero ser um crafter/i });
+    const cta = page.getByRole('button', { name: /contratar|empresa|apps/i });
     if (await cta.count() > 0) {
       const box = await cta.boundingBox();
       expect(box).toBeTruthy();
@@ -502,7 +508,7 @@ test.describe('6 - Touch Interactions (Mobile)', () => {
     await expect(hamburger).toBeVisible({ timeout: 10000 });
     await hamburger.tap();
     await page.waitForTimeout(500);
-    const link = page.locator('nav a').filter({ hasText: /^Desafios$/ }).first();
+    const link = page.locator('nav a').filter({ hasText: /^Projetos$/ }).first();
     await expect(link).toBeVisible({ timeout: 5000 });
   });
 
@@ -531,7 +537,7 @@ test.describe('6 - Touch Interactions (Mobile)', () => {
   test('6.04 - CTA button responds to tap', async ({ page }) => {
     await page.setViewportSize(MOBILE);
     await visitAndWait(page, '/');
-    const cta = page.getByRole('button', { name: /quero ser um crafter/i });
+    const cta = page.getByRole('button', { name: /contratar|empresa|apps/i });
     if (await cta.count() > 0) {
       await cta.tap();
     }
@@ -539,7 +545,7 @@ test.describe('6 - Touch Interactions (Mobile)', () => {
 
   test('6.05 - Tapping logo navigates to home', async ({ page }) => {
     await page.setViewportSize(MOBILE);
-    await page.goto('/desafios');
+    await page.goto('/projetos');
     await page.waitForLoadState('domcontentloaded');
     const logoLink = page.locator('nav a').filter({ has: page.locator('img') }).first();
     if (await logoLink.count() > 0) {
@@ -589,8 +595,8 @@ test.describe('7 - Viewport Resize', () => {
     await page.setViewportSize(DESKTOP);
     await page.waitForTimeout(500);
     await expect(hamburger).not.toBeVisible();
-    const desafiosLink = page.locator('nav a').filter({ hasText: /^Desafios$/ }).first();
-    await expect(desafiosLink).toBeVisible({ timeout: 10000 });
+    const projetosLink = page.locator('nav a').filter({ hasText: /^Projetos$/ }).first();
+    await expect(projetosLink).toBeVisible({ timeout: 10000 });
   });
 
   test('7.03 - Dark background is consistent across viewports', async ({ page }) => {
