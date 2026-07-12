@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   Rocket, Target, Users, Heart, Code2, Trophy,
-  Building2, ArrowRight, Zap, Star, Globe, MessageCircle
+  Building2, ArrowRight, Zap, Star, Globe, MessageCircle,
+  MessagesSquare, PenTool, Terminal, LifeBuoy, Package
 } from 'lucide-react';
 
 import Navbar from '../components/Navbar/Navbar';
@@ -48,10 +49,44 @@ const valores = [
 ];
 
 const numeros = [
-  { valor: '5+', label: 'Produtos em produção' },
-  { valor: '10+', label: 'Clientes atendidos' },
+  { valor: '7', label: 'Produtos próprios no ar' },
+  { valor: '3', label: 'Plataformas · Win, Mac, Linux' },
   { valor: '2025', label: 'Fundação · Ribeirão Preto/SP' },
-  { valor: '100%', label: 'Foco em qualidade' },
+  { valor: 'B2B', label: 'Software sob medida para empresas' },
+];
+
+const processo = [
+  {
+    icon: <MessagesSquare size={24} />,
+    titulo: 'Briefing',
+    descricao: 'Entendemos o problema antes de propor solução. Conversa direta, sem formulário genérico, para saber o que o seu negócio realmente precisa.',
+  },
+  {
+    icon: <PenTool size={24} />,
+    titulo: 'Design & escopo',
+    descricao: 'Desenhamos a solução e fechamos escopo, prazo e preço com clareza. Você aprova antes de qualquer linha de código.',
+  },
+  {
+    icon: <Terminal size={24} />,
+    titulo: 'Desenvolvimento',
+    descricao: 'Código limpo, testado e versionado. Acompanhamento em etapas — você vê o progresso, não recebe uma caixa-preta no final.',
+  },
+  {
+    icon: <LifeBuoy size={24} />,
+    titulo: 'Deploy & suporte',
+    descricao: 'Colocamos no ar e continuamos por perto. Atualizações e suporte incluídos — sem fornecedor que some depois da entrega.',
+  },
+];
+
+// Produtos próprios reais em produção (loja /aplicativos).
+const produtos = [
+  { nome: 'CodeCraft Hub', desc: 'Launcher desktop para gerenciar todos os apps' },
+  { nome: 'DeskCraft', desc: 'Ferramenta de produtividade para o desktop' },
+  { nome: 'OverlayCraft', desc: 'Overlay flutuante para o seu fluxo de trabalho' },
+  { nome: 'StackCraft', desc: 'Organização de stack e projetos' },
+  { nome: 'VaultCraft', desc: 'Cofre e gestão segura de dados' },
+  { nome: 'StudyCraft', desc: 'Aprendizagem e estudo focado' },
+  { nome: 'QuizCraft', desc: 'Criação e aplicação de quizzes' },
 ];
 
 const SobrePage = () => {
@@ -146,7 +181,7 @@ const SobrePage = () => {
             variants={fadeUp()}
           >
             <span className={styles.sectionBadge}><Globe size={13} /> Nossa jornada</span>
-            <h2 className={styles.sectionTitle}>De uma ideia a uma comunidade</h2>
+            <h2 className={styles.sectionTitle}>De uma ideia a sete produtos no ar</h2>
           </motion.div>
 
           <motion.div
@@ -168,7 +203,7 @@ const SobrePage = () => {
               <div className={styles.historiaAno}>Hoje</div>
               <h3 className={styles.historiaItemTitle}>A operação</h3>
               <p className={styles.historiaItemDesc}>
-                Mantemos um catálogo crescente de produtos próprios (CraftCard, CodeCraft Hub e novos lançamentos a caminho) e atendemos empresas de diferentes setores com desenvolvimento sob medida, do briefing ao deploy.
+                Sete produtos próprios já rodando — CodeCraft Hub, DeskCraft, OverlayCraft, StackCraft, VaultCraft, StudyCraft e QuizCraft — mais desenvolvimento sob medida para empresas. Tudo com licença definitiva, atualizações e suporte incluídos.
               </p>
             </motion.div>
 
@@ -180,6 +215,42 @@ const SobrePage = () => {
               </p>
             </motion.div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* Como trabalhamos */}
+      <section className={styles.processoSection}>
+        <div className={`${styles.processoInner} container`}>
+          <motion.div
+            className={styles.sectionHeader}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp()}
+          >
+            <span className={styles.sectionBadge}><Terminal size={13} /> Do briefing ao deploy</span>
+            <h2 className={styles.sectionTitle}>Como trabalhamos</h2>
+            <p className={styles.sectionLead}>
+              Um processo transparente, do primeiro contato ao suporte contínuo. Sem caixa-preta.
+            </p>
+          </motion.div>
+
+          <motion.ol
+            className={styles.processoGrid}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={stagger}
+          >
+            {processo.map((p, i) => (
+              <motion.li key={p.titulo} className={styles.processoStep} variants={fadeUp()}>
+                <span className={styles.processoNum}>{String(i + 1).padStart(2, '0')}</span>
+                <div className={styles.processoIcon}>{p.icon}</div>
+                <h3 className={styles.processoTitulo}>{p.titulo}</h3>
+                <p className={styles.processoDesc}>{p.descricao}</p>
+              </motion.li>
+            ))}
+          </motion.ol>
         </div>
       </section>
 
@@ -214,6 +285,52 @@ const SobrePage = () => {
                 <p className={styles.valorDesc}>{v.descricao}</p>
               </motion.div>
             ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Prova social honesta — vitrine dos produtos reais */}
+      <section className={styles.produtosSection}>
+        <div className={`${styles.produtosInner} container`}>
+          <motion.div
+            className={styles.sectionHeader}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp()}
+          >
+            <span className={styles.sectionBadge}><Package size={13} /> Não é promessa, é produto</span>
+            <h2 className={styles.sectionTitle}>Sete apps próprios, já no ar</h2>
+            <p className={styles.sectionLead}>
+              A melhor prova do nosso trabalho é o que já construímos. Todos disponíveis na loja, com licença vitalícia.
+            </p>
+          </motion.div>
+
+          <motion.div
+            className={styles.produtosGrid}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={stagger}
+          >
+            {produtos.map((p) => (
+              <motion.div key={p.nome} className={styles.produtoChip} variants={fadeUp()}>
+                <span className={styles.produtoNome}>{p.nome}</span>
+                <span className={styles.produtoDesc}>{p.desc}</span>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          <motion.div
+            className={styles.produtosCta}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp(0.1)}
+          >
+            <Link to="/aplicativos" className={styles.produtosLink}>
+              Ver todos na loja <ArrowRight size={15} />
+            </Link>
           </motion.div>
         </div>
       </section>
