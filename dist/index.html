@@ -111,22 +111,22 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <!-- Fontes otimizadas - apenas pesos essenciais -->
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <!-- Fontes do design system (tokens.css): Montserrat=display/logo, Poppins=headings, Inter=body, Fira Code=mono. Uma unica requisicao combinada, carregada sem bloquear o render. -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" media="print" onload="this.media='all'" />
     <noscript>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" />
     </noscript>
 
     <!-- Critical CSS inline para LCP -->
     <style>
       :root{--cor-primaria:#D12BF2;--cor-terciaria:#00E4F2;--fundo-escuro:#0a0a0f;--texto-gelo:#e0e0e0}
       *{margin:0;padding:0;box-sizing:border-box}
-      body{font-family:'Poppins',system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e0e0e0;-webkit-font-smoothing:antialiased}
+      body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e0e0e0;-webkit-font-smoothing:antialiased}
       #root{min-height:100vh}
     </style>
 
-    <script type="module" crossorigin src="/assets/index-CeVbBtsY.js"></script>
+    <script type="module" crossorigin src="/assets/index-DEe7EGFs.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/router-CiDplONn.js">
     <link rel="stylesheet" crossorigin href="/assets/index-BIrPKVc9.css">
   <link rel="manifest" href="/manifest.webmanifest"></head>

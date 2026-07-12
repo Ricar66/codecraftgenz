@@ -4,9 +4,10 @@ import { ProjectDataValidator } from './dataCache.js';
 
 describe('ProjectDataValidator', () => {
   it('validates a list of valid projects', () => {
+    // Status validos do sistema (PT-BR): aguardando_start | em_andamento | finalizado
     const projects = [
-      { id: 1, title: 'Test', description: 'Desc', status: 'active' },
-      { id: 2, title: 'Another', description: 'Desc', status: 'completed' },
+      { id: 1, title: 'Test', description: 'Desc', status: 'em_andamento' },
+      { id: 2, title: 'Another', description: 'Desc', status: 'finalizado' },
     ];
 
     const result = ProjectDataValidator.validateProjects(projects);

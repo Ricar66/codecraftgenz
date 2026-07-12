@@ -104,14 +104,9 @@ function App() {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/projetos" element={<ProjectsPage />} />
-                {/* URLs legadas da Comunidade Craft (removida 2026-06-27) — redirect p/ home preserva SEO. */}
-                <Route path="/desafios" element={<Navigate to="/" replace />} />
-                <Route path="/desafios/*" element={<Navigate to="/" replace />} />
-                <Route path="/ranking" element={<Navigate to="/" replace />} />
-                <Route path="/feedbacks" element={<Navigate to="/" replace />} />
-                <Route path="/mentoria" element={<Navigate to="/" replace />} />
-                <Route path="/crafter/:id" element={<Navigate to="/" replace />} />
-                <Route path="/onboarding" element={<Navigate to="/" replace />} />
+                {/* URLs legadas da Comunidade Craft (desafios/ranking/mentoria/feedbacks/crafter/onboarding,
+                    removida 2026-06-27) sao redirecionadas via 301 no nginx do VPS — nao no React —
+                    para preservar SEO sem manter rotas mortas no bundle. */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/reset-password" element={<PasswordResetPage />} />
