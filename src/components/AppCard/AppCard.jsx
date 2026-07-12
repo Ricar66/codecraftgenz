@@ -1,12 +1,14 @@
 // src/components/AppCard/AppCard.jsx
+import { ShoppingBag, Download, Star } from 'lucide-react';
 import React from 'react';
-import { WindowsIcon, AppleIcon, LinuxIcon } from '../UI/BrandIcons/index.jsx';
 import { Link } from 'react-router-dom';
 
 import { trackFunnelStep } from '../../services/analyticsAPI.js';
 import { getAppImageUrl, getAppPrice } from '../../utils/appModel.js';
 import { getLucideIcon } from '../../utils/lucideIconMap.js';
 import { stripMarkdown } from '../../utils/textUtils.js';
+import { WindowsIcon, AppleIcon, LinuxIcon } from '../UI/BrandIcons/index.jsx';
+
 import styles from './AppCard.module.css';
 
 const parsePlatforms = (p) => {
@@ -28,6 +30,13 @@ const getBadge = (app) => {
   return { label: 'Disponível', className: styles.badgeAvailable };
 };
 
+// Formata contagens grandes de forma compacta: 1200 -> "1,2 mil".
+const formatCount = (n) => {
+  const v = Number(n) || 0;
+  if (v >= 1000) return `${(v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
+  return String(v);
+};
+
 const AppCard = ({ app, onDownload, onAbout, mode = 'owned', featured = false }) => {
   const { id, name, mainFeature } = app;
   // `app.category` agora é objeto { id, name, slug, icon } | null (nova FK).
@@ -42,6 +51,16 @@ const AppCard = ({ app, onDownload, onAbout, mode = 'owned', featured = false })
   const hasDiscount = safePrice > 0 && originalPrice > safePrice;
   const discountPct = hasDiscount ? Math.round(((originalPrice - safePrice) / originalPrice) * 100) : 0;
   const badge = getBadge(app);
+
+  // Prova social real (backend): vendas, downloads e avaliações.
+  const purchases = Number(app?.purchases_count ?? app?.purchasesCount ?? 0);
+  const downloads = Number(app?.download_count ?? app?.downloadCount ?? 0);
+  const feedbacks = Number(app?.feedbacks_count ?? app?.feedbacksCount ?? 0);
+  const proof = [
+    purchases > 0 && { icon: ShoppingBag, label: `${formatCount(purchases)} ${purchases === 1 ? 'venda' : 'vendas'}` },
+    downloads > 0 && { icon: Download, label: `${formatCount(downloads)} downloads` },
+    feedbacks > 0 && { icon: Star, label: `${formatCount(feedbacks)} ${feedbacks === 1 ? 'avaliação' : 'avaliações'}` },
+  ].filter(Boolean);
 
   const cardClass = [styles.card, featured ? styles.cardFeatured : ''].filter(Boolean).join(' ');
 
@@ -73,27 +92,25 @@ const AppCard = ({ app, onDownload, onAbout, mode = 'owned', featured = false })
         )}
         <p className={`${styles.feature} ${styles.clamp2}`} title={mainFeature}>{mainFeature}</p>
 
+        {proof.length > 0 && (
+          <div className={styles.socialProof} aria-label="Prova social">
+            {proof.map(({ icon: Icon, label }) => (
+              <span key={label} className={styles.proofItem}>
+                <Icon size={13} aria-hidden="true" /> {label}
+              </span>
+            ))}
+          </div>
+        )}
+
         <div className={styles.pricingRow} aria-label="Preço">
           {hasDiscount && (
-            <span style={{ color: '#a0a0b0', fontSize: '0.85rem', textDecoration: 'line-through', marginRight: 6 }}>
+            <span className={styles.originalPrice}>
               R$ {originalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </span>
           )}
           <span className={`${styles.price} ${safePrice === 0 ? styles.priceFree : ''}`}>{displayPrice}</span>
           {hasDiscount && (
-            <span style={{
-              display: 'inline-block',
-              padding: '1px 8px',
-              borderRadius: 999,
-              background: 'linear-gradient(135deg, #d12bf2 0%, #D12BF2 100%)',
-              color: '#fff',
-              fontSize: '0.7rem',
-              fontWeight: 700,
-              letterSpacing: '0.03em',
-              marginLeft: 6,
-            }}>
-              −{discountPct}%
-            </span>
+            <span className={styles.discountTag}>−{discountPct}%</span>
           )}
           {safePrice > 0 && (
             <span className={styles.licenseType}>{app.license_type === 'assinatura' ? 'Assinatura' : 'Licença vitalícia'}</span>

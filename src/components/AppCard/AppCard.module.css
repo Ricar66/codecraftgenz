@@ -3,21 +3,40 @@
 
 /* ===== CARD LAYOUT ===== */
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   overflow: hidden;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s ease, box-shadow 0.25s ease;
   width: 100%;
   box-sizing: border-box;
 }
 
+/* Linha de marca no topo, revelada no hover (assinatura magenta->ciano) */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-primary, #D12BF2), var(--color-accent, #00E4F2));
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: 2;
+}
+
 .card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.14);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+  transform: translateY(-6px);
+  border-color: rgba(209, 43, 242, 0.35);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.45), 0 0 32px rgba(209, 43, 242, 0.12);
+}
+
+.card:hover::before {
+  opacity: 1;
 }
 
 /* Featured card — spans 2 columns on desktop */
@@ -250,8 +269,8 @@
 }
 
 .btnPrimary:hover {
-  box-shadow: 0 6px 20px rgba(209, 43, 242, 0.35);
-  background: #5558e6;
+  box-shadow: 0 6px 24px rgba(209, 43, 242, 0.45);
+  background: var(--color-primary-hover, #E055F5);
 }
 
 /* Secondary — ghost / outline, does not compete */
@@ -292,4 +311,61 @@
   font-size: 0.7rem;
   color: #64748b;
   margin-left: 6px;
+}
+
+/* ===== PROVA SOCIAL (vendas / downloads / avaliações reais) ===== */
+.socialProof {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.proofItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.proofItem svg {
+  color: var(--color-accent, #00E4F2);
+  flex-shrink: 0;
+}
+
+/* ===== DESCONTO (movido de inline p/ CSS Module) ===== */
+.originalPrice {
+  color: #a0a0b0;
+  font-size: 0.85rem;
+  text-decoration: line-through;
+  margin-right: 2px;
+}
+
+.discountTag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--color-primary, #D12BF2), var(--color-secondary, #68007B));
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin-left: 2px;
+}
+
+/* Zoom sutil da imagem no hover — sensação premium de card de produto */
+.media .thumb {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.card:hover .media .thumb {
+  transform: scale(1.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card:hover .media .thumb {
+    transform: none;
+  }
 }

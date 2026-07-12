@@ -2,7 +2,7 @@
 // Categorias da loja de apps — endpoint público (pills da loja) + endpoints admin (CRUD).
 import { apiRequest } from '../lib/apiConfig.js';
 
-// Público — categorias ativas, ordenadas por `order`. Consumido por AppsPage.
+// Público — categorias ativas, ordenadas por `order`. Consumido por AppHubPage (loja em /aplicativos).
 export async function getPublicCategories() {
   const resp = await apiRequest('/api/categories/public', { method: 'GET' });
   return resp?.data ?? resp;

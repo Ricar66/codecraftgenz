@@ -1,20 +1,20 @@
 // src/pages/AppHubPage.jsx
+import { Download, ShieldCheck, Infinity as InfinityIcon, Headset, RefreshCw } from 'lucide-react';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Download } from 'lucide-react';
-import { WindowsIcon } from '../components/UI/BrandIcons/index.jsx';
 
 import AppCard from '../components/AppCard/AppCard.jsx';
 import AppDetailModal from '../components/AppDetailModal/AppDetailModal.jsx';
-import { trackPageView, trackEvent } from '../services/analyticsAPI.js';
 import Navbar from '../components/Navbar/Navbar.jsx';
+import { WindowsIcon } from '../components/UI/BrandIcons/index.jsx';
+import { trackPageView, trackEvent } from '../services/analyticsAPI.js';
 import { getPublicApps } from '../services/appsAPI.js';
 import { getPublicCategories } from '../services/categoriesAPI.js';
-import { getLucideIcon } from '../utils/lucideIconMap.js';
 import { getAppImageUrl } from '../utils/appModel.js';
 import { appsCache } from '../utils/dataCache.js';
-import { sanitizeSrcSet } from '../utils/urlSanitize.js';
+import { getLucideIcon } from '../utils/lucideIconMap.js';
 import { stripMarkdown } from '../utils/textUtils.js';
+import { sanitizeSrcSet } from '../utils/urlSanitize.js';
 
 import styles from './AppHubPage.module.css';
 
@@ -252,10 +252,10 @@ const AppHubPage = () => {
         <div className={styles.heroContent}>
           <header>
             <h1 className={styles.heroTitle}>
-              Descubra nossos <span className={styles.heroAccent}>Aplicativos</span>
+              Software pronto para <span className={styles.heroAccent}>usar hoje</span>
             </h1>
             <p className={styles.heroSubtitle}>
-              Soluções profissionais para impulsionar seu dia a dia. Desenvolvidas pela comunidade CodeCraft.
+              Aplicativos desenvolvidos pela CodeCraft — código limpo, suporte dedicado e licença definitiva. Do desktop ao seu fluxo de trabalho.
             </p>
           </header>
 
@@ -272,6 +272,14 @@ const AppHubPage = () => {
             />
             <div className={styles.searchIcon} aria-hidden="true">&#128269;</div>
           </div>
+
+          {/* Faixa de confiança — garantias que dão peso comercial */}
+          <ul className={styles.trustBar} aria-label="Nossas garantias">
+            <li className={styles.trustItem}><ShieldCheck size={16} aria-hidden="true" /> Pagamento seguro</li>
+            <li className={styles.trustItem}><InfinityIcon size={16} aria-hidden="true" /> Licença vitalícia</li>
+            <li className={styles.trustItem}><Headset size={16} aria-hidden="true" /> Suporte dedicado</li>
+            <li className={styles.trustItem}><RefreshCw size={16} aria-hidden="true" /> Atualizações incluídas</li>
+          </ul>
         </div>
       </section>
 
