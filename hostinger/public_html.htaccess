@@ -39,6 +39,22 @@ Options +FollowSymlinks
   Header set X-Frame-Options "SAMEORIGIN"
   Header set X-XSS-Protection "1; mode=block"
   Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # HSTS: forca HTTPS por 1 ano (inclui subdominios). Protege contra downgrade/MITM.
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+  # Permissions-Policy: desliga APIs sensiveis do browser que o site nao usa.
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+
+  # CSP em REPORT-ONLY: por enquanto apenas REPORTA violacoes no console do browser,
+  # NAO bloqueia nada. Isso permite validar em producao que nenhuma feature legitima
+  # (OAuth Google, Mercado Pago, ViaCEP/BrasilAPI, Sentry, agente IA, subdominios) e
+  # barrada por engano. Depois de confirmar zero falso-bloqueio, trocar o nome do header
+  # para "Content-Security-Policy" (sem -Report-Only) para ativar o enforce.
+  Header always set Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://api.codecraftgenz.com.br https://*.codecraftgenz.com.br https://accounts.google.com https://api.mercadopago.com https://api.mercadolibre.com https://viacep.com.br https://brasilapi.com.br https://agente-codecraftgenz.onrender.com https://app.trackpro.com.br https://*.sentry.io https://*.ingest.sentry.io; frame-src 'self' https://accounts.google.com https://*.mercadopago.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+
+  # upgrade-insecure-requests em enforce (seguro, so forca https em subresources)
+  Header always set Content-Security-Policy "upgrade-insecure-requests"
 </IfModule>
 
 # Cache Control Headers
