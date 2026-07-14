@@ -42,6 +42,7 @@ export default function AdminProjetos() {
   const [query, setQuery] = useState('');
   const [newTag, setNewTag] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
+  const [saveError, setSaveError] = useState(''); // erro exibido DENTRO do modal de cadastro
   const [confirmFinalizar, setConfirmFinalizar] = useState(null); // project obj or null
   const [transitionBusy, setTransitionBusy] = useState(null);     // project.id or null
   const [activeFilter, setActiveFilter] = useState('em_andamento'); // 'aguardando_start' | 'em_andamento' | 'finalizado'
@@ -109,6 +110,7 @@ export default function AdminProjetos() {
   // ---- Modal: open new ----
   const openNew = () => {
     setForm(emptyForm);
+    setSaveError('');
     setModalOpen(true);
   };
 
@@ -126,6 +128,7 @@ export default function AdminProjetos() {
       thumb_url: p.thumb_url || p.thumbUrl || '',
       tags: p.tags || p.tecnologias || [],
     });
+    setSaveError('');
     setModalOpen(true);
   };
 
@@ -134,6 +137,7 @@ export default function AdminProjetos() {
     setNewTag('');
     setThumbFile(null);
     setThumbUploadError('');
+    setSaveError('');
   };
 
   // ---- Tag handlers ----
@@ -149,22 +153,26 @@ export default function AdminProjetos() {
   };
 
   // ---- Save ----
+  // Erros de validação/salvamento aparecem DENTRO do modal (setSaveError),
+  // não como toast na página de trás. O sucesso fecha o modal e aí sim
+  // mostra o aviso na página (showNotice).
   const onSave = async () => {
+    setSaveError('');
     if (!String(form.titulo || '').trim() || !String(form.owner || '').trim()) {
-      showNotice('error', 'Preencha título e owner.');
+      setSaveError('Preencha título e owner.');
       return;
     }
     if (String(form.descricao || '').length < 10) {
-      showNotice('error', 'Descrição muito curta.');
+      setSaveError('Descrição muito curta (mínimo 10 caracteres).');
       return;
     }
     if (isInvalidUrl(form.thumb_url)) {
-      showNotice('error', 'URL de imagem inválida (use http(s)).');
+      setSaveError('URL de imagem inválida (use http:// ou https://).');
       return;
     }
     const res = await ProjectsRepo.upsert(form);
     if (res?.ok === false) {
-      showNotice('error', res.error || 'Falha ao salvar.');
+      setSaveError(res.error || 'Falha ao salvar. Tente novamente.');
       return;
     }
     showNotice('success', form.id ? 'Projeto atualizado.' : 'Projeto criado.');
@@ -388,6 +396,7 @@ export default function AdminProjetos() {
             onUploadThumb={handleThumbnailUpload}
             onClose={closeModal}
             onSave={onSave}
+            saveError={saveError}
           />
         )}
       </AnimatePresence>
@@ -622,7 +631,7 @@ function ProjectCard({ project, app, columnId, onEdit, onDelete, onTransition, b
 function ProjectModal({
   form, setForm, newTag, setNewTag, addTag, removeTag,
   thumbFile, setThumbFile, thumbUploadBusy, thumbUploadError,
-  setThumbUploadError, onUploadThumb, onClose, onSave,
+  setThumbUploadError, onUploadThumb, onClose, onSave, saveError,
 }) {
   const editing = !!form.id;
   const handleTagKey = (e) => {
@@ -789,6 +798,13 @@ function ProjectModal({
             </div>
           )}
         </div>
+
+        {saveError && (
+          <div className={styles.modalError} role="alert" aria-live="assertive">
+            <AlertTriangle size={16} aria-hidden="true" />
+            <span>{saveError}</span>
+          </div>
+        )}
 
         <footer className={styles.modalFoot}>
           <button onClick={onClose} className={styles.cancelBtn}>

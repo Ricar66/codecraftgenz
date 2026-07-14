@@ -58,6 +58,7 @@ const AdminProposals = () => {
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createError, setCreateError] = useState(''); // erro exibido DENTRO do modal de criação
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -149,6 +150,7 @@ const AdminProposals = () => {
 
   const handleCloseCreateModal = useCallback(() => {
     setIsCreateModalOpen(false);
+    setCreateError('');
     setCreateForm({
       companyName: '',
       contactName: '',
@@ -178,10 +180,13 @@ const AdminProposals = () => {
   }, [selectedProposal, fetchStats]);
 
   // Criar proposta
+  // Erros aparecem DENTRO do modal (setCreateError), não como toast na página
+  // de trás. O sucesso fecha o modal e aí mostra o toast na página.
   const handleCreateProposal = useCallback(async (e) => {
     e.preventDefault();
+    setCreateError('');
     if (!createForm.companyName.trim() || !createForm.contactName.trim() || !createForm.email.trim()) {
-      showToast('Preencha os campos obrigatórios', 'error');
+      setCreateError('Preencha os campos obrigatórios (empresa, contato e e-mail).');
       return;
     }
     try {
@@ -191,7 +196,7 @@ const AdminProposals = () => {
       fetchProposals();
       fetchStats();
     } catch (err) {
-      showToast(err.message || 'Erro ao criar proposta', 'error');
+      setCreateError(err.message || 'Erro ao criar proposta. Tente novamente.');
     }
   }, [createForm, fetchProposals, fetchStats, handleCloseCreateModal]);
 
@@ -339,7 +344,7 @@ const AdminProposals = () => {
             <RefreshCw className={loading ? styles.spinning : ''} />
           </button>
           <button
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => { setCreateError(''); setIsCreateModalOpen(true); }}
             className={styles.createBtn}
           >
             <Plus /> Nova Proposta
@@ -655,6 +660,13 @@ const AdminProposals = () => {
                   placeholder="Descreva os detalhes do projeto..."
                 />
               </div>
+
+              {createError && (
+                <div className={styles.modalError} role="alert" aria-live="assertive">
+                  <AlertTriangle size={16} aria-hidden="true" />
+                  <span>{createError}</span>
+                </div>
+              )}
 
               <div className={styles.formActions}>
                 <button type="button" onClick={handleCloseCreateModal} className={styles.cancelBtn}>
