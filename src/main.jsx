@@ -36,25 +36,9 @@ createRoot(document.getElementById('root')).render(
   </StrictMode>,
 )
 
-// Recuperação de chunk órfão pós-deploy.
-// As rotas são lazy(); o deploy apaga os assets antigos do servidor. Um cliente com
-// index.html/SW antigo pede um chunk que não existe mais → o import dinâmico falha e
-// a tela fica preta até o usuário recarregar na mão. O Vite emite `vite:preloadError`
-// nesse caso: recarregamos uma vez para buscar o index.html novo. A trava em
-// sessionStorage evita loop de reload se a falha for por rede offline.
-if (import.meta.env.PROD) {
-  window.addEventListener('vite:preloadError', (event) => {
-    const KEY = 'cc_chunk_reload'
-    if (sessionStorage.getItem(KEY)) return // já tentamos: deixa o erro aparecer
-    sessionStorage.setItem(KEY, '1')
-    event.preventDefault()
-    window.location.reload()
-  })
-  // App montou e navegou bem: libera a trava para o próximo deploy.
-  window.addEventListener('load', () => {
-    setTimeout(() => sessionStorage.removeItem('cc_chunk_reload'), 5000)
-  })
-}
+// NOTA: a recuperação de chunk órfão / tela-preta vive agora no WATCHDOG INLINE
+// do index.html (roda antes de qualquer bundle, cobre até o caso do próprio
+// main.jsx dar 404). Não duplicar aqui para evitar reloads concorrentes.
 
 // Registra Service Worker APÓS window.load para não bloquear o carregamento inicial
 // CORRIGIDO: Reload forçado quando nova versão está disponível

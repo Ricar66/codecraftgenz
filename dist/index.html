@@ -3,6 +3,65 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- ============================================================
+         WATCHDOG ANTI-TELA-PRETA (inline, sem depender de bundle)
+         Problema: apos um deploy, o service worker pode servir um HTML/chunk
+         antigo que referencia assets ja apagados do servidor -> 404 -> o app
+         nunca monta -> tela preta que so o reload manual resolvia.
+         Este script roda ANTES de qualquer bundle e recupera sozinho:
+           (a) se um <script>/<link> falhar ao carregar (asset 404), ou
+           (b) se o app nao montar em 8s (o loader #boot ainda esta na tela),
+         ele desregistra o SW, limpa TODOS os caches e recarrega 1x.
+         Trava em sessionStorage evita loop de reload.
+         ============================================================ -->
+    <script>
+      (function () {
+        var KEY = 'cc_recover';
+        var done = false;
+        function recover(reason) {
+          if (done) return;
+          if (sessionStorage.getItem(KEY)) return; // ja tentamos nesta sessao -> nao entra em loop
+          done = true;
+          sessionStorage.setItem(KEY, reason || '1');
+          var reload = function () { location.reload(); };
+          var jobs = [];
+          try {
+            if ('serviceWorker' in navigator) {
+              jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+                return Promise.all(rs.map(function (r) { return r.unregister(); }));
+              })['catch'](function () {}));
+            }
+            if (window.caches && caches.keys) {
+              jobs.push(caches.keys().then(function (ks) {
+                return Promise.all(ks.map(function (k) { return caches['delete'](k); }));
+              })['catch'](function () {}));
+            }
+            Promise.all(jobs).then(reload, reload);
+            setTimeout(reload, 2500); // fallback: recarrega mesmo se a limpeza travar
+          } catch (e) { reload(); }
+        }
+        // (a) erro ao carregar um dos NOSSOS chunks JS (/assets/*.js). So estes causam
+        // tela preta. Fontes/estilos externos (<link> do Google) podem falhar sem
+        // quebrar o app — nao disparam recuperacao, para nao recarregar a toa.
+        window.addEventListener('error', function (e) {
+          var t = e && e.target;
+          if (t && t.tagName === 'SCRIPT' && /\/assets\/.*\.js/.test(t.src || '')) recover('asset-404');
+        }, true);
+        // Vite emite este evento quando um import dinamico (chunk lazy) falha
+        window.addEventListener('vite:preloadError', function () { recover('preload'); });
+        // (b) app nao montou: se o loader #boot ainda existir 8s apos o load, recupera
+        window.addEventListener('load', function () {
+          setTimeout(function () {
+            var root = document.getElementById('root');
+            var boot = document.getElementById('boot');
+            if (boot && root && root.contains(boot)) recover('no-mount');
+            else sessionStorage.removeItem(KEY); // montou OK -> libera trava p/ proximo deploy
+          }, 8000);
+        });
+      })();
+    </script>
+
     <title>CodeCraft Gen-Z | Software sob medida para empresas</title>
 
     <!-- SEO Meta Tags -->
@@ -136,7 +195,7 @@
       @media (prefers-reduced-motion:reduce){#boot .ring{animation-duration:2.4s}}
     </style>
 
-    <script type="module" crossorigin src="/assets/index-bgBSi0ei.js"></script>
+    <script type="module" crossorigin src="/assets/index-BCMVJBaN.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/router-Brv-m0Ov.js">
     <link rel="stylesheet" crossorigin href="/assets/index-BIrPKVc9.css">
   <link rel="manifest" href="/manifest.webmanifest"></head>

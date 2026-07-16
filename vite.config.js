@@ -60,12 +60,15 @@ export default defineConfig({
             }
           },
           {
-            // Cache mais conservador para páginas HTML
+            // HTML: NetworkFirst SEM timeout curto. O timeout de 3s antigo fazia o SW
+            // servir o index.html do cache (versao antiga, aponta p/ chunks ja deletados
+            // -> tela preta) sempre que a rede passava de 3s. Sem timeout, quando ONLINE
+            // o HTML vem sempre fresco; o cache so entra em cena quando a rede realmente
+            // falha (offline). O loader inline + o watchdog cobrem a espera e falhas.
             urlPattern: ({ request }) => request.destination === 'document',
             handler: 'NetworkFirst',
             options: {
               cacheName: 'pages-cache',
-              networkTimeoutSeconds: 3, // Timeout rápido para detectar offline
               expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24 // 24 horas apenas
