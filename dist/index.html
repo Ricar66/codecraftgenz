@@ -124,13 +124,29 @@
       *{margin:0;padding:0;box-sizing:border-box}
       body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e0e0e0;-webkit-font-smoothing:antialiased}
       #root{min-height:100vh}
+
+      /* Loader inicial: o bundle leva ~4s para montar o React e o fundo do tema e
+         escuro — sem isto o visitante encara uma tela preta e acha que quebrou.
+         Fica DENTRO de #root: o createRoot() do React substitui os filhos do
+         container ao montar, entao o loader some sozinho, sem JS extra. */
+      #boot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;min-height:100vh;padding:24px}
+      #boot .ring{width:44px;height:44px;border-radius:50%;border:3px solid rgba(255,255,255,.12);border-top-color:#D12BF2;border-right-color:#00E4F2;animation:boot-spin .9s linear infinite}
+      #boot .txt{font-size:.9rem;letter-spacing:.02em;color:#a0a0b0}
+      @keyframes boot-spin{to{transform:rotate(360deg)}}
+      @media (prefers-reduced-motion:reduce){#boot .ring{animation-duration:2.4s}}
     </style>
 
-    <script type="module" crossorigin src="/assets/index-BCMVJBaN.js"></script>
+    <script type="module" crossorigin src="/assets/index-bgBSi0ei.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/router-Brv-m0Ov.js">
     <link rel="stylesheet" crossorigin href="/assets/index-BIrPKVc9.css">
   <link rel="manifest" href="/manifest.webmanifest"></head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Substituido pelo React assim que o app monta -->
+      <div id="boot" role="status" aria-live="polite">
+        <div class="ring"></div>
+        <div class="txt">Carregando a CodeCraft…</div>
+      </div>
+    </div>
   </body>
 </html>

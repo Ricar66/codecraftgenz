@@ -105,8 +105,9 @@ function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/projetos" element={<ProjectsPage />} />
                 {/* URLs legadas da Comunidade Craft (desafios/ranking/mentoria/feedbacks/crafter/onboarding,
-                    removida 2026-06-27) sao redirecionadas via 301 no nginx do VPS — nao no React —
-                    para preservar SEO sem manter rotas mortas no bundle. */}
+                    removida 2026-06-27) sao redirecionadas via 301 no .htaccess da Hostinger (Apache)
+                    — nao no React — para preservar SEO sem manter rotas mortas no bundle.
+                    Ver hostinger/public_html.htaccess. */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/reset-password" element={<PasswordResetPage />} />
