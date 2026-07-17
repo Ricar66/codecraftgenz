@@ -19,7 +19,14 @@ export default defineConfig({
       modernPolyfills: false // NAO adicionar polyfills modernos automaticamente
     }),
     VitePWA({
-      // Registro manual do SW para não bloquear o carregamento inicial
+      // KILL-SWITCH: gera um sw.js AUTO-DESTRUTIVO em vez de um SW de cache.
+      // O SW era a causa da "tela preta ao entrar" (servia HTML/JS obsoleto do
+      // precache apos deploys). Com selfDestroying, qualquer navegador que buscar
+      // /sw.js recebe um worker que desregistra a si mesmo e limpa os caches —
+      // resgatando os usuarios presos com o SW antigo. O registro tambem foi
+      // removido do main.jsx. Reavaliar PWA/offline no futuro, com versionamento
+      // de HTML adequado, se necessario.
+      selfDestroying: true,
       registerType: 'autoUpdate',
       injectRegister: null, // Registramos manualmente após window.load
       devOptions: {

@@ -40,75 +40,22 @@ createRoot(document.getElementById('root')).render(
 // do index.html (roda antes de qualquer bundle, cobre até o caso do próprio
 // main.jsx dar 404). Não duplicar aqui para evitar reloads concorrentes.
 
-// Registra Service Worker APÓS window.load para não bloquear o carregamento inicial
-// CORRIGIDO: Reload forçado quando nova versão está disponível
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  // Detecta quando o SW assume controle — mostra aviso antes de recarregar
-  let refreshing = false
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (refreshing) return
-    refreshing = true
-    // Mostra banner discreto em vez de reload abrupto
-    const banner = document.createElement('div')
-    const text = document.createTextNode('Nova versão disponível! ')
-    const btn = document.createElement('button')
-    btn.textContent = 'Atualizar'
-    Object.assign(btn.style, { marginLeft:'12px', background:'#D12BF2', color:'#fff', border:'none', borderRadius:'8px', padding:'6px 16px', cursor:'pointer', fontWeight:'600' })
-    btn.onclick = () => window.location.reload()
-    banner.appendChild(text)
-    banner.appendChild(btn)
-    Object.assign(banner.style, {
-      position:'fixed',bottom:'20px',left:'50%',transform:'translateX(-50%)',
-      background:'rgba(10,10,18,0.95)',color:'#F5F5F7',padding:'14px 24px',
-      borderRadius:'14px',zIndex:'99999',fontSize:'0.9rem',
-      border:'1px solid rgba(99,102,241,0.3)',backdropFilter:'blur(12px)',
-      boxShadow:'0 8px 32px rgba(0,0,0,0.4)',display:'flex',alignItems:'center',
-    })
-    document.body.appendChild(banner)
-  })
-
-  // Registra o SW após window.load para não bloquear o carregamento inicial.
-  // NOTA: removido o antigo caches.delete() a cada load (era hack de migração
-  // Render->VPS). Ele sabotava o próprio service worker e causava tela branca
-  // com chunks antigos logo após um deploy. O workbox já cuida disso via
-  // cleanupOutdatedCaches + registerType:'autoUpdate' (skipWaiting/clientsClaim).
-  window.addEventListener('load', () => {
-    // Registra SW após 1 segundo (reduzido de 3s para atualização mais rápida)
-    setTimeout(() => {
-      navigator.serviceWorker.register('/sw.js', { scope: '/' })
-        .then((registration) => {
-          // Verifica se há atualização pendente
-          if (registration.waiting) {
-            // Nova versão já está esperando - ativa imediatamente
-            registration.waiting.postMessage({ type: 'SKIP_WAITING' })
-          }
-
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed') {
-                  if (navigator.serviceWorker.controller) {
-                    // Nova versão instalada - ativa e recarrega
-                    console.log('Nova versão disponível. Atualizando...')
-                    newWorker.postMessage({ type: 'SKIP_WAITING' })
-                  } else {
-                    // Primeira instalação
-                    console.log('App disponível offline')
-                  }
-                }
-              })
-            }
-          })
-
-          // Verifica atualizações a cada 60 segundos
-          setInterval(() => {
-            registration.update().catch(() => {})
-          }, 60000)
-        })
-        .catch((error) => {
-          console.warn('SW registration failed:', error)
-        })
-    }, 1000)
-  })
+// SERVICE WORKER DESATIVADO (2026-07) — era a causa da "tela preta ao entrar".
+// O SW guardava HTML/JS antigos no precache e, apos um deploy, servia esses
+// arquivos obsoletos (que ja tinham sido apagados do servidor) -> 404 -> tela
+// preta que so o reload manual resolvia. O site nao e offline-first, entao o
+// SW trazia mais problema que beneficio.
+//
+// Em vez de registrar, DESREGISTRAMOS qualquer SW existente e limpamos TODOS os
+// caches. Isso resgata quem estava preso com o SW antigo: assim que o codigo novo
+// roda, o SW problemático e removido e o site passa a carregar sempre da rede.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations()
+    .then((regs) => Promise.all(regs.map((r) => r.unregister())))
+    .catch(() => {})
+  if (window.caches && caches.keys) {
+    caches.keys()
+      .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+      .catch(() => {})
+  }
 }
